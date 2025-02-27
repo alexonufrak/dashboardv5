@@ -54,7 +54,17 @@ export default function SignUp() {
     if (user) {
       router.push("/dashboard");
     }
-  }, [user, router]);
+    
+    // Get email from URL query parameters if available
+    if (router.query.email) {
+      setEmail(router.query.email);
+      // Automatically initiate verification if email is provided via URL
+      if (router.query.email.includes('@')) {
+        // Need to wait for component to fully mount
+        setTimeout(() => verifyInstitution(), 500);
+      }
+    }
+  }, [user, router, router.query]);
 
   // Function to check email domain against institution domains and check if user exists
   const verifyInstitution = async () => {

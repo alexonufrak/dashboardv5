@@ -108,9 +108,9 @@ const Navbar = () => {
                 )}
               </>
             ) : (
-              <a href="/api/auth/login" className="login">
+              <Link href="/login" className="login">
                 Log In
-              </a>
+              </Link>
             )}
           </div>
         </div>
