@@ -407,7 +407,7 @@ export default function SignUp() {
         </div>
         
         <div style={styles.loginPrompt}>
-          Already have an account? <a href="/api/auth/login" style={styles.loginLink}>Log in</a>
+          Already have an account? <a href="/login" style={styles.loginLink}>Log in</a>
         </div>
       </div>
     </Layout>

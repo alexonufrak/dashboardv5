@@ -32,7 +32,7 @@ export default function Home() {
           <h1 style={styles.heading}>Welcome to xFoundry</h1>
           <p style={styles.subheading}>The educational platform connecting students with opportunities</p>
           <div style={styles.buttonContainer}>
-            <a href="/api/auth/login" style={styles.button}>
+            <a href="/login" style={styles.button}>
               Log In
             </a>
             <a href="/signup" style={{...styles.button, ...styles.secondaryButton}}>
