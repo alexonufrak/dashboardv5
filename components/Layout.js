@@ -2,6 +2,8 @@
 
 import Head from "next/head"
 import { useState, useEffect } from "react"
+import Navbar from "./Navbar"
+import ResourcesToolbar from "./ResourcesToolbar"
 
 const Layout = ({ children, title = "xFoundry Student Dashboard" }) => {
   const [currentYear, setCurrentYear] = useState("")
@@ -20,8 +22,11 @@ const Layout = ({ children, title = "xFoundry Student Dashboard" }) => {
       </Head>
 
       <div style={styles.pageContainer}>
-        {/* Navbar placeholder */}
-        <nav style={styles.navbar}>{/* Navbar component will be implemented here */}</nav>
+        {/* Resources Toolbar - fixed at top */}
+        <ResourcesToolbar />
+        
+        {/* Main Navbar */}
+        <Navbar />
 
         <main style={styles.mainContent}>{children}</main>
 
@@ -38,11 +43,7 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     minHeight: "100vh",
-  },
-  navbar: {
-    backgroundColor: "var(--color-primary)",
-    color: "var(--color-white)",
-    padding: "1rem 0",
+    paddingTop: "30px", // Add padding to account for fixed toolbar
   },
   mainContent: {
     flex: 1,

@@ -26,9 +26,11 @@ const Navbar = () => {
               <Link href="/profile" className={router.pathname === "/profile" ? "active" : ""}>
                 Profile
               </Link>
-              <a href="/api/auth/logout" className="logout">
-                Log Out
-              </a>
+              <div className="sign-out-button">
+                <a href="/api/auth/logout" className="logout">
+                  Sign Out
+                </a>
+              </div>
               {user.picture && (
                 <div className="profile-picture-container">
                   <img
@@ -86,12 +88,18 @@ const Navbar = () => {
           color: var(--color-primary);
           font-weight: 600;
         }
+        .sign-out-button {
+          margin-left: 10px;
+        }
         .logout {
-          color: var(--color-danger) !important;
+          background-color: var(--color-danger);
+          color: white !important;
+          padding: 6px 12px;
+          border-radius: 4px;
+          font-size: 0.9rem;
         }
         .logout:hover {
-          color: var(--color-danger) !important;
-          text-decoration: underline;
+          background-color: #c82333;
         }
         .login {
           color: var(--color-primary) !important;
