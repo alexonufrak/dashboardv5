@@ -49,7 +49,7 @@ const TeamCard = ({ team }) => {
                   <li key={member.id || index} style={styles.memberItem}>
                     <div style={styles.memberInfo}>
                       <span style={styles.memberName}>
-                        {member.name}
+                        {member.name || member.email || "Unknown Member"}
                         {member.isCurrentUser && <span style={styles.currentUser}> (You)</span>}
                       </span>
                     </div>
