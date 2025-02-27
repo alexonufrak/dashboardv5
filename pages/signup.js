@@ -36,7 +36,8 @@ export default function SignUp() {
     firstName: "",
     lastName: "",
     graduationYear: "",
-    degreeType: ""
+    degreeType: "",
+    referralSource: ""
   });
   const formStepRefs = useRef([]);
 
@@ -121,10 +122,12 @@ export default function SignUp() {
       graduationYear: formData.graduationYear,
       firstName: formData.firstName,
       lastName: formData.lastName,
+      referralSource: formData.referralSource,
+      login_hint: email, // Pre-fill email in Auth0
     }).toString();
     
-    // Redirect to Auth0 login with Google
-    window.location.href = `/api/auth/login?connection=google-oauth2&${queryParams}`;
+    // Redirect to Auth0 login with Google, directly bypassing the Auth0 login screen if possible
+    window.location.href = `/api/auth/login?connection=google-oauth2&${queryParams}&prompt=login`;
   };
 
   if (isLoading) {
@@ -281,6 +284,30 @@ export default function SignUp() {
                     <option value="Undergraduate">Undergraduate</option>
                   </select>
                 </div>
+              </div>
+              
+              <div style={styles.formGroup}>
+                <label htmlFor="referralSource" style={styles.label}>
+                  How did you hear about xFoundry?
+                  <span style={styles.tooltipIcon} title="Help us understand how you found us">ⓘ</span>
+                </label>
+                <select
+                  id="referralSource"
+                  name="referralSource"
+                  value={formData.referralSource}
+                  onChange={handleInputChange}
+                  style={styles.input}
+                  required
+                >
+                  <option value="">Please select...</option>
+                  <option value="Friend">Friend or Classmate</option>
+                  <option value="Professor">Professor or Advisor</option>
+                  <option value="Email">Email</option>
+                  <option value="SocialMedia">Social Media</option>
+                  <option value="Event">Campus Event</option>
+                  <option value="Search">Search Engine</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
               
               <div style={styles.buttonsRow}>

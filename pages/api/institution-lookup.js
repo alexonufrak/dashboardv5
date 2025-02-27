@@ -30,22 +30,31 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Institutions table not configured' });
     }
 
-    // Search for institutions with this domain
-    // We're looking for institutions where the Domains field (an array) contains the domain
+    // Search for institutions with an exact domain match
+    // We need to check if the domain appears as a whole value in the comma-separated list
     const records = await institutionsTable.select({
-      filterByFormula: `FIND("${domain}", {Domains})`,
       fields: ['Name', 'Domains'],
-      maxRecords: 1
     }).firstPage();
+    
+    // Filter records manually to match exact domains
+    const matchingRecords = records.filter(record => {
+      if (!record.fields.Domains) return false;
+      
+      // Split domains by comma and trim whitespace
+      const domainList = record.fields.Domains.split(',').map(d => d.trim());
+      
+      // Check if the domain matches exactly with any domain in the list
+      return domainList.includes(domain);
+    });
 
-    if (records && records.length > 0) {
+    if (matchingRecords && matchingRecords.length > 0) {
       // Found a matching institution
       return res.status(200).json({
         success: true,
         institution: {
-          id: records[0].id,
-          name: records[0].fields.Name,
-          domains: records[0].fields.Domains
+          id: matchingRecords[0].id,
+          name: matchingRecords[0].fields.Name,
+          domains: matchingRecords[0].fields.Domains
         }
       });
     } else {

@@ -2,7 +2,16 @@ import { handleAuth, handleCallback } from "@auth0/nextjs-auth0"
 
 const afterCallback = async (req, res, session, state) => {
   try {
-    const { institution, institutionId, degreeType, major, graduationYear } = req.query
+    const { 
+      institution, 
+      institutionId, 
+      degreeType, 
+      major, 
+      graduationYear, 
+      firstName, 
+      lastName,
+      referralSource 
+    } = req.query
 
     if (institution && institutionId) {
       session.user.institution = {
@@ -12,10 +21,22 @@ const afterCallback = async (req, res, session, state) => {
         major: major || "",
         graduationYear: graduationYear || "",
       }
+      
+      // Add personal information
+      if (firstName) session.user.firstName = firstName;
+      if (lastName) session.user.lastName = lastName;
+      
+      // Add referral source as user metadata
+      if (referralSource) session.user.referralSource = referralSource;
 
       // Here you would typically update the user's metadata in Auth0
-      // This is just a placeholder for that operation
-      console.log("Updating user metadata:", session.user.institution)
+      // Log all the metadata we're capturing
+      console.log("Updating user metadata:", {
+        institution: session.user.institution,
+        firstName,
+        lastName,
+        referralSource
+      });
     }
 
     return session
