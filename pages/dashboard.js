@@ -4,11 +4,11 @@ import { withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { useEffect, useState } from "react"
 import Layout from "../components/Layout"
-import DashboardHeader from "../components/DashboardHeader"
 import ProfileCard from "../components/ProfileCard"
 import ProfileEditModal from "../components/ProfileEditModal"
 import TeamCard from "../components/TeamCard"
 import LoadingScreen from "../components/LoadingScreen"
+import OnboardingChecklist from "../components/OnboardingChecklist"
 import { FilloutPopupEmbed } from "@fillout/react"
 
 const Dashboard = () => {
@@ -190,17 +190,11 @@ const Dashboard = () => {
     );
   };
 
+  const [dashboardContent, setDashboardContent] = useState(false);
+  
   return (
     <Layout title="xFoundry Dashboard">
       <div style={styles.container}>
-        {profile.institutionName && profile.institutionName !== "Not specified" && (
-          <div style={styles.institutionBadge}>
-            {profile.institutionName}
-          </div>
-        )}
-        
-        <DashboardHeader profile={profile} />
-        
         {/* Fillout form popup */}
         {activeFilloutForm && (
           <FilloutPopupEmbed
@@ -216,136 +210,145 @@ const Dashboard = () => {
           />
         )}
         
-        <div style={styles.content}>
-          <div style={styles.profileSection}>
-            <h2 style={styles.sectionHeading}>Your Profile</h2>
-            <ProfileCard profile={profile} onEditClick={handleEditClick} />
+        {/* Onboarding Checklist */}
+        <OnboardingChecklist 
+          profile={profile}
+          onComplete={() => setDashboardContent(true)}
+        />
+        
+        {/* Dashboard Content - Only shown after onboarding is completed or skipped */}
+        {dashboardContent && (
+          <div style={styles.content}>
+            <div style={styles.profileSection}>
+              <h2 style={styles.sectionHeading}>Your Profile</h2>
+              <ProfileCard profile={profile} onEditClick={handleEditClick} />
+              
+              {isEditModalOpen && (
+                <ProfileEditModal
+                  isOpen={isEditModalOpen}
+                  onClose={handleEditClose}
+                  profile={profile}
+                  onSave={handleProfileUpdate}
+                />
+              )}
+            </div>
             
-            {isEditModalOpen && (
-              <ProfileEditModal
-                isOpen={isEditModalOpen}
-                onClose={handleEditClose}
-                profile={profile}
-                onSave={handleProfileUpdate}
-              />
-            )}
-          </div>
-          
-          <div style={styles.teamSection}>
-            <h2 style={styles.sectionHeading}>Your Team</h2>
-            {isTeamLoading ? (
-              <div style={styles.card}>
-                <p style={styles.loadingText}>Loading team information...</p>
-              </div>
-            ) : (
-              <>
-                <TeamCard team={teamData} />
-                {process.env.NODE_ENV !== 'production' && (
-                  <div style={styles.debugInfo}>
-                    <p><strong>Team Data:</strong> {teamData ? 'Available' : 'Not available'}</p>
-                    <p><strong>Contact ID:</strong> {profile?.contactId || 'Not available'}</p>
-                    <div style={styles.debugActions}>
-                      <button 
-                        onClick={async () => {
-                          try {
-                            const response = await fetch('/api/debug/team-data');
-                            const data = await response.json();
-                            console.log("Debug team data:", data);
-                            
-                            // Create a more user-friendly summary
-                            const summary = [
-                              `Contact ID: ${data.contactId}`,
-                              `Email: ${data.email}`,
-                              `Member records: ${data.memberRecords?.length || 0}`,
-                              `Team records: ${data.teamRecords?.length || 0}`,
-                              `Table IDs configured: ${data.tableConfig.membersTableId ? 'Yes' : 'No'} (Members), ${data.tableConfig.teamsTableId ? 'Yes' : 'No'} (Teams)`,
-                            ];
-                            
-                            if (data.memberRecords?.length === 0) {
-                              summary.push("ISSUE: No member records found for this user");
-                            } else if (data.extractedTeamIds?.length === 0) {
-                              summary.push("ISSUE: Member records don't have Team links");
-                            } else if (data.memberAnalysis?.activeMembers === 0) {
-                              summary.push(`ISSUE: No ACTIVE members (statuses: ${data.memberAnalysis.statuses.join(', ')})`);
-                            } else if (data.teamRecords?.length === 0) {
-                              summary.push("ISSUE: Team records not found");
-                            }
-                            
-                            alert(summary.join('\n'));
-                          } catch (error) {
-                            console.error("Error debugging teams:", error);
-                            alert(`Error debugging teams: ${error.message}`);
-                          }
-                        }}
-                        style={styles.debugButton}
-                      >
-                        Enhanced Team Debug
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-          
-          <div style={styles.cohortsSection}>
-            <h2 style={styles.sectionHeading}>Available Programs</h2>
-            
-            {/* Add debug info */}
-            {process.env.NODE_ENV !== 'production' && (
-              <div style={styles.debugInfo}>
-                <p><strong>Institution ID:</strong> {profile.institution?.id || 'Not available'}</p>
-                <p><strong>Cohorts data available:</strong> {profile.cohorts ? 'Yes' : 'No'}</p>
-                <p><strong>Number of cohorts:</strong> {profile.cohorts?.length || 0}</p>
-                {profile.cohorts && profile.cohorts.length > 0 && (
-                  <div>
-                    <p><strong>Cohort IDs:</strong></p>
-                    <ul>
-                      {profile.cohorts.map((cohort, index) => (
-                        <li key={index}>{cohort.id} - Status: {cohort.Status || 'Unknown'}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {/* Add check action */}
-                <div style={styles.debugActions}>
-                  <button 
-                    onClick={async () => {
-                      if (!profile.institution?.id) {
-                        alert("No institution ID available");
-                        return;
-                      }
-                      
-                      try {
-                        // Try to fetch partnerships directly
-                        const response = await fetch(`/api/debug/partnerships?institutionId=${profile.institution.id}`);
-                        const data = await response.json();
-                        console.log("Debug partnerships data:", data);
-                        alert(`Found ${data.partnerships?.length || 0} partnerships and ${data.cohorts?.length || 0} cohorts.\nCheck console for details.`);
-                      } catch (error) {
-                        console.error("Error checking partnerships:", error);
-                        alert(`Error checking partnerships: ${error.message}`);
-                      }
-                    }}
-                    style={styles.debugButton}
-                  >
-                    Check Partnerships
-                  </button>
+            <div style={styles.teamSection}>
+              <h2 style={styles.sectionHeading}>Your Team</h2>
+              {isTeamLoading ? (
+                <div style={styles.card}>
+                  <p style={styles.loadingText}>Loading team information...</p>
                 </div>
-              </div>
-            )}
+              ) : (
+                <>
+                  <TeamCard team={teamData} />
+                  {process.env.NODE_ENV !== 'production' && (
+                    <div style={styles.debugInfo}>
+                      <p><strong>Team Data:</strong> {teamData ? 'Available' : 'Not available'}</p>
+                      <p><strong>Contact ID:</strong> {profile?.contactId || 'Not available'}</p>
+                      <div style={styles.debugActions}>
+                        <button 
+                          onClick={async () => {
+                            try {
+                              const response = await fetch('/api/debug/team-data');
+                              const data = await response.json();
+                              console.log("Debug team data:", data);
+                              
+                              // Create a more user-friendly summary
+                              const summary = [
+                                `Contact ID: ${data.contactId}`,
+                                `Email: ${data.email}`,
+                                `Member records: ${data.memberRecords?.length || 0}`,
+                                `Team records: ${data.teamRecords?.length || 0}`,
+                                `Table IDs configured: ${data.tableConfig.membersTableId ? 'Yes' : 'No'} (Members), ${data.tableConfig.teamsTableId ? 'Yes' : 'No'} (Teams)`,
+                              ];
+                              
+                              if (data.memberRecords?.length === 0) {
+                                summary.push("ISSUE: No member records found for this user");
+                              } else if (data.extractedTeamIds?.length === 0) {
+                                summary.push("ISSUE: Member records don't have Team links");
+                              } else if (data.memberAnalysis?.activeMembers === 0) {
+                                summary.push(`ISSUE: No ACTIVE members (statuses: ${data.memberAnalysis.statuses.join(', ')})`);
+                              } else if (data.teamRecords?.length === 0) {
+                                summary.push("ISSUE: Team records not found");
+                              }
+                              
+                              alert(summary.join('\n'));
+                            } catch (error) {
+                              console.error("Error debugging teams:", error);
+                              alert(`Error debugging teams: ${error.message}`);
+                            }
+                          }}
+                          style={styles.debugButton}
+                        >
+                          Enhanced Team Debug
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
             
-            {profile.cohorts && profile.cohorts.length > 0 ? (
-              <div style={styles.cohortsGrid}>
-                {profile.cohorts.map(cohort => renderCohortCard(cohort))}
-              </div>
-            ) : (
-              <div style={styles.card}>
-                <p style={styles.noCohorts}>No programs are currently available for your institution. Check back later for updates.</p>
-              </div>
-            )}
+            <div style={styles.cohortsSection}>
+              <h2 style={styles.sectionHeading}>Available Programs</h2>
+              
+              {/* Add debug info */}
+              {process.env.NODE_ENV !== 'production' && (
+                <div style={styles.debugInfo}>
+                  <p><strong>Institution ID:</strong> {profile.institution?.id || 'Not available'}</p>
+                  <p><strong>Cohorts data available:</strong> {profile.cohorts ? 'Yes' : 'No'}</p>
+                  <p><strong>Number of cohorts:</strong> {profile.cohorts?.length || 0}</p>
+                  {profile.cohorts && profile.cohorts.length > 0 && (
+                    <div>
+                      <p><strong>Cohort IDs:</strong></p>
+                      <ul>
+                        {profile.cohorts.map((cohort, index) => (
+                          <li key={index}>{cohort.id} - Status: {cohort.Status || 'Unknown'}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {/* Add check action */}
+                  <div style={styles.debugActions}>
+                    <button 
+                      onClick={async () => {
+                        if (!profile.institution?.id) {
+                          alert("No institution ID available");
+                          return;
+                        }
+                        
+                        try {
+                          // Try to fetch partnerships directly
+                          const response = await fetch(`/api/debug/partnerships?institutionId=${profile.institution.id}`);
+                          const data = await response.json();
+                          console.log("Debug partnerships data:", data);
+                          alert(`Found ${data.partnerships?.length || 0} partnerships and ${data.cohorts?.length || 0} cohorts.\nCheck console for details.`);
+                        } catch (error) {
+                          console.error("Error checking partnerships:", error);
+                          alert(`Error checking partnerships: ${error.message}`);
+                        }
+                      }}
+                      style={styles.debugButton}
+                    >
+                      Check Partnerships
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {profile.cohorts && profile.cohorts.length > 0 ? (
+                <div style={styles.cohortsGrid}>
+                  {profile.cohorts.map(cohort => renderCohortCard(cohort))}
+                </div>
+              ) : (
+                <div style={styles.card}>
+                  <p style={styles.noCohorts}>No programs are currently available for your institution. Check back later for updates.</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </Layout>
   )

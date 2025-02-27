@@ -52,7 +52,12 @@ export default function SignUp() {
   // Redirect to dashboard if user is already logged in
   useEffect(() => {
     if (user) {
-      router.push("/dashboard");
+      // If there's a cohortId parameter, add it to the dashboard redirect
+      if (router.query.cohortId) {
+        router.push(`/dashboard?cohortId=${router.query.cohortId}`);
+      } else {
+        router.push("/dashboard");
+      }
     }
     
     // Get email from URL query parameters if available
@@ -187,10 +192,15 @@ export default function SignUp() {
       lastName: formData.lastName,
       referralSource: formData.referralSource,
       login_hint: email, // Pre-fill email in Auth0
-    }).toString();
+    });
+    
+    // Add cohortId if it exists in URL parameters
+    if (router.query.cohortId) {
+      queryParams.append("cohortId", router.query.cohortId);
+    }
     
     // Redirect to Auth0 login with Google, directly bypassing the Auth0 login screen if possible
-    window.location.href = `/api/auth/login?connection=google-oauth2&${queryParams}&prompt=login`;
+    window.location.href = `/api/auth/login?connection=google-oauth2&${queryParams.toString()}&prompt=login`;
   };
 
   if (isLoading) {
