@@ -29,7 +29,7 @@ const ProfileCard = ({ profile, onEditClick }) => {
             style={styles.editButton}
             aria-label="Edit profile"
           >
-            Edit
+            Edit Profile
           </button>
         )}
       </div>
