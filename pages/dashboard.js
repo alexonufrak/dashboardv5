@@ -53,9 +53,25 @@ const Dashboard = () => {
       }
     }
 
+    const checkOnboardingStatus = async () => {
+      try {
+        const response = await fetch("/api/user/metadata")
+        if (response.ok) {
+          const metadata = await response.json()
+          if (metadata.onboardingCompleted || metadata.onboardingSkipped) {
+            setDashboardContent(true)
+          }
+        }
+      } catch (err) {
+        console.error("Error checking onboarding status:", err)
+        // If there's an error, we'll default to showing the onboarding
+      }
+    }
+
     if (user) {
       fetchProfile()
       fetchTeamData()
+      checkOnboardingStatus()
     }
   }, [user])
 
@@ -103,6 +119,8 @@ const Dashboard = () => {
   };
 
   // Function to render individual cohort cards
+  const [dashboardContent, setDashboardContent] = useState(false);
+  
   const renderCohortCard = (cohort) => {
     // Debug: Log the entire cohort object to see its structure
     console.log("Cohort object:", cohort);
@@ -189,8 +207,6 @@ const Dashboard = () => {
       </div>
     );
   };
-
-  const [dashboardContent, setDashboardContent] = useState(false);
   
   return (
     <Layout title="xFoundry Dashboard">
