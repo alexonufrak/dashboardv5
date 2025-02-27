@@ -72,6 +72,7 @@ export default function SignUp() {
       console.log(`Verifying institution for email: ${email}`);
       
       // First check if the user already exists
+      console.log(`Checking if email exists: ${email}`);
       const userCheckResponse = await fetch("/api/user/check-email", {
         method: "POST",
         headers: {
@@ -80,11 +81,15 @@ export default function SignUp() {
         body: JSON.stringify({ email }),
       });
       
+      console.log(`User check response status: ${userCheckResponse.status}`);
+      
       if (!userCheckResponse.ok) {
+        console.error("Failed user check response:", userCheckResponse);
         throw new Error("Failed to check user existence");
       }
       
       const userCheckData = await userCheckResponse.json();
+      console.log("User check data:", userCheckData);
       
       // If user exists, show message and prepare for redirect
       if (userCheckData.exists) {

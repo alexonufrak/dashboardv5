@@ -1,5 +1,8 @@
-import { auth0ManagementClient } from '../../../lib/auth0';
+import { getUserByEmail } from '../../../lib/userProfile';
 
+/**
+ * API handler to check if a user exists by email
+ */
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -7,55 +10,44 @@ export default async function handler(req, res) {
 
   try {
     const { email } = req.body;
+    console.log(`API received check-email request for: ${email}`);
 
     if (!email) {
+      console.log('Email is required but was not provided');
       return res.status(400).json({ 
         error: 'Email is required',
         exists: false
       });
     }
 
+    // Try to get user from the database using email
     try {
-      // Get Auth0 Management API client
-      const auth0Management = await auth0ManagementClient();
+      console.log(`Checking if user exists in database with email: ${email}`);
+      const user = await getUserByEmail(email);
       
-      try {
-        // Search for users with this email
-        const users = await auth0Management.users.getByEmail(email);
-        
-        // Check if any users were found
-        const userExists = users && users.length > 0;
+      // If user is found, they exist
+      const userExists = !!user;
+      console.log(`User existence check result: ${userExists}`);
   
-        return res.status(200).json({ 
-          exists: userExists,
-          message: userExists ? 'User exists' : 'User does not exist'
-        });
-      } catch (userError) {
-        // If Auth0 returns a 404, the user doesn't exist
-        if (userError.statusCode === 404) {
-          return res.status(200).json({
-            exists: false,
-            message: 'User does not exist'
-          });
-        }
-        throw userError;
-      }
-    } catch (auth0Error) {
-      // For other Auth0 errors, log and continue with signup
-      console.error('Error with Auth0 Management API:', auth0Error);
+      return res.status(200).json({ 
+        exists: userExists,
+        message: userExists ? 'User exists' : 'User does not exist'
+      });
+    } catch (error) {
+      console.error('Error checking user existence:', error);
       
-      // As a fallback, just return false - the worst that happens is the user goes through signup again
+      // Don't return error status - better to let user continue with signup
+      // than to block them incorrectly
       return res.status(200).json({
         exists: false,
-        message: 'Unable to verify user existence, continuing with signup'
+        message: 'Error checking user existence, continuing with signup'
       });
     }
   } catch (error) {
-    console.error('Unhandled error checking user:', error);
-    // Don't return error status, just continue with signup
+    console.error('Unhandled error in API handler:', error);
     return res.status(200).json({ 
       exists: false, 
-      message: 'Error checking user existence, continuing with signup'
+      message: 'Error checking user, continuing with signup'
     });
   }
 }
