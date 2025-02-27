@@ -106,8 +106,15 @@ const LoginModal = ({ isOpen, onClose, initialEmail = "" }) => {
     }
   };
 
+  // Handle clicking outside the modal to close it
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div style={styles.modalOverlay}>
+    <div style={styles.modalOverlay} onClick={handleOverlayClick}>
       <div style={styles.modalContent}>
         <div style={styles.modalHeader}>
           <h3 style={styles.modalTitle}>Sign In to xFoundry</h3>
@@ -138,13 +145,16 @@ const LoginModal = ({ isOpen, onClose, initialEmail = "" }) => {
             {emailError && <div style={styles.errorText}>{emailError}</div>}
           </div>
           
-          <button 
-            onClick={verifyEmailAndInstitution}
-            style={styles.verifyButton}
-            disabled={isVerifying || !email || isRedirecting}
-          >
-            {isVerifying ? "Verifying..." : "Continue"}
-          </button>
+          {/* Only show verify button when not yet verified or there was an error */}
+          {(institutionStatus === null || institutionStatus === "error") && (
+            <button 
+              onClick={verifyEmailAndInstitution}
+              style={styles.verifyButton}
+              disabled={isVerifying || !email || isRedirecting}
+            >
+              {isVerifying ? "Verifying..." : "Continue"}
+            </button>
+          )}
           
           {/* User exists message */}
           {userExists === true && institutionStatus === "success" && (
@@ -212,7 +222,9 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.6)", // Darker background
+    backdropFilter: "blur(5px)", // Blur effect
+    WebkitBackdropFilter: "blur(5px)", // Safari support
     display: "flex",
     alignItems: "center",
     justifyContent: "center",

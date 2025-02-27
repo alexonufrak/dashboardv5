@@ -43,6 +43,13 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
   }, [isOpen, profile?.showMajor]);
 
   if (!isOpen) return null;
+  
+  // Handle clicking outside the modal to close it
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -110,7 +117,7 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
   };
 
   return (
-    <div style={styles.modalOverlay}>
+    <div style={styles.modalOverlay} onClick={handleOverlayClick}>
       <div style={styles.modalContent}>
         <div style={styles.modalHeader}>
           <h3 style={styles.modalTitle}>Edit Profile</h3>
@@ -288,7 +295,9 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(0, 0, 0, 0.6)", // Darker background
+    backdropFilter: "blur(5px)", // Blur effect
+    WebkitBackdropFilter: "blur(5px)", // Safari support
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
