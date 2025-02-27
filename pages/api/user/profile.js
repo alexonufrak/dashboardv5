@@ -27,6 +27,7 @@ async function handler(req, res) {
         Major: updateData.major,
         GraduationYear: updateData.graduationYear,
         InstitutionId: updateData.institutionId,
+        educationId: updateData.educationId, // Include education record ID for updating
       }
 
       const updatedProfile = await updateUserProfile(contactId, airtableData)

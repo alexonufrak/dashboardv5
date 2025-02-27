@@ -1,4 +1,4 @@
-const ProfileCard = ({ profile }) => {
+const ProfileCard = ({ profile, onEditClick }) => {
   // Use real data or fallback to placeholders if no profile is provided
   const userData = profile || {};
   
@@ -23,6 +23,15 @@ const ProfileCard = ({ profile }) => {
           <h2 style={styles.name}>{userData.name || "No Name"}</h2>
           <p style={styles.email}>{userData.email || "No Email"}</p>
         </div>
+        {onEditClick && (
+          <button 
+            onClick={onEditClick} 
+            style={styles.editButton}
+            aria-label="Edit profile"
+          >
+            Edit
+          </button>
+        )}
       </div>
 
       <div style={styles.academicInfo}>
@@ -94,6 +103,17 @@ const styles = {
     width: "100%",
     height: "100%",
     objectFit: "cover",
+  },
+  editButton: {
+    backgroundColor: "var(--color-primary, #4285f4)",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    padding: "6px 12px",
+    fontSize: "14px",
+    fontWeight: "500",
+    cursor: "pointer",
+    marginLeft: "10px",
   },
   profileInfo: {
     flex: 1,

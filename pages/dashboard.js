@@ -6,6 +6,7 @@ import { useEffect, useState } from "react"
 import Layout from "../components/Layout"
 import DashboardHeader from "../components/DashboardHeader"
 import ProfileCard from "../components/ProfileCard"
+import ProfileEditModal from "../components/ProfileEditModal"
 import TeamCard from "../components/TeamCard"
 import LoadingScreen from "../components/LoadingScreen"
 
@@ -16,6 +17,8 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [isTeamLoading, setIsTeamLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -61,6 +64,41 @@ const Dashboard = () => {
   if (error) {
     return <div>Error: {error}</div>
   }
+  
+  const handleEditClick = () => {
+    setIsEditModalOpen(true);
+  };
+  
+  const handleEditClose = () => {
+    setIsEditModalOpen(false);
+  };
+  
+  const handleProfileUpdate = async (updatedData) => {
+    try {
+      setIsUpdating(true);
+      
+      const response = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedData),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update profile");
+      }
+      
+      const updatedProfile = await response.json();
+      setProfile(updatedProfile);
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      throw err;
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   // Function to render individual cohort cards
   const renderCohortCard = (cohort) => {
@@ -147,7 +185,16 @@ const Dashboard = () => {
         <div style={styles.content}>
           <div style={styles.profileSection}>
             <h2 style={styles.sectionHeading}>Your Profile</h2>
-            <ProfileCard profile={profile} />
+            <ProfileCard profile={profile} onEditClick={handleEditClick} />
+            
+            {isEditModalOpen && (
+              <ProfileEditModal
+                isOpen={isEditModalOpen}
+                onClose={handleEditClose}
+                profile={profile}
+                onSave={handleProfileUpdate}
+              />
+            )}
           </div>
           
           <div style={styles.teamSection}>
