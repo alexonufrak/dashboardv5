@@ -196,7 +196,7 @@ const Navbar = () => {
           object-fit: cover;
         }
       `}</style>
-    </nav>
+    </>
   )
 }
 
