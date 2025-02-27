@@ -178,18 +178,25 @@ const LoginModal = ({ isOpen, onClose, initialEmail = "" }) => {
             </div>
           )}
           
-          {/* Continue button */}
-          {institutionStatus === "success" && userExists !== null && (
+          {/* Sign In button - only shown when user exists */}
+          {institutionStatus === "success" && userExists === true && (
             <button
               onClick={proceedToAuth}
               style={styles.continueButton}
               disabled={isRedirecting}
             >
-              {isRedirecting 
-                ? "Redirecting..." 
-                : userExists 
-                  ? "Sign In to Your Account" 
-                  : "Create New Account"}
+              {isRedirecting ? "Redirecting..." : "Sign In to Your Account"}
+            </button>
+          )}
+          
+          {/* Create Account button - only shown when user doesn't exist */}
+          {institutionStatus === "success" && userExists === false && (
+            <button
+              onClick={proceedToAuth}
+              style={styles.continueButton}
+              disabled={isRedirecting}
+            >
+              {isRedirecting ? "Redirecting..." : "Create New Account"}
             </button>
           )}
         </div>

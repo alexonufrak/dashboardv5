@@ -107,6 +107,10 @@ export default function SignUp() {
         setUserExists(true);
         setIsRedirecting(true);
         
+        // Hide the continue button by setting institutionStatus to a special value
+        // This prevents the continue button from showing
+        setInstitutionStatus("user-exists");
+        
         // Delay redirect to show message to user for 2 seconds
         setTimeout(() => {
           // Encode the email to use as a query parameter
