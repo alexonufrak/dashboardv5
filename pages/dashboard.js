@@ -140,6 +140,31 @@ const Dashboard = () => {
                     </ul>
                   </div>
                 )}
+                {/* Add check action */}
+                <div style={styles.debugActions}>
+                  <button 
+                    onClick={async () => {
+                      if (!profile.institution?.id) {
+                        alert("No institution ID available");
+                        return;
+                      }
+                      
+                      try {
+                        // Try to fetch partnerships directly
+                        const response = await fetch(`/api/debug/partnerships?institutionId=${profile.institution.id}`);
+                        const data = await response.json();
+                        console.log("Debug partnerships data:", data);
+                        alert(`Found ${data.partnerships?.length || 0} partnerships and ${data.cohorts?.length || 0} cohorts.\nCheck console for details.`);
+                      } catch (error) {
+                        console.error("Error checking partnerships:", error);
+                        alert(`Error checking partnerships: ${error.message}`);
+                      }
+                    }}
+                    style={styles.debugButton}
+                  >
+                    Check Partnerships
+                  </button>
+                </div>
               </div>
             )}
             
@@ -205,6 +230,19 @@ const styles = {
     marginBottom: "20px",
     fontFamily: "monospace",
     whiteSpace: "pre-wrap",
+  },
+  debugActions: {
+    marginTop: "10px",
+    borderTop: "1px solid #ddd",
+    paddingTop: "10px",
+  },
+  debugButton: {
+    padding: "5px 10px",
+    backgroundColor: "#333",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    cursor: "pointer",
   },
   card: {
     backgroundColor: "var(--color-white)",
