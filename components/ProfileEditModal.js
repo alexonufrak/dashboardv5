@@ -215,12 +215,10 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
                   required
                 >
                   <option value="">Select Degree Type</option>
-                  <option value="Bachelor's">Bachelor's</option>
-                  <option value="Master's">Master's</option>
-                  <option value="PhD">PhD</option>
-                  <option value="Associate">Associate</option>
-                  <option value="Certificate">Certificate</option>
                   <option value="Undergraduate">Undergraduate</option>
+                  <option value="Graduate">Graduate</option>
+                  <option value="Doctorate">Doctorate</option>
+                  <option value="Certificate">Certificate</option>
                 </select>
               </div>
               {profile.showMajor && (

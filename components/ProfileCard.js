@@ -83,10 +83,27 @@ const ProfileCard = ({ profile, onEditClick }) => {
         ) : (
           <>
             <span style={styles.statusIcon}>⚠</span>
-            Profile Incomplete - Please update your information
+            Profile Incomplete - {onEditClick && (
+              <button onClick={onEditClick} style={styles.updateButton}>
+                Update Your Information
+              </button>
+            )}
           </>
         )}
       </div>
+      
+      {!userData.institution?.id && !userData.suggestedInstitution && (
+        <div style={styles.educationPrompt}>
+          <p style={styles.promptMessage}>
+            Please add your education information to see available programs for your institution.
+          </p>
+          {onEditClick && (
+            <button onClick={onEditClick} style={styles.promptButton}>
+              Add Education Details
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -187,6 +204,39 @@ const styles = {
   },
   statusIcon: {
     marginRight: "8px",
+  },
+  updateButton: {
+    backgroundColor: "transparent",
+    color: "inherit",
+    border: "none",
+    textDecoration: "underline",
+    cursor: "pointer",
+    fontWeight: "bold",
+    padding: 0,
+    display: "inline",
+    fontSize: "inherit",
+  },
+  educationPrompt: {
+    marginTop: "15px",
+    padding: "12px",
+    backgroundColor: "#e3f2fd",
+    borderRadius: "6px",
+    border: "1px solid #bbdefb",
+  },
+  promptMessage: {
+    margin: "0 0 10px 0",
+    color: "#0d47a1",
+    fontWeight: "500",
+  },
+  promptButton: {
+    backgroundColor: "#1976d2",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    padding: "8px 12px",
+    fontWeight: "500",
+    cursor: "pointer",
+    fontSize: "0.9rem",
   },
   institutionAlert: {
     backgroundColor: "#e3f2fd",
