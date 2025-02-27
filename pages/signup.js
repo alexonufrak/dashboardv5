@@ -38,6 +38,8 @@ export default function SignUp() {
   const [institutionStatus, setInstitutionStatus] = useState(null);
   const [institution, setInstitution] = useState(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [userExists, setUserExists] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -54,7 +56,7 @@ export default function SignUp() {
     }
   }, [user, router]);
 
-  // Function to check email domain against institution domains
+  // Function to check email domain against institution domains and check if user exists
   const verifyInstitution = async () => {
     // Basic email validation
     if (!email || !email.includes("@")) {
@@ -69,6 +71,37 @@ export default function SignUp() {
     try {
       console.log(`Verifying institution for email: ${email}`);
       
+      // First check if the user already exists
+      const userCheckResponse = await fetch("/api/user/check-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+      
+      if (!userCheckResponse.ok) {
+        throw new Error("Failed to check user existence");
+      }
+      
+      const userCheckData = await userCheckResponse.json();
+      
+      // If user exists, show message and prepare for redirect
+      if (userCheckData.exists) {
+        console.log("User already exists, redirecting to login");
+        setUserExists(true);
+        setIsRedirecting(true);
+        
+        // Delay redirect to show message to user for 2 seconds
+        setTimeout(() => {
+          // Encode the email to use as a query parameter
+          const encodedEmail = encodeURIComponent(email);
+          window.location.href = `/api/auth/login?login_hint=${encodedEmail}`;
+        }, 2000);
+        return;
+      }
+      
+      // If user doesn't exist, continue with institution verification
       const response = await fetch("/api/institution-lookup", {
         method: "POST",
         headers: {
@@ -193,20 +226,28 @@ export default function SignUp() {
               <button 
                 onClick={verifyInstitution}
                 style={styles.verifyButton}
-                disabled={isVerifying || !email}
+                disabled={isVerifying || !email || isRedirecting}
               >
                 {isVerifying ? "Verifying..." : "Verify Institution"}
               </button>
               
+              {/* User exists message */}
+              {userExists && (
+                <div style={styles.redirectBadge}>
+                  <span style={styles.badgeIcon}>ℹ</span>
+                  An account with this email already exists. Redirecting you to the login page...
+                </div>
+              )}
+              
               {/* Institution verification result */}
-              {institutionStatus === "success" && (
+              {institutionStatus === "success" && !userExists && (
                 <div style={styles.successBadge}>
                   <span style={styles.badgeIcon}>✓</span>
                   Verified: {institution.name}
                 </div>
               )}
               
-              {institutionStatus === "error" && (
+              {institutionStatus === "error" && !userExists && (
                 <div style={styles.errorBadge}>
                   <span style={styles.badgeIcon}>✕</span>
                   Institution not recognized. Contact support if you believe this is an error.
@@ -223,7 +264,7 @@ export default function SignUp() {
                 </div>
               )}
               
-              {institutionStatus === "success" && (
+              {institutionStatus === "success" && !userExists && (
                 <button
                   onClick={nextStep}
                   style={styles.continueButton}
@@ -484,6 +525,17 @@ const styles = {
     alignItems: "center",
     marginBottom: "20px",
     fontWeight: "500",
+  },
+  redirectBadge: {
+    backgroundColor: "#e8f0fe",
+    color: "#0d47a1",
+    padding: "12px 15px",
+    borderRadius: "4px",
+    display: "flex",
+    alignItems: "center",
+    marginBottom: "20px",
+    fontWeight: "500",
+    borderLeft: "4px solid #1976d2",
   },
   badgeIcon: {
     marginRight: "10px",
