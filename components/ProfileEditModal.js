@@ -10,6 +10,7 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     major: profile?.programId || "", // Use programId for the value
     graduationYear: profile?.graduationYear || "",
     educationId: profile?.educationId || null,
+    institutionId: profile?.institution?.id || null,
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,6 +46,22 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Special validation for graduation year - ensure it's a valid year format
+    if (name === "graduationYear") {
+      // Only allow digits
+      const onlyDigits = value.replace(/\D/g, '');
+      
+      // Limit to 4 digits
+      const yearValue = onlyDigits.slice(0, 4);
+      
+      setFormData(prev => ({
+        ...prev,
+        [name]: yearValue
+      }));
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -57,11 +74,29 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     setError(null);
 
     try {
+      // Validate graduation year
+      const graduationYear = formData.graduationYear;
+      if (graduationYear) {
+        // Make sure it's 4 digits and a valid year
+        const yearPattern = /^[0-9]{4}$/;
+        if (!yearPattern.test(graduationYear)) {
+          throw new Error("Please enter a valid 4-digit graduation year (e.g., 2025)");
+        }
+        
+        const yearValue = parseInt(graduationYear, 10);
+        const currentYear = new Date().getFullYear();
+        
+        // Check if it's a reasonable graduation year (not too far in past or future)
+        if (yearValue < currentYear - 10 || yearValue > currentYear + 10) {
+          throw new Error(`Graduation year ${yearValue} seems unusual. Please verify and try again.`);
+        }
+      }
+      
       // Add contact ID and institution ID to the data
       const updateData = {
         ...formData,
         contactId: profile.contactId,
-        institutionId: profile.institution?.id
+        institutionId: formData.institutionId || profile.institution?.id
       };
       
       // Call the callback with the updated data
@@ -119,14 +154,53 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
             <h4 style={styles.sectionTitle}>Academic Information</h4>
             <div style={styles.formGroup}>
               <label htmlFor="institution" style={styles.label}>Institution</label>
-              <input
-                type="text"
-                id="institution"
-                value={profile.institutionName || profile.institution?.name || "Not specified"}
-                style={{...styles.input, ...styles.disabledInput}}
-                disabled
-              />
-              <small style={styles.helperText}>Institution cannot be changed. Contact support if needed.</small>
+              {profile.needsInstitutionConfirm && profile.suggestedInstitution ? (
+                <>
+                  <div style={styles.suggestedInstitution}>
+                    <p>Based on your email domain, we suggest:</p>
+                    <div style={styles.institutionOption}>
+                      <input
+                        type="radio"
+                        id="suggestedInstitution"
+                        name="institutionId"
+                        value={profile.suggestedInstitution.id}
+                        checked={formData.institutionId === profile.suggestedInstitution.id}
+                        onChange={handleInputChange}
+                        style={styles.radioInput}
+                      />
+                      <label htmlFor="suggestedInstitution" style={styles.radioLabel}>
+                        {profile.suggestedInstitution.name}
+                      </label>
+                    </div>
+                    <div style={styles.institutionOption}>
+                      <input
+                        type="radio"
+                        id="noInstitution"
+                        name="institutionId"
+                        value=""
+                        checked={!formData.institutionId}
+                        onChange={() => setFormData(prev => ({...prev, institutionId: null}))}
+                        style={styles.radioInput}
+                      />
+                      <label htmlFor="noInstitution" style={styles.radioLabel}>
+                        None of the above / Other Institution
+                      </label>
+                    </div>
+                    <small style={styles.helperText}>Please confirm your institution to see relevant programs.</small>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    id="institution"
+                    value={profile.institutionName || profile.institution?.name || "Not specified"}
+                    style={{...styles.input, ...styles.disabledInput}}
+                    disabled
+                  />
+                  <small style={styles.helperText}>Institution cannot be changed. Contact support if needed.</small>
+                </>
+              )}
             </div>
             
             <div style={styles.formRow}>
@@ -185,8 +259,13 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
                 onChange={handleInputChange}
                 style={styles.input}
                 placeholder="YYYY"
+                pattern="[0-9]{4}"
+                inputMode="numeric"
+                maxLength="4"
+                title="Please enter a valid 4-digit year (e.g., 2025)"
                 required
               />
+              <small style={styles.helperText}>Enter 4-digit year (e.g., 2025)</small>
             </div>
           </div>
           
@@ -294,6 +373,25 @@ const styles = {
     fontSize: "0.8rem",
     color: "#777",
     marginTop: "5px",
+  },
+  suggestedInstitution: {
+    backgroundColor: "#f5f9ff",
+    padding: "12px",
+    borderRadius: "5px",
+    marginBottom: "10px",
+    border: "1px solid #e0eaff"
+  },
+  institutionOption: {
+    display: "flex",
+    alignItems: "center",
+    margin: "8px 0",
+  },
+  radioInput: {
+    margin: "0 10px 0 0",
+  },
+  radioLabel: {
+    fontWeight: "500",
+    color: "#333",
   },
   errorMessage: {
     backgroundColor: "#ffebee",

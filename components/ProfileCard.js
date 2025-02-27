@@ -36,10 +36,26 @@ const ProfileCard = ({ profile, onEditClick }) => {
 
       <div style={styles.academicInfo}>
         <h3 style={styles.sectionHeading}>Academic Information</h3>
+        
+        {userData.needsInstitutionConfirm && userData.suggestedInstitution && (
+          <div style={styles.institutionAlert}>
+            <p style={styles.alertTitle}>Is this your institution?</p>
+            <p style={styles.alertText}>
+              Based on your email domain, we think you might be from <strong>{userData.suggestedInstitution.name}</strong>.
+            </p>
+            <button onClick={onEditClick} style={styles.confirmButton}>
+              Confirm Institution
+            </button>
+          </div>
+        )}
+        
         <div style={styles.infoGrid}>
           <div style={styles.infoItem}>
             <span style={styles.label}>Institution:</span>
             <span style={styles.value}>{userData.institutionName || "Not specified"}</span>
+            {userData.needsInstitutionConfirm && (
+              <span style={styles.pendingTag}>Needs confirmation</span>
+            )}
           </div>
           <div style={styles.infoItem}>
             <span style={styles.label}>Degree Type:</span>
@@ -171,6 +187,44 @@ const styles = {
   },
   statusIcon: {
     marginRight: "8px",
+  },
+  institutionAlert: {
+    backgroundColor: "#e3f2fd",
+    borderRadius: "6px",
+    padding: "15px",
+    marginBottom: "20px",
+    border: "1px solid #bbdefb",
+  },
+  alertTitle: {
+    fontWeight: "bold",
+    fontSize: "1.1rem",
+    marginTop: 0,
+    marginBottom: "8px",
+    color: "#0d47a1",
+  },
+  alertText: {
+    marginBottom: "15px",
+    fontSize: "0.95rem",
+  },
+  confirmButton: {
+    backgroundColor: "#1976d2",
+    color: "white",
+    border: "none",
+    borderRadius: "4px",
+    padding: "8px 12px",
+    fontWeight: "500",
+    cursor: "pointer",
+    fontSize: "0.9rem",
+  },
+  pendingTag: {
+    display: "inline-block",
+    backgroundColor: "#fff3cd",
+    color: "#856404",
+    borderRadius: "3px",
+    padding: "2px 6px",
+    fontSize: "0.75rem",
+    marginTop: "5px",
+    fontWeight: "bold",
   },
 }
 
