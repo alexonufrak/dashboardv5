@@ -50,7 +50,6 @@ const TeamCard = ({ team }) => {
                         {member.name}
                         {member.isCurrentUser && <span style={styles.currentUser}> (You)</span>}
                       </span>
-                      <span style={styles.memberRole}>{member.role || "Member"}</span>
                     </div>
                     <div style={styles.memberPoints}>
                       <span style={styles.pointsLabel}>Points: </span>

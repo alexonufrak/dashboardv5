@@ -157,7 +157,33 @@ const Dashboard = () => {
                 <p style={styles.loadingText}>Loading team information...</p>
               </div>
             ) : (
-              <TeamCard team={teamData} />
+              <>
+                <TeamCard team={teamData} />
+                {process.env.NODE_ENV !== 'production' && (
+                  <div style={styles.debugInfo}>
+                    <p><strong>Team Data:</strong> {teamData ? 'Available' : 'Not available'}</p>
+                    <p><strong>Contact ID:</strong> {profile?.contactId || 'Not available'}</p>
+                    <div style={styles.debugActions}>
+                      <button 
+                        onClick={async () => {
+                          try {
+                            const response = await fetch('/api/debug/team-data');
+                            const data = await response.json();
+                            console.log("Debug team data:", data);
+                            alert(`Debug info logged to console.\nContact ID: ${data.contactId}\nMember records: ${data.memberRecords.length}\nTeam records: ${data.teamRecords.length}`);
+                          } catch (error) {
+                            console.error("Error debugging teams:", error);
+                            alert(`Error debugging teams: ${error.message}`);
+                          }
+                        }}
+                        style={styles.debugButton}
+                      >
+                        Debug Team Data
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
           
