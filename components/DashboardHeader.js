@@ -1,0 +1,83 @@
+import Link from "next/link"
+
+const DashboardHeader = () => {
+  return (
+    <header style={styles.header}>
+      <div>
+        <h1 style={styles.heading}>Welcome, John!</h1>
+        <p style={styles.subtitle}>
+          Welcome to your xFoundry student dashboard. Here you can view your profile information and access educational
+          resources.
+        </p>
+      </div>
+      <div style={styles.alert}>
+        <span style={styles.warningIcon}>⚠</span>
+        <div style={styles.alertContent}>
+          <p style={styles.alertText}>
+            <strong>Please complete your profile</strong>
+          </p>
+          <p style={styles.alertDescription}>
+            Your profile is incomplete. Complete your profile to unlock all features and opportunities.
+          </p>
+          <Link href="/profile" style={styles.updateButton}>
+            Update Profile
+          </Link>
+        </div>
+      </div>
+    </header>
+  )
+}
+
+const styles = {
+  header: {
+    backgroundColor: "#f8f9fa",
+    borderRadius: "8px",
+    padding: "30px 20px",
+    marginBottom: "30px",
+  },
+  heading: {
+    fontSize: "2rem",
+    marginBottom: "10px",
+    color: "var(--color-primary)",
+  },
+  subtitle: {
+    fontSize: "1.1rem",
+    color: "#555",
+    marginBottom: "20px",
+  },
+  alert: {
+    backgroundColor: "#fff4ce",
+    color: "#815001",
+    padding: "15px",
+    borderRadius: "8px",
+    display: "flex",
+    alignItems: "flex-start",
+  },
+  warningIcon: {
+    fontSize: "1.5rem",
+    marginRight: "15px",
+  },
+  alertContent: {
+    flex: 1,
+  },
+  alertText: {
+    fontWeight: "bold",
+    marginBottom: "5px",
+  },
+  alertDescription: {
+    marginBottom: "15px",
+  },
+  updateButton: {
+    display: "inline-block",
+    backgroundColor: "var(--color-primary)",
+    color: "white",
+    padding: "8px 16px",
+    borderRadius: "4px",
+    textDecoration: "none",
+    fontWeight: "bold",
+    transition: "background-color 0.3s ease",
+  },
+}
+
+export default DashboardHeader
+
