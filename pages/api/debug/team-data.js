@@ -191,18 +191,18 @@ async function handler(req, res) {
     }
     
     // Analyze member records to see if they have active status
-    if (debugInfo.memberRecords.length > 0) {
-      const activeMembers = debugInfo.memberRecords.filter(
-        record => record.fields.Status === "Active"
-      );
-      
-      debugInfo.memberAnalysis = {
-        totalMembers: debugInfo.memberRecords.length,
-        activeMembers: activeMembers.length,
-        inactiveMembers: debugInfo.memberRecords.length - activeMembers.length,
-        statuses: debugInfo.memberRecords.map(record => record.fields.Status)
-      };
-    }
+    // if (debugInfo.memberRecords.length > 0) {
+    //   const activeMembers = debugInfo.memberRecords.filter(
+    //     record => record.fields.Status === "Active"
+    //   );
+    //   
+    //   debugInfo.memberAnalysis = {
+    //     totalMembers: debugInfo.memberRecords.length,
+    //     activeMembers: activeMembers.length,
+    //     inactiveMembers: debugInfo.memberRecords.length - activeMembers.length,
+    //     statuses: debugInfo.memberRecords.map(record => record.fields.Status)
+    //   };
+    // }
 
     return res.status(200).json(debugInfo);
   } catch (error) {
