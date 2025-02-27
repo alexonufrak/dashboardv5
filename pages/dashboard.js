@@ -45,18 +45,19 @@ const Dashboard = () => {
 
   // Function to render individual cohort cards
   const renderCohortCard = (cohort) => {
+    // Debug: Log the entire cohort object to see its structure
+    console.log("Cohort object:", cohort);
+    
     // Get initiative name from enhancedCohorts data
     const initiativeName = cohort.initiativeDetails?.name || "Unknown Initiative";
     
-    // Get topics
-    const topics = cohort["Topics"] && cohort["Topics"].length > 0 
-      ? cohort["Name (from Topics)"] || []
-      : [];
+    // Get topics and classes from our enhanced data
+    const topics = cohort.topicNames || [];
+    const classes = cohort.classNames || [];
     
-    // Get classes
-    const classes = cohort["Classes"] && cohort["Classes"].length > 0
-      ? cohort["Name (from Classes)"] || []
-      : [];
+    // Debug: Log what we found
+    console.log("Topics from enhanced data:", topics);
+    console.log("Classes from enhanced data:", classes);
     
     // Set button action based on the Action Button field
     const actionButtonText = cohort["Action Button"] || "Apply Now";
@@ -75,16 +76,17 @@ const Dashboard = () => {
         <div style={styles.cohortHeader}>
           <div>
             <h3 style={styles.cohortTitle}>{initiativeName}</h3>
+            
             <div style={styles.badgesContainer}>
               {/* Only show topic badges if topics exist */}
-              {topics && topics.length > 0 && 
+              {Array.isArray(topics) && topics.length > 0 && 
                 topics.map((topic, index) => (
                   <span key={`topic-${index}`} style={styles.topicBadge}>{topic}</span>
                 ))
               }
               
               {/* Only show class badges if classes exist */}
-              {classes && classes.length > 0 && 
+              {Array.isArray(classes) && classes.length > 0 && 
                 classes.map((className, index) => (
                   <span key={`class-${index}`} style={styles.classBadge}>{className}</span>
                 ))
