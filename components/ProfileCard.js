@@ -1,22 +1,14 @@
 const ProfileCard = ({ profile }) => {
-  // Use placeholder data if no profile is provided
-  const {
-    name = "John Doe",
-    email = "johndoe@university.edu",
-    institution = "Sample University",
-    degreeType = "Bachelor's",
-    major = "Computer Science",
-    graduationYear = "2025",
-    isProfileComplete = false,
-  } = profile || {}
-
+  // Use real data or fallback to placeholders if no profile is provided
+  const userData = profile || {};
+  
   return (
     <div style={styles.card}>
       <div style={styles.header}>
         <div style={styles.profilePicture}></div>
         <div style={styles.profileInfo}>
-          <h2 style={styles.name}>{name}</h2>
-          <p style={styles.email}>{email}</p>
+          <h2 style={styles.name}>{userData.name || "No Name"}</h2>
+          <p style={styles.email}>{userData.email || "No Email"}</p>
         </div>
       </div>
 
@@ -25,25 +17,25 @@ const ProfileCard = ({ profile }) => {
         <div style={styles.infoGrid}>
           <div style={styles.infoItem}>
             <span style={styles.label}>Institution:</span>
-            <span style={styles.value}>{institution}</span>
+            <span style={styles.value}>{userData.institutionName || userData.institution?.name || "Not specified"}</span>
           </div>
           <div style={styles.infoItem}>
             <span style={styles.label}>Degree Type:</span>
-            <span style={styles.value}>{degreeType}</span>
+            <span style={styles.value}>{userData.degreeType || "Not specified"}</span>
           </div>
           <div style={styles.infoItem}>
             <span style={styles.label}>Major:</span>
-            <span style={styles.value}>{major}</span>
+            <span style={styles.value}>{userData.major || "Not specified"}</span>
           </div>
           <div style={styles.infoItem}>
             <span style={styles.label}>Graduation Year:</span>
-            <span style={styles.value}>{graduationYear}</span>
+            <span style={styles.value}>{userData.graduationYear || "Not specified"}</span>
           </div>
         </div>
       </div>
 
-      <div style={isProfileComplete ? styles.completeStatus : styles.incompleteStatus}>
-        {isProfileComplete ? (
+      <div style={userData.isProfileComplete ? styles.completeStatus : styles.incompleteStatus}>
+        {userData.isProfileComplete ? (
           <>
             <span style={styles.statusIcon}>✓</span>
             Profile Complete
@@ -139,4 +131,3 @@ const styles = {
 }
 
 export default ProfileCard
-
