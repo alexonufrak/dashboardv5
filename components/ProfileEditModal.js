@@ -1,19 +1,45 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
   const [formData, setFormData] = useState({
     firstName: profile?.firstName || "",
     lastName: profile?.lastName || "",
     degreeType: profile?.degreeType || "",
-    major: profile?.showMajor ? profile?.major || "" : "",
+    major: profile?.programId || "", // Use programId for the value
     graduationYear: profile?.graduationYear || "",
     educationId: profile?.educationId || null,
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [majors, setMajors] = useState([]);
+  const [isLoadingMajors, setIsLoadingMajors] = useState(false);
+
+  // Fetch majors if this is for a UMD student (showMajor is true)
+  useEffect(() => {
+    if (isOpen && profile?.showMajor) {
+      const fetchMajors = async () => {
+        setIsLoadingMajors(true);
+        try {
+          const response = await fetch('/api/user/majors');
+          if (!response.ok) {
+            throw new Error('Failed to fetch majors');
+          }
+          const data = await response.json();
+          setMajors(data.majors || []);
+        } catch (err) {
+          console.error('Error fetching majors:', err);
+          setError('Failed to load majors. Please try again.');
+        } finally {
+          setIsLoadingMajors(false);
+        }
+      };
+      
+      fetchMajors();
+    }
+  }, [isOpen, profile?.showMajor]);
 
   if (!isOpen) return null;
 
@@ -126,15 +152,25 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
               {profile.showMajor && (
                 <div style={styles.formGroup}>
                   <label htmlFor="major" style={styles.label}>Major/Field of Study</label>
-                  <input
-                    type="text"
-                    id="major"
-                    name="major"
-                    value={formData.major}
-                    onChange={handleInputChange}
-                    style={styles.input}
-                    required={profile.showMajor}
-                  />
+                  {isLoadingMajors ? (
+                    <div style={styles.loadingText}>Loading majors...</div>
+                  ) : (
+                    <select
+                      id="major"
+                      name="major"
+                      value={formData.major}
+                      onChange={handleInputChange}
+                      style={styles.input}
+                      required={profile.showMajor}
+                    >
+                      <option value="">Select a Major</option>
+                      {majors.map(major => (
+                        <option key={major.id} value={major.id}>
+                          {major.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               )}
             </div>
@@ -180,6 +216,12 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1000,
+  },
+  loadingText: {
+    padding: "8px 12px",
+    color: "#777",
+    fontSize: "0.9rem",
+    fontStyle: "italic",
   },
   modalContent: {
     backgroundColor: "white",
