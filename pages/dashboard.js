@@ -45,34 +45,18 @@ const Dashboard = () => {
 
   // Function to render individual cohort cards
   const renderCohortCard = (cohort) => {
-    // Debugging to see available fields
-    console.log("Cohort fields:", cohort);
-    
-    // Get initiative name - try several possible field patterns
-    let initiativeName = "Unknown Initiative";
-    
-    // Check for initiative lookup field patterns
-    if (cohort["Name (from Initiative)"]) {
-      // If it's an array, get the first item
-      initiativeName = Array.isArray(cohort["Name (from Initiative)"]) 
-        ? cohort["Name (from Initiative)"][0] 
-        : cohort["Name (from Initiative)"];
-    } else if (cohort["Short Name (from Initiative)"]) {
-      initiativeName = Array.isArray(cohort["Short Name (from Initiative)"]) 
-        ? cohort["Short Name (from Initiative)"][0] 
-        : cohort["Short Name (from Initiative)"];
-    } else if (cohort["Initiative Name"]) {
-      initiativeName = cohort["Initiative Name"];
-    } else if (cohort["Initiative"] && Array.isArray(cohort["Initiative"]) && cohort["Initiative"].length > 0) {
-      // Just show the initiative ID if that's all we have
-      initiativeName = `Initiative ${cohort["Initiative"][0]}`;
-    }
+    // Get initiative name from enhancedCohorts data
+    const initiativeName = cohort.initiativeDetails?.name || "Unknown Initiative";
     
     // Get topics
-    const topics = cohort["Name (from Topics)"] || [];
+    const topics = cohort["Topics"] && cohort["Topics"].length > 0 
+      ? cohort["Name (from Topics)"] || []
+      : [];
     
     // Get classes
-    const classes = cohort["Name (from Classes)"] || [];
+    const classes = cohort["Classes"] && cohort["Classes"].length > 0
+      ? cohort["Name (from Classes)"] || []
+      : [];
     
     // Set button action based on the Action Button field
     const actionButtonText = cohort["Action Button"] || "Apply Now";
