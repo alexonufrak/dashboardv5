@@ -21,7 +21,9 @@ const TeamCard = ({ team }) => {
       <div style={styles.header}>
         <div>
           <h3 style={styles.teamName}>{team.name}</h3>
-          <p style={styles.teamPoints}>Team Points: <span style={styles.points}>{team.points || 0}</span></p>
+          {team.points !== undefined && (
+            <p style={styles.teamPoints}>Team Points: <span style={styles.points}>{team.points || 0}</span></p>
+          )}
         </div>
         <button 
           style={styles.expandButton} 
@@ -50,10 +52,6 @@ const TeamCard = ({ team }) => {
                         {member.name}
                         {member.isCurrentUser && <span style={styles.currentUser}> (You)</span>}
                       </span>
-                    </div>
-                    <div style={styles.memberPoints}>
-                      <span style={styles.pointsLabel}>Points: </span>
-                      <span style={styles.pointsValue}>{member.points || 0}</span>
                     </div>
                   </li>
                 ))}
