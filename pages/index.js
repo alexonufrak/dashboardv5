@@ -31,9 +31,14 @@ export default function Home() {
         <section style={styles.hero}>
           <h1 style={styles.heading}>Welcome to xFoundry</h1>
           <p style={styles.subheading}>The educational platform connecting students with opportunities</p>
-          <a href="/api/auth/login" style={styles.button}>
-            Log In
-          </a>
+          <div style={styles.buttonContainer}>
+            <a href="/api/auth/login" style={styles.button}>
+              Log In
+            </a>
+            <a href="/signup" style={{...styles.button, ...styles.secondaryButton}}>
+              Sign Up
+            </a>
+          </div>
         </section>
 
         <section style={styles.howItWorks}>
@@ -84,6 +89,11 @@ const styles = {
     color: "var(--color-secondary)",
     marginBottom: "30px",
   },
+  buttonContainer: {
+    display: "flex",
+    gap: "15px",
+    justifyContent: "center",
+  },
   button: {
     display: "inline-block",
     padding: "12px 24px",
@@ -93,6 +103,11 @@ const styles = {
     borderRadius: "4px",
     fontSize: "1rem",
     transition: "background-color 0.3s ease",
+  },
+  secondaryButton: {
+    backgroundColor: "var(--color-white)",
+    color: "var(--color-primary)",
+    border: "1px solid var(--color-primary)",
   },
   howItWorks: {
     textAlign: "center",

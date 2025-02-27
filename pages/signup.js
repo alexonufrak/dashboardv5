@@ -1,0 +1,488 @@
+"use client"
+
+import { useState, useRef, useEffect } from "react"
+import { useRouter } from "next/router"
+import Layout from "../components/Layout"
+import { useUser } from "@auth0/nextjs-auth0/client"
+import LoadingScreen from "../components/LoadingScreen"
+
+// SignupStep component to handle each step of the form
+const SignupStep = ({ currentStep, stepNumber, children }) => {
+  return (
+    <div 
+      style={{
+        ...styles.formStep,
+        transform: `translateX(${(stepNumber - currentStep) * 100}%)`,
+        opacity: currentStep === stepNumber ? 1 : 0,
+        zIndex: currentStep === stepNumber ? 1 : 0,
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
+// Main SignUp component
+export default function SignUp() {
+  const { user, isLoading } = useUser();
+  const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [institutionStatus, setInstitutionStatus] = useState(null);
+  const [institution, setInstitution] = useState(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    graduationYear: "",
+    degreeType: ""
+  });
+  const formStepRefs = useRef([]);
+
+  // Redirect to dashboard if user is already logged in
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard");
+    }
+  }, [user, router]);
+
+  // Function to check email domain against institution domains
+  const verifyInstitution = async () => {
+    // Basic email validation
+    if (!email || !email.includes("@")) {
+      setEmailError("Please enter a valid email address");
+      return;
+    }
+    
+    setIsVerifying(true);
+    setEmailError("");
+    setInstitutionStatus(null);
+    
+    try {
+      const response = await fetch("/api/institution-lookup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to verify institution");
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setInstitution(data.institution);
+        setInstitutionStatus("success");
+      } else {
+        setInstitutionStatus("error");
+      }
+    } catch (error) {
+      console.error("Error verifying institution:", error);
+      setInstitutionStatus("error");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // Function to handle input changes for personal info form
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  // Function to continue to the next step
+  const nextStep = () => {
+    if (currentStep < 2) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  // Function to go back to the previous step
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  // Function to handle the Google sign up/in
+  const handleGoogleSignup = () => {
+    // Create query params with user data for Auth0
+    const queryParams = new URLSearchParams({
+      institution: institution?.name || "",
+      institutionId: institution?.id || "",
+      degreeType: formData.degreeType,
+      graduationYear: formData.graduationYear,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+    }).toString();
+    
+    // Redirect to Auth0 login with Google
+    window.location.href = `/api/auth/login?connection=google-oauth2&${queryParams}`;
+  };
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
+  return (
+    <Layout title="Sign Up - xFoundry">
+      <div style={styles.container}>
+        <h1 style={styles.heading}>Create Your xFoundry Account</h1>
+        
+        <div style={styles.formContainer}>
+          {/* Step indicators */}
+          <div style={styles.stepIndicators}>
+            <div style={{
+              ...styles.stepIndicator,
+              backgroundColor: currentStep >= 1 ? "var(--color-primary)" : "var(--color-secondary)"
+            }}>1</div>
+            <div style={styles.stepConnector}></div>
+            <div style={{
+              ...styles.stepIndicator,
+              backgroundColor: currentStep >= 2 ? "var(--color-primary)" : "var(--color-secondary)"
+            }}>2</div>
+          </div>
+          
+          <div style={styles.formStepsContainer}>
+            {/* Step 1: Email verification */}
+            <SignupStep currentStep={currentStep} stepNumber={1}>
+              <h2 style={styles.stepHeading}>Verify Your Institution</h2>
+              <p style={styles.stepDescription}>
+                Enter your institutional email to get started. We'll verify that your school is part of our network.
+              </p>
+              
+              <div style={styles.formGroup}>
+                <label htmlFor="email" style={styles.label}>
+                  Institutional Email 
+                  <span style={styles.tooltipIcon} title="Use your school email (e.g., name@school.edu)">ⓘ</span>
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your.name@school.edu"
+                  style={styles.input}
+                  disabled={isVerifying}
+                />
+                {emailError && <div style={styles.errorText}>{emailError}</div>}
+              </div>
+              
+              <button 
+                onClick={verifyInstitution}
+                style={styles.verifyButton}
+                disabled={isVerifying || !email}
+              >
+                {isVerifying ? "Verifying..." : "Verify Institution"}
+              </button>
+              
+              {/* Institution verification result */}
+              {institutionStatus === "success" && (
+                <div style={styles.successBadge}>
+                  <span style={styles.badgeIcon}>✓</span>
+                  Verified: {institution.name}
+                </div>
+              )}
+              
+              {institutionStatus === "error" && (
+                <div style={styles.errorBadge}>
+                  <span style={styles.badgeIcon}>✕</span>
+                  Institution not recognized. Contact support if you believe this is an error.
+                </div>
+              )}
+              
+              {institutionStatus === "success" && (
+                <button
+                  onClick={nextStep}
+                  style={styles.continueButton}
+                >
+                  Continue
+                </button>
+              )}
+            </SignupStep>
+            
+            {/* Step 2: Personal Information */}
+            <SignupStep currentStep={currentStep} stepNumber={2}>
+              <h2 style={styles.stepHeading}>Complete Your Profile</h2>
+              <p style={styles.stepDescription}>
+                Please provide the following information to complete your profile.
+              </p>
+              
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label htmlFor="firstName" style={styles.label}>First Name</label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    style={styles.input}
+                    required
+                  />
+                </div>
+                
+                <div style={styles.formGroup}>
+                  <label htmlFor="lastName" style={styles.label}>Last Name</label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    style={styles.input}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div style={styles.formRow}>
+                <div style={styles.formGroup}>
+                  <label htmlFor="graduationYear" style={styles.label}>
+                    Expected Graduation Year
+                    <span style={styles.tooltipIcon} title="Year you expect to graduate">ⓘ</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="graduationYear"
+                    name="graduationYear"
+                    value={formData.graduationYear}
+                    onChange={handleInputChange}
+                    placeholder="YYYY"
+                    style={styles.input}
+                    required
+                  />
+                </div>
+                
+                <div style={styles.formGroup}>
+                  <label htmlFor="degreeType" style={styles.label}>Degree Type</label>
+                  <select
+                    id="degreeType"
+                    name="degreeType"
+                    value={formData.degreeType}
+                    onChange={handleInputChange}
+                    style={styles.input}
+                    required
+                  >
+                    <option value="">Select Degree Type</option>
+                    <option value="Bachelor's">Bachelor's</option>
+                    <option value="Master's">Master's</option>
+                    <option value="PhD">PhD</option>
+                    <option value="Associate">Associate</option>
+                    <option value="Certificate">Certificate</option>
+                    <option value="Undergraduate">Undergraduate</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div style={styles.buttonsRow}>
+                <button onClick={prevStep} style={styles.backButton}>
+                  Back
+                </button>
+                
+                <button
+                  onClick={handleGoogleSignup}
+                  style={styles.googleButton}
+                  disabled={!formData.firstName || !formData.lastName || !formData.graduationYear || !formData.degreeType}
+                >
+                  Continue with Google
+                </button>
+              </div>
+            </SignupStep>
+          </div>
+        </div>
+        
+        <div style={styles.loginPrompt}>
+          Already have an account? <a href="/api/auth/login" style={styles.loginLink}>Log in</a>
+        </div>
+      </div>
+    </Layout>
+  );
+}
+
+const styles = {
+  container: {
+    maxWidth: "800px",
+    margin: "0 auto",
+    padding: "40px 20px",
+  },
+  heading: {
+    fontSize: "2.5rem",
+    textAlign: "center",
+    color: "var(--color-primary)",
+    marginBottom: "40px",
+  },
+  formContainer: {
+    backgroundColor: "white",
+    borderRadius: "8px",
+    boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
+    overflow: "hidden",
+    padding: "30px",
+    marginBottom: "30px",
+  },
+  stepIndicators: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: "30px",
+  },
+  stepIndicator: {
+    width: "36px",
+    height: "36px",
+    borderRadius: "50%",
+    color: "white",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: "bold",
+    transition: "background-color 0.3s ease",
+  },
+  stepConnector: {
+    height: "2px",
+    width: "80px",
+    backgroundColor: "var(--color-secondary)",
+    margin: "0 10px",
+  },
+  formStepsContainer: {
+    position: "relative",
+    overflow: "hidden",
+    minHeight: "400px",
+  },
+  formStep: {
+    position: "absolute",
+    width: "100%",
+    transition: "transform 0.5s ease, opacity 0.5s ease",
+  },
+  stepHeading: {
+    fontSize: "1.5rem",
+    color: "var(--color-primary)",
+    marginBottom: "10px",
+  },
+  stepDescription: {
+    color: "var(--color-secondary)",
+    marginBottom: "30px",
+  },
+  formGroup: {
+    marginBottom: "20px",
+    flex: "1 1 calc(50% - 10px)",
+  },
+  formRow: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "20px",
+  },
+  label: {
+    display: "block",
+    marginBottom: "8px",
+    fontWeight: "500",
+    color: "var(--color-dark)",
+  },
+  input: {
+    width: "100%",
+    padding: "12px 15px",
+    fontSize: "1rem",
+    borderRadius: "4px",
+    border: "1px solid #ddd",
+    transition: "border-color 0.3s ease",
+  },
+  tooltipIcon: {
+    marginLeft: "5px",
+    fontSize: "14px",
+    color: "var(--color-secondary)",
+    cursor: "help",
+  },
+  errorText: {
+    color: "var(--color-danger)",
+    fontSize: "0.9rem",
+    marginTop: "5px",
+  },
+  verifyButton: {
+    backgroundColor: "var(--color-primary)",
+    color: "white",
+    border: "none",
+    padding: "12px 20px",
+    borderRadius: "4px",
+    fontSize: "1rem",
+    cursor: "pointer",
+    marginBottom: "20px",
+    transition: "background-color 0.3s ease",
+  },
+  successBadge: {
+    backgroundColor: "#d4edda",
+    color: "#155724",
+    padding: "12px 15px",
+    borderRadius: "4px",
+    display: "flex",
+    alignItems: "center",
+    marginBottom: "20px",
+    fontWeight: "500",
+  },
+  errorBadge: {
+    backgroundColor: "#f8d7da",
+    color: "#721c24",
+    padding: "12px 15px",
+    borderRadius: "4px",
+    display: "flex",
+    alignItems: "center",
+    marginBottom: "20px",
+    fontWeight: "500",
+  },
+  badgeIcon: {
+    marginRight: "10px",
+    fontSize: "1.2rem",
+  },
+  continueButton: {
+    backgroundColor: "var(--color-success)",
+    color: "white",
+    border: "none",
+    padding: "12px 20px",
+    borderRadius: "4px",
+    fontSize: "1rem",
+    cursor: "pointer",
+    transition: "background-color 0.3s ease",
+  },
+  buttonsRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    marginTop: "30px",
+  },
+  backButton: {
+    backgroundColor: "var(--color-light)",
+    color: "var(--color-dark)",
+    border: "1px solid var(--color-secondary)",
+    padding: "12px 20px",
+    borderRadius: "4px",
+    fontSize: "1rem",
+    cursor: "pointer",
+    transition: "background-color 0.3s ease",
+  },
+  googleButton: {
+    backgroundColor: "var(--color-primary)",
+    color: "white",
+    border: "none",
+    padding: "12px 20px",
+    borderRadius: "4px",
+    fontSize: "1rem",
+    cursor: "pointer",
+    transition: "background-color 0.3s ease",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loginPrompt: {
+    textAlign: "center",
+    color: "var(--color-secondary)",
+  },
+  loginLink: {
+    color: "var(--color-primary)",
+    fontWeight: "500",
+  },
+};
