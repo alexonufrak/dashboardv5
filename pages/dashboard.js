@@ -54,7 +54,12 @@ const Dashboard = () => {
     
     // Get topics
     const topics = cohort["Topics"] && cohort["Topics"].length > 0 
-      ? cohort["Name (from Topics)"] 
+      ? cohort["Name (from Topics)"] || []
+      : [];
+    
+    // Get classes
+    const classes = cohort["Classes"] && cohort["Classes"].length > 0
+      ? cohort["Name (from Classes)"] || []
       : [];
     
     // Set button action based on the Action Button field
@@ -66,36 +71,43 @@ const Dashboard = () => {
     // Define different action button styles based on status
     const buttonStyle = {
       ...styles.actionButton,
-      backgroundColor: status === "Open" ? "var(--color-primary)" : "var(--color-secondary)",
+      backgroundColor: status === "Applications Open" ? "var(--color-primary)" : "var(--color-secondary)",
     };
     
     return (
       <div key={cohort.id} style={styles.cohortCard}>
         <div style={styles.cohortHeader}>
           <div>
-            <h3 style={styles.cohortTitle}>{cohort["Short Name"] || "Unnamed Cohort"}</h3>
-            <span style={styles.initiativeBadge}>{initiativeName}</span>
-            <span style={{
-              ...styles.statusBadge,
-              backgroundColor: status === "Open" ? "#dff0d8" : "#f2dede",
-              color: status === "Open" ? "#3c763d" : "#a94442",
-            }}>
-              {status}
-            </span>
+            <h3 style={styles.cohortTitle}>{initiativeName}</h3>
+            <div style={styles.badgesContainer}>
+              {/* Only show topic badges if topics exist */}
+              {topics && topics.length > 0 && 
+                topics.map((topic, index) => (
+                  <span key={`topic-${index}`} style={styles.topicBadge}>{topic}</span>
+                ))
+              }
+              
+              {/* Only show class badges if classes exist */}
+              {classes && classes.length > 0 && 
+                classes.map((className, index) => (
+                  <span key={`class-${index}`} style={styles.classBadge}>{className}</span>
+                ))
+              }
+              
+              <span style={{
+                ...styles.statusBadge,
+                backgroundColor: status === "Applications Open" ? "#dff0d8" : "#f2dede",
+                color: status === "Applications Open" ? "#3c763d" : "#a94442",
+              }}>
+                {status}
+              </span>
+            </div>
           </div>
         </div>
         
         <div style={styles.cohortContent}>
-          {topics && topics.length > 0 && (
-            <div style={styles.topicsContainer}>
-              {topics.map((topic, index) => (
-                <span key={index} style={styles.topicBadge}>{topic}</span>
-              ))}
-            </div>
-          )}
-          
           <div style={styles.actionButtonContainer}>
-            <button style={buttonStyle} disabled={status !== "Open"}>
+            <button style={buttonStyle} disabled={status !== "Applications Open"}>
               {actionButtonText}
             </button>
           </div>
@@ -277,14 +289,27 @@ const styles = {
     fontWeight: "bold",
     marginBottom: "10px",
   },
-  initiativeBadge: {
+  badgesContainer: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+    marginTop: "8px",
+  },
+  topicBadge: {
     display: "inline-block",
     padding: "4px 8px",
-    backgroundColor: "var(--color-primary)",
-    color: "white",
+    backgroundColor: "#e0f7fa",
+    color: "#00838f",
     borderRadius: "4px",
     fontSize: "0.8rem",
-    marginRight: "8px",
+  },
+  classBadge: {
+    display: "inline-block",
+    padding: "4px 8px",
+    backgroundColor: "#fff3e0",
+    color: "#e65100",
+    borderRadius: "4px",
+    fontSize: "0.8rem",
   },
   statusBadge: {
     display: "inline-block",
@@ -300,14 +325,6 @@ const styles = {
     flexWrap: "wrap",
     gap: "8px",
     marginBottom: "15px",
-  },
-  topicBadge: {
-    display: "inline-block",
-    padding: "3px 8px",
-    backgroundColor: "#f0f0f0",
-    color: "#333",
-    borderRadius: "4px",
-    fontSize: "0.8rem",
   },
   actionButtonContainer: {
     display: "flex",
