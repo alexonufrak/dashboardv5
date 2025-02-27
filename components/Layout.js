@@ -2,11 +2,14 @@
 
 import Head from "next/head"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/router"
 import Navbar from "./Navbar"
 import ResourcesToolbar from "./ResourcesToolbar"
 
 const Layout = ({ children, title = "xFoundry Student Dashboard" }) => {
   const [currentYear, setCurrentYear] = useState("")
+  const router = useRouter()
+  const isDashboard = router.pathname === "/dashboard"
 
   useEffect(() => {
     setCurrentYear(new Date().getFullYear())
@@ -21,9 +24,12 @@ const Layout = ({ children, title = "xFoundry Student Dashboard" }) => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div style={styles.pageContainer}>
-        {/* Resources Toolbar - fixed at top */}
-        <ResourcesToolbar />
+      <div style={{
+        ...styles.pageContainer,
+        paddingTop: isDashboard ? "30px" : "0"
+      }}>
+        {/* Resources Toolbar - only shown on dashboard */}
+        {isDashboard && <ResourcesToolbar />}
         
         {/* Main Navbar */}
         <Navbar />
@@ -43,7 +49,6 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     minHeight: "100vh",
-    paddingTop: "30px", // Add padding to account for fixed toolbar
   },
   mainContent: {
     flex: 1,
