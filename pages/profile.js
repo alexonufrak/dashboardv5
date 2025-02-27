@@ -109,7 +109,17 @@ const Profile = () => {
 
         <div style={styles.card}>
           <div style={styles.profileHeader}>
-            <div style={styles.profilePicture}></div>
+            <div style={styles.profilePicture}>
+              <img 
+                src={profile.Headshot || profile.picture || '/placeholder-user.jpg'} 
+                alt={profile.name || "Profile"} 
+                style={styles.profileImage}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = '/placeholder-user.jpg';
+                }}
+              />
+            </div>
             <div style={styles.profileInfo}>
               <h2 style={styles.name}>{profile.name || ""}</h2>
               <p style={styles.email}>{profile.email || ""}</p>
@@ -272,6 +282,15 @@ const styles = {
     borderRadius: "50%",
     backgroundColor: "var(--color-light)",
     marginRight: "20px",
+    overflow: "hidden",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  profileImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
   },
   profileInfo: {
     flex: 1,

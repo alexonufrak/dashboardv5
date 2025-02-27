@@ -2,10 +2,23 @@ const ProfileCard = ({ profile }) => {
   // Use real data or fallback to placeholders if no profile is provided
   const userData = profile || {};
   
+  // Get profile picture from Airtable or Auth0
+  const profilePicture = userData.Headshot || userData.picture || '/placeholder-user.jpg';
+  
   return (
     <div style={styles.card}>
       <div style={styles.header}>
-        <div style={styles.profilePicture}></div>
+        <div style={styles.profilePicture}>
+          <img 
+            src={profilePicture} 
+            alt={userData.name || "Profile"} 
+            style={styles.profileImage}
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = '/placeholder-user.jpg';
+            }}
+          />
+        </div>
         <div style={styles.profileInfo}>
           <h2 style={styles.name}>{userData.name || "No Name"}</h2>
           <p style={styles.email}>{userData.email || "No Email"}</p>
@@ -72,6 +85,15 @@ const styles = {
     borderRadius: "50%",
     backgroundColor: "#f0f0f0",
     marginRight: "20px",
+    overflow: "hidden",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  profileImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
   },
   profileInfo: {
     flex: 1,
