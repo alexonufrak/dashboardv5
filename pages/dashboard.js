@@ -124,6 +124,25 @@ const Dashboard = () => {
           <div style={styles.cohortsSection}>
             <h2 style={styles.sectionHeading}>Available Programs</h2>
             
+            {/* Add debug info */}
+            {process.env.NODE_ENV !== 'production' && (
+              <div style={styles.debugInfo}>
+                <p><strong>Institution ID:</strong> {profile.institution?.id || 'Not available'}</p>
+                <p><strong>Cohorts data available:</strong> {profile.cohorts ? 'Yes' : 'No'}</p>
+                <p><strong>Number of cohorts:</strong> {profile.cohorts?.length || 0}</p>
+                {profile.cohorts && profile.cohorts.length > 0 && (
+                  <div>
+                    <p><strong>Cohort IDs:</strong></p>
+                    <ul>
+                      {profile.cohorts.map((cohort, index) => (
+                        <li key={index}>{cohort.id} - Status: {cohort.Status || 'Unknown'}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+            
             {profile.cohorts && profile.cohorts.length > 0 ? (
               <div style={styles.cohortsGrid}>
                 {profile.cohorts.map(cohort => renderCohortCard(cohort))}
@@ -176,6 +195,16 @@ const styles = {
     fontSize: "1.5rem",
     color: "var(--color-primary)",
     marginBottom: "15px",
+  },
+  debugInfo: {
+    backgroundColor: "#f9f9f9",
+    padding: "15px",
+    border: "1px solid #ddd",
+    borderRadius: "4px",
+    fontSize: "14px",
+    marginBottom: "20px",
+    fontFamily: "monospace",
+    whiteSpace: "pre-wrap",
   },
   card: {
     backgroundColor: "var(--color-white)",
