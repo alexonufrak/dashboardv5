@@ -8,13 +8,19 @@ import LoadingScreen from "../components/LoadingScreen"
 
 // SignupStep component to handle each step of the form
 const SignupStep = ({ currentStep, stepNumber, children }) => {
+  // Calculate whether this step is active to determine display properties
+  const isActive = currentStep === stepNumber;
+  
   return (
     <div 
       style={{
         ...styles.formStep,
         transform: `translateX(${(stepNumber - currentStep) * 100}%)`,
-        opacity: currentStep === stepNumber ? 1 : 0,
-        zIndex: currentStep === stepNumber ? 1 : 0,
+        opacity: isActive ? 1 : 0,
+        zIndex: isActive ? 1 : 0,
+        // When not active, remove from layout flow to prevent issues with container sizing
+        position: isActive ? 'relative' : 'absolute',
+        display: isActive ? 'block' : 'none',
       }}
     >
       {children}
@@ -352,6 +358,7 @@ export default function SignUp() {
 
 const styles = {
   container: {
+    width: "100%",
     maxWidth: "800px",
     margin: "0 auto",
     padding: "40px 20px",
@@ -366,9 +373,10 @@ const styles = {
     backgroundColor: "white",
     borderRadius: "8px",
     boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
-    overflow: "hidden",
+    overflow: "visible", // Changed from hidden to visible
     padding: "30px",
     marginBottom: "30px",
+    maxWidth: "100%",
   },
   stepIndicators: {
     display: "flex",
@@ -395,13 +403,13 @@ const styles = {
   },
   formStepsContainer: {
     position: "relative",
-    overflow: "hidden",
-    minHeight: "400px",
+    overflow: "visible", // Changed from hidden to visible to prevent content being cut off
+    width: "100%",
   },
   formStep: {
-    position: "absolute",
     width: "100%",
     transition: "transform 0.5s ease, opacity 0.5s ease",
+    height: "auto", // Allow height to adjust to content
   },
   stepHeading: {
     fontSize: "1.5rem",
@@ -415,11 +423,13 @@ const styles = {
   formGroup: {
     marginBottom: "20px",
     flex: "1 1 calc(50% - 10px)",
+    minWidth: "200px", // Ensure form fields don't get too narrow on small screens
   },
   formRow: {
     display: "flex",
     flexWrap: "wrap",
     gap: "20px",
+    marginBottom: "15px", // Add bottom margin to ensure spacing between rows
   },
   label: {
     display: "block",
@@ -494,7 +504,10 @@ const styles = {
   buttonsRow: {
     display: "flex",
     justifyContent: "space-between",
+    flexWrap: "wrap", // Allow buttons to wrap on small screens
+    gap: "15px", // Add gap between buttons
     marginTop: "30px",
+    marginBottom: "10px", // Add bottom margin
   },
   backButton: {
     backgroundColor: "var(--color-light)",
@@ -505,6 +518,8 @@ const styles = {
     fontSize: "1rem",
     cursor: "pointer",
     transition: "background-color 0.3s ease",
+    flex: "0 1 auto", // Allow button to shrink but not grow
+    minWidth: "100px", // Minimum width for the button
   },
   googleButton: {
     backgroundColor: "var(--color-primary)",
@@ -518,6 +533,8 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    flex: "0 1 auto", // Allow button to shrink but not grow
+    minWidth: "150px", // Minimum width for the button
   },
   loginPrompt: {
     textAlign: "center",
