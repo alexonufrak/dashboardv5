@@ -8,10 +8,17 @@ import ProfileCard from "../components/ProfileCard"
 import ProfileEditModal from "../components/ProfileEditModal"
 import TeamCard from "../components/TeamCard"
 import LoadingScreen from "../components/LoadingScreen"
-import OnboardingChecklist from "../components/OnboardingChecklist"
 import { FilloutPopupEmbed } from "@fillout/react"
 
+// Import the OnboardingChecklist component dynamically to avoid hook issues
+import dynamic from 'next/dynamic'
+const OnboardingChecklist = dynamic(
+  () => import('../components/OnboardingChecklist'),
+  { ssr: false }
+)
+
 const Dashboard = () => {
+  // All React hooks must be called at the top level
   const { user, isLoading: isUserLoading } = useUser()
   const [profile, setProfile] = useState(null)
   const [teamData, setTeamData] = useState(null)
@@ -21,6 +28,7 @@ const Dashboard = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [activeFilloutForm, setActiveFilloutForm] = useState(null)
+  const [dashboardContent, setDashboardContent] = useState(false)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -75,14 +83,17 @@ const Dashboard = () => {
     }
   }, [user])
 
+  // Show loading screen while data is loading
   if (isUserLoading || isLoading) {
     return <LoadingScreen />
   }
 
+  // Show error message if there's an error
   if (error) {
     return <div>Error: {error}</div>
   }
   
+  // Handler functions
   const handleEditClick = () => {
     setIsEditModalOpen(true);
   };
@@ -119,22 +130,13 @@ const Dashboard = () => {
   };
 
   // Function to render individual cohort cards
-  const [dashboardContent, setDashboardContent] = useState(false);
-  
   const renderCohortCard = (cohort) => {
-    // Debug: Log the entire cohort object to see its structure
-    console.log("Cohort object:", cohort);
-    
     // Get initiative name from enhancedCohorts data
     const initiativeName = cohort.initiativeDetails?.name || "Unknown Initiative";
     
     // Get topics and classes from our enhanced data
     const topics = cohort.topicNames || [];
     const classes = cohort.classNames || [];
-    
-    // Debug: Log what we found
-    console.log("Topics from enhanced data:", topics);
-    console.log("Classes from enhanced data:", classes);
     
     // Set button action based on the Action Button field
     const actionButtonText = cohort["Action Button"] || "Apply Now";
@@ -208,6 +210,7 @@ const Dashboard = () => {
     );
   };
   
+  // Main JSX content
   return (
     <Layout title="xFoundry Dashboard">
       <div style={styles.container}>
@@ -226,11 +229,13 @@ const Dashboard = () => {
           />
         )}
         
-        {/* Onboarding Checklist */}
-        <OnboardingChecklist 
-          profile={profile}
-          onComplete={() => setDashboardContent(true)}
-        />
+        {/* Onboarding Checklist - Only render when we have profile data */}
+        {profile && (
+          <OnboardingChecklist 
+            profile={profile}
+            onComplete={() => setDashboardContent(true)}
+          />
+        )}
         
         {/* Dashboard Content - Only shown after onboarding is completed or skipped */}
         {dashboardContent && (
