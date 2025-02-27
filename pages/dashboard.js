@@ -6,12 +6,15 @@ import { useEffect, useState } from "react"
 import Layout from "../components/Layout"
 import DashboardHeader from "../components/DashboardHeader"
 import ProfileCard from "../components/ProfileCard"
+import TeamCard from "../components/TeamCard"
 import LoadingScreen from "../components/LoadingScreen"
 
 const Dashboard = () => {
   const { user, isLoading: isUserLoading } = useUser()
   const [profile, setProfile] = useState(null)
+  const [teamData, setTeamData] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isTeamLoading, setIsTeamLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -30,8 +33,24 @@ const Dashboard = () => {
       }
     }
 
+    const fetchTeamData = async () => {
+      try {
+        const response = await fetch("/api/user/team")
+        if (!response.ok) {
+          throw new Error("Failed to fetch team data")
+        }
+        const data = await response.json()
+        setTeamData(data.team)
+      } catch (err) {
+        console.error("Error fetching team data:", err)
+      } finally {
+        setIsTeamLoading(false)
+      }
+    }
+
     if (user) {
       fetchProfile()
+      fetchTeamData()
     }
   }, [user])
 
@@ -131,6 +150,17 @@ const Dashboard = () => {
             <ProfileCard profile={profile} />
           </div>
           
+          <div style={styles.teamSection}>
+            <h2 style={styles.sectionHeading}>Your Team</h2>
+            {isTeamLoading ? (
+              <div style={styles.card}>
+                <p style={styles.loadingText}>Loading team information...</p>
+              </div>
+            ) : (
+              <TeamCard team={teamData} />
+            )}
+          </div>
+          
           <div style={styles.cohortsSection}>
             <h2 style={styles.sectionHeading}>Available Programs</h2>
             
@@ -223,6 +253,10 @@ const styles = {
   profileSection: {
     width: "100%",
   },
+  teamSection: {
+    width: "100%",
+    marginBottom: "10px",
+  },
   cohortsSection: {
     width: "100%",
   },
@@ -230,6 +264,12 @@ const styles = {
     fontSize: "1.5rem",
     color: "var(--color-primary)",
     marginBottom: "15px",
+  },
+  loadingText: {
+    padding: "20px",
+    textAlign: "center",
+    color: "var(--color-secondary)",
+    fontStyle: "italic",
   },
   debugInfo: {
     backgroundColor: "#f9f9f9",
