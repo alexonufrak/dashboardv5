@@ -50,7 +50,7 @@ const styles = {
     padding: "0 8px",
     transition: "color 0.2s ease",
   },
-  link:hover: {
+  "link:hover": {
     color: "var(--color-primary)",
   },
   divider: {
