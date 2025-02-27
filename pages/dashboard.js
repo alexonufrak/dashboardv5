@@ -170,7 +170,27 @@ const Dashboard = () => {
                             const response = await fetch('/api/debug/team-data');
                             const data = await response.json();
                             console.log("Debug team data:", data);
-                            alert(`Debug info logged to console.\nContact ID: ${data.contactId}\nMember records: ${data.memberRecords.length}\nTeam records: ${data.teamRecords.length}`);
+                            
+                            // Create a more user-friendly summary
+                            const summary = [
+                              `Contact ID: ${data.contactId}`,
+                              `Email: ${data.email}`,
+                              `Member records: ${data.memberRecords?.length || 0}`,
+                              `Team records: ${data.teamRecords?.length || 0}`,
+                              `Table IDs configured: ${data.tableConfig.membersTableId ? 'Yes' : 'No'} (Members), ${data.tableConfig.teamsTableId ? 'Yes' : 'No'} (Teams)`,
+                            ];
+                            
+                            if (data.memberRecords?.length === 0) {
+                              summary.push("ISSUE: No member records found for this user");
+                            } else if (data.extractedTeamIds?.length === 0) {
+                              summary.push("ISSUE: Member records don't have Team links");
+                            } else if (data.memberAnalysis?.activeMembers === 0) {
+                              summary.push(`ISSUE: No ACTIVE members (statuses: ${data.memberAnalysis.statuses.join(', ')})`);
+                            } else if (data.teamRecords?.length === 0) {
+                              summary.push("ISSUE: Team records not found");
+                            }
+                            
+                            alert(summary.join('\n'));
                           } catch (error) {
                             console.error("Error debugging teams:", error);
                             alert(`Error debugging teams: ${error.message}`);
@@ -178,7 +198,7 @@ const Dashboard = () => {
                         }}
                         style={styles.debugButton}
                       >
-                        Debug Team Data
+                        Enhanced Team Debug
                       </button>
                     </div>
                   </div>
