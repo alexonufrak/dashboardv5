@@ -5,6 +5,7 @@ import { useRouter } from "next/router"
 import { useEffect } from "react"
 import Layout from "../components/Layout"
 import LoadingScreen from "../components/LoadingScreen"
+import DashboardRedirect from "../components/DashboardRedirect"
 
 export default function Home() {
   const { user, isLoading } = useUser()
@@ -18,6 +19,10 @@ export default function Home() {
 
   if (isLoading) {
     return <LoadingScreen />
+  }
+
+  if (user) {
+    return <DashboardRedirect />
   }
 
   return (
