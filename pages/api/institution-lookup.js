@@ -30,21 +30,45 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Institutions table not configured' });
     }
 
-    // Search for institutions with an exact domain match
-    // We need to check if the domain appears as a whole value in the comma-separated list
-    const records = await institutionsTable.select({
+    console.log(`Looking up institution for domain: "${domain}"`);
+    
+    // For better performance with many institutions, try to filter down the query first with FIND
+    // This will give us candidates that might contain the domain as a substring
+    const recordsQuery = await institutionsTable.select({
       fields: ['Name', 'Domains'],
+      filterByFormula: `OR(FIND("${domain},", {Domains}), FIND("${domain}", {Domains}))`
     }).firstPage();
+    
+    console.log(`Pre-filtered ${recordsQuery.length} institutions that might contain domain`);
+    
+    // If no results from the pre-filter, try to get all records as a fallback
+    const records = recordsQuery.length > 0 ? recordsQuery : 
+      await institutionsTable.select({
+        fields: ['Name', 'Domains'],
+      }).firstPage();
+    
+    console.log(`Found ${records.length} total institutions to check`);
     
     // Filter records manually to match exact domains
     const matchingRecords = records.filter(record => {
       if (!record.fields.Domains) return false;
       
+      // Get the domains string
+      const domainsString = record.fields.Domains;
+      console.log(`Institution: ${record.fields.Name}, Domains: ${domainsString}`);
+      
       // Split domains by comma and trim whitespace
-      const domainList = record.fields.Domains.split(',').map(d => d.trim());
+      const domainList = domainsString.split(',').map(d => d.trim());
+      
+      // Log the domains list for debugging
+      console.log(`Parsed domains list: ${JSON.stringify(domainList)}`);
       
       // Check if the domain matches exactly with any domain in the list
-      return domainList.includes(domain);
+      const matches = domainList.includes(domain);
+      if (matches) {
+        console.log(`✓ MATCH FOUND: ${domain} in ${record.fields.Name}`);
+      }
+      return matches;
     });
 
     if (matchingRecords && matchingRecords.length > 0) {

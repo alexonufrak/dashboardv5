@@ -61,6 +61,8 @@ export default function SignUp() {
     setInstitutionStatus(null);
     
     try {
+      console.log(`Verifying institution for email: ${email}`);
+      
       const response = await fetch("/api/institution-lookup", {
         method: "POST",
         headers: {
@@ -74,11 +76,14 @@ export default function SignUp() {
       }
       
       const data = await response.json();
+      console.log("Institution lookup response:", data);
       
       if (data.success) {
+        console.log(`Institution found: ${data.institution.name}`);
         setInstitution(data.institution);
         setInstitutionStatus("success");
       } else {
+        console.log("No matching institution found");
         setInstitutionStatus("error");
       }
     } catch (error) {
@@ -199,6 +204,16 @@ export default function SignUp() {
                 <div style={styles.errorBadge}>
                   <span style={styles.badgeIcon}>✕</span>
                   Institution not recognized. Contact support if you believe this is an error.
+                  <button 
+                    onClick={() => {
+                      // For debugging purposes, show an alert with the domain
+                      const domain = email.split('@')[1];
+                      alert(`Domain being checked: ${domain}`);
+                    }}
+                    style={styles.debugButton}
+                  >
+                    Debug
+                  </button>
                 </div>
               )}
               
@@ -511,5 +526,15 @@ const styles = {
   loginLink: {
     color: "var(--color-primary)",
     fontWeight: "500",
+  },
+  debugButton: {
+    padding: "4px 8px",
+    backgroundColor: "#f5f5f5",
+    color: "#333",
+    border: "none",
+    borderRadius: "4px",
+    fontSize: "0.8rem",
+    cursor: "pointer",
+    marginLeft: "10px",
   },
 };
