@@ -126,4 +126,3 @@ const styles = {
     color: "var(--color-secondary)",
   },
 }
-

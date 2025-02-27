@@ -9,7 +9,13 @@ import LoadingScreen from "../components/LoadingScreen"
 const Profile = () => {
   const { user, isLoading: isUserLoading } = useUser()
   const [profile, setProfile] = useState(null)
-  const [formData, setFormData] = useState({})
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    degreeType: "",
+    major: "",
+    graduationYear: ""
+  })
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
   const [error, setError] = useState(null)
@@ -24,7 +30,15 @@ const Profile = () => {
         }
         const data = await response.json()
         setProfile(data)
-        setFormData(data)
+        
+        // Initialize form with profile data
+        setFormData({
+          firstName: data.firstName || "",
+          lastName: data.lastName || "",
+          degreeType: data.degreeType || "",
+          major: data.major || "",
+          graduationYear: data.graduationYear || ""
+        })
       } catch (err) {
         setError(err.message)
       } finally {
@@ -52,16 +66,23 @@ const Profile = () => {
     setSuccessMessage("")
 
     try {
+      // Add contact ID to the update data
+      const updateData = {
+        ...formData,
+        contactId: profile.contactId
+      }
+      
       const response = await fetch("/api/user/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(updateData),
       })
 
       if (!response.ok) {
-        throw new Error("Failed to update profile")
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to update profile")
       }
 
       const updatedProfile = await response.json()
@@ -78,10 +99,6 @@ const Profile = () => {
     return <LoadingScreen />
   }
 
-  if (error) {
-    return <div>Error: {error}</div>
-  }
-
   return (
     <Layout title="xFoundry Profile">
       <div style={styles.container}>
@@ -94,9 +111,11 @@ const Profile = () => {
           <div style={styles.profileHeader}>
             <div style={styles.profilePicture}></div>
             <div style={styles.profileInfo}>
-              <h2 style={styles.name}>{profile.name}</h2>
-              <p style={styles.email}>{profile.email}</p>
-              <p style={styles.institution}>{profile.institution?.name || "No Institution Set"}</p>
+              <h2 style={styles.name}>{profile.name || ""}</h2>
+              <p style={styles.email}>{profile.email || ""}</p>
+              <p style={styles.institution}>
+                {profile.institutionName || profile.institution?.name || ""}
+              </p>
             </div>
           </div>
 
@@ -111,7 +130,7 @@ const Profile = () => {
                   type="text"
                   id="firstName"
                   name="firstName"
-                  value={formData.firstName || ""}
+                  value={formData.firstName}
                   onChange={handleInputChange}
                   style={styles.input}
                 />
@@ -124,7 +143,7 @@ const Profile = () => {
                   type="text"
                   id="lastName"
                   name="lastName"
-                  value={formData.lastName || ""}
+                  value={formData.lastName}
                   onChange={handleInputChange}
                   style={styles.input}
                 />
@@ -140,7 +159,7 @@ const Profile = () => {
                 <input
                   type="text"
                   id="institution"
-                  value={profile.institution?.name || ""}
+                  value={profile.institutionName || profile.institution?.name || ""}
                   style={styles.input}
                   disabled
                 />
@@ -152,7 +171,7 @@ const Profile = () => {
                 <select
                   id="degreeType"
                   name="degreeType"
-                  value={formData.degreeType || ""}
+                  value={formData.degreeType}
                   onChange={handleInputChange}
                   style={styles.input}
                 >
@@ -162,6 +181,7 @@ const Profile = () => {
                   <option value="PhD">PhD</option>
                   <option value="Associate">Associate</option>
                   <option value="Certificate">Certificate</option>
+                  <option value="Undergraduate">Undergraduate</option>
                 </select>
               </div>
             </div>
@@ -174,7 +194,7 @@ const Profile = () => {
                   type="text"
                   id="major"
                   name="major"
-                  value={formData.major || ""}
+                  value={formData.major}
                   onChange={handleInputChange}
                   style={styles.input}
                 />
@@ -184,10 +204,10 @@ const Profile = () => {
                   Graduation Year
                 </label>
                 <input
-                  type="number"
+                  type="text"
                   id="graduationYear"
                   name="graduationYear"
-                  value={formData.graduationYear || ""}
+                  value={formData.graduationYear}
                   onChange={handleInputChange}
                   style={styles.input}
                 />
@@ -315,4 +335,3 @@ const styles = {
     transition: "background-color 0.3s ease",
   },
 }
-

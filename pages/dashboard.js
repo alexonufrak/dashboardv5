@@ -58,17 +58,17 @@ const Dashboard = () => {
               <h3 style={styles.cardHeading}>Educational Resources</h3>
               <ul style={styles.resourceList}>
                 <li>
-                  <a href="#" style={styles.link}>
+                  <a href="https://www.xfoundry.org/resources/intro-programming" style={styles.link}>
                     Introduction to Programming
                   </a>
                 </li>
                 <li>
-                  <a href="#" style={styles.link}>
+                  <a href="https://www.xfoundry.org/resources/data-structures" style={styles.link}>
                     Data Structures and Algorithms
                   </a>
                 </li>
                 <li>
-                  <a href="#" style={styles.link}>
+                  <a href="https://www.xfoundry.org/resources/web-development" style={styles.link}>
                     Web Development Fundamentals
                   </a>
                 </li>
@@ -132,13 +132,12 @@ const styles = {
   link: {
     color: "var(--color-primary)",
     textDecoration: "none",
-    ":hover": {
-      textDecoration: "underline",
-    },
+    padding: "8px 0",
+    display: "block",
+    transition: "color 0.3s ease",
   },
   noEvents: {
     color: "var(--color-secondary)",
     fontStyle: "italic",
   },
 }
-

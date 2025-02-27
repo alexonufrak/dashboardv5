@@ -7,7 +7,7 @@ import Image from "next/image"
 
 const Navbar = () => {
   const router = useRouter()
-  const { user, error, isLoading } = useUser()
+  const { user, isLoading } = useUser()
 
   return (
     <nav className="navbar">
@@ -30,13 +30,13 @@ const Navbar = () => {
                 Log Out
               </a>
               {user.picture && (
-                <Image
-                  src={user.picture || "/placeholder.svg"}
-                  alt="Profile"
-                  width={32}
-                  height={32}
-                  className="profile-picture"
-                />
+                <div className="profile-picture-container">
+                  <img
+                    src={user.picture}
+                    alt="Profile"
+                    className="profile-picture"
+                  />
+                </div>
               )}
             </>
           ) : (
@@ -100,8 +100,15 @@ const Navbar = () => {
         .login:hover {
           text-decoration: underline;
         }
-        .profile-picture {
+        .profile-picture-container {
+          width: 32px;
+          height: 32px;
           border-radius: 50%;
+          overflow: hidden;
+        }
+        .profile-picture {
+          width: 100%;
+          height: 100%;
           object-fit: cover;
         }
       `}</style>
@@ -110,4 +117,3 @@ const Navbar = () => {
 }
 
 export default Navbar
-

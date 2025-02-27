@@ -1,29 +1,34 @@
 import Link from "next/link"
 
-const DashboardHeader = () => {
+const DashboardHeader = ({ profile }) => {
+  // Get first name from full name or use "Student" as fallback
+  const firstName = profile?.name ? profile.name.split(' ')[0] : "Student";
+  
   return (
     <header style={styles.header}>
       <div>
-        <h1 style={styles.heading}>Welcome, John!</h1>
+        <h1 style={styles.heading}>Welcome, {firstName}!</h1>
         <p style={styles.subtitle}>
           Welcome to your xFoundry student dashboard. Here you can view your profile information and access educational
           resources.
         </p>
       </div>
-      <div style={styles.alert}>
-        <span style={styles.warningIcon}>⚠</span>
-        <div style={styles.alertContent}>
-          <p style={styles.alertText}>
-            <strong>Please complete your profile</strong>
-          </p>
-          <p style={styles.alertDescription}>
-            Your profile is incomplete. Complete your profile to unlock all features and opportunities.
-          </p>
-          <Link href="/profile" style={styles.updateButton}>
-            Update Profile
-          </Link>
+      {!profile?.isProfileComplete && (
+        <div style={styles.alert}>
+          <span style={styles.warningIcon}>⚠</span>
+          <div style={styles.alertContent}>
+            <p style={styles.alertText}>
+              <strong>Please complete your profile</strong>
+            </p>
+            <p style={styles.alertDescription}>
+              Your profile is incomplete. Complete your profile to unlock all features and opportunities.
+            </p>
+            <Link href="/profile" style={styles.updateButton}>
+              Update Profile
+            </Link>
+          </div>
         </div>
-      </div>
+      )}
     </header>
   )
 }
@@ -80,4 +85,3 @@ const styles = {
 }
 
 export default DashboardHeader
-
