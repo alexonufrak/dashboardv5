@@ -1,3 +1,12 @@
+/* Custom Font Import */
+@font-face {
+  font-family: 'Hanken Grotesk';
+  src: url('/fonts/Hanken Grotesk Variable Font.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* CSS Variables */
 :root {
   --color-primary: #0056b3;
@@ -8,6 +17,7 @@
   --color-light: #f8f9fa;
   --color-dark: #343a40;
   --color-white: #ffffff;
+  --font-custom: 'Hanken Grotesk', sans-serif;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol";
 }
@@ -40,7 +50,7 @@ html {
 }
 
 body {
-  font-family: var(--font-sans);
+  font-family: var(--font-custom);
   background-color: var(--color-light);
   color: var(--color-dark);
 }
