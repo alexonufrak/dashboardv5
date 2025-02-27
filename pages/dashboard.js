@@ -9,6 +9,7 @@ import ProfileCard from "../components/ProfileCard"
 import ProfileEditModal from "../components/ProfileEditModal"
 import TeamCard from "../components/TeamCard"
 import LoadingScreen from "../components/LoadingScreen"
+import { FilloutPopupEmbed } from "@fillout/react"
 
 const Dashboard = () => {
   const { user, isLoading: isUserLoading } = useUser()
@@ -19,6 +20,7 @@ const Dashboard = () => {
   const [error, setError] = useState(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [activeFilloutForm, setActiveFilloutForm] = useState(null)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -122,10 +124,23 @@ const Dashboard = () => {
     // Set status indicator
     const status = cohort["Status"] || "Unknown";
     
+    // Get Fillout form ID from Airtable
+    const filloutFormId = cohort["Application Form ID (Fillout)"];
+    
     // Define different action button styles based on status
     const buttonStyle = {
       ...styles.actionButton,
       backgroundColor: status === "Applications Open" ? "var(--color-primary)" : "var(--color-secondary)",
+    };
+    
+    const handleButtonClick = () => {
+      if (status === "Applications Open" && filloutFormId) {
+        setActiveFilloutForm({
+          formId: filloutFormId,
+          cohortId: cohort.id,
+          initiativeName: initiativeName
+        });
+      }
     };
     
     return (
@@ -162,7 +177,11 @@ const Dashboard = () => {
         
         <div style={styles.cohortContent}>
           <div style={styles.actionButtonContainer}>
-            <button style={buttonStyle} disabled={status !== "Applications Open"}>
+            <button 
+              style={buttonStyle} 
+              disabled={status !== "Applications Open" || !filloutFormId}
+              onClick={handleButtonClick}
+            >
               {actionButtonText}
             </button>
           </div>
@@ -181,6 +200,21 @@ const Dashboard = () => {
         )}
         
         <DashboardHeader profile={profile} />
+        
+        {/* Fillout form popup */}
+        {activeFilloutForm && (
+          <FilloutPopupEmbed
+            filloutId={activeFilloutForm.formId}
+            onClose={() => setActiveFilloutForm(null)}
+            parameters={{
+              cohortId: activeFilloutForm.cohortId,
+              initiativeName: activeFilloutForm.initiativeName,
+              userEmail: user?.email,
+              userName: user?.name,
+              userContactId: profile?.contactId
+            }}
+          />
+        )}
         
         <div style={styles.content}>
           <div style={styles.profileSection}>
