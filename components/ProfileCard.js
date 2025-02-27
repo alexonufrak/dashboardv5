@@ -17,16 +17,18 @@ const ProfileCard = ({ profile }) => {
         <div style={styles.infoGrid}>
           <div style={styles.infoItem}>
             <span style={styles.label}>Institution:</span>
-            <span style={styles.value}>{userData.institutionName || userData.institution?.name || "Not specified"}</span>
+            <span style={styles.value}>{userData.institutionName || "Not specified"}</span>
           </div>
           <div style={styles.infoItem}>
             <span style={styles.label}>Degree Type:</span>
             <span style={styles.value}>{userData.degreeType || "Not specified"}</span>
           </div>
-          <div style={styles.infoItem}>
-            <span style={styles.label}>Major:</span>
-            <span style={styles.value}>{userData.major || "Not specified"}</span>
-          </div>
+          {userData.showMajor && (
+            <div style={styles.infoItem}>
+              <span style={styles.label}>Major:</span>
+              <span style={styles.value}>{userData.major || "Not specified"}</span>
+            </div>
+          )}
           <div style={styles.infoItem}>
             <span style={styles.label}>Graduation Year:</span>
             <span style={styles.value}>{userData.graduationYear || "Not specified"}</span>

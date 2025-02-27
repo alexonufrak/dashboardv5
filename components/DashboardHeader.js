@@ -9,8 +9,7 @@ const DashboardHeader = ({ profile }) => {
       <div>
         <h1 style={styles.heading}>Welcome, {firstName}!</h1>
         <p style={styles.subtitle}>
-          Welcome to your xFoundry student dashboard. Here you can view your profile information and access educational
-          resources.
+          Welcome to your xFoundry student dashboard. Here you can view your profile information and explore available programs.
         </p>
       </div>
       {!profile?.isProfileComplete && (
