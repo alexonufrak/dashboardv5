@@ -286,25 +286,25 @@ export default function Home() {
       </section>
       
       {/* CTA Section */}
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-primary/90">
+      <section className="w-full py-12 md:py-24 lg:py-32 bg-primary">
         <div className="container px-4 md:px-6">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center">
-            <div className="space-y-2 text-white">
+          <div className="flex flex-col items-center justify-center space-y-6 text-center">
+            <div className="space-y-3 text-white">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                 Ready to Start Your Journey?
               </h2>
-              <p className="mx-auto max-w-[700px] text-white/80 md:text-xl">
+              <p className="mx-auto max-w-[700px] text-white md:text-xl font-medium">
                 Join xFoundry today and connect with opportunities, mentors, and resources that will shape your future.
               </p>
             </div>
-            <div className="space-x-4">
+            <div className="space-x-4 pt-2">
               <Link href="/signup">
-                <Button size="lg" className="h-12 px-6 bg-white text-primary hover:bg-white/90">
+                <Button size="lg" className="h-12 px-8 bg-white text-primary hover:bg-white/90 font-semibold text-base shadow-md">
                   Create Your Account
                 </Button>
               </Link>
               <Link href="/login">
-                <Button size="lg" variant="outline" className="h-12 px-6 border-white text-white hover:bg-white/10">
+                <Button size="lg" variant="outline" className="h-12 px-8 border-white text-white hover:bg-white/20 font-semibold text-base shadow-md">
                   Sign In
                 </Button>
               </Link>

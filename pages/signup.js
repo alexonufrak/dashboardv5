@@ -185,6 +185,12 @@ export default function SignUp() {
       queryParams.append("cohortId", router.query.cohortId);
     }
     
+    // Store the verified email in localStorage before redirecting
+    // This will be used as a backup to ensure email consistency
+    if (email) {
+      localStorage.setItem('xFoundry_verifiedEmail', email);
+    }
+    
     // Redirect to Auth0 login with Google, directly bypassing the Auth0 login screen if possible
     window.location.href = `/api/auth/login?connection=google-oauth2&${queryParams.toString()}&prompt=login`;
   };
@@ -213,27 +219,46 @@ export default function SignUp() {
               value={currentStep === 1 ? "step1" : "step2"}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-2 mb-8">
-                <TabsTrigger 
-                  value="step1" 
-                  disabled={currentStep !== 1}
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                >
-                  <div className="flex items-center">
-                    <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center mr-2 text-sm">1</div>
-                    <span className="hidden sm:inline">Institution</span>
+              {/* Progress Steps */}
+              <div className="mb-8 w-full">
+                <div className="flex items-center justify-between relative">
+                  {/* Progress line connector */}
+                  <div className="absolute top-1/2 h-1 w-full -translate-y-1/2 bg-gray-200 z-0"></div>
+                  
+                  {/* Active progress line */}
+                  <div 
+                    className="absolute top-1/2 h-1 -translate-y-1/2 bg-primary z-10 transition-all duration-300 ease-in-out" 
+                    style={{ width: currentStep === 1 ? '0%' : '100%' }}
+                  ></div>
+                  
+                  {/* Step 1 */}
+                  <div className="flex flex-col items-center relative z-20">
+                    <div 
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm mb-1
+                        ${currentStep >= 1 ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'}`}
+                    >
+                      1
+                    </div>
+                    <span className="text-xs font-medium text-gray-600 hidden sm:block">Institution</span>
                   </div>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="step2" 
-                  disabled={currentStep !== 2}
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                >
-                  <div className="flex items-center">
-                    <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center mr-2 text-sm">2</div>
-                    <span className="hidden sm:inline">Profile Details</span>
+                  
+                  {/* Step 2 */}
+                  <div className="flex flex-col items-center relative z-20">
+                    <div 
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm mb-1
+                        ${currentStep >= 2 ? 'bg-primary text-white' : 'bg-gray-200 text-gray-500'}`}
+                    >
+                      2
+                    </div>
+                    <span className="text-xs font-medium text-gray-600 hidden sm:block">Profile Details</span>
                   </div>
-                </TabsTrigger>
+                </div>
+              </div>
+              
+              {/* Hidden tabs for content control */}
+              <TabsList className="sr-only">
+                <TabsTrigger value="step1" disabled={currentStep !== 1}>Institution</TabsTrigger>
+                <TabsTrigger value="step2" disabled={currentStep !== 2}>Profile Details</TabsTrigger>
               </TabsList>
               
               {/* Step 1: Institution Verification */}

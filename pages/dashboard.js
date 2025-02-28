@@ -13,6 +13,7 @@ import TeamCard from "../components/TeamCard"
 import { FilloutPopupEmbed } from "@fillout/react"
 import OnboardingChecklistCondensed from "../components/OnboardingChecklistCondensed"
 import ProgramDetailModal from "../components/ProgramDetailModal"
+import EmailMismatchAlert from "../components/EmailMismatchAlert"
 
 // Import UI components
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -309,6 +310,9 @@ const Dashboard = () => {
       {/* Dashboard Content - Either condensed onboarding or full dashboard */}
       {profile && !showFullOnboarding && (
         <div className="space-y-8 pt-4">
+          {/* Email mismatch alert - appears if user authenticated with different email than verified */}
+          {user?.emailMismatch && <EmailMismatchAlert emailMismatch={user.emailMismatch} />}
+          
           {/* Condensed onboarding if not completed */}
           {showOnboardingBanner && (
             <OnboardingChecklistCondensed 

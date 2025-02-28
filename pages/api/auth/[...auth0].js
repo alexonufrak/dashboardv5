@@ -11,8 +11,19 @@ const afterCallback = async (req, res, session, state) => {
       firstName, 
       lastName,
       referralSource,
-      cohortId
+      cohortId,
+      login_hint  // This contains the pre-verified email address
     } = req.query
+
+    // Check if there's a login_hint (pre-verified email) to compare against
+    if (login_hint && session.user.email && login_hint !== session.user.email) {
+      console.error(`Email mismatch: Verified ${login_hint} but authenticated with ${session.user.email}`);
+      // Add a flag to indicate email mismatch - this will be checked on the frontend
+      session.user.emailMismatch = {
+        verifiedEmail: login_hint,
+        authEmail: session.user.email
+      };
+    }
 
     if (institution && institutionId) {
       session.user.institution = {
@@ -47,7 +58,9 @@ const afterCallback = async (req, res, session, state) => {
         const metadata = {
           onboarding: ['register'], // First step is always completed for new users
           ...(referralSource ? { referralSource } : {}),
-          ...(cohortId ? { selectedCohort: cohortId } : {})
+          ...(cohortId ? { selectedCohort: cohortId } : {}),
+          // Store the verified email in metadata for future reference
+          ...(login_hint ? { verifiedEmail: login_hint } : {})
         };
         
         // Update user metadata in Auth0
@@ -65,6 +78,7 @@ const afterCallback = async (req, res, session, state) => {
         lastName,
         referralSource,
         cohortId,
+        login_hint,
         metadata: session.user.user_metadata
       });
     }
