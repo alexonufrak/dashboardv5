@@ -226,12 +226,12 @@ export default function SignUp() {
                   <div 
                     className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center text-sm font-medium mb-2 transition-all duration-300 shadow-sm
                       ${currentStep >= 1 
-                        ? 'bg-primary text-white' 
+                        ? 'bg-curious text-white' 
                         : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
                   >
                     1
                   </div>
-                  <span className={`text-xs font-medium ${currentStep >= 1 ? 'text-primary' : 'text-gray-400'}`}>
+                  <span className={`text-xs font-medium ${currentStep >= 1 ? 'text-curious' : 'text-gray-400'}`}>
                     Institution
                   </span>
                 </div>
@@ -241,12 +241,12 @@ export default function SignUp() {
                   <div 
                     className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center text-sm font-medium mb-2 transition-all duration-300 shadow-sm
                       ${currentStep >= 2 
-                        ? 'bg-primary text-white' 
+                        ? 'bg-eden text-white' 
                         : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
                   >
                     2
                   </div>
-                  <span className={`text-xs font-medium ${currentStep >= 2 ? 'text-primary' : 'text-gray-400'}`}>
+                  <span className={`text-xs font-medium ${currentStep >= 2 ? 'text-eden' : 'text-gray-400'}`}>
                     Profile
                   </span>
                 </div>
@@ -295,7 +295,7 @@ export default function SignUp() {
                         <Button 
                           onClick={verifyInstitution}
                           disabled={isVerifying || !email || isRedirecting}
-                          className="w-full h-12"
+                          className="w-full h-12 bg-curious hover:bg-curious/90"
                         >
                           {isVerifying ? (
                             <div className="flex items-center">
@@ -345,7 +345,7 @@ export default function SignUp() {
                         {institutionStatus === "success" && !userExists && (
                           <Button
                             onClick={nextStep}
-                            className="w-full h-12"
+                            className="w-full h-12 bg-eden hover:bg-eden/90"
                           >
                             Continue to Profile Details
                             <ArrowRight className="ml-2 h-4 w-4" />
@@ -463,7 +463,7 @@ export default function SignUp() {
                         <Button 
                           variant="outline" 
                           onClick={prevStep}
-                          className="h-12 md:flex-1"
+                          className="h-12 md:flex-1 border-eden text-eden hover:bg-eden/5"
                         >
                           Back
                         </Button>
@@ -471,7 +471,7 @@ export default function SignUp() {
                         <Button 
                           onClick={handleGoogleSignup}
                           disabled={!formData.firstName || !formData.lastName || !formData.graduationYear || !formData.degreeType}
-                          className="h-12 md:flex-[2]"
+                          className="h-12 md:flex-[2] bg-gold text-eden hover:bg-gold/90"
                         >
                           <div className="flex items-center">
                             Create Account with Google

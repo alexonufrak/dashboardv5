@@ -13,14 +13,20 @@
 
 /* CSS Variables */
 :root {
-  --color-primary: #0056b3;
-  --color-secondary: #6c757d;
+  /* xFoundry Brand Colors */
+  --color-primary: #24A9E0;    /* Curious Blue */
+  --color-secondary: #0E445A;  /* Eden */
+  --color-accent: #FFD200;     /* Gold */
+  
+  /* Utility Colors */
   --color-success: #28a745;
-  --color-warning: #ffc107;
+  --color-warning: #FFD200;    /* Using Gold for warnings */
   --color-danger: #dc3545;
   --color-light: #f8f9fa;
-  --color-dark: #343a40;
+  --color-dark: #0E445A;       /* Using Eden for dark color */
   --color-white: #ffffff;
+  
+  /* Fonts */
   --font-custom: 'Hanken Grotesk', sans-serif;
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji",
     "Segoe UI Emoji", "Segoe UI Symbol";

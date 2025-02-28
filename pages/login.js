@@ -143,7 +143,7 @@ export default function Login() {
           <Card className="p-6 md:p-8 shadow-md border-0 bg-white">
             <div className="space-y-6">
               <div className="space-y-2 text-center">
-                <h1 className="text-2xl font-bold tracking-tight text-primary">Sign In</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-curious">Sign In</h1>
                 <p className="text-muted-foreground text-sm">Enter your institutional email to continue</p>
               </div>
               
@@ -169,7 +169,7 @@ export default function Login() {
                   <Button 
                     onClick={verifyEmailAndInstitution}
                     disabled={isVerifying || !email || isRedirecting}
-                    className="w-full h-10"
+                    className="w-full h-10 bg-curious hover:bg-curious/90"
                   >
                     {isVerifying ? (
                       <div className="flex items-center">
@@ -228,7 +228,7 @@ export default function Login() {
                   <Button
                     onClick={proceedToAuth}
                     disabled={isRedirecting}
-                    className="w-full"
+                    className="w-full bg-eden hover:bg-eden/90"
                     size="lg"
                   >
                     {isRedirecting ? (
@@ -252,7 +252,7 @@ export default function Login() {
                   <Button
                     onClick={proceedToAuth}
                     disabled={isRedirecting}
-                    className="w-full"
+                    className="w-full bg-gold text-eden hover:bg-gold/90"
                     size="lg"
                   >
                     {isRedirecting ? (
@@ -281,7 +281,7 @@ export default function Login() {
                 </div>
                 
                 <div className="text-center">
-                  <Button variant="outline" asChild className="w-full">
+                  <Button variant="outline" asChild className="w-full border-curious text-curious hover:bg-curious/5">
                     <a href="/signup">Create New Account</a>
                   </Button>
                 </div>

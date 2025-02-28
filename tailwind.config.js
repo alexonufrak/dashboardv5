@@ -7,11 +7,17 @@ module.exports = {
   theme: {
   	extend: {
       colors: {
+        // xFoundry brand colors
         primary: {
-          DEFAULT: "#0056b3",
-          dark: "#004085",
-          light: "#0077cc"
-        }
+          DEFAULT: "#24A9E0", // Curious Blue
+          dark: "#0E445A",    // Eden
+          light: "#55C4F1"    // Lighter shade of Curious Blue
+        },
+        secondary: "#0E445A",  // Eden
+        accent: "#FFD200",     // Gold
+        eden: "#0E445A",
+        curious: "#24A9E0",
+        gold: "#FFD200"
       },
   		keyframes: {
   			'accordion-down': {

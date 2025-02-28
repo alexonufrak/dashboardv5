@@ -32,7 +32,7 @@ export default function Home() {
   return (
     <Layout title="Welcome to xFoundry">
       {/* Hero Section */}
-      <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-gradient-to-br from-primary/5 to-primary/10">
+      <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-gradient-to-br from-curious/5 to-eden/10">
         <div className="container px-4 md:px-6">
           <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
             <div className="flex flex-col justify-center space-y-8">
@@ -105,9 +105,9 @@ export default function Home() {
           </div>
           <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 mt-12">
             <Card className="relative overflow-hidden transition-all hover:shadow-lg hover:translate-y-[-5px]">
-              <div className="absolute top-0 right-0 h-24 w-24 bg-primary/10 rounded-bl-full"></div>
+              <div className="absolute top-0 right-0 h-24 w-24 bg-curious/10 rounded-bl-full"></div>
               <CardHeader>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/20 text-eden">
                   <RocketIcon className="h-5 w-5" />
                 </div>
                 <CardTitle className="mt-4">Targeted Competitions</CardTitle>
@@ -119,9 +119,9 @@ export default function Home() {
               </CardContent>
             </Card>
             <Card className="relative overflow-hidden transition-all hover:shadow-lg hover:translate-y-[-5px]">
-              <div className="absolute top-0 right-0 h-24 w-24 bg-primary/10 rounded-bl-full"></div>
+              <div className="absolute top-0 right-0 h-24 w-24 bg-eden/10 rounded-bl-full"></div>
               <CardHeader>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-curious/20 text-eden">
                   <Users className="h-5 w-5" />
                 </div>
                 <CardTitle className="mt-4">Cross-Disciplinary Teams</CardTitle>
@@ -133,9 +133,9 @@ export default function Home() {
               </CardContent>
             </Card>
             <Card className="relative overflow-hidden transition-all hover:shadow-lg hover:translate-y-[-5px] md:col-span-2 lg:col-span-1">
-              <div className="absolute top-0 right-0 h-24 w-24 bg-primary/10 rounded-bl-full"></div>
+              <div className="absolute top-0 right-0 h-24 w-24 bg-gold/10 rounded-bl-full"></div>
               <CardHeader>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-eden/20 text-curious">
                   <GraduationCap className="h-5 w-5" />
                 </div>
                 <CardTitle className="mt-4">Resource Matrix</CardTitle>
@@ -165,7 +165,7 @@ export default function Home() {
             </p>
             <div className="space-y-4 mt-6">
               <div className="flex items-start gap-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white">1</div>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-curious text-white">1</div>
                 <div>
                   <h3 className="font-semibold">Join a Multidisciplinary Team</h3>
                   <p className="text-sm text-gray-500">
@@ -174,7 +174,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white">2</div>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-eden text-white">2</div>
                 <div>
                   <h3 className="font-semibold">Engage in Targeted Competitions</h3>
                   <p className="text-sm text-gray-500">
@@ -183,7 +183,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex items-start gap-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white">3</div>
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gold text-eden">3</div>
                 <div>
                   <h3 className="font-semibold">Access the Resource Matrix</h3>
                   <p className="text-sm text-gray-500">
@@ -286,7 +286,7 @@ export default function Home() {
       </section>
       
       {/* CTA Section */}
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-br from-primary to-primary-dark">
+      <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-br from-curious to-eden">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-8 text-center">
             <div className="space-y-4">
@@ -299,12 +299,12 @@ export default function Home() {
             </div>
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 pt-2 w-full max-w-md">
               <Link href="/signup" className="w-full sm:w-auto">
-                <Button size="lg" className="w-full h-12 px-8 bg-white text-primary hover:bg-gray-100 font-semibold text-base shadow-lg">
+                <Button size="lg" className="w-full h-12 px-8 bg-gold text-eden hover:bg-gold/90 font-semibold text-base shadow-lg">
                   Create Your Account
                 </Button>
               </Link>
               <Link href="/login" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full h-12 px-8 border-white text-white hover:bg-primary-dark/50 font-semibold text-base shadow-md">
+                <Button size="lg" variant="outline" className="w-full h-12 px-8 border-white text-white hover:bg-curious/30 font-semibold text-base shadow-md">
                   Sign In
                 </Button>
               </Link>
