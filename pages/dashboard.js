@@ -8,17 +8,15 @@ import { toast } from "sonner"
 
 // Import components
 import Layout from "../components/Layout"
-import ProfileCard from "../components/ProfileCard"
 import ProfileEditModal from "../components/ProfileEditModal"
 import TeamCard from "../components/TeamCard"
 import { FilloutPopupEmbed } from "@fillout/react"
+import OnboardingChecklistCondensed from "../components/OnboardingChecklistCondensed"
 
 // Import UI components
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 
@@ -26,13 +24,9 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { 
   BookOpen, 
   Users, 
-  UserCircle, 
-  BellRing, 
-  Terminal, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  AlertTriangle 
+  AlertTriangle, 
+  Compass,
+  ArrowRight
 } from "lucide-react"
 
 // Import the OnboardingChecklist component dynamically to avoid hook issues
@@ -53,7 +47,8 @@ const Dashboard = () => {
   const [isUpdating, setIsUpdating] = useState(false)
   const [activeFilloutForm, setActiveFilloutForm] = useState(null)
   const [dashboardContent, setDashboardContent] = useState(false)
-  const [activeTab, setActiveTab] = useState("overview")
+  const [showFullOnboarding, setShowFullOnboarding] = useState(false)
+  const [activeSection, setActiveSection] = useState("programs")
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -113,16 +108,16 @@ const Dashboard = () => {
   // Show loading screen while data is loading
   if (isUserLoading || isLoading) {
     return (
-      <Layout title="xFoundry Dashboard">
+      <Layout title="xFoundry Hub">
         <div className="flex flex-col gap-6 mt-10">
-          <Skeleton className="h-[50px] w-[250px]" />
+          <Skeleton className="h-[30px] w-[280px] rounded" />
           
           <div className="flex flex-col gap-6">
-            <Skeleton className="h-[250px] w-full rounded-xl" />
+            <Skeleton className="h-[80px] w-full rounded-lg" />
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Skeleton className="h-[150px] rounded-xl" />
-              <Skeleton className="h-[150px] rounded-xl" />
-              <Skeleton className="h-[150px] rounded-xl" />
+              <Skeleton className="h-[250px] rounded-lg" />
+              <Skeleton className="h-[250px] rounded-lg" />
+              <Skeleton className="h-[250px] rounded-lg" />
             </div>
           </div>
         </div>
@@ -133,7 +128,7 @@ const Dashboard = () => {
   // Show error message if there's an error
   if (error) {
     return (
-      <Layout title="xFoundry Dashboard">
+      <Layout title="xFoundry Hub">
         <Alert variant="destructive" className="mt-6">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
@@ -183,6 +178,11 @@ const Dashboard = () => {
     }
   };
 
+  const handleCompletion = () => {
+    setShowFullOnboarding(false);
+    setDashboardContent(true);
+  };
+
   // Function to render individual cohort cards
   const renderCohortCard = (cohort) => {
     const initiativeName = cohort.initiativeDetails?.name || "Unknown Initiative";
@@ -204,7 +204,7 @@ const Dashboard = () => {
     };
     
     return (
-      <Card key={cohort.id} className="overflow-hidden">
+      <Card key={cohort.id} className="overflow-hidden h-full flex flex-col">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg">{initiativeName}</CardTitle>
           <div className="flex flex-wrap gap-2 mt-2">
@@ -234,6 +234,12 @@ const Dashboard = () => {
           </div>
         </CardHeader>
         
+        <CardContent className="flex-grow">
+          <p className="text-sm text-muted-foreground line-clamp-3">
+            {cohort.description || "Join this program to connect with mentors and build career skills."}
+          </p>
+        </CardContent>
+        
         <CardFooter className="pt-2 pb-4">
           <Button 
             className="w-full" 
@@ -250,7 +256,7 @@ const Dashboard = () => {
   
   // Main JSX content
   return (
-    <Layout title="xFoundry Dashboard" profile={profile}>
+    <Layout title="xFoundry Hub" profile={profile}>
       {/* Fillout form popup */}
       {activeFilloutForm && (
         <FilloutPopupEmbed
@@ -266,217 +272,75 @@ const Dashboard = () => {
         />
       )}
       
-      {/* Onboarding Checklist - Only render when we have profile data */}
-      {profile && (
+      {/* Full Onboarding Checklist - Only when shown */}
+      {profile && showFullOnboarding && (
         <OnboardingChecklist 
           profile={profile}
-          onComplete={() => setDashboardContent(true)}
+          onComplete={handleCompletion}
         />
       )}
       
-      {/* Dashboard Content - Only shown after onboarding is completed or skipped */}
-      {dashboardContent && (
-        <div className="space-y-8">
+      {/* Dashboard Content - Either condensed onboarding or full dashboard */}
+      {profile && !showFullOnboarding && (
+        <div className="space-y-8 pt-4">
+          {/* Condensed onboarding if not completed */}
+          {!dashboardContent && (
+            <OnboardingChecklistCondensed 
+              profile={profile}
+              onViewAll={() => setShowFullOnboarding(true)}
+              onComplete={handleCompletion}
+            />
+          )}
+          
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Your Hub</h1>
               <p className="text-muted-foreground">
-                Welcome back, {profile?.firstName || user?.name?.split(' ')[0] || 'Student'}
+                Welcome, {profile?.firstName || user?.name?.split(' ')[0] || 'Student'}
               </p>
             </div>
-            
-            <Tabs 
-              defaultValue="overview" 
-              className="w-full md:w-auto"
-              value={activeTab}
-              onValueChange={setActiveTab}
-            >
-              <TabsList className="grid w-full md:w-auto grid-cols-3">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="teams">Team</TabsTrigger>
-                <TabsTrigger value="programs">Programs</TabsTrigger>
-              </TabsList>
-            </Tabs>
           </div>
           
-          <div>
-            {activeTab === "overview" && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <Card className="col-span-2" id="profile">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <UserCircle className="h-5 w-5 text-primary" />
-                          <CardTitle className="text-xl">Profile Information</CardTitle>
-                        </div>
-                        <Button variant="outline" size="sm" onClick={handleEditClick}>
-                          Edit Profile
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <ProfileCard profile={profile} onEditClick={handleEditClick} />
-                    </CardContent>
-                  </Card>
-                  
-                  <Card id="notifications">
-                    <CardHeader>
-                      <div className="flex items-center gap-2">
-                        <BellRing className="h-5 w-5 text-primary" />
-                        <CardTitle className="text-xl">Notifications</CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center gap-4 rounded-lg border p-3">
-                        <div className="rounded-full bg-primary/10 p-1">
-                          <CheckCircle className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="flex-1 space-y-1">
-                          <p className="text-sm font-medium">Application Complete</p>
-                          <p className="text-xs text-muted-foreground">
-                            Your program application has been received
-                          </p>
-                        </div>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <XCircle className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      
-                      <div className="flex items-center gap-4 rounded-lg border p-3">
-                        <div className="rounded-full bg-amber-100 p-1">
-                          <Clock className="h-5 w-5 text-amber-600" />
-                        </div>
-                        <div className="flex-1 space-y-1">
-                          <p className="text-sm font-medium">Complete Your Profile</p>
-                          <p className="text-xs text-muted-foreground">
-                            Add your education details to see more programs
-                          </p>
-                        </div>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <XCircle className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card id="team-overview">
-                    <CardHeader>
-                      <div className="flex items-center gap-2">
-                        <Users className="h-5 w-5 text-primary" />
-                        <CardTitle className="text-xl">Team Status</CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {isTeamLoading ? (
-                        <div className="flex items-center justify-center py-8">
-                          <Skeleton className="h-32 w-full rounded-xl" />
-                        </div>
-                      ) : (
-                        teamData ? (
-                          <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <h3 className="font-medium text-primary">{teamData.name}</h3>
-                                <p className="text-sm text-muted-foreground">
-                                  {teamData.members?.filter(m => m.status === "Active").length || 0} active members
-                                </p>
-                              </div>
-                              <Button variant="ghost" size="sm" onClick={() => setActiveTab("teams")}>
-                                View Details
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-center py-8 text-muted-foreground">
-                            <p>You're not part of any team yet.</p>
-                            <Button variant="outline" className="mt-4">Join a Team</Button>
-                          </div>
-                        )
-                      )}
-                    </CardContent>
-                  </Card>
-                  
-                  <Card id="program-overview">
-                    <CardHeader>
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="h-5 w-5 text-primary" />
-                        <CardTitle className="text-xl">Available Programs</CardTitle>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      {profile.cohorts && profile.cohorts.length > 0 ? (
-                        <div className="space-y-4">
-                          <p className="text-sm text-muted-foreground">
-                            You have {profile.cohorts.length} programs available to join
-                          </p>
-                          <Button onClick={() => setActiveTab("programs")}>
-                            Browse Programs
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <p>No programs are currently available for your institution.</p>
-                          <p className="text-sm mt-2">Check back later for updates.</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+          {/* Main Content */}
+          <div className="space-y-8">
+            {/* Programs Section */}
+            <section id="programs" className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Compass className="h-5 w-5 text-primary" />
+                  <h2 className="text-xl font-semibold">Available Programs</h2>
                 </div>
               </div>
-            )}
-            
-            {activeTab === "teams" && (
-              <div className="space-y-6" id="teams">
+              
+              {profile.cohorts && profile.cohorts.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {profile.cohorts.map(cohort => renderCohortCard(cohort))}
+                </div>
+              ) : (
                 <Card>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-xl">Your Team</CardTitle>
-                    </div>
-                    <CardDescription>
-                      View and manage your team information
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {isTeamLoading ? (
-                      <Skeleton className="h-48 w-full" />
-                    ) : (
-                      <TeamCard team={teamData} />
-                    )}
+                  <CardContent className="text-center py-12 text-muted-foreground italic">
+                    <p>No programs are currently available for your institution.</p>
+                    <p className="text-sm mt-2">Check back later for updates.</p>
                   </CardContent>
                 </Card>
-              </div>
-            )}
+              )}
+            </section>
             
-            {activeTab === "programs" && (
-              <div className="space-y-6" id="programs">
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-xl">Available Programs</CardTitle>
-                    </div>
-                    <CardDescription>
-                      Browse and apply for programs available to you
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {profile.cohorts && profile.cohorts.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {profile.cohorts.map(cohort => renderCohortCard(cohort))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-12 text-muted-foreground italic">
-                        No programs are currently available for your institution. Check back later for updates.
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+            {/* Team Section */}
+            <section id="teams" className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  <h2 className="text-xl font-semibold">Your Team</h2>
+                </div>
               </div>
-            )}
+              
+              {isTeamLoading ? (
+                <Skeleton className="h-48 w-full rounded-lg" />
+              ) : (
+                <TeamCard team={teamData} />
+              )}
+            </section>
           </div>
           
           {isEditModalOpen && (

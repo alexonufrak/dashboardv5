@@ -6,15 +6,15 @@ import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0/client"
 
 import DashboardSidebar from "./DashboardSidebar"
-import ResourceToolbarNew from "./ResourceToolbarNew"
 import Breadcrumbs from "./Breadcrumbs"
 
-const Layout = ({ children, title = "xFoundry Student Dashboard", profile }) => {
+const Layout = ({ children, title = "xFoundry Hub", profile }) => {
   const [currentYear, setCurrentYear] = useState("")
   const router = useRouter()
   const { user } = useUser()
   const isDashboard = router.pathname === "/dashboard" || router.pathname === "/profile"
   const showSidebar = isDashboard && user
+  const showBreadcrumbs = router.pathname !== "/dashboard" && showSidebar
 
   useEffect(() => {
     setCurrentYear(new Date().getFullYear())
@@ -24,22 +24,19 @@ const Layout = ({ children, title = "xFoundry Student Dashboard", profile }) => 
     <>
       <Head>
         <title>{title}</title>
-        <meta name="description" content="xFoundry Student Dashboard - Empowering education through technology" />
+        <meta name="description" content="xFoundry Hub - Empowering education through technology" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <div className="min-h-screen bg-background">
-        {/* Resources Toolbar - only shown when logged in */}
-        {showSidebar && <ResourceToolbarNew />}
-        
         {/* Sidebar - only shown on protected pages */}
         {showSidebar && <DashboardSidebar profile={profile} />}
         
         {/* Main Content */}
-        <main className={`flex-1 ${showSidebar ? 'md:ml-64 pt-12' : 'pt-4'}`}>
-          <div className="container max-w-7xl mx-auto px-4 md:px-6">
-            {showSidebar && <Breadcrumbs />}
+        <main className={`flex-1 ${showSidebar ? 'md:ml-64' : ''} pt-4`}>
+          <div className="container max-w-6xl mx-auto px-4 md:px-6">
+            {showBreadcrumbs && <Breadcrumbs />}
             {children}
           </div>
         </main>

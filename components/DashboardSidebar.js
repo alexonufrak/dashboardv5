@@ -13,18 +13,19 @@ import {
   SheetContent, 
   SheetTrigger 
 } from "@/components/ui/sheet"
+import { Badge } from "@/components/ui/badge"
 
 import { 
-  LayoutDashboard, 
-  User, 
+  Home,
+  Compass,
   Users, 
-  BookOpen, 
-  Calendar, 
-  Settings, 
+  User,
   LogOut, 
   Menu, 
-  MessageSquare,
-  Bell
+  ExternalLink,
+  Edit,
+  CheckCircle,
+  XCircle
 } from "lucide-react"
 
 const DashboardSidebar = ({ profile }) => {
@@ -42,31 +43,36 @@ const DashboardSidebar = ({ profile }) => {
       .toUpperCase()
   }
 
+  const isProfileComplete = profile?.isProfileComplete || false
+
   const links = [
     {
       href: "/dashboard",
-      label: "Dashboard",
-      icon: <LayoutDashboard className="h-5 w-5" />
+      label: "Hub",
+      icon: <Home className="h-5 w-5" />
     },
     {
-      href: "/profile",
-      label: "Profile",
-      icon: <User className="h-5 w-5" />
+      href: "#programs",
+      label: "Programs",
+      icon: <Compass className="h-5 w-5" />
     },
     {
       href: "#teams",
       label: "My Team",
       icon: <Users className="h-5 w-5" />
+    }
+  ]
+  
+  const externalLinks = [
+    {
+      href: "https://connexions.xfoundry.org",
+      label: "ConneXions Community",
+      icon: <ExternalLink className="h-4 w-4" />
     },
     {
-      href: "#programs",
-      label: "Programs",
-      icon: <BookOpen className="h-5 w-5" />
-    },
-    {
-      href: "#calendar",
-      label: "Calendar",
-      icon: <Calendar className="h-5 w-5" />
+      href: "https://xfoundry.org",
+      label: "xFoundry Website",
+      icon: <ExternalLink className="h-4 w-4" />
     }
   ]
 
@@ -98,61 +104,123 @@ const DashboardSidebar = ({ profile }) => {
       </Link>
     )
   }
+  
+  const renderExternalLink = (link) => (
+    <a
+      key={link.label}
+      href={link.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+    >
+      {link.label}
+      {link.icon}
+    </a>
+  )
+
+  const renderProfileSection = () => (
+    <div className="px-3 pb-5 border-b">
+      <div className="flex flex-col items-center pt-5">
+        <Avatar className="h-20 w-20 mb-3">
+          <AvatarImage src={user?.picture} alt={user?.name || "Profile"} />
+          <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
+        </Avatar>
+        
+        <div className="text-center mb-2">
+          <h3 className="font-semibold">{profile?.firstName} {profile?.lastName}</h3>
+          <p className="text-xs text-muted-foreground">{user?.email}</p>
+        </div>
+        
+        <div className="w-full">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs font-medium">Profile Status</span>
+            <Link href="/dashboard">
+              <Button variant="ghost" size="sm" className="h-7 px-2">
+                <Edit className="h-3.5 w-3.5 mr-1" />
+                <span className="text-xs">Edit</span>
+              </Button>
+            </Link>
+          </div>
+          
+          <div className="flex items-center gap-2 text-xs mb-2">
+            {isProfileComplete ? (
+              <Badge variant="outline" className="flex items-center gap-1 w-full justify-center py-1 bg-green-50 text-green-700 border-green-200">
+                <CheckCircle className="h-3 w-3" />
+                Complete
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="flex items-center gap-1 w-full justify-center py-1 bg-amber-50 text-amber-700 border-amber-200">
+                <XCircle className="h-3 w-3" />
+                Incomplete
+              </Badge>
+            )}
+          </div>
+          
+          <div className="text-xs space-y-1 mt-3">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Institution</span>
+              <span className="font-medium">{profile?.institutionName || "Not specified"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Degree</span>
+              <span className="font-medium">{profile?.degreeType || "Not specified"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Graduation</span>
+              <span className="font-medium">{profile?.graduationYear || "Not specified"}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 
   const renderSidebarContent = () => (
     <div className="flex h-full flex-col">
-      <div className="px-3 py-2">
-        <div className="flex items-center justify-between mb-8 mt-2">
-          <h2 className="text-lg font-semibold tracking-tight">
-            xFoundry
-          </h2>
-          <div className="flex gap-1">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary"></span>
-            </Button>
-            <Button variant="ghost" size="icon">
-              <MessageSquare className="h-5 w-5" />
-            </Button>
-          </div>
+      <div className="px-6 py-3 border-b flex items-center justify-between">
+        <h2 className="text-xl font-bold tracking-tight text-primary">
+          xFoundry Hub
+        </h2>
+        
+        <div className="md:hidden">
+          <Button variant="ghost" size="icon" onClick={() => setOpenMobile(false)}>
+            <XCircle className="h-5 w-5" />
+          </Button>
         </div>
-        
-        <div className="mb-4 flex items-center gap-4 px-1">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src={user?.picture} alt={user?.name || "User"} />
-            <AvatarFallback>{getInitials()}</AvatarFallback>
-          </Avatar>
-          <div className="space-y-1">
-            <h3 className="text-sm font-medium leading-none">
-              {user?.name || "User"}
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              {user?.email || ""}
-            </p>
-          </div>
-        </div>
-        
-        <Separator className="mb-4" />
-        
+      </div>
+      
+      {/* Profile Section */}
+      {profile && renderProfileSection()}
+      
+      {/* Navigation Links */}
+      <div className="px-3 py-5">
+        <p className="text-xs font-medium text-muted-foreground mb-2 pl-3">
+          NAVIGATION
+        </p>
         <div className="space-y-1">
-          <p className="text-xs font-medium text-muted-foreground mb-2 pl-3">
-            MENU
-          </p>
           {links.map(renderNavLink)}
         </div>
       </div>
       
-      <div className="mt-auto px-3 py-2">
-        <Separator className="mb-4" />
+      {/* External Links */}
+      <div className="px-3 py-2 border-t mt-auto">
+        <p className="text-xs font-medium text-muted-foreground mb-2 pl-3">
+          LINKS
+        </p>
         <div className="space-y-1">
-          <Link
-            href="/api/auth/logout"
-            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <LogOut className="h-5 w-5" />
-            Sign Out
-          </Link>
+          {externalLinks.map(renderExternalLink)}
         </div>
+      </div>
+      
+      {/* Sign Out */}
+      <div className="px-3 py-4 border-t">
+        <Link
+          href="/api/auth/logout"
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <LogOut className="h-5 w-5" />
+          Sign Out
+        </Link>
       </div>
     </div>
   )
@@ -171,13 +239,13 @@ const DashboardSidebar = ({ profile }) => {
       
       {/* Mobile Sidebar */}
       <Sheet open={openMobile} onOpenChange={setOpenMobile}>
-        <SheetContent side="left" className="p-0">
+        <SheetContent side="left" className="p-0 max-w-[300px]">
           {renderSidebarContent()}
         </SheetContent>
       </Sheet>
       
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex h-screen w-64 flex-col border-r bg-background fixed left-0 top-0">
+      <div className="hidden md:flex h-screen w-64 flex-col border-r bg-background fixed left-0 top-0 overflow-y-auto">
         {renderSidebarContent()}
       </div>
     </>
