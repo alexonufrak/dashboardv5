@@ -24,47 +24,25 @@ const Layout = ({ children, title = "xFoundry Student Dashboard" }) => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div style={{
-        ...styles.pageContainer,
-        paddingTop: isDashboard ? "30px" : "0"
-      }}>
+      <div className="flex flex-col min-h-screen">
         {/* Resources Toolbar - only shown on dashboard */}
         {isDashboard && <ResourcesToolbar />}
         
         {/* Main Navbar */}
         <Navbar />
 
-        <main style={styles.mainContent}>{children}</main>
+        <main className="flex-1 container mx-auto max-w-7xl p-4 md:p-6">
+          {children}
+        </main>
 
-        <footer style={styles.footer}>
-          <p>© {currentYear} xFoundry Education Platform. All rights reserved.</p>
+        <footer className="w-full py-4 border-t border-border bg-card text-center mt-8">
+          <p className="text-sm text-muted-foreground">
+            © {currentYear} xFoundry Education Platform. All rights reserved.
+          </p>
         </footer>
       </div>
     </>
   )
-}
-
-const styles = {
-  pageContainer: {
-    display: "flex",
-    flexDirection: "column",
-    minHeight: "100vh",
-  },
-  mainContent: {
-    flex: 1,
-    maxWidth: "1200px",
-    margin: "0 auto",
-    padding: "20px",
-    width: "100%",
-  },
-  footer: {
-    borderTop: "1px solid var(--color-light)",
-    backgroundColor: "var(--color-white)",
-    color: "var(--color-secondary)",
-    textAlign: "center",
-    padding: "1rem 0",
-    marginTop: "2rem",
-  },
 }
 
 export default Layout

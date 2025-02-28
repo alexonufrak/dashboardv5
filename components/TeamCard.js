@@ -1,5 +1,8 @@
 // components/TeamCard.js
 import { useState } from "react"
+import { Card, CardHeader, CardContent } from "./ui/card"
+import { Button } from "./ui/button"
+import { ChevronDown, ChevronUp, Users, Medal } from "lucide-react"
 
 const TeamCard = ({ team }) => {
   const [expanded, setExpanded] = useState(false)
@@ -7,9 +10,11 @@ const TeamCard = ({ team }) => {
   // If no team data is provided, show a not found message
   if (!team) {
     return (
-      <div style={styles.card}>
-        <p style={styles.notFound}>You are not currently part of any team.</p>
-      </div>
+      <Card className="mb-5">
+        <CardContent className="py-6 text-center italic text-muted-foreground">
+          You are not currently part of any team.
+        </CardContent>
+      </Card>
     )
   }
   
@@ -17,159 +22,66 @@ const TeamCard = ({ team }) => {
   const activeMembers = team.members ? team.members.filter(member => member.status === "Active") : []
   
   return (
-    <div style={styles.card}>
-      <div style={styles.header}>
+    <Card className="mb-5 overflow-hidden">
+      <CardHeader className="p-4 sm:p-6 flex flex-row justify-between items-center">
         <div>
-          <h3 style={styles.teamName}>{team.name}</h3>
+          <h3 className="text-xl font-bold text-primary">{team.name}</h3>
           {team.points !== undefined && (
-            <p style={styles.teamPoints}>Team Points: <span style={styles.points}>{team.points || 0}</span></p>
+            <div className="flex items-center gap-1.5 text-muted-foreground mt-1">
+              <Medal className="h-4 w-4" />
+              <span>Team Points: <span className="font-medium text-foreground">{team.points || 0}</span></span>
+            </div>
           )}
         </div>
-        <button 
-          style={styles.expandButton} 
+        <Button 
+          variant="ghost"
+          size="icon"
           onClick={() => setExpanded(!expanded)}
           aria-label={expanded ? "Collapse team details" : "Expand team details"}
+          className="h-8 w-8 rounded-full"
         >
-          {expanded ? "−" : "+"}
-        </button>
-      </div>
+          {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
+      </CardHeader>
       
       {expanded && (
-        <div style={styles.expandedContent}>
-          <div style={styles.description}>
-            <h4 style={styles.sectionTitle}>Description</h4>
-            <p>{team.description || "No description available."}</p>
+        <CardContent className="p-4 sm:p-6 pt-0 space-y-6">
+          <div>
+            <h4 className="text-base font-semibold border-b border-border pb-2 mb-3">Description</h4>
+            <p className="text-sm text-muted-foreground">
+              {team.description || "No description available."}
+            </p>
           </div>
           
-          <div style={styles.members}>
-            <h4 style={styles.sectionTitle}>Team Members ({activeMembers.length})</h4>
+          <div>
+            <h4 className="text-base font-semibold border-b border-border pb-2 mb-3 flex items-center gap-1.5">
+              <Users className="h-4 w-4" />
+              <span>Team Members ({activeMembers.length})</span>
+            </h4>
+            
             {activeMembers.length > 0 ? (
-              <ul style={styles.membersList}>
+              <ul className="space-y-2 divide-y divide-border">
                 {activeMembers.map((member, index) => (
-                  <li key={member.id || index} style={styles.memberItem}>
-                    <div style={styles.memberInfo}>
-                      <span style={styles.memberName}>
+                  <li key={member.id || index} className="py-3 first:pt-0">
+                    <div>
+                      <span className="font-medium">
                         {member.name || member.email || "Unknown Member"}
-                        {member.isCurrentUser && <span style={styles.currentUser}> (You)</span>}
+                        {member.isCurrentUser && (
+                          <span className="italic text-primary ml-1">(You)</span>
+                        )}
                       </span>
                     </div>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p style={styles.noMembers}>No active team members found.</p>
+              <p className="italic text-muted-foreground">No active team members found.</p>
             )}
           </div>
-        </div>
+        </CardContent>
       )}
-    </div>
+    </Card>
   )
-}
-
-const styles = {
-  card: {
-    backgroundColor: "var(--color-white)",
-    borderRadius: "8px",
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-    overflow: "hidden",
-    marginBottom: "20px",
-  },
-  header: {
-    padding: "20px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderBottom: expanded => expanded ? "1px solid #eee" : "none",
-  },
-  teamName: {
-    fontSize: "1.4rem",
-    fontWeight: "bold",
-    color: "var(--color-primary)",
-    marginBottom: "8px",
-  },
-  teamPoints: {
-    fontSize: "1rem",
-    color: "var(--color-secondary)",
-  },
-  points: {
-    fontWeight: "bold",
-    color: "var(--color-dark)",
-  },
-  expandButton: {
-    width: "32px",
-    height: "32px",
-    borderRadius: "50%",
-    backgroundColor: "var(--color-light)",
-    border: "1px solid #ddd",
-    color: "var(--color-primary)",
-    fontSize: "1.5rem",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    outline: "none",
-    transition: "background-color 0.2s ease",
-    padding: 0,
-    lineHeight: 1,
-  },
-  expandedContent: {
-    padding: "20px",
-  },
-  description: {
-    marginBottom: "20px",
-  },
-  sectionTitle: {
-    fontSize: "1.1rem",
-    fontWeight: "bold",
-    marginBottom: "10px",
-    borderBottom: "1px solid #eee",
-    paddingBottom: "8px",
-  },
-  members: {},
-  membersList: {
-    listStyleType: "none",
-    padding: 0,
-  },
-  memberItem: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "12px 0",
-    borderBottom: "1px solid #f0f0f0",
-  },
-  memberInfo: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  memberName: {
-    fontWeight: "600",
-  },
-  currentUser: {
-    fontStyle: "italic",
-    color: "var(--color-primary)",
-  },
-  memberRole: {
-    fontSize: "0.9rem",
-    color: "var(--color-secondary)",
-  },
-  memberPoints: {},
-  pointsLabel: {
-    fontSize: "0.9rem",
-    color: "var(--color-secondary)",
-  },
-  pointsValue: {
-    fontWeight: "bold",
-  },
-  notFound: {
-    padding: "20px",
-    textAlign: "center",
-    color: "var(--color-secondary)",
-    fontStyle: "italic",
-  },
-  noMembers: {
-    fontStyle: "italic",
-    color: "var(--color-secondary)",
-  },
 }
 
 export default TeamCard
