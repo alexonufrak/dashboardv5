@@ -38,10 +38,10 @@ export default function Home() {
             <div className="flex flex-col justify-center space-y-8">
               <div className="space-y-6">
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl/none text-primary">
-                  Your Academic Journey Starts Here
+                  Break Down Silos, Build Better Solutions
                 </h1>
                 <p className="max-w-[600px] text-gray-500 md:text-xl lg:text-2xl/relaxed">
-                  xFoundry connects students with opportunities, resources, and networks to help you thrive in your educational and professional path.
+                  xFoundry brings diverse perspectives together through multidisciplinary collaboration, hands-on experience, and targeted competitions to tackle global challenges.
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -93,13 +93,13 @@ export default function Home() {
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
               <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary">
-                Features
+                TEAMS Philosophy
               </div>
               <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-primary">
-                Empowering Students
+                Multidisciplinary Collaboration
               </h2>
               <p className="max-w-[900px] text-gray-500 md:text-xl/relaxed lg:text-center">
-                xFoundry provides all the tools you need to discover opportunities, connect with peers and mentors, and build your future.
+                The most innovative solutions emerge when multiple disciplines intersect. xFoundry's unique approach breaks down academic silos to tackle global challenges from every angle.
               </p>
             </div>
           </div>
@@ -110,11 +110,11 @@ export default function Home() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <RocketIcon className="h-5 w-5" />
                 </div>
-                <CardTitle className="mt-4">Discover Opportunities</CardTitle>
+                <CardTitle className="mt-4">Targeted Competitions</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-500">
-                  Access curated programs, internships, and resources specific to your institution and interests.
+                  Engage in real-world challenges that push boundaries and develop your skills through hands-on experience and innovation.
                 </p>
               </CardContent>
             </Card>
@@ -124,11 +124,11 @@ export default function Home() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Users className="h-5 w-5" />
                 </div>
-                <CardTitle className="mt-4">Connect With Others</CardTitle>
+                <CardTitle className="mt-4">Cross-Disciplinary Teams</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-500">
-                  Build relationships with fellow students, mentors, and professionals in your field of interest.
+                  Collaborate with peers from diverse academic backgrounds to create innovative solutions that wouldn't be possible within a single discipline.
                 </p>
               </CardContent>
             </Card>
@@ -138,11 +138,11 @@ export default function Home() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <GraduationCap className="h-5 w-5" />
                 </div>
-                <CardTitle className="mt-4">Track Your Progress</CardTitle>
+                <CardTitle className="mt-4">Resource Matrix</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-500">
-                  Manage applications, track your participation, and build your professional portfolio all in one place.
+                  Access a comprehensive network of tools, mentors, and frameworks designed to help your team succeed in addressing complex global challenges.
                 </p>
               </CardContent>
             </Card>
@@ -155,39 +155,39 @@ export default function Home() {
         <div className="container grid items-center justify-center gap-4 px-4 md:px-6 lg:grid-cols-2 lg:gap-10">
           <div className="space-y-4">
             <div className="inline-block rounded-lg bg-primary/10 px-3 py-1 text-sm text-primary">
-              Getting Started
+              How It Works
             </div>
             <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight text-primary">
-              Join xFoundry in Three Simple Steps
+              Join xFoundry and Make an Impact
             </h2>
             <p className="max-w-[600px] text-gray-500 md:text-xl/relaxed">
-              Our streamlined onboarding process makes it easy to get started and discover valuable opportunities.
+              Our unique approach combines multidisciplinary collaboration, hands-on experience, and targeted competitions to prepare you to tackle global challenges.
             </p>
             <div className="space-y-4 mt-6">
               <div className="flex items-start gap-4">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white">1</div>
                 <div>
-                  <h3 className="font-semibold">Sign Up with Your School Email</h3>
+                  <h3 className="font-semibold">Join a Multidisciplinary Team</h3>
                   <p className="text-sm text-gray-500">
-                    We'll verify your institution to provide you with relevant opportunities
+                    Collaborate with students from different academic backgrounds to bring diverse perspectives together
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white">2</div>
                 <div>
-                  <h3 className="font-semibold">Complete Your Profile</h3>
+                  <h3 className="font-semibold">Engage in Targeted Competitions</h3>
                   <p className="text-sm text-gray-500">
-                    Tell us about your interests, skills, and goals for a personalized experience
+                    Work on real-world challenges designed to develop innovative solutions to global problems
                   </p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white">3</div>
                 <div>
-                  <h3 className="font-semibold">Explore Your Hub</h3>
+                  <h3 className="font-semibold">Access the Resource Matrix</h3>
                   <p className="text-sm text-gray-500">
-                    Discover programs, connect with your team, and access resources in your dashboard
+                    Leverage our comprehensive network of tools, mentors, and frameworks to help your team succeed
                   </p>
                 </div>
               </div>
@@ -219,10 +219,10 @@ export default function Home() {
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-primary">
-                Join Thousands of Students
+                Breaking Down Academic Silos
               </h2>
               <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed">
-                Hear from students who have used xFoundry to advance their academic and professional journeys.
+                Hear from students who have collaborated across disciplines to create innovative solutions to real-world challenges.
               </p>
             </div>
           </div>
@@ -241,7 +241,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-600">
-                  "xFoundry helped me discover internship opportunities I wouldn't have found otherwise. The personalized approach made all the difference in my career journey."
+                  "Working with students from different disciplines opened my eyes to new perspectives. Our team created solutions that would have been impossible if we all studied the same field."
                 </p>
               </CardContent>
             </Card>
@@ -259,7 +259,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-600">
-                  "The mentoring connections I made through xFoundry were invaluable. I'm now working at my dream company thanks to the relationships I built on the platform."
+                  "Our targeted competition pushed us to develop a real-world solution to a complex problem. The multidisciplinary approach helped me apply my business skills in ways I never imagined."
                 </p>
               </CardContent>
             </Card>
@@ -277,7 +277,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-gray-600">
-                  "Being able to see opportunities specifically for my university and field of study saved me so much time. xFoundry has become an essential resource for my academic journey."
+                  "The resource matrix provided my team with everything we needed to succeed. Having access to mentors from different industries helped us create a truly innovative engineering solution."
                 </p>
               </CardContent>
             </Card>
@@ -286,25 +286,25 @@ export default function Home() {
       </section>
       
       {/* CTA Section */}
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-primary">
+      <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-br from-primary to-primary-dark">
         <div className="container px-4 md:px-6">
-          <div className="flex flex-col items-center justify-center space-y-6 text-center">
-            <div className="space-y-3 text-white">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-                Ready to Start Your Journey?
+          <div className="flex flex-col items-center justify-center space-y-8 text-center">
+            <div className="space-y-4">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-white drop-shadow-sm">
+                Ready to Tackle Global Challenges?
               </h2>
-              <p className="mx-auto max-w-[700px] text-white md:text-xl font-medium">
-                Join xFoundry today and connect with opportunities, mentors, and resources that will shape your future.
+              <p className="mx-auto max-w-[700px] text-white md:text-xl font-medium drop-shadow-sm">
+                Join xFoundry today to collaborate across disciplines and develop innovative solutions through our unique TEAMS approach.
               </p>
             </div>
-            <div className="space-x-4 pt-2">
-              <Link href="/signup">
-                <Button size="lg" className="h-12 px-8 bg-white text-primary hover:bg-white/90 font-semibold text-base shadow-md">
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 pt-2 w-full max-w-md">
+              <Link href="/signup" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full h-12 px-8 bg-white text-primary hover:bg-gray-100 font-semibold text-base shadow-lg">
                   Create Your Account
                 </Button>
               </Link>
-              <Link href="/login">
-                <Button size="lg" variant="outline" className="h-12 px-8 border-white text-white hover:bg-white/20 font-semibold text-base shadow-md">
+              <Link href="/login" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full h-12 px-8 border-white text-white hover:bg-primary-dark/50 font-semibold text-base shadow-md">
                   Sign In
                 </Button>
               </Link>

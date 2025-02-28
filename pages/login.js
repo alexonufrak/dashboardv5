@@ -290,48 +290,48 @@ export default function Login() {
           </div>
           
           {/* Right content - Benefits */}
-          <div className="w-full md:w-1/2 bg-gradient-to-br from-primary to-primary/90 p-8 text-white">
+          <div className="w-full md:w-1/2 bg-gradient-to-br from-primary to-primary-dark p-8 text-white">
             <div className="h-full flex flex-col">
-              <h2 className="text-2xl font-bold mb-6">Why Join xFoundry?</h2>
+              <h2 className="text-2xl font-bold mb-6 drop-shadow-sm">The TEAMS Philosophy</h2>
               
               <ul className="space-y-6 my-8">
-                <li className="flex">
-                  <div className="rounded-full bg-white/20 p-1.5 mr-4 h-8 w-8 flex items-center justify-center flex-shrink-0">
+                <li className="flex items-start">
+                  <div className="rounded-full bg-white/30 p-1.5 mr-4 h-8 w-8 flex items-center justify-center flex-shrink-0 shadow-sm">
                     <CheckCircle className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Access Exclusive Programs</h3>
-                    <p className="text-white text-sm">Discover opportunities curated for your profile and institution</p>
+                    <h3 className="font-semibold mb-1 drop-shadow-sm">Multidisciplinary Collaboration</h3>
+                    <p className="text-white text-sm drop-shadow-sm">Break down academic silos by bringing diverse perspectives together to innovate</p>
                   </div>
                 </li>
                 
-                <li className="flex">
-                  <div className="rounded-full bg-white/20 p-1.5 mr-4 h-8 w-8 flex items-center justify-center flex-shrink-0">
+                <li className="flex items-start">
+                  <div className="rounded-full bg-white/30 p-1.5 mr-4 h-8 w-8 flex items-center justify-center flex-shrink-0 shadow-sm">
                     <CheckCircle className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Connect With Mentors</h3>
-                    <p className="text-white text-sm">Build relationships with industry professionals and peers</p>
+                    <h3 className="font-semibold mb-1 drop-shadow-sm">Targeted Competitions</h3>
+                    <p className="text-white text-sm drop-shadow-sm">Engage in real-world challenges designed to develop solutions to global problems</p>
                   </div>
                 </li>
                 
-                <li className="flex">
-                  <div className="rounded-full bg-white/20 p-1.5 mr-4 h-8 w-8 flex items-center justify-center flex-shrink-0">
+                <li className="flex items-start">
+                  <div className="rounded-full bg-white/30 p-1.5 mr-4 h-8 w-8 flex items-center justify-center flex-shrink-0 shadow-sm">
                     <CheckCircle className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-1">Track Your Progress</h3>
-                    <p className="text-white text-sm">Manage your application status and program participation</p>
+                    <h3 className="font-semibold mb-1 drop-shadow-sm">Resource Matrix</h3>
+                    <p className="text-white text-sm drop-shadow-sm">Access tools, mentors, and frameworks that help your team succeed</p>
                   </div>
                 </li>
               </ul>
               
               <div className="mt-auto">
-                <div className="bg-white/20 rounded-lg p-4">
-                  <p className="text-sm italic text-white">
-                    "xFoundry helped me discover internship opportunities I wouldn't have found otherwise. The personalized approach made all the difference in my career journey."
+                <div className="bg-white/30 rounded-lg p-5 shadow-md">
+                  <p className="text-sm italic text-white drop-shadow-sm">
+                    "xFoundry's multidisciplinary approach taught me how to collaborate with people from different fields. The innovative solutions we created would have been impossible in academic silos."
                   </p>
-                  <p className="text-sm font-medium mt-2 text-white">— Maria C., Computer Science Student</p>
+                  <p className="text-sm font-medium mt-2 text-white drop-shadow-sm">— Maria C., Computer Science Student</p>
                 </div>
               </div>
             </div>

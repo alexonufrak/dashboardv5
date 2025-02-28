@@ -6,6 +6,13 @@ module.exports = {
   ],
   theme: {
   	extend: {
+      colors: {
+        primary: {
+          DEFAULT: "#0056b3",
+          dark: "#004085",
+          light: "#0077cc"
+        }
+      },
   		keyframes: {
   			'accordion-down': {
   				from: {
