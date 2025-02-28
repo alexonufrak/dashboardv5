@@ -48,16 +48,29 @@ const Layout = ({ children, title = "xFoundry Hub", profile, onEditClick }) => {
           </div>
         )}
         
-        {/* Sidebar - only shown on protected pages */}
-        {showSidebar && <DashboardSidebar profile={profile} onEditClick={onEditClick} />}
-        
-        {/* Main Content */}
-        <main className={`flex-1 ${showSidebar ? 'md:ml-64' : ''} ${showSidebar ? 'pt-[60px] md:pt-4' : 'pt-4'}`}>
-          <div className="container max-w-6xl mx-auto px-4 md:px-6">
-            {showBreadcrumbs && <Breadcrumbs />}
-            {children}
+        {showSidebar ? (
+          <div className="flex flex-1 relative">
+            {/* Sidebar - only shown on protected pages */}
+            <DashboardSidebar profile={profile} onEditClick={onEditClick} />
+            
+            {/* Main Content with sidebar */}
+            <div className="flex-1 w-full">
+              <main className={`w-full ${showSidebar ? 'md:ml-64' : ''} ${showSidebar ? 'pt-[60px] md:pt-4' : 'pt-4'}`}>
+                <div className="max-w-6xl mx-auto px-4 md:px-6">
+                  {showBreadcrumbs && <Breadcrumbs />}
+                  {children}
+                </div>
+              </main>
+            </div>
           </div>
-        </main>
+        ) : (
+          /* Main Content without sidebar */
+          <main className="flex-1 pt-4">
+            <div className="container max-w-6xl mx-auto px-4 md:px-6">
+              {children}
+            </div>
+          </main>
+        )}
 
         {/* Footer with added padding */}
         <footer className={`border-t py-8 mt-8 text-center text-muted-foreground text-sm ${showSidebar ? 'md:ml-64' : ''}`}>
