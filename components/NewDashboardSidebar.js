@@ -28,7 +28,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger
-} from "@/components/ui/sidebar"
+} from "./ui/sidebar"
 
 const NewDashboardSidebar = ({ profile, onEditClick }) => {
   const router = useRouter()
