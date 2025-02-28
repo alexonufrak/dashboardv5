@@ -60,7 +60,7 @@ const ProperDashboardSidebar = ({ profile, onEditClick }) => {
       {/* Mobile trigger button - fixed position */}
       <div className="md:hidden fixed left-4 top-3 z-40">
         <SidebarTrigger 
-          className="h-10 w-10 rounded-full bg-white shadow-sm border"
+          className="h-10 w-10 rounded-full bg-white shadow-xs border"
         >
           <Menu className="h-5 w-5" />
         </SidebarTrigger>

@@ -1,267 +1,334 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-/* Custom Font Import */
-@font-face {
-  font-family: 'Hanken Grotesk';
-  src: url('/fonts/Hanken Grotesk Variable Font.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-  font-display: swap;
-}
+@plugin 'tailwindcss-animate';
 
-/* CSS Variables */
-:root {
-  /* xFoundry Brand Colors */
-  --color-primary: #24A9E0;    /* Curious Blue */
-  --color-secondary: #0E445A;  /* Eden */
-  --color-accent: #FFD200;     /* Gold */
-  
-  /* Utility Colors */
-  --color-success: #28a745;
-  --color-warning: #FFD200;    /* Using Gold for warnings */
-  --color-danger: #dc3545;
-  --color-light: #f8f9fa;
-  --color-dark: #0E445A;       /* Using Eden for dark color */
-  --color-white: #ffffff;
-  
-  /* Fonts */
-  --font-custom: 'Hanken Grotesk', sans-serif;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji",
-    "Segoe UI Emoji", "Segoe UI Symbol";
-}
+@custom-variant dark (&:is(.dark *));
 
-/* Reset Styles */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+@theme {
+  --color-primary: #24a9e0;
+  --color-primary-dark: #0e445a;
+  --color-primary-light: #55c4f1;
 
-body,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-p,
-ul,
-ol {
-  margin: 0;
-  padding: 0;
-}
+  --color-secondary: #0e445a;
+  --color-accent: #ffd200;
+  --color-eden: #0e445a;
+  --color-curious: #24a9e0;
+  --color-gold: #ffd200;
 
-/* Basic Element Styling */
-html {
-  font-size: 16px;
-  line-height: 1.5;
-}
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
 
-body {
-  font-family: var(--font-custom);
-  background-color: var(--color-light);
-  color: var(--color-dark);
-}
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
 
-a {
-  color: var(--color-primary);
-  text-decoration: none;
-  transition: color 0.3s ease;
-}
-
-a:hover {
-  color: #003d7a;
-}
-
-/* Typography */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  margin-bottom: 0.5em;
-  font-weight: 600;
-  line-height: 1.2;
-}
-
-h1 {
-  font-size: 2.5rem;
-}
-h2 {
-  font-size: 2rem;
-}
-h3 {
-  font-size: 1.75rem;
-}
-h4 {
-  font-size: 1.5rem;
-}
-h5 {
-  font-size: 1.25rem;
-}
-h6 {
-  font-size: 1rem;
-}
-
-/* Utility Classes */
-.container {
-  width: 100%;
-  padding-right: 15px;
-  padding-left: 15px;
-  margin-right: auto;
-  margin-left: auto;
-}
-
-@media (min-width: 576px) {
-  .container {
-    max-width: 540px;
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
   }
 }
 
-@media (min-width: 768px) {
-  .container {
-    max-width: 720px;
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
   }
 }
 
-@media (min-width: 992px) {
-  .container {
-    max-width: 960px;
+@layer utilities {
+  /* Custom Font Import */
+  @font-face {
+    font-family: 'Hanken Grotesk';
+    src: url('/fonts/Hanken Grotesk Variable Font.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
   }
-}
 
-@media (min-width: 1200px) {
-  .container {
-    max-width: 1140px;
+  /* CSS Variables */
+  :root {
+    /* xFoundry Brand Colors */
+    --color-primary: #24a9e0; /* Curious Blue */
+    --color-secondary: #0e445a; /* Eden */
+    --color-accent: #ffd200; /* Gold */
+
+    /* Utility Colors */
+    --color-success: #28a745;
+    --color-warning: #ffd200; /* Using Gold for warnings */
+    --color-danger: #dc3545;
+    --color-light: #f8f9fa;
+    --color-dark: #0e445a; /* Using Eden for dark color */
+    --color-white: #ffffff;
+
+    /* Fonts */
+    --font-custom: 'Hanken Grotesk', sans-serif;
+    --font-sans:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+      sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
   }
-}
 
-.card {
-  background-color: var(--color-white);
-  border-radius: 0.25rem;
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-  padding: 1rem;
-}
+  /* Reset Styles */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
 
-.btn {
-  display: inline-block;
-  font-weight: 400;
-  text-align: center;
-  vertical-align: middle;
-  user-select: none;
-  border: 1px solid transparent;
-  padding: 0.375rem 0.75rem;
-  font-size: 1rem;
-  line-height: 1.5;
-  border-radius: 0.25rem;
-  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow
-    0.15s ease-in-out;
-}
+  body,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  ul,
+  ol {
+    margin: 0;
+    padding: 0;
+  }
 
-.btn-primary {
-  color: var(--color-white);
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
-}
-
-.btn-primary:hover {
-  background-color: #004085;
-  border-color: #003d7a;
-}
-
-.form-control {
-  display: block;
-  width: 100%;
-  padding: 0.375rem 0.75rem;
-  font-size: 1rem;
-  line-height: 1.5;
-  color: var(--color-dark);
-  background-color: var(--color-white);
-  background-clip: padding-box;
-  border: 1px solid var(--color-secondary);
-  border-radius: 0.25rem;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-}
-
-.form-control:focus {
-  color: var(--color-dark);
-  background-color: var(--color-white);
-  border-color: #80bdff;
-  outline: 0;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-}
-
-.alert {
-  position: relative;
-  padding: 0.75rem 1.25rem;
-  margin-bottom: 1rem;
-  border: 1px solid transparent;
-  border-radius: 0.25rem;
-}
-
-.alert-success {
-  color: #155724;
-  background-color: #d4edda;
-  border-color: #c3e6cb;
-}
-
-.alert-warning {
-  color: #856404;
-  background-color: #fff3cd;
-  border-color: #ffeeba;
-}
-
-.alert-danger {
-  color: #721c24;
-  background-color: #f8d7da;
-  border-color: #f5c6cb;
-}
-
-/* Grid System */
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  margin-right: -15px;
-  margin-left: -15px;
-}
-
-.col {
-  flex-basis: 0;
-  flex-grow: 1;
-  max-width: 100%;
-  padding-right: 15px;
-  padding-left: 15px;
-}
-
-.col-6 {
-  flex: 0 0 50%;
-  max-width: 50%;
-}
-
-.col-4 {
-  flex: 0 0 33.333333%;
-  max-width: 33.333333%;
-}
-
-.col-3 {
-  flex: 0 0 25%;
-  max-width: 25%;
-}
-
-/* Responsive Utilities */
-@media (max-width: 768px) {
+  /* Basic Element Styling */
   html {
-    font-size: 14px;
+    font-size: 16px;
+    line-height: 1.5;
   }
 
-  .col-6,
-  .col-4,
-  .col-3 {
-    flex: 0 0 100%;
+  body {
+    font-family: var(--font-custom);
+    background-color: var(--color-light);
+    color: var(--color-dark);
+  }
+
+  a {
+    color: var(--color-primary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+
+  a:hover {
+    color: #003d7a;
+  }
+
+  /* Typography */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin-bottom: 0.5em;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+  }
+  h2 {
+    font-size: 2rem;
+  }
+  h3 {
+    font-size: 1.75rem;
+  }
+  h4 {
+    font-size: 1.5rem;
+  }
+  h5 {
+    font-size: 1.25rem;
+  }
+  h6 {
+    font-size: 1rem;
+  }
+
+  /* Utility Classes */
+  .container {
+    width: 100%;
+    padding-right: 15px;
+    padding-left: 15px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  @media (min-width: 576px) {
+    .container {
+      max-width: 540px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .container {
+      max-width: 720px;
+    }
+  }
+
+  @media (min-width: 992px) {
+    .container {
+      max-width: 960px;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .container {
+      max-width: 1140px;
+    }
+  }
+
+  .card {
+    background-color: var(--color-white);
+    border-radius: 0.25rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    padding: 1rem;
+  }
+
+  .btn {
+    display: inline-block;
+    font-weight: 400;
+    text-align: center;
+    vertical-align: middle;
+    user-select: none;
+    border: 1px solid transparent;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    border-radius: 0.25rem;
+    transition:
+      color 0.15s ease-in-out,
+      background-color 0.15s ease-in-out,
+      border-color 0.15s ease-in-out,
+      box-shadow 0.15s ease-in-out;
+  }
+
+  .btn-primary {
+    color: var(--color-white);
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+  .btn-primary:hover {
+    background-color: #004085;
+    border-color: #003d7a;
+  }
+
+  .form-control {
+    display: block;
+    width: 100%;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--color-dark);
+    background-color: var(--color-white);
+    background-clip: padding-box;
+    border: 1px solid var(--color-secondary);
+    border-radius: 0.25rem;
+    transition:
+      border-color 0.15s ease-in-out,
+      box-shadow 0.15s ease-in-out;
+  }
+
+  .form-control:focus {
+    color: var(--color-dark);
+    background-color: var(--color-white);
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  }
+
+  .alert {
+    position: relative;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    border-radius: 0.25rem;
+  }
+
+  .alert-success {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+  }
+
+  .alert-warning {
+    color: #856404;
+    background-color: #fff3cd;
+    border-color: #ffeeba;
+  }
+
+  .alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+  }
+
+  /* Grid System */
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -15px;
+    margin-left: -15px;
+  }
+
+  .col {
+    flex-basis: 0;
+    flex-grow: 1;
     max-width: 100%;
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+
+  .col-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+
+  .col-4 {
+    flex: 0 0 33.333333%;
+    max-width: 33.333333%;
+  }
+
+  .col-3 {
+    flex: 0 0 25%;
+    max-width: 25%;
+  }
+
+  /* Responsive Utilities */
+  @media (max-width: 768px) {
+    html {
+      font-size: 14px;
+    }
+
+    .col-6,
+    .col-4,
+    .col-3 {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
   }
 }
 

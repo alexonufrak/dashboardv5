@@ -33,7 +33,7 @@ export default function Home() {
   return (
     <Layout title="Welcome to xFoundry">
       {/* Hero Section */}
-      <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-gradient-to-br from-curious/5 to-eden/10">
+      <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-linear-to-br from-curious/5 to-eden/10">
         <div className="container px-4 md:px-6">
           <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
             <div className="flex flex-col justify-center space-y-8">
@@ -77,7 +77,7 @@ export default function Home() {
               </div>
             </div>
             <div className="mx-auto flex flex-col justify-center md:justify-end">
-              <div className="relative h-[450px] w-full overflow-hidden rounded-xl bg-white/10 backdrop-blur-sm border border-primary/20 shadow-xl">
+              <div className="relative h-[450px] w-full overflow-hidden rounded-xl bg-white/10 backdrop-blur-xs border border-primary/20 shadow-xl">
                 <div className="flex h-full items-center justify-center">
                   <img 
                     src="/placeholder.svg" 
@@ -290,14 +290,14 @@ export default function Home() {
       </section>
       
       {/* CTA Section */}
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-br from-curious to-eden">
+      <section className="w-full py-12 md:py-24 lg:py-32 bg-linear-to-br from-curious to-eden">
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-8 text-center">
             <div className="space-y-4">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-white drop-shadow-sm">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl text-white drop-shadow-xs">
                 Ready to Tackle Global Challenges?
               </h2>
-              <p className="mx-auto max-w-[700px] text-white md:text-xl font-medium drop-shadow-sm">
+              <p className="mx-auto max-w-[700px] text-white md:text-xl font-medium drop-shadow-xs">
                 Join xFoundry today to collaborate across disciplines and develop innovative solutions through our unique TEAMS approach.
               </p>
             </div>

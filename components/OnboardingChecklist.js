@@ -325,12 +325,12 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
                 disabled={step.id === 'register'}
               >
                 <div className="flex items-center p-4 bg-muted/30">
-                  <div className={`flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full mr-3 
+                  <div className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-full mr-3 
                     ${step.completed ? 'text-green-600' : 'text-primary'}`}>
                     {step.completed ? <CheckCircle className="h-7 w-7" /> : <Circle className="h-7 w-7" />}
                   </div>
                   
-                  <div className="flex-grow">
+                  <div className="grow">
                     <h3 className="text-base font-medium">{step.title}</h3>
                     <p className="text-sm text-muted-foreground">{step.description}</p>
                   </div>
@@ -338,7 +338,7 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
                   {hasContent && !step.completed && (
                     <AccordionTrigger 
                       onClick={() => handleAccordionChange(step.id)} 
-                      className="ml-2 flex-shrink-0 p-0"
+                      className="ml-2 shrink-0 p-0"
                     />
                   )}
                 </div>

@@ -119,7 +119,7 @@ const DashboardV2 = () => {
     return (
       <DashboardLayoutV2 title="xFoundry Hub">
         <div className="flex flex-col gap-6 mt-10">
-          <Skeleton className="h-[30px] w-[280px] rounded" />
+          <Skeleton className="h-[30px] w-[280px] rounded-sm" />
           
           <div className="flex flex-col gap-6">
             <Skeleton className="h-[80px] w-full rounded-lg" />
@@ -243,7 +243,7 @@ const DashboardV2 = () => {
           </div>
         </CardHeader>
         
-        <CardContent className="flex-grow">
+        <CardContent className="grow">
           <p className="text-sm text-muted-foreground line-clamp-3">
             {cohort.description || cohort.initiativeDetails?.description || 
              "Join this program to connect with mentors and build career skills."}

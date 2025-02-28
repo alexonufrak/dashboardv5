@@ -179,7 +179,7 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
                       value={profile.suggestedInstitution.id}
                       checked={formData.institutionId === profile.suggestedInstitution.id}
                       onChange={handleInputChange}
-                      className="rounded"
+                      className="rounded-sm"
                     />
                     <Label htmlFor="suggestedInstitution" className="font-medium cursor-pointer">
                       {profile.suggestedInstitution.name}
@@ -194,7 +194,7 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
                       value=""
                       checked={!formData.institutionId}
                       onChange={() => setFormData(prev => ({...prev, institutionId: null}))}
-                      className="rounded"
+                      className="rounded-sm"
                     />
                     <Label htmlFor="noInstitution" className="font-medium cursor-pointer">
                       None of the above / Other Institution

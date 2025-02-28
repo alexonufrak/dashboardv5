@@ -475,7 +475,7 @@ export default function SignUp() {
                         <Button 
                           onClick={handleGoogleSignup}
                           disabled={!formData.firstName || !formData.lastName || !formData.graduationYear || !formData.degreeType}
-                          className="h-12 md:flex-[2] bg-gold text-eden hover:bg-gold/90"
+                          className="h-12 md:flex-2 bg-gold text-eden hover:bg-gold/90"
                         >
                           <div className="flex items-center">
                             Create Account with Google

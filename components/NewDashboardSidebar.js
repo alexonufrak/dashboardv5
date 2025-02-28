@@ -61,7 +61,7 @@ const NewDashboardSidebar = ({ profile, onEditClick }) => {
       {/* Mobile trigger is handled by SidebarTrigger */}
       <div className="md:hidden fixed left-4 top-3 z-40">
         <button 
-          className="h-10 w-10 rounded-full bg-white flex items-center justify-center shadow-sm border"
+          className="h-10 w-10 rounded-full bg-white flex items-center justify-center shadow-xs border"
           onClick={() => {
             // Use a simple sheet toggle approach instead of SidebarProvider
             const sidebarEl = document.getElementById('mobile-sidebar')
