@@ -138,19 +138,18 @@ export default function Login() {
 
   return (
     <Layout title="Sign In - xFoundry">
-      <div className="flex min-h-[calc(100vh-100px)] w-full items-center justify-center py-10 px-4 md:px-6">
-        <div className="flex w-full max-w-4xl flex-col-reverse md:flex-row overflow-hidden rounded-xl shadow-xl">
-          {/* Left content - Login Form */}
-          <div className="w-full md:w-1/2 bg-white p-8">
+      <div className="flex min-h-[calc(100vh-100px)] w-full items-center justify-center py-10 px-4">
+        <div className="w-full max-w-md">
+          <Card className="p-6 md:p-8 shadow-md border-0 bg-white">
             <div className="space-y-6">
               <div className="space-y-2 text-center">
-                <h1 className="text-3xl font-bold tracking-tight text-primary">Welcome Back</h1>
-                <p className="text-muted-foreground">Sign in to your xFoundry account</p>
+                <h1 className="text-2xl font-bold tracking-tight text-primary">Sign In</h1>
+                <p className="text-muted-foreground text-sm">Enter your institutional email to continue</p>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Your Institutional Email</Label>
+                  <Label htmlFor="email">Institutional Email</Label>
                   <Input 
                     id="email"
                     type="email"
@@ -158,6 +157,7 @@ export default function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={isVerifying || isRedirecting}
+                    className="h-10"
                   />
                   {emailError && (
                     <p className="text-sm font-medium text-destructive">{emailError}</p>
@@ -169,7 +169,7 @@ export default function Login() {
                   <Button 
                     onClick={verifyEmailAndInstitution}
                     disabled={isVerifying || !email || isRedirecting}
-                    className="w-full"
+                    className="w-full h-10"
                   >
                     {isVerifying ? (
                       <div className="flex items-center">
@@ -280,62 +280,14 @@ export default function Login() {
                   </div>
                 </div>
                 
-                <div className="flex justify-center">
-                  <Button variant="outline" asChild>
+                <div className="text-center">
+                  <Button variant="outline" asChild className="w-full">
                     <a href="/signup">Create New Account</a>
                   </Button>
                 </div>
               </div>
             </div>
-          </div>
-          
-          {/* Right content - Benefits */}
-          <div className="w-full md:w-1/2 bg-gradient-to-br from-primary to-primary-dark p-8 text-white">
-            <div className="h-full flex flex-col">
-              <h2 className="text-2xl font-bold mb-6 drop-shadow-sm">The TEAMS Philosophy</h2>
-              
-              <ul className="space-y-6 my-8">
-                <li className="flex items-start">
-                  <div className="rounded-full bg-white/30 p-1.5 mr-4 h-8 w-8 flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <CheckCircle className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1 drop-shadow-sm">Multidisciplinary Collaboration</h3>
-                    <p className="text-white text-sm drop-shadow-sm">Break down academic silos by bringing diverse perspectives together to innovate</p>
-                  </div>
-                </li>
-                
-                <li className="flex items-start">
-                  <div className="rounded-full bg-white/30 p-1.5 mr-4 h-8 w-8 flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <CheckCircle className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1 drop-shadow-sm">Targeted Competitions</h3>
-                    <p className="text-white text-sm drop-shadow-sm">Engage in real-world challenges designed to develop solutions to global problems</p>
-                  </div>
-                </li>
-                
-                <li className="flex items-start">
-                  <div className="rounded-full bg-white/30 p-1.5 mr-4 h-8 w-8 flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <CheckCircle className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1 drop-shadow-sm">Resource Matrix</h3>
-                    <p className="text-white text-sm drop-shadow-sm">Access tools, mentors, and frameworks that help your team succeed</p>
-                  </div>
-                </li>
-              </ul>
-              
-              <div className="mt-auto">
-                <div className="bg-white/30 rounded-lg p-5 shadow-md">
-                  <p className="text-sm italic text-white drop-shadow-sm">
-                    "xFoundry's multidisciplinary approach taught me how to collaborate with people from different fields. The innovative solutions we created would have been impossible in academic silos."
-                  </p>
-                  <p className="text-sm font-medium mt-2 text-white drop-shadow-sm">— Maria C., Computer Science Student</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          </Card>
         </div>
       </div>
     </Layout>

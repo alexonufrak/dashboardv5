@@ -219,50 +219,52 @@ export default function SignUp() {
               value={currentStep === 1 ? "step1" : "step2"}
               className="w-full"
             >
-              {/* Progress Steps */}
-              <div className="mb-10 w-full px-4">
-                <div className="flex items-center justify-between relative">
-                  {/* Progress line connector */}
-                  <div className="absolute top-1/2 h-2 w-full -translate-y-1/2 bg-gray-100 rounded-full z-0"></div>
-                  
-                  {/* Active progress line */}
-                  <div 
-                    className="absolute top-1/2 h-2 -translate-y-1/2 bg-primary rounded-full z-10 transition-all duration-500 ease-in-out" 
-                    style={{ width: currentStep === 1 ? '0%' : '100%' }}
-                  ></div>
-                  
-                  {/* Step markers container */}
-                  <div className="relative z-20 w-full flex justify-between">
+              {/* Clean Minimal Progress Steps */}
+              <div className="mb-8 w-full max-w-xs mx-auto">
+                <div className="relative pt-4 pb-8">
+                  {/* Step Indicators */}
+                  <div className="flex justify-between">
                     {/* Step 1 */}
-                    <div className="flex flex-col items-center">
+                    <div className="text-center">
                       <div 
-                        className={`w-10 h-10 rounded-full flex items-center justify-center text-sm mb-2 transition-all duration-300 shadow-sm
+                        className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center text-sm mb-2 transition-all duration-300
                           ${currentStep >= 1 
-                            ? 'bg-primary text-white ring-4 ring-primary/20' 
-                            : 'bg-white text-gray-400 border border-gray-200'}`}
+                            ? 'bg-primary text-white' 
+                            : 'bg-gray-100 text-gray-400'}`}
                       >
                         1
                       </div>
-                      <span className={`text-sm font-medium transition-colors duration-300 ${currentStep >= 1 ? 'text-primary' : 'text-gray-500'}`}>
+                      <span className={`text-xs font-medium ${currentStep >= 1 ? 'text-primary' : 'text-gray-400'}`}>
                         Institution
                       </span>
                     </div>
                     
                     {/* Step 2 */}
-                    <div className="flex flex-col items-center">
+                    <div className="text-center">
                       <div 
-                        className={`w-10 h-10 rounded-full flex items-center justify-center text-sm mb-2 transition-all duration-300 shadow-sm
+                        className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center text-sm mb-2 transition-all duration-300
                           ${currentStep >= 2 
-                            ? 'bg-primary text-white ring-4 ring-primary/20' 
-                            : 'bg-white text-gray-400 border border-gray-200'}`}
+                            ? 'bg-primary text-white' 
+                            : 'bg-gray-100 text-gray-400'}`}
                       >
                         2
                       </div>
-                      <span className={`text-sm font-medium transition-colors duration-300 ${currentStep >= 2 ? 'text-primary' : 'text-gray-500'}`}>
+                      <span className={`text-xs font-medium ${currentStep >= 2 ? 'text-primary' : 'text-gray-400'}`}>
                         Profile
                       </span>
                     </div>
                   </div>
+                  
+                  {/* Connecting Line */}
+                  <div className="absolute h-0.5 bg-gray-200 top-8 left-12 right-12 -mt-[2px] -translate-y-1/2"></div>
+                  
+                  {/* Active Progress Line */}
+                  <div 
+                    className="absolute h-0.5 bg-primary top-8 left-12 -mt-[2px] -translate-y-1/2 transition-all duration-500 ease-in-out"
+                    style={{ 
+                      width: currentStep === 1 ? '0' : 'calc(100% - 48px)' // 24px padding on each side (48px total)
+                    }}
+                  ></div>
                 </div>
               </div>
               
