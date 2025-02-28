@@ -1,6 +1,5 @@
 import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0'
-import { getUserProfile } from '@/lib/airtable'
-import Airtable from 'airtable'
+import { getUserProfile, base } from '@/lib/airtable'
 
 /**
  * API handler to create a new team and add the user as a member
@@ -35,8 +34,7 @@ export default withApiAuthRequired(async function createTeamHandler(req, res) {
       return res.status(404).json({ error: 'User profile not found' })
     }
     
-    // Initialize Airtable
-    const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID)
+    // Use the imported base from lib/airtable.js
     
     // Get the Teams table ID from environment variables
     const teamsTableId = process.env.AIRTABLE_TEAMS_TABLE_ID

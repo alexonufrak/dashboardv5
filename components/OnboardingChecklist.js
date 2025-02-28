@@ -201,28 +201,44 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
 
   // Handle clicking a cohort card to apply
   const handleCohortApply = (cohort) => {
+    console.log("Applying to cohort:", cohort);
+    console.log("Cohort initiative details:", cohort.initiativeDetails);
+    
     // Check if initiative has participation type
     const participationType = cohort.initiativeDetails?.["Participation Type"] || "Individual"
+    console.log(`Participation type: ${participationType}`);
     
     if (participationType === "Team") {
+      console.log("Team participation type detected");
+      console.log("User teams:", userTeams);
+      
       if (userTeams.length === 0) {
         // User doesn't have a team, show team creation dialog
-        setActiveTeamCreateDialog(true)
+        console.log("No teams found, opening team creation dialog");
+        setActiveTeamCreateDialog(true);
+        
+        // Store the cohort for later use after team creation
+        setSelectedCohort(cohort.id);
       } else {
         // User has teams, show team selection dialog
+        console.log("User has teams, opening team selection dialog");
         setActiveTeamSelectDialog({
           cohort: cohort,
           teams: userTeams
-        })
+        });
       }
     } else {
       // Individual participation - use Fillout form
+      console.log("Individual participation type, using Fillout form");
       if (cohort && cohort["Application Form ID (Fillout)"]) {
+        console.log(`Using Fillout form ID: ${cohort["Application Form ID (Fillout)"]}`);
         setActiveFilloutForm({
           formId: cohort["Application Form ID (Fillout)"],
           cohortId: cohort.id,
           initiativeName: cohort.initiativeDetails?.name || "Program Application"
-        })
+        });
+      } else {
+        console.error("No Fillout form ID found for individual participation");
       }
     }
   }
@@ -233,12 +249,23 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     setUserTeams(prev => [...prev, team])
     setActiveTeamCreateDialog(false)
     
-    // If we have a pending team application, open the team selection dialog
+    console.log("Team created:", team);
+    
+    // If we have a pending team application, open the team selection dialog with the newly created team
     if (activeTeamSelectDialog) {
       setActiveTeamSelectDialog({
         ...activeTeamSelectDialog,
-        teams: [...userTeams, team]
-      })
+        teams: [team] // Prioritize the newly created team
+      });
+    } else if (selectedCohort) {
+      // If no active dialog but we have a selected cohort, find the cohort and open the team selection dialog
+      const cohort = profile.cohorts?.find(c => c.id === selectedCohort);
+      if (cohort) {
+        setActiveTeamSelectDialog({
+          cohort: cohort,
+          teams: [team]
+        });
+      }
     }
   }
 

@@ -42,31 +42,54 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
   // Fetch user's teams if not provided
   useEffect(() => {
     const fetchTeams = async () => {
+      // If teams are provided, use them
       if (teams && teams.length > 0) {
-        setUserTeams(teams)
-        return
+        console.log("Using provided teams:", teams);
+        setUserTeams(teams);
+        
+        // If there's only one team, select it by default
+        if (teams.length === 1) {
+          setSelectedTeamId(teams[0].id);
+        }
+        return;
       }
       
+      // Otherwise fetch teams from API
       try {
-        const response = await fetch('/api/teams')
+        setIsLoading(true);
+        const response = await fetch('/api/teams');
         if (response.ok) {
-          const data = await response.json()
-          setUserTeams(data.teams || [])
+          const data = await response.json();
+          const fetchedTeams = data.teams || [];
+          console.log("Fetched teams:", fetchedTeams);
+          
+          setUserTeams(fetchedTeams);
           
           // If user has only one team, select it by default
-          if (data.teams?.length === 1) {
-            setSelectedTeamId(data.teams[0].id)
+          if (fetchedTeams.length === 1) {
+            setSelectedTeamId(fetchedTeams[0].id);
           }
         }
       } catch (error) {
-        console.error('Error fetching teams:', error)
+        console.error('Error fetching teams:', error);
+        setError('Failed to load teams. Please try again.');
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
     
     if (open) {
-      fetchTeams()
+      fetchTeams();
     }
   }, [open, teams])
+  
+  // Update selected team when teams change
+  useEffect(() => {
+    // If we have teams but no selection, select the first one
+    if (userTeams.length > 0 && !selectedTeamId) {
+      setSelectedTeamId(userTeams[0].id);
+    }
+  }, [userTeams, selectedTeamId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -77,8 +100,23 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
       return
     }
     
+    // Validate cohort
+    if (!cohort || !cohort.id) {
+      setError('Invalid cohort data')
+      console.error('Missing cohort data:', cohort)
+      return
+    }
+    
+    // Don't submit if it's "create_new" option
+    if (selectedTeamId === 'create_new') {
+      handleOpenCreateTeam()
+      return
+    }
+    
     setIsSubmitting(true)
     setError('')
+    
+    console.log(`Submitting application for cohort ${cohort.id} with team ${selectedTeamId}`)
     
     try {
       // Create the application with the selected team
@@ -93,16 +131,19 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
         })
       })
       
+      // Get the response data
+      const responseData = await response.json()
+      
+      // Check if the request was successful
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to submit application')
+        throw new Error(responseData.error || responseData.details || 'Failed to submit application')
       }
       
-      const application = await response.json()
+      console.log('Application submitted successfully:', responseData)
       
       // Call the success callback
       if (onSubmit) {
-        onSubmit(application)
+        onSubmit(responseData)
       }
       
       // Reset and close
@@ -111,6 +152,7 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
         onClose()
       }
     } catch (error) {
+      console.error('Error submitting application:', error)
       setError(error.message || 'An error occurred while submitting your application')
     } finally {
       setIsSubmitting(false)
@@ -188,28 +230,42 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
                 Select your team <span className="text-red-500">*</span>
               </label>
               
-              {userTeams.length > 0 ? (
-                <Select 
-                  value={selectedTeamId} 
-                  onValueChange={setSelectedTeamId}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a team" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {userTeams.map(team => (
-                      <SelectItem key={team.id} value={team.id}>
-                        {team.name}
+              {isLoading ? (
+                <div className="flex flex-col space-y-2">
+                  <div className="h-10 bg-muted/30 animate-pulse rounded-md"></div>
+                  <p className="text-sm text-muted-foreground">Loading your teams...</p>
+                </div>
+              ) : userTeams.length > 0 ? (
+                <div className="space-y-2">
+                  <Select 
+                    value={selectedTeamId} 
+                    onValueChange={setSelectedTeamId}
+                    disabled={isSubmitting}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a team" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {userTeams.map(team => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="create_new" className="text-primary font-medium">
+                        <span className="flex items-center">
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Create new team
+                        </span>
                       </SelectItem>
-                    ))}
-                    <SelectItem value="create_new" className="text-primary font-medium">
-                      <span className="flex items-center">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Create new team
-                      </span>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                    </SelectContent>
+                  </Select>
+                  
+                  {selectedTeamId && selectedTeamId !== 'create_new' && (
+                    <div className="text-sm text-muted-foreground">
+                      Selected team: {userTeams.find(t => t.id === selectedTeamId)?.name}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="flex flex-col space-y-2">
                   <p className="text-sm text-muted-foreground">
@@ -220,6 +276,7 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
                     variant="outline"
                     onClick={handleOpenCreateTeam}
                     className="w-full"
+                    disabled={isSubmitting}
                   >
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Create a new team

@@ -1,6 +1,5 @@
 import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0'
-import { getUserProfile } from '@/lib/airtable'
-import Airtable from 'airtable'
+import { getUserProfile, base } from '@/lib/airtable'
 
 /**
  * API handler to create a new application
@@ -40,8 +39,7 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
       return res.status(404).json({ error: 'User profile not found' })
     }
     
-    // Initialize Airtable
-    const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID)
+    // Use the imported base from lib/airtable.js
     
     // Get the Applications table ID from environment variables
     const applicationsTableId = process.env.AIRTABLE_APPLICATIONS_TABLE_ID
