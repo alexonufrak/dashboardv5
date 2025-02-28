@@ -11,33 +11,50 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  html {
-    font-family: 'Hanken Grotesk', sans-serif;
+body {
+  font-family: 'Hanken Grotesk', sans-serif;
+  background-color: #f8f9fa;
+  color: #343a40;
+}
+
+a {
+  color: #0056b3;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #003d7a;
+}
+
+.container {
+  width: 100%;
+  padding-right: 15px;
+  padding-left: 15px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+@media (min-width: 576px) {
+  .container {
+    max-width: 540px;
   }
-  
-  body {
-    @apply bg-background text-foreground;
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 720px;
   }
-  
-  .dark {
-    @apply bg-gray-900 text-gray-100;
+}
+
+@media (min-width: 992px) {
+  .container {
+    max-width: 960px;
   }
-  
-  .dark .bg-white {
-    @apply bg-gray-800;
-  }
-  
-  .dark .bg-background {
-    @apply bg-gray-900;
-  }
-  
-  .dark .text-foreground {
-    @apply text-gray-100;
-  }
-  
-  .dark .border-border {
-    @apply border-gray-700;
+}
+
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1140px;
   }
 }
 
