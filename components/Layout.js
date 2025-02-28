@@ -33,9 +33,12 @@ const Layout = ({ children, title = "xFoundry Hub", profile, onEditClick }) => {
         {/* Mobile Header */}
         {showSidebar && (
           <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white border-b py-3 px-4 flex justify-between items-center shadow-sm">
-            <h2 className="text-lg font-bold tracking-tight text-primary ml-9">
-              xFoundry Hub
-            </h2>
+            <div className="flex items-center">
+              <div className="w-10"></div> {/* Placeholder for alignment */}
+              <h2 className="text-lg font-bold tracking-tight text-primary ml-4">
+                xFoundry Hub
+              </h2>
+            </div>
             <div className="text-xs">
               {profile?.institutionName || "Institution"}
             </div>
@@ -46,7 +49,7 @@ const Layout = ({ children, title = "xFoundry Hub", profile, onEditClick }) => {
         {showSidebar && <DashboardSidebar profile={profile} onEditClick={onEditClick} />}
         
         {/* Main Content */}
-        <main className={`flex-1 ${showSidebar ? 'md:ml-64' : ''} ${showSidebar ? 'pt-16 md:pt-4' : 'pt-4'}`}>
+        <main className={`flex-1 ${showSidebar ? 'md:ml-64' : ''} ${showSidebar ? 'pt-[60px] md:pt-4' : 'pt-4'}`}>
           <div className="container max-w-6xl mx-auto px-4 md:px-6">
             {showBreadcrumbs && <Breadcrumbs />}
             {children}

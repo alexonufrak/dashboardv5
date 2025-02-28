@@ -146,9 +146,9 @@ const DashboardSidebar = ({ profile, onEditClick }) => {
     <>
       {/* Mobile Trigger */}
       <Button
-        variant="outline"
+        variant="ghost"
         size="icon"
-        className="md:hidden fixed left-4 top-3 z-40"
+        className="md:hidden fixed left-4 top-3 z-40 h-10 w-10 rounded-full"
         onClick={() => setOpenMobile(true)}
       >
         <Menu className="h-5 w-5" />
