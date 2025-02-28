@@ -4,14 +4,26 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import Layout from "../components/Layout";
-import LoginModal from "../components/LoginModal";
 import LoadingScreen from "../components/LoadingScreen";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ExternalLink, AlertCircle, CheckCircle, XCircle, ArrowRight } from "lucide-react";
 
 export default function Login() {
   const router = useRouter();
   const { user, isLoading } = useUser();
-  const [isModalOpen, setIsModalOpen] = useState(true);
   const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [institutionStatus, setInstitutionStatus] = useState(null);
+  const [institution, setInstitution] = useState(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [userExists, setUserExists] = useState(null);
 
   // If user is already logged in, redirect to dashboard
   useEffect(() => {
@@ -22,12 +34,96 @@ export default function Login() {
     // Get email from URL query parameters if available
     if (router.query.email) {
       setEmail(router.query.email);
+      
+      // Auto-verify if email is in the URL
+      if (router.query.email.includes('@')) {
+        setTimeout(() => verifyEmailAndInstitution(), 500);
+      }
     }
   }, [user, router, router.query]);
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    router.push("/"); // Return to home page if modal is closed
+  // Function to verify the institution and check if user exists
+  const verifyEmailAndInstitution = async () => {
+    // Basic email validation
+    if (!email || !email.includes("@")) {
+      setEmailError("Please enter a valid email address");
+      return;
+    }
+    
+    setIsVerifying(true);
+    setEmailError("");
+    setInstitutionStatus(null);
+    setUserExists(null);
+    
+    try {
+      console.log(`Checking if email exists: ${email}`);
+      // First check if the user already exists
+      const userCheckResponse = await fetch("/api/user/check-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+      
+      console.log(`User check response status: ${userCheckResponse.status}`);
+      
+      if (!userCheckResponse.ok) {
+        console.error("Failed user check response:", userCheckResponse);
+        throw new Error("Failed to check user existence");
+      }
+      
+      const userCheckData = await userCheckResponse.json();
+      console.log("User check data:", userCheckData);
+      
+      // Set whether the user exists
+      setUserExists(userCheckData.exists);
+      
+      // Check institution regardless of whether user exists
+      console.log(`Verifying institution for email: ${email}`);
+      const institutionResponse = await fetch("/api/institution-lookup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+      
+      if (!institutionResponse.ok) {
+        throw new Error("Failed to verify institution");
+      }
+      
+      const data = await institutionResponse.json();
+      console.log("Institution lookup response:", data);
+      
+      if (data.success) {
+        console.log(`Institution found: ${data.institution.name}`);
+        setInstitution(data.institution);
+        setInstitutionStatus("success");
+      } else {
+        console.log("No matching institution found");
+        setInstitutionStatus("error");
+      }
+    } catch (error) {
+      console.error("Error verifying email or institution:", error);
+      setInstitutionStatus("error");
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // Function to proceed to login or signup based on user existence
+  const proceedToAuth = () => {
+    setIsRedirecting(true);
+    const encodedEmail = encodeURIComponent(email);
+    
+    if (userExists) {
+      // If user exists, redirect to login with email prefilled
+      window.location.href = `/api/auth/login?login_hint=${encodedEmail}`;
+    } else {
+      // If user doesn't exist, redirect to signup with email prefilled
+      router.push(`/signup?email=${encodedEmail}`);
+    }
   };
 
   if (isLoading) {
@@ -36,52 +132,202 @@ export default function Login() {
 
   return (
     <Layout title="Sign In - xFoundry">
-      <div style={styles.pageWrapper}>
-        <div style={styles.container}>
-          <div style={styles.contentCard}>
-            <div style={styles.cardHeader}>
-              <h1 style={styles.heading}>Welcome Back</h1>
-              <p style={styles.subheading}>
-                Sign in to access your xFoundry account and continue your journey.
-              </p>
-            </div>
-            
-            <LoginModal 
-              isOpen={isModalOpen}
-              onClose={handleCloseModal}
-              initialEmail={email}
-            />
-            
-            <div style={styles.divider}>
-              <span style={styles.dividerText}>Don't have an account?</span>
-            </div>
-            
-            <div style={styles.alternateActions}>
-              <a href="/signup" style={styles.secondaryButton}>Create Account</a>
+      <div className="flex min-h-[calc(100vh-100px)] w-full items-center justify-center py-10 px-4 md:px-6">
+        <div className="flex w-full max-w-4xl flex-col-reverse md:flex-row overflow-hidden rounded-xl shadow-xl">
+          {/* Left content - Login Form */}
+          <div className="w-full md:w-1/2 bg-white p-8">
+            <div className="space-y-6">
+              <div className="space-y-2 text-center">
+                <h1 className="text-3xl font-bold tracking-tight text-primary">Welcome Back</h1>
+                <p className="text-muted-foreground">Sign in to your xFoundry account</p>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Your Institutional Email</Label>
+                  <Input 
+                    id="email"
+                    type="email"
+                    placeholder="your.name@school.edu"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isVerifying || isRedirecting}
+                  />
+                  {emailError && (
+                    <p className="text-sm font-medium text-destructive">{emailError}</p>
+                  )}
+                </div>
+                
+                {/* Only show verify button when not yet verified */}
+                {(institutionStatus === null || institutionStatus === "error") && (
+                  <Button 
+                    onClick={verifyEmailAndInstitution}
+                    disabled={isVerifying || !email || isRedirecting}
+                    className="w-full"
+                  >
+                    {isVerifying ? (
+                      <div className="flex items-center">
+                        <span className="mr-2">Verifying</span>
+                        <span className="inline-block animate-pulse">•</span>
+                        <span className="inline-block animate-pulse delay-75">•</span>
+                        <span className="inline-block animate-pulse delay-150">•</span>
+                      </div>
+                    ) : "Continue"}
+                  </Button>
+                )}
+                
+                {/* Verification Results */}
+                <div className="space-y-3">
+                  {/* User exists message */}
+                  {userExists === true && institutionStatus === "success" && (
+                    <Alert variant="default" className="bg-green-50 text-green-800 border-green-200">
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      <AlertDescription>
+                        Welcome back! Your account was found.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {/* User doesn't exist message */}
+                  {userExists === false && institutionStatus === "success" && (
+                    <Alert variant="default" className="bg-blue-50 text-blue-800 border-blue-200">
+                      <AlertCircle className="h-4 w-4 mr-2" />
+                      <AlertDescription>
+                        No account found with this email. We'll help you create one.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {/* Institution verification error */}
+                  {institutionStatus === "error" && (
+                    <Alert variant="destructive">
+                      <XCircle className="h-4 w-4 mr-2" />
+                      <AlertDescription>
+                        We couldn't verify your institution. Please use your school email.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {/* Institution verification success */}
+                  {institutionStatus === "success" && (
+                    <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200 px-3 py-1.5">
+                      <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
+                      {institution.name}
+                    </Badge>
+                  )}
+                </div>
+                
+                {/* Sign In button - only shown when user exists */}
+                {institutionStatus === "success" && userExists === true && (
+                  <Button
+                    onClick={proceedToAuth}
+                    disabled={isRedirecting}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {isRedirecting ? (
+                      <div className="flex items-center">
+                        <span className="mr-2">Signing in</span>
+                        <span className="inline-block animate-pulse">•</span>
+                        <span className="inline-block animate-pulse delay-75">•</span>
+                        <span className="inline-block animate-pulse delay-150">•</span>
+                      </div>
+                    ) : (
+                      <>
+                        Sign In
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                )}
+                
+                {/* Create Account button - only shown when user doesn't exist */}
+                {institutionStatus === "success" && userExists === false && (
+                  <Button
+                    onClick={proceedToAuth}
+                    disabled={isRedirecting}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {isRedirecting ? (
+                      <div className="flex items-center">
+                        <span className="mr-2">Redirecting</span>
+                        <span className="inline-block animate-pulse">•</span>
+                        <span className="inline-block animate-pulse delay-75">•</span>
+                        <span className="inline-block animate-pulse delay-150">•</span>
+                      </div>
+                    ) : (
+                      <>
+                        Create New Account
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                )}
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator className="w-full" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-muted-foreground">Or</span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-center">
+                  <Button variant="outline" asChild>
+                    <a href="/signup">Create New Account</a>
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
           
-          <div style={styles.infoPanel}>
-            <div style={styles.infoPanelContent}>
-              <h2 style={styles.infoPanelTitle}>Why Join xFoundry?</h2>
-              <ul style={styles.benefitsList}>
-                <li style={styles.benefitItem}>
-                  <span style={styles.benefitIcon}>✓</span>
-                  <span style={styles.benefitText}>Access to exclusive educational opportunities</span>
+          {/* Right content - Benefits */}
+          <div className="w-full md:w-1/2 bg-gradient-to-br from-primary to-primary/80 p-8 text-white">
+            <div className="h-full flex flex-col">
+              <h2 className="text-2xl font-bold mb-6">Why Join xFoundry?</h2>
+              
+              <ul className="space-y-6 my-8">
+                <li className="flex">
+                  <div className="rounded-full bg-white/10 p-1.5 mr-4 h-8 w-8 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-1">Access Exclusive Programs</h3>
+                    <p className="text-white/80 text-sm">Discover opportunities curated for your profile and institution</p>
+                  </div>
                 </li>
-                <li style={styles.benefitItem}>
-                  <span style={styles.benefitIcon}>✓</span>
-                  <span style={styles.benefitText}>Connect with mentors and fellow students</span>
+                
+                <li className="flex">
+                  <div className="rounded-full bg-white/10 p-1.5 mr-4 h-8 w-8 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-1">Connect With Mentors</h3>
+                    <p className="text-white/80 text-sm">Build relationships with industry professionals and peers</p>
+                  </div>
                 </li>
-                <li style={styles.benefitItem}>
-                  <span style={styles.benefitIcon}>✓</span>
-                  <span style={styles.benefitText}>Discover programs tailored to your interests</span>
-                </li>
-                <li style={styles.benefitItem}>
-                  <span style={styles.benefitIcon}>✓</span>
-                  <span style={styles.benefitText}>Track your applications and progress</span>
+                
+                <li className="flex">
+                  <div className="rounded-full bg-white/10 p-1.5 mr-4 h-8 w-8 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-1">Track Your Progress</h3>
+                    <p className="text-white/80 text-sm">Manage your application status and program participation</p>
+                  </div>
                 </li>
               </ul>
+              
+              <div className="mt-auto">
+                <div className="bg-white/10 rounded-lg p-4">
+                  <p className="text-sm italic">
+                    "xFoundry helped me discover internship opportunities I wouldn't have found otherwise. The personalized approach made all the difference in my career journey."
+                  </p>
+                  <p className="text-sm font-medium mt-2">— Maria C., Computer Science Student</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -89,114 +335,3 @@ export default function Login() {
     </Layout>
   );
 }
-
-const styles = {
-  pageWrapper: {
-    width: "100%",
-    padding: "40px 20px",
-    minHeight: "calc(100vh - 200px)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  container: {
-    display: "flex",
-    flexWrap: "wrap",
-    maxWidth: "1200px",
-    margin: "0 auto",
-    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
-    borderRadius: "16px",
-    overflow: "hidden",
-  },
-  contentCard: {
-    flex: "1 1 400px",
-    padding: "40px",
-    backgroundColor: "white",
-  },
-  cardHeader: {
-    textAlign: "center",
-    marginBottom: "30px",
-  },
-  heading: {
-    fontSize: "2.3rem",
-    color: "var(--color-primary)",
-    marginBottom: "15px",
-    fontWeight: "600",
-  },
-  subheading: {
-    fontSize: "1.1rem",
-    color: "var(--color-secondary)",
-    lineHeight: "1.6",
-  },
-  divider: {
-    position: "relative",
-    margin: "40px 0 30px",
-    textAlign: "center",
-    borderTop: "1px solid #e0e0e0",
-  },
-  dividerText: {
-    position: "relative",
-    top: "-12px",
-    padding: "0 15px",
-    backgroundColor: "white",
-    color: "var(--color-secondary)",
-    fontSize: "0.95rem",
-  },
-  alternateActions: {
-    textAlign: "center",
-  },
-  secondaryButton: {
-    display: "inline-block",
-    padding: "12px 24px",
-    color: "var(--color-primary)",
-    backgroundColor: "transparent",
-    border: "2px solid var(--color-primary)",
-    borderRadius: "8px",
-    textDecoration: "none",
-    fontSize: "1rem",
-    fontWeight: "500",
-    transition: "all 0.2s ease",
-  },
-  infoPanel: {
-    flex: "1 1 400px",
-    backgroundImage: "linear-gradient(135deg, #0056b3, #3a7bd5)",
-    color: "white",
-    padding: "40px",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-  },
-  infoPanelContent: {
-    maxWidth: "400px",
-  },
-  infoPanelTitle: {
-    fontSize: "2rem",
-    fontWeight: "600",
-    marginBottom: "30px",
-  },
-  benefitsList: {
-    listStyle: "none",
-    padding: 0,
-    margin: 0,
-  },
-  benefitItem: {
-    display: "flex",
-    alignItems: "flex-start",
-    marginBottom: "20px",
-    fontSize: "1.1rem",
-  },
-  benefitIcon: {
-    fontSize: "1.2rem",
-    marginRight: "12px",
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: "50%",
-    width: "24px",
-    height: "24px",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  benefitText: {
-    lineHeight: "1.5",
-  },
-};
