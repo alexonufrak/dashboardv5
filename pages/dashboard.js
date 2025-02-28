@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic'
 import { toast } from "sonner"
 
 // Import components
-import Layout from "../components/Layout"
+import ProperDashboardLayout from "../components/ProperDashboardLayout"
 import ProfileEditModal from "../components/ProfileEditModal"
 import TeamCard from "../components/TeamCard"
 import { FilloutPopupEmbed } from "@fillout/react"
@@ -117,7 +117,7 @@ const Dashboard = () => {
   // Show loading screen while data is loading
   if (isUserLoading || isLoading) {
     return (
-      <Layout title="xFoundry Hub">
+      <ProperDashboardLayout title="xFoundry Hub">
         <div className="flex flex-col gap-6 mt-10">
           <Skeleton className="h-[30px] w-[280px] rounded" />
           
@@ -130,14 +130,14 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      </Layout>
+      </ProperDashboardLayout>
     )
   }
 
   // Show error message if there's an error
   if (error) {
     return (
-      <Layout title="xFoundry Hub">
+      <ProperDashboardLayout title="xFoundry Hub">
         <Alert variant="destructive" className="mt-6">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
@@ -145,7 +145,7 @@ const Dashboard = () => {
             {error}. Please try refreshing the page or contact support if the issue persists.
           </AlertDescription>
         </Alert>
-      </Layout>
+      </ProperDashboardLayout>
     )
   }
   
@@ -275,7 +275,7 @@ const Dashboard = () => {
   
   // Main JSX content
   return (
-    <Layout title="xFoundry Hub" profile={profile} onEditClick={handleEditClick}>
+    <ProperDashboardLayout title="xFoundry Hub" profile={profile} onEditClick={handleEditClick}>
       {/* Fillout form popup with required parameters */}
       {activeFilloutForm && (
         <FilloutPopupEmbed
@@ -385,7 +385,7 @@ const Dashboard = () => {
           )}
         </div>
       )}
-    </Layout>
+    </ProperDashboardLayout>
   )
 }
 
