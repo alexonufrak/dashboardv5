@@ -5,7 +5,7 @@ import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { useState } from "react"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import ProfileMenuButton from "./ProfileMenuButton"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { 
@@ -13,37 +13,20 @@ import {
   SheetContent, 
   SheetTrigger 
 } from "@/components/ui/sheet"
-import { Badge } from "@/components/ui/badge"
 
 import { 
   Home,
   Compass,
   Users, 
-  User,
-  LogOut, 
   Menu, 
   ExternalLink,
-  Edit,
-  CheckCircle,
   XCircle
 } from "lucide-react"
 
-const DashboardSidebar = ({ profile }) => {
+const DashboardSidebar = ({ profile, onEditClick }) => {
   const router = useRouter()
   const { user } = useUser()
   const [openMobile, setOpenMobile] = useState(false)
-
-  const getInitials = () => {
-    if (!user?.name) return "U"
-    return user.name
-      .split(" ")
-      .map(n => n[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase()
-  }
-
-  const isProfileComplete = profile?.isProfileComplete || false
 
   const links = [
     {
@@ -118,63 +101,6 @@ const DashboardSidebar = ({ profile }) => {
     </a>
   )
 
-  const renderProfileSection = () => (
-    <div className="px-3 pb-5 border-b">
-      <div className="flex flex-col items-center pt-5">
-        <Avatar className="h-20 w-20 mb-3">
-          <AvatarImage src={user?.picture} alt={user?.name || "Profile"} />
-          <AvatarFallback className="text-lg">{getInitials()}</AvatarFallback>
-        </Avatar>
-        
-        <div className="text-center mb-2">
-          <h3 className="font-semibold">{profile?.firstName} {profile?.lastName}</h3>
-          <p className="text-xs text-muted-foreground">{user?.email}</p>
-        </div>
-        
-        <div className="w-full">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-medium">Profile Status</span>
-            <Link href="/dashboard">
-              <Button variant="ghost" size="sm" className="h-7 px-2">
-                <Edit className="h-3.5 w-3.5 mr-1" />
-                <span className="text-xs">Edit</span>
-              </Button>
-            </Link>
-          </div>
-          
-          <div className="flex items-center gap-2 text-xs mb-2">
-            {isProfileComplete ? (
-              <Badge variant="outline" className="flex items-center gap-1 w-full justify-center py-1 bg-green-50 text-green-700 border-green-200">
-                <CheckCircle className="h-3 w-3" />
-                Complete
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="flex items-center gap-1 w-full justify-center py-1 bg-amber-50 text-amber-700 border-amber-200">
-                <XCircle className="h-3 w-3" />
-                Incomplete
-              </Badge>
-            )}
-          </div>
-          
-          <div className="text-xs space-y-1 mt-3">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Institution</span>
-              <span className="font-medium">{profile?.institutionName || "Not specified"}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Degree</span>
-              <span className="font-medium">{profile?.degreeType || "Not specified"}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Graduation</span>
-              <span className="font-medium">{profile?.graduationYear || "Not specified"}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-
   const renderSidebarContent = () => (
     <div className="flex h-full flex-col">
       <div className="px-6 py-3 border-b flex items-center justify-between">
@@ -190,7 +116,7 @@ const DashboardSidebar = ({ profile }) => {
       </div>
       
       {/* Profile Section */}
-      {profile && renderProfileSection()}
+      {profile && <ProfileMenuButton user={user} profile={profile} onEditClick={onEditClick} />}
       
       {/* Navigation Links */}
       <div className="px-3 py-5">
@@ -211,17 +137,6 @@ const DashboardSidebar = ({ profile }) => {
           {externalLinks.map(renderExternalLink)}
         </div>
       </div>
-      
-      {/* Sign Out */}
-      <div className="px-3 py-4 border-t">
-        <Link
-          href="/api/auth/logout"
-          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <LogOut className="h-5 w-5" />
-          Sign Out
-        </Link>
-      </div>
     </div>
   )
 
@@ -229,7 +144,7 @@ const DashboardSidebar = ({ profile }) => {
     <>
       {/* Mobile Trigger */}
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
         className="md:hidden fixed left-4 top-3 z-40"
         onClick={() => setOpenMobile(true)}

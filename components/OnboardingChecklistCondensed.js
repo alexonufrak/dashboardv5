@@ -72,7 +72,7 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
     }
   }
 
-  // Skip onboarding
+  // Skip onboarding (but keep notification visible)
   const skipOnboarding = async () => {
     try {
       await fetch('/api/user/metadata', {
@@ -81,7 +81,8 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          onboardingSkipped: true
+          onboardingSkipped: true,
+          keepOnboardingVisible: true
         })
       })
       

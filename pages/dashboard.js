@@ -12,6 +12,7 @@ import ProfileEditModal from "../components/ProfileEditModal"
 import TeamCard from "../components/TeamCard"
 import { FilloutPopupEmbed } from "@fillout/react"
 import OnboardingChecklistCondensed from "../components/OnboardingChecklistCondensed"
+import ProgramDetailModal from "../components/ProgramDetailModal"
 
 // Import UI components
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -26,6 +27,8 @@ import {
   Users, 
   AlertTriangle, 
   Compass,
+  ExternalLink,
+  Eye,
   ArrowRight
 } from "lucide-react"
 
@@ -48,7 +51,8 @@ const Dashboard = () => {
   const [activeFilloutForm, setActiveFilloutForm] = useState(null)
   const [dashboardContent, setDashboardContent] = useState(false)
   const [showFullOnboarding, setShowFullOnboarding] = useState(false)
-  const [activeSection, setActiveSection] = useState("programs")
+  const [showOnboardingBanner, setShowOnboardingBanner] = useState(true)
+  const [selectedProgram, setSelectedProgram] = useState(null)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -88,8 +92,12 @@ const Dashboard = () => {
         const response = await fetch("/api/user/metadata")
         if (response.ok) {
           const metadata = await response.json()
-          if (metadata.onboardingCompleted || metadata.onboardingSkipped) {
+          if (metadata.onboardingCompleted) {
             setDashboardContent(true)
+            setShowOnboardingBanner(false)
+          } else if (metadata.onboardingSkipped) {
+            setDashboardContent(true)
+            setShowOnboardingBanner(metadata.keepOnboardingVisible === true)
           }
         }
       } catch (err) {
@@ -182,48 +190,35 @@ const Dashboard = () => {
     setShowFullOnboarding(false);
     setDashboardContent(true);
   };
+  
+  const handleProgramApply = (cohort) => {
+    if (cohort && cohort["Application Form ID (Fillout)"]) {
+      setActiveFilloutForm({
+        formId: cohort["Application Form ID (Fillout)"],
+        cohortId: cohort.id,
+        initiativeName: cohort.initiativeDetails?.name || "Program Application"
+      })
+    }
+  }
+  
+  const handleViewProgramDetails = (cohort) => {
+    setSelectedProgram(cohort)
+  }
 
   // Function to render individual cohort cards
   const renderCohortCard = (cohort) => {
     const initiativeName = cohort.initiativeDetails?.name || "Unknown Initiative";
     const topics = cohort.topicNames || [];
-    const classes = cohort.classNames || [];
     const status = cohort["Status"] || "Unknown";
     const actionButtonText = cohort["Action Button"] || "Apply Now";
     const filloutFormId = cohort["Application Form ID (Fillout)"];
     const isOpen = status === "Applications Open";
     
-    const handleButtonClick = () => {
-      if (isOpen && filloutFormId) {
-        setActiveFilloutForm({
-          formId: filloutFormId,
-          cohortId: cohort.id,
-          initiativeName: initiativeName
-        });
-      }
-    };
-    
     return (
       <Card key={cohort.id} className="overflow-hidden h-full flex flex-col">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg">{initiativeName}</CardTitle>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {Array.isArray(topics) && topics.length > 0 && 
-              topics.map((topic, index) => (
-                <Badge key={`topic-${index}`} variant="secondary" className="bg-cyan-50 text-cyan-800">
-                  {topic}
-                </Badge>
-              ))
-            }
-            
-            {Array.isArray(classes) && classes.length > 0 && 
-              classes.map((className, index) => (
-                <Badge key={`class-${index}`} variant="outline" className="bg-amber-50 text-amber-800">
-                  {className}
-                </Badge>
-              ))
-            }
-            
+          <div className="flex justify-between items-start">
+            <CardTitle className="text-lg">{initiativeName}</CardTitle>
             <Badge variant={isOpen ? "success" : "destructive"} 
               className={isOpen ? 
                 "bg-green-50 text-green-800" : 
@@ -232,20 +227,43 @@ const Dashboard = () => {
               {status}
             </Badge>
           </div>
+          
+          <div className="flex flex-wrap gap-2 mt-2">
+            {Array.isArray(topics) && topics.length > 0 && 
+              topics.slice(0, 2).map((topic, index) => (
+                <Badge key={`topic-${index}`} variant="secondary" className="bg-cyan-50 text-cyan-800">
+                  {topic}
+                </Badge>
+              ))
+            }
+            {topics.length > 2 && (
+              <Badge variant="outline">+{topics.length - 2} more</Badge>
+            )}
+          </div>
         </CardHeader>
         
         <CardContent className="flex-grow">
           <p className="text-sm text-muted-foreground line-clamp-3">
-            {cohort.description || "Join this program to connect with mentors and build career skills."}
+            {cohort.description || cohort.initiativeDetails?.description || 
+             "Join this program to connect with mentors and build career skills."}
           </p>
         </CardContent>
         
-        <CardFooter className="pt-2 pb-4">
+        <CardFooter className="pt-2 pb-4 flex flex-col sm:flex-row gap-2">
           <Button 
-            className="w-full" 
+            variant="outline"
+            className="w-full sm:w-auto sm:flex-1"
+            onClick={() => handleViewProgramDetails(cohort)}
+          >
+            <Eye className="mr-2 h-4 w-4" />
+            View Details
+          </Button>
+          
+          <Button 
+            className="w-full sm:w-auto sm:flex-1" 
             variant={isOpen ? "default" : "secondary"}
             disabled={!isOpen || !filloutFormId}
-            onClick={handleButtonClick}
+            onClick={() => handleProgramApply(cohort)}
           >
             {actionButtonText}
           </Button>
@@ -256,7 +274,7 @@ const Dashboard = () => {
   
   // Main JSX content
   return (
-    <Layout title="xFoundry Hub" profile={profile}>
+    <Layout title="xFoundry Hub" profile={profile} onEditClick={handleEditClick}>
       {/* Fillout form popup */}
       {activeFilloutForm && (
         <FilloutPopupEmbed
@@ -272,6 +290,14 @@ const Dashboard = () => {
         />
       )}
       
+      {/* Program Detail Modal */}
+      <ProgramDetailModal 
+        cohort={selectedProgram}
+        isOpen={!!selectedProgram}
+        onClose={() => setSelectedProgram(null)}
+        onApply={handleProgramApply}
+      />
+      
       {/* Full Onboarding Checklist - Only when shown */}
       {profile && showFullOnboarding && (
         <OnboardingChecklist 
@@ -284,7 +310,7 @@ const Dashboard = () => {
       {profile && !showFullOnboarding && (
         <div className="space-y-8 pt-4">
           {/* Condensed onboarding if not completed */}
-          {!dashboardContent && (
+          {showOnboardingBanner && (
             <OnboardingChecklistCondensed 
               profile={profile}
               onViewAll={() => setShowFullOnboarding(true)}
@@ -305,11 +331,9 @@ const Dashboard = () => {
           <div className="space-y-8">
             {/* Programs Section */}
             <section id="programs" className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Compass className="h-5 w-5 text-primary" />
-                  <h2 className="text-xl font-semibold">Available Programs</h2>
-                </div>
+              <div className="flex items-center gap-2">
+                <Compass className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-semibold">Available Programs</h2>
               </div>
               
               {profile.cohorts && profile.cohorts.length > 0 ? (
@@ -328,11 +352,9 @@ const Dashboard = () => {
             
             {/* Team Section */}
             <section id="teams" className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
-                  <h2 className="text-xl font-semibold">Your Team</h2>
-                </div>
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-semibold">Your Team</h2>
               </div>
               
               {isTeamLoading ? (

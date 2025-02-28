@@ -8,7 +8,7 @@ import { useUser } from "@auth0/nextjs-auth0/client"
 import DashboardSidebar from "./DashboardSidebar"
 import Breadcrumbs from "./Breadcrumbs"
 
-const Layout = ({ children, title = "xFoundry Hub", profile }) => {
+const Layout = ({ children, title = "xFoundry Hub", profile, onEditClick }) => {
   const [currentYear, setCurrentYear] = useState("")
   const router = useRouter()
   const { user } = useUser()
@@ -31,7 +31,7 @@ const Layout = ({ children, title = "xFoundry Hub", profile }) => {
 
       <div className="min-h-screen bg-background">
         {/* Sidebar - only shown on protected pages */}
-        {showSidebar && <DashboardSidebar profile={profile} />}
+        {showSidebar && <DashboardSidebar profile={profile} onEditClick={onEditClick} />}
         
         {/* Main Content */}
         <main className={`flex-1 ${showSidebar ? 'md:ml-64' : ''} pt-4`}>

@@ -1,16 +1,14 @@
 // components/TeamCard.js
 import { useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger
-} from "@/components/ui/accordion";
+import { Users, Info } from "lucide-react";
+import TeamDetailModal from "./TeamDetailModal";
 
 const TeamCard = ({ team }) => {
+  const [showDetails, setShowDetails] = useState(false);
+  
   // If no team data is provided, show a not found message
   if (!team) {
     return (
@@ -26,58 +24,52 @@ const TeamCard = ({ team }) => {
   const activeMembers = team.members ? team.members.filter(member => member.status === "Active") : [];
   
   return (
-    <Card className="mb-5">
-      <Accordion type="single" collapsible className="w-full">
-        <AccordionItem value="team-details" className="border-0">
-          <CardHeader className="pb-0 pt-5">
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle className="text-xl text-primary mb-1">{team.name}</CardTitle>
-                {team.points !== undefined && (
-                  <p className="text-muted-foreground">
-                    Team Points: <span className="font-bold text-foreground">{team.points || 0}</span>
-                  </p>
-                )}
-              </div>
-              <AccordionTrigger className="ml-2 mr-0" />
-            </div>
-          </CardHeader>
+    <>
+      <Card className="mb-5">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl">{team.name}</CardTitle>
+            <Badge className="ml-2">
+              {activeMembers.length} {activeMembers.length === 1 ? 'member' : 'members'}
+            </Badge>
+          </div>
+        </CardHeader>
+        
+        <CardContent>
+          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+            {team.description || "No description available."}
+          </p>
           
-          <AccordionContent>
-            <CardContent className="pt-4">
-              <div className="mb-6">
-                <h4 className="text-base font-semibold border-b pb-2 mb-2">Description</h4>
-                <p className="text-sm">{team.description || "No description available."}</p>
-              </div>
-              
-              <div>
-                <h4 className="text-base font-semibold border-b pb-2 mb-3">
-                  Team Members ({activeMembers.length})
-                </h4>
-                {activeMembers.length > 0 ? (
-                  <ul className="space-y-2">
-                    {activeMembers.map((member, index) => (
-                      <li key={member.id || index} className="py-2 border-b border-muted flex justify-between items-center">
-                        <div>
-                          <span className="font-medium">
-                            {member.name || member.email || "Unknown Member"}
-                            {member.isCurrentUser && (
-                              <Badge variant="secondary" className="ml-2 font-normal">You</Badge>
-                            )}
-                          </span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="italic text-muted-foreground">No active team members found.</p>
-                )}
-              </div>
-            </CardContent>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    </Card>
+          {activeMembers.length > 0 && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Users className="h-4 w-4" />
+              <span>
+                {activeMembers.filter(m => m.isCurrentUser).length > 0 ? 
+                  "You and " + (activeMembers.length - 1) + " others" : 
+                  activeMembers.length + " team members"}
+              </span>
+            </div>
+          )}
+        </CardContent>
+        
+        <CardFooter>
+          <Button 
+            variant="outline"
+            className="w-full"
+            onClick={() => setShowDetails(true)}
+          >
+            <Info className="mr-2 h-4 w-4" />
+            View Team Details
+          </Button>
+        </CardFooter>
+      </Card>
+      
+      <TeamDetailModal 
+        team={team} 
+        isOpen={showDetails} 
+        onClose={() => setShowDetails(false)} 
+      />
+    </>
   );
 };
 
