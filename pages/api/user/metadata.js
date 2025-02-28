@@ -1,5 +1,5 @@
 import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0';
-import auth0 from '../../../lib/auth0';
+import { auth0ManagementClient } from '../../../lib/auth0';
 
 /**
  * API endpoint to get and update user metadata
@@ -33,7 +33,7 @@ export default withApiAuthRequired(async function userMetadata(req, res) {
 
       try {
         // Get the Auth0 Management API client
-        const auth0Management = await auth0.management;
+        const auth0Management = await auth0ManagementClient();
         
         // First get current metadata
         const userInfo = await auth0Management.getUser({ id: userId });

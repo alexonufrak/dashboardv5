@@ -8,7 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Button } from "@/components/ui/button"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, Circle } from "lucide-react"
+import { CheckCircle, Circle, Users, UserRound } from "lucide-react"
+import TeamSelectDialog from './TeamSelectDialog'
+import TeamCreateDialog from './TeamCreateDialog'
 
 const OnboardingChecklist = ({ profile, onComplete }) => {
   const { user } = useUser()
@@ -19,12 +21,16 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     { id: 'connexions', title: 'Join ConneXions', completed: false, description: 'Connect with the community' }
   ])
   const [activeFilloutForm, setActiveFilloutForm] = useState(null)
+  const [activeTeamSelectDialog, setActiveTeamSelectDialog] = useState(null)
+  const [activeTeamCreateDialog, setActiveTeamCreateDialog] = useState(false)
   const [checkedCohortSubmission, setCheckedCohortSubmission] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedCohort, setSelectedCohort] = useState(null)
   const [showOnboarding, setShowOnboarding] = useState(true)
   const [expandedAccordion, setExpandedAccordion] = useState({})
-
+  const [userTeams, setUserTeams] = useState([])
+  const [isLoadingTeams, setIsLoadingTeams] = useState(false)
+  
   // Setup expanded state initially based on completion status
   useEffect(() => {
     const newExpandedState = {};
@@ -115,6 +121,28 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     checkCohortSubmission()
   }, [selectedCohort, profile, checkedCohortSubmission])
 
+  // Fetch user's teams when needed
+  useEffect(() => {
+    const fetchUserTeams = async () => {
+      if (!profile?.contactId || isLoadingTeams) return
+      
+      setIsLoadingTeams(true)
+      try {
+        const response = await fetch('/api/teams')
+        if (response.ok) {
+          const data = await response.json()
+          setUserTeams(data.teams || [])
+        }
+      } catch (error) {
+        console.error('Error fetching user teams:', error)
+      } finally {
+        setIsLoadingTeams(false)
+      }
+    }
+    
+    fetchUserTeams()
+  }, [profile])
+
   // Save selected cohort to user metadata
   const saveCohortToMetadata = async (cohortId) => {
     try {
@@ -173,11 +201,43 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
 
   // Handle clicking a cohort card to apply
   const handleCohortApply = (cohort) => {
-    if (cohort && cohort["Application Form ID (Fillout)"]) {
-      setActiveFilloutForm({
-        formId: cohort["Application Form ID (Fillout)"],
-        cohortId: cohort.id,
-        initiativeName: cohort.initiativeDetails?.name || "Program Application"
+    // Check if initiative has participation type
+    const participationType = cohort.initiativeDetails?.["Participation Type"] || "Individual"
+    
+    if (participationType === "Team") {
+      if (userTeams.length === 0) {
+        // User doesn't have a team, show team creation dialog
+        setActiveTeamCreateDialog(true)
+      } else {
+        // User has teams, show team selection dialog
+        setActiveTeamSelectDialog({
+          cohort: cohort,
+          teams: userTeams
+        })
+      }
+    } else {
+      // Individual participation - use Fillout form
+      if (cohort && cohort["Application Form ID (Fillout)"]) {
+        setActiveFilloutForm({
+          formId: cohort["Application Form ID (Fillout)"],
+          cohortId: cohort.id,
+          initiativeName: cohort.initiativeDetails?.name || "Program Application"
+        })
+      }
+    }
+  }
+
+  // Handle team creation
+  const handleTeamCreated = (team) => {
+    // Add new team to user's teams
+    setUserTeams(prev => [...prev, team])
+    setActiveTeamCreateDialog(false)
+    
+    // If we have a pending team application, open the team selection dialog
+    if (activeTeamSelectDialog) {
+      setActiveTeamSelectDialog({
+        ...activeTeamSelectDialog,
+        teams: [...userTeams, team]
       })
     }
   }
@@ -185,6 +245,12 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
   // Handle completion of form submission
   const handleFormCompleted = () => {
     setActiveFilloutForm(null)
+    completeStep('selectCohort')
+  }
+
+  // Handle team application submission
+  const handleTeamApplicationSubmitted = (application) => {
+    setActiveTeamSelectDialog(null)
     completeStep('selectCohort')
   }
 
@@ -235,8 +301,10 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     const status = cohort["Status"] || "Unknown"
     const actionButtonText = cohort["Action Button"] || "Apply Now"
     const filloutFormId = cohort["Application Form ID (Fillout)"]
+    const participationType = cohort.initiativeDetails?.["Participation Type"] || "Individual"
     
     const isOpen = status === "Applications Open"
+    const isDisabled = !isOpen || (participationType === "Individual" && !filloutFormId)
     
     return (
       <Card key={cohort.id} className="overflow-hidden">
@@ -258,6 +326,20 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
               }>
               {status}
             </Badge>
+            
+            <Badge variant="outline" className="flex items-center gap-1">
+              {participationType === "Team" ? (
+                <>
+                  <Users className="h-3 w-3" />
+                  <span>Team</span>
+                </>
+              ) : (
+                <>
+                  <UserRound className="h-3 w-3" />
+                  <span>Individual</span>
+                </>
+              )}
+            </Badge>
           </div>
         </CardHeader>
         
@@ -265,7 +347,7 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
           <Button 
             className="w-full" 
             variant={isOpen ? "default" : "secondary"}
-            disabled={!isOpen || !filloutFormId}
+            disabled={isDisabled}
             onClick={() => handleCohortApply(cohort)}
           >
             {actionButtonText}
@@ -310,6 +392,24 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
           }}
         />
       )}
+      
+      {/* Team selection dialog */}
+      {activeTeamSelectDialog && (
+        <TeamSelectDialog
+          open={!!activeTeamSelectDialog}
+          onClose={() => setActiveTeamSelectDialog(null)}
+          onSubmit={handleTeamApplicationSubmitted}
+          cohort={activeTeamSelectDialog.cohort}
+          teams={activeTeamSelectDialog.teams || userTeams}
+        />
+      )}
+      
+      {/* Team creation dialog */}
+      <TeamCreateDialog
+        open={activeTeamCreateDialog}
+        onClose={() => setActiveTeamCreateDialog(false)}
+        onCreateTeam={handleTeamCreated}
+      />
       
       <CardContent>
         <Accordion type="multiple" value={Object.keys(expandedAccordion).filter(key => expandedAccordion[key])}>

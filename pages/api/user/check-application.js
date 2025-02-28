@@ -1,5 +1,5 @@
 import { withApiAuthRequired } from '@auth0/nextjs-auth0';
-import { base } from '../../../lib/airtable';
+import Airtable from 'airtable';
 
 /**
  * API endpoint to check if a user has applied to a specific cohort
@@ -19,6 +19,9 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
       });
     }
 
+    // Initialize Airtable
+    const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID)
+    
     // Initialize Applications table
     const applicationsTable = process.env.AIRTABLE_APPLICATIONS_TABLE_ID
       ? base(process.env.AIRTABLE_APPLICATIONS_TABLE_ID)
