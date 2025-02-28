@@ -5,6 +5,8 @@ import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { useState, useEffect } from "react"
 import ProfileEditModal from "./ProfileEditModal"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 
 const Navbar = () => {
   const router = useRouter()
@@ -12,6 +14,17 @@ const Navbar = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [profile, setProfile] = useState(null)
   const [isProfileLoading, setIsProfileLoading] = useState(false)
+
+  // Get initials for avatar fallback
+  const getInitials = () => {
+    if (!user?.name) return "U";
+    return user.name
+      .split(" ")
+      .map(n => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+  };
 
   // Fetch user profile when needed
   useEffect(() => {
@@ -76,41 +89,45 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="navbar">
-        <div className="navbar-content">
-          <Link href="/" className="logo">
+      <nav className="h-[70px] bg-background border-b w-full">
+        <div className="max-w-[1200px] mx-auto px-4 h-full flex items-center justify-between">
+          <Link href="/" className="text-xl font-bold text-primary">
             xFoundry
           </Link>
-          <div className="nav-links">
+          
+          <div className="flex items-center gap-6">
             {isLoading ? (
-              <span>Loading...</span>
+              <span className="text-muted-foreground">Loading...</span>
             ) : user ? (
               <>
-                <Link href="/dashboard" className={router.pathname === "/dashboard" ? "active" : ""}>
+                <Link 
+                  href="/dashboard" 
+                  className={`text-sm font-medium ${router.pathname === "/dashboard" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                >
                   Dashboard
                 </Link>
-                <a href="#" onClick={handleOpenProfileModal} className={router.pathname === "/profile" ? "active" : ""}>
+                <a 
+                  href="#" 
+                  onClick={handleOpenProfileModal} 
+                  className={`text-sm font-medium ${router.pathname === "/profile" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                >
                   Profile
                 </a>
-                <div className="sign-out-button">
-                  <a href="/api/auth/logout" className="logout">
-                    Sign Out
-                  </a>
-                </div>
-                {user.picture && (
-                  <div className="profile-picture-container">
-                    <img
-                      src={user.picture}
-                      alt="Profile"
-                      className="profile-picture"
-                    />
-                  </div>
-                )}
+                <Button asChild variant="destructive" size="sm">
+                  <a href="/api/auth/logout">Sign Out</a>
+                </Button>
+                <Avatar className="h-8 w-8">
+                  <AvatarImage 
+                    src={user.picture} 
+                    alt={user.name || "Profile"} 
+                  />
+                  <AvatarFallback>{getInitials()}</AvatarFallback>
+                </Avatar>
               </>
             ) : (
-              <Link href="/login" className="login">
-                Log In
-              </Link>
+              <Button asChild variant="default">
+                <Link href="/login">Log In</Link>
+              </Button>
             )}
           </div>
         </div>
@@ -124,78 +141,6 @@ const Navbar = () => {
           onSave={handleProfileUpdate}
         />
       )}
-
-      <style jsx>{`
-        .navbar {
-          height: 70px;
-          background-color: var(--color-white);
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-          width: 100%;
-        }
-        .navbar-content {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 0 20px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          height: 100%;
-        }
-        .logo {
-          font-size: 1.5rem;
-          font-weight: bold;
-          color: var(--color-primary);
-          text-decoration: none;
-        }
-        .nav-links {
-          display: flex;
-          gap: 20px;
-          align-items: center;
-        }
-        .nav-links a {
-          color: var(--color-dark);
-          text-decoration: none;
-          transition: color 0.3s ease;
-        }
-        .nav-links a:hover {
-          color: var(--color-primary);
-        }
-        .nav-links a.active {
-          color: var(--color-primary);
-          font-weight: 600;
-        }
-        .sign-out-button {
-          margin-left: 10px;
-        }
-        .logout {
-          background-color: var(--color-danger);
-          color: white !important;
-          padding: 6px 12px;
-          border-radius: 4px;
-          font-size: 0.9rem;
-        }
-        .logout:hover {
-          background-color: #c82333;
-        }
-        .login {
-          color: var(--color-primary) !important;
-          font-weight: 600;
-        }
-        .login:hover {
-          text-decoration: underline;
-        }
-        .profile-picture-container {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          overflow: hidden;
-        }
-        .profile-picture {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-      `}</style>
     </>
   )
 }

@@ -2,6 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 
 const LoginModal = ({ isOpen, onClose, initialEmail = "" }) => {
   const router = useRouter();
@@ -20,8 +26,6 @@ const LoginModal = ({ isOpen, onClose, initialEmail = "" }) => {
     }
   }, [initialEmail]);
   
-  if (!isOpen) return null;
-
   // Function to verify the institution and check if user exists
   const verifyEmailAndInstitution = async () => {
     // Basic email validation
@@ -106,261 +110,145 @@ const LoginModal = ({ isOpen, onClose, initialEmail = "" }) => {
     }
   };
 
-  // Handle clicking outside the modal to close it
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
+  if (!isOpen) return null;
 
   return (
-    <div style={styles.modalOverlay} onClick={handleOverlayClick}>
-      <div style={styles.modalContent}>
-        <div style={styles.modalHeader}>
-          <h3 style={styles.modalTitle}>Sign In to xFoundry</h3>
-          <button style={styles.closeButton} onClick={onClose}>×</button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Sign In to xFoundry</DialogTitle>
+        </DialogHeader>
         
-        <div style={styles.modalBody}>
-          <p style={styles.description}>
+        <div className="py-4">
+          <p className="text-sm text-muted-foreground mb-4">
             Please enter your institutional email to continue. 
             We'll verify your institution and check if you already have an account.
           </p>
           
-          <div style={styles.formGroup}>
-            <label htmlFor="email" style={styles.label}>
-              Institutional Email 
-              <span style={styles.tooltipIcon} title="Use your school email (e.g., name@school.edu)">ⓘ</span>
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your.name@school.edu"
-              style={styles.input}
-              disabled={isVerifying || isRedirecting}
-            />
-            {emailError && <div style={styles.errorText}>{emailError}</div>}
+          <div className="grid gap-4 mb-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right col-span-1">
+                Email
+                <span className="ml-1 text-muted-foreground cursor-help" title="Use your school email (e.g., name@school.edu)">ⓘ</span>
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your.name@school.edu"
+                disabled={isVerifying || isRedirecting}
+                className="col-span-3"
+              />
+            </div>
+            {emailError && (
+              <div className="text-sm text-destructive ml-auto col-span-3 col-start-2">
+                {emailError}
+              </div>
+            )}
           </div>
           
           {/* Only show verify button when not yet verified or there was an error */}
           {(institutionStatus === null || institutionStatus === "error") && (
-            <button 
+            <Button 
               onClick={verifyEmailAndInstitution}
-              style={styles.verifyButton}
               disabled={isVerifying || !email || isRedirecting}
+              className="w-full"
             >
               {isVerifying ? "Verifying..." : "Continue"}
-            </button>
+            </Button>
           )}
           
-          {/* User exists message */}
-          {userExists === true && institutionStatus === "success" && (
-            <div style={styles.successBadge}>
-              <span style={styles.badgeIcon}>✓</span>
-              Welcome back! Your account was found. Continue to sign in.
-            </div>
-          )}
-          
-          {/* User doesn't exist message */}
-          {userExists === false && institutionStatus === "success" && (
-            <div style={styles.infoBadge}>
-              <span style={styles.badgeIcon}>ℹ</span>
-              No account found with this email. Continue to create a new account.
-            </div>
-          )}
-          
-          {/* Institution verification success */}
-          {institutionStatus === "success" && (
-            <div style={styles.institutionBadge}>
-              <span style={styles.badgeIcon}>✓</span>
-              Verified: {institution.name}
-            </div>
-          )}
-          
-          {/* Institution verification error */}
-          {institutionStatus === "error" && (
-            <div style={styles.errorBadge}>
-              <span style={styles.badgeIcon}>✕</span>
-              Institution not recognized. Please use your institutional email.
-            </div>
-          )}
+          {/* Verification Results */}
+          <div className="space-y-3 mt-4">
+            {/* User exists message */}
+            {userExists === true && institutionStatus === "success" && (
+              <Alert variant="success" className="bg-green-50 text-green-800 border-green-200">
+                <AlertDescription className="flex items-center">
+                  <CheckIcon className="mr-2 h-4 w-4" />
+                  Welcome back! Your account was found. Continue to sign in.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {/* User doesn't exist message */}
+            {userExists === false && institutionStatus === "success" && (
+              <Alert variant="info" className="bg-blue-50 text-blue-800 border-blue-200">
+                <AlertDescription className="flex items-center">
+                  <InfoIcon className="mr-2 h-4 w-4" />
+                  No account found with this email. Continue to create a new account.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {/* Institution verification success */}
+            {institutionStatus === "success" && (
+              <div className="flex items-center">
+                <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200 px-3 py-1">
+                  <CheckIcon className="mr-2 h-4 w-4" />
+                  Verified: {institution.name}
+                </Badge>
+              </div>
+            )}
+            
+            {/* Institution verification error */}
+            {institutionStatus === "error" && (
+              <Alert variant="destructive">
+                <AlertDescription className="flex items-center">
+                  <CrossIcon className="mr-2 h-4 w-4" />
+                  Institution not recognized. Please use your institutional email.
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
           
           {/* Sign In button - only shown when user exists */}
           {institutionStatus === "success" && userExists === true && (
-            <button
+            <Button
               onClick={proceedToAuth}
-              style={styles.continueButton}
               disabled={isRedirecting}
+              className="w-full mt-4 bg-green-600 hover:bg-green-700"
             >
               {isRedirecting ? "Redirecting..." : "Sign In to Your Account"}
-            </button>
+            </Button>
           )}
           
           {/* Create Account button - only shown when user doesn't exist */}
           {institutionStatus === "success" && userExists === false && (
-            <button
+            <Button
               onClick={proceedToAuth}
-              style={styles.continueButton}
               disabled={isRedirecting}
+              className="w-full mt-4 bg-green-600 hover:bg-green-700"
             >
               {isRedirecting ? "Redirecting..." : "Create New Account"}
-            </button>
+            </Button>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
-const styles = {
-  modalOverlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.6)", // Darker background
-    backdropFilter: "blur(5px)", // Blur effect
-    WebkitBackdropFilter: "blur(5px)", // Safari support
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-  },
-  modalContent: {
-    backgroundColor: "white",
-    borderRadius: "8px",
-    width: "90%",
-    maxWidth: "500px",
-    maxHeight: "90vh",
-    overflow: "auto",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-  },
-  modalHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "15px 20px",
-    borderBottom: "1px solid #eee",
-  },
-  modalTitle: {
-    margin: 0,
-    fontSize: "1.25rem",
-    fontWeight: "bold",
-    color: "var(--color-primary, #333)",
-  },
-  closeButton: {
-    background: "none",
-    border: "none",
-    fontSize: "1.5rem",
-    cursor: "pointer",
-    color: "#777",
-  },
-  modalBody: {
-    padding: "20px",
-  },
-  description: {
-    color: "var(--color-dark, #333)",
-    marginBottom: "20px",
-  },
-  formGroup: {
-    marginBottom: "20px",
-  },
-  label: {
-    display: "block",
-    marginBottom: "8px",
-    fontWeight: "500",
-    color: "var(--color-dark, #333)",
-  },
-  input: {
-    width: "100%",
-    padding: "12px 15px",
-    fontSize: "1rem",
-    borderRadius: "4px",
-    border: "1px solid #ddd",
-    transition: "border-color 0.3s ease",
-  },
-  tooltipIcon: {
-    marginLeft: "5px",
-    fontSize: "14px",
-    color: "var(--color-secondary, #666)",
-    cursor: "help",
-  },
-  errorText: {
-    color: "var(--color-danger, #dc3545)",
-    fontSize: "0.9rem",
-    marginTop: "5px",
-  },
-  verifyButton: {
-    backgroundColor: "var(--color-primary, #007bff)",
-    color: "white",
-    border: "none",
-    padding: "12px 20px",
-    borderRadius: "4px",
-    fontSize: "1rem",
-    cursor: "pointer",
-    marginBottom: "20px",
-    transition: "background-color 0.3s ease",
-    width: "100%",
-  },
-  successBadge: {
-    backgroundColor: "#d4edda",
-    color: "#155724",
-    padding: "12px 15px",
-    borderRadius: "4px",
-    display: "flex",
-    alignItems: "center",
-    marginBottom: "20px",
-    fontWeight: "500",
-  },
-  infoBadge: {
-    backgroundColor: "#cce5ff",
-    color: "#004085",
-    padding: "12px 15px",
-    borderRadius: "4px",
-    display: "flex",
-    alignItems: "center",
-    marginBottom: "20px",
-    fontWeight: "500",
-  },
-  institutionBadge: {
-    backgroundColor: "#f0f8ff",
-    color: "#0366d6",
-    padding: "12px 15px",
-    borderRadius: "4px",
-    display: "flex",
-    alignItems: "center",
-    marginBottom: "20px",
-    fontWeight: "500",
-  },
-  errorBadge: {
-    backgroundColor: "#f8d7da",
-    color: "#721c24",
-    padding: "12px 15px",
-    borderRadius: "4px",
-    display: "flex",
-    alignItems: "center",
-    marginBottom: "20px",
-    fontWeight: "500",
-  },
-  badgeIcon: {
-    marginRight: "10px",
-    fontSize: "1.2rem",
-  },
-  continueButton: {
-    backgroundColor: "var(--color-success, #28a745)",
-    color: "white",
-    border: "none",
-    padding: "12px 20px",
-    borderRadius: "4px",
-    fontSize: "1rem",
-    cursor: "pointer",
-    transition: "background-color 0.3s ease",
-    width: "100%",
-  },
-};
+// Icon components
+const CheckIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const InfoIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="12" cy="12" r="10" />
+    <line x1="12" y1="16" x2="12" y2="12" />
+    <line x1="12" y1="8" x2="12.01" y2="8" />
+  </svg>
+);
+
+const CrossIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
 
 export default LoginModal;

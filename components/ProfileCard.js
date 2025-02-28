@@ -1,3 +1,9 @@
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+
 const ProfileCard = ({ profile, onEditClick }) => {
   // Use real data or fallback to placeholders if no profile is provided
   const userData = profile || {};
@@ -5,277 +11,151 @@ const ProfileCard = ({ profile, onEditClick }) => {
   // Get profile picture from Airtable or Auth0
   const profilePicture = userData.Headshot || userData.picture || '/placeholder-user.jpg';
   
+  // Get initials for avatar fallback
+  const getInitials = () => {
+    if (!userData.name) return "NN";
+    return userData.name
+      .split(" ")
+      .map(n => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+  };
+
   return (
-    <div style={styles.card}>
-      <div style={styles.header}>
-        <div style={styles.profilePicture}>
-          <img 
-            src={profilePicture} 
-            alt={userData.name || "Profile"} 
-            style={styles.profileImage}
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = '/placeholder-user.jpg';
-            }}
-          />
-        </div>
-        <div style={styles.profileInfo}>
-          <h2 style={styles.name}>{userData.name || "No Name"}</h2>
-          <p style={styles.email}>{userData.email || "No Email"}</p>
-        </div>
-        {onEditClick && (
-          <button 
-            onClick={onEditClick} 
-            style={styles.editButton}
-            aria-label="Edit profile"
-          >
-            Edit Profile
-          </button>
-        )}
-      </div>
-
-      <div style={styles.academicInfo}>
-        <h3 style={styles.sectionHeading}>Academic Information</h3>
-        
-        {userData.needsInstitutionConfirm && userData.suggestedInstitution && (
-          <div style={styles.institutionAlert}>
-            <p style={styles.alertTitle}>Is this your institution?</p>
-            <p style={styles.alertText}>
-              Based on your email domain, we think you might be from <strong>{userData.suggestedInstitution.name}</strong>.
-            </p>
-            <button onClick={onEditClick} style={styles.confirmButton}>
-              Confirm Institution
-            </button>
+    <Card className="mb-5">
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-4">
+          <Avatar className="h-20 w-20">
+            <AvatarImage 
+              src={profilePicture} 
+              alt={userData.name || "Profile"} 
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = '/placeholder-user.jpg';
+              }}
+            />
+            <AvatarFallback className="text-xl">{getInitials()}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1">
+            <CardTitle className="text-xl mb-1">{userData.name || "No Name"}</CardTitle>
+            <p className="text-muted-foreground">{userData.email || "No Email"}</p>
           </div>
-        )}
-        
-        <div style={styles.infoGrid}>
-          <div style={styles.infoItem}>
-            <span style={styles.label}>Institution:</span>
-            <span style={styles.value}>{userData.institutionName || "Not specified"}</span>
-            {userData.needsInstitutionConfirm && (
-              <span style={styles.pendingTag}>Needs confirmation</span>
-            )}
-          </div>
-          <div style={styles.infoItem}>
-            <span style={styles.label}>Degree Type:</span>
-            <span style={styles.value}>{userData.degreeType || "Not specified"}</span>
-          </div>
-          {userData.showMajor && (
-            <div style={styles.infoItem}>
-              <span style={styles.label}>Major:</span>
-              <span style={styles.value}>{userData.major || "Not specified"}</span>
-            </div>
-          )}
-          <div style={styles.infoItem}>
-            <span style={styles.label}>Graduation Year:</span>
-            <span style={styles.value}>{userData.graduationYear || "Not specified"}</span>
-          </div>
-        </div>
-      </div>
-
-      <div style={userData.isProfileComplete ? styles.completeStatus : styles.incompleteStatus}>
-        {userData.isProfileComplete ? (
-          <>
-            <span style={styles.statusIcon}>✓</span>
-            Profile Complete
-          </>
-        ) : (
-          <>
-            <span style={styles.statusIcon}>⚠</span>
-            Profile Incomplete - {onEditClick && (
-              <button onClick={onEditClick} style={styles.updateButton}>
-                Update Your Information
-              </button>
-            )}
-          </>
-        )}
-      </div>
-      
-      {!userData.institution?.id && !userData.suggestedInstitution && (
-        <div style={styles.educationPrompt}>
-          <p style={styles.promptMessage}>
-            Please add your education information to see available programs for your institution.
-          </p>
           {onEditClick && (
-            <button onClick={onEditClick} style={styles.promptButton}>
-              Add Education Details
-            </button>
+            <Button onClick={onEditClick} size="sm">
+              Edit Profile
+            </Button>
           )}
         </div>
-      )}
-    </div>
-  )
-}
+      </CardHeader>
 
-const styles = {
-  card: {
-    backgroundColor: "white",
-    borderRadius: "8px",
-    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-    padding: "20px",
-    marginBottom: "20px",
-  },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    marginBottom: "20px",
-  },
-  profilePicture: {
-    width: "80px",
-    height: "80px",
-    borderRadius: "50%",
-    backgroundColor: "#f0f0f0",
-    marginRight: "20px",
-    overflow: "hidden",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  profileImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
-  },
-  editButton: {
-    backgroundColor: "var(--color-primary, #4285f4)",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
-    padding: "6px 12px",
-    fontSize: "14px",
-    fontWeight: "500",
-    cursor: "pointer",
-    marginLeft: "10px",
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  name: {
-    fontSize: "1.5rem",
-    fontWeight: "bold",
-    marginBottom: "5px",
-  },
-  email: {
-    color: "#555",
-    fontSize: "1rem",
-  },
-  academicInfo: {
-    marginBottom: "20px",
-  },
-  sectionHeading: {
-    fontSize: "1.2rem",
-    fontWeight: "bold",
-    borderBottom: "1px solid #eee",
-    paddingBottom: "10px",
-    marginBottom: "15px",
-  },
-  infoGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 1fr)",
-    gap: "15px",
-  },
-  infoItem: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  label: {
-    fontWeight: "bold",
-    marginBottom: "5px",
-  },
-  value: {
-    color: "#333",
-  },
-  completeStatus: {
-    backgroundColor: "#dff6dd",
-    color: "#107c10",
-    padding: "10px",
-    borderRadius: "4px",
-    textAlign: "center",
-    fontWeight: "bold",
-  },
-  incompleteStatus: {
-    backgroundColor: "#fff4ce",
-    color: "#815001",
-    padding: "10px",
-    borderRadius: "4px",
-    textAlign: "center",
-    fontWeight: "bold",
-  },
-  statusIcon: {
-    marginRight: "8px",
-  },
-  updateButton: {
-    backgroundColor: "transparent",
-    color: "inherit",
-    border: "none",
-    textDecoration: "underline",
-    cursor: "pointer",
-    fontWeight: "bold",
-    padding: 0,
-    display: "inline",
-    fontSize: "inherit",
-  },
-  educationPrompt: {
-    marginTop: "15px",
-    padding: "12px",
-    backgroundColor: "#e3f2fd",
-    borderRadius: "6px",
-    border: "1px solid #bbdefb",
-  },
-  promptMessage: {
-    margin: "0 0 10px 0",
-    color: "#0d47a1",
-    fontWeight: "500",
-  },
-  promptButton: {
-    backgroundColor: "#1976d2",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
-    padding: "8px 12px",
-    fontWeight: "500",
-    cursor: "pointer",
-    fontSize: "0.9rem",
-  },
-  institutionAlert: {
-    backgroundColor: "#e3f2fd",
-    borderRadius: "6px",
-    padding: "15px",
-    marginBottom: "20px",
-    border: "1px solid #bbdefb",
-  },
-  alertTitle: {
-    fontWeight: "bold",
-    fontSize: "1.1rem",
-    marginTop: 0,
-    marginBottom: "8px",
-    color: "#0d47a1",
-  },
-  alertText: {
-    marginBottom: "15px",
-    fontSize: "0.95rem",
-  },
-  confirmButton: {
-    backgroundColor: "#1976d2",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
-    padding: "8px 12px",
-    fontWeight: "500",
-    cursor: "pointer",
-    fontSize: "0.9rem",
-  },
-  pendingTag: {
-    display: "inline-block",
-    backgroundColor: "#fff3cd",
-    color: "#856404",
-    borderRadius: "3px",
-    padding: "2px 6px",
-    fontSize: "0.75rem",
-    marginTop: "5px",
-    fontWeight: "bold",
-  },
-}
+      <CardContent>
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold border-b pb-2 mb-4">Academic Information</h3>
+          
+          {userData.needsInstitutionConfirm && userData.suggestedInstitution && (
+            <Alert className="mb-4 bg-blue-50 border-blue-200 text-blue-800">
+              <div className="mb-2 font-semibold">Is this your institution?</div>
+              <AlertDescription className="space-y-2">
+                <p>
+                  Based on your email domain, we think you might be from <strong>{userData.suggestedInstitution.name}</strong>.
+                </p>
+                <Button onClick={onEditClick} className="mt-2" variant="secondary">
+                  Confirm Institution
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <div className="font-semibold">Institution:</div>
+              <div>{userData.institutionName || "Not specified"}</div>
+              {userData.needsInstitutionConfirm && (
+                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                  Needs confirmation
+                </Badge>
+              )}
+            </div>
+            <div className="space-y-1">
+              <div className="font-semibold">Degree Type:</div>
+              <div>{userData.degreeType || "Not specified"}</div>
+            </div>
+            {userData.showMajor && (
+              <div className="space-y-1">
+                <div className="font-semibold">Major:</div>
+                <div>{userData.major || "Not specified"}</div>
+              </div>
+            )}
+            <div className="space-y-1">
+              <div className="font-semibold">Graduation Year:</div>
+              <div>{userData.graduationYear || "Not specified"}</div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+      
+      <CardFooter className="flex flex-col gap-4">
+        <Alert className={userData.isProfileComplete ? 
+          "bg-green-50 border-green-200 text-green-800 w-full" : 
+          "bg-amber-50 border-amber-200 text-amber-800 w-full"
+        }>
+          <AlertDescription className="flex items-center justify-center font-medium">
+            {userData.isProfileComplete ? (
+              <>
+                <CheckIcon className="mr-2 h-4 w-4" />
+                Profile Complete
+              </>
+            ) : (
+              <>
+                <WarningIcon className="mr-2 h-4 w-4" />
+                Profile Incomplete
+                {onEditClick && (
+                  <Button 
+                    onClick={onEditClick} 
+                    variant="link" 
+                    className="p-0 h-auto ml-2 font-medium text-amber-800 underline"
+                  >
+                    Update Your Information
+                  </Button>
+                )}
+              </>
+            )}
+          </AlertDescription>
+        </Alert>
+        
+        {!userData.institution?.id && !userData.suggestedInstitution && (
+          <Alert className="bg-blue-50 border-blue-200 text-blue-800 w-full">
+            <AlertDescription className="space-y-2">
+              <p>
+                Please add your education information to see available programs for your institution.
+              </p>
+              {onEditClick && (
+                <Button onClick={onEditClick} variant="secondary" size="sm" className="mt-2">
+                  Add Education Details
+                </Button>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+      </CardFooter>
+    </Card>
+  );
+};
 
-export default ProfileCard
+// Icon components
+const CheckIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const WarningIcon = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+    <line x1="12" y1="9" x2="12" y2="13" />
+    <line x1="12" y1="17" x2="12.01" y2="17" />
+  </svg>
+);
+
+export default ProfileCard;
