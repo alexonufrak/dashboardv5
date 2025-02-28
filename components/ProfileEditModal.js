@@ -123,7 +123,7 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onClose} className="transition-all duration-300 ease-in-out">
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>

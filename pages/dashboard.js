@@ -232,7 +232,7 @@ const Dashboard = () => {
             {Array.isArray(topics) && topics.length > 0 && 
               topics.slice(0, 2).map((topic, index) => (
                 <Badge key={`topic-${index}`} variant="secondary" className="bg-cyan-50 text-cyan-800">
-                  {topic}
+                  {topic} {cohort.className && index === 0 ? `- ${cohort.className}` : ''}
                 </Badge>
               ))
             }

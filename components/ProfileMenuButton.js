@@ -49,28 +49,6 @@ const ProfileMenuButton = ({ user, profile, onEditClick }) => {
   return (
     <div className="px-3 pb-5 border-b">
       <div className="flex flex-col items-center pt-5">
-        {/* Institution Badge */}
-        {profile?.institution && (
-          <Badge 
-            variant="outline" 
-            className="mb-4 py-1 px-3 bg-primary/5 hover:bg-primary/10"
-          >
-            {institutionUrl ? (
-              <a 
-                href={institutionUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-1"
-              >
-                {institutionName}
-                <ExternalLink className="h-3 w-3 ml-1" />
-              </a>
-            ) : (
-              institutionName
-            )}
-          </Badge>
-        )}
-        
         {/* Profile Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -111,42 +89,23 @@ const ProfileMenuButton = ({ user, profile, onEditClick }) => {
         </div>
         
         <div className="w-full">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-medium">Profile Status</span>
-            <Button variant="ghost" size="sm" className="h-7 px-2" onClick={onEditClick}>
-              <Edit className="h-3.5 w-3.5 mr-1" />
-              <span className="text-xs">Edit</span>
-            </Button>
-          </div>
-          
-          <div className="flex items-center gap-2 text-xs mb-2">
-            {isProfileComplete ? (
-              <Badge variant="outline" className="flex items-center gap-1 w-full justify-center py-1 bg-green-50 text-green-700 border-green-200">
-                <CheckCircle className="h-3 w-3" />
-                Complete
-              </Badge>
-            ) : (
+          {!isProfileComplete && (
+            <div className="flex items-center gap-2 text-xs mb-3">
               <Badge variant="outline" className="flex items-center gap-1 w-full justify-center py-1 bg-amber-50 text-amber-700 border-amber-200">
                 <XCircle className="h-3 w-3" />
-                Incomplete
+                Profile Incomplete
               </Badge>
-            )}
-          </div>
+            </div>
+          )}
           
-          <div className="text-xs space-y-1 mt-3">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Institution</span>
-              <span className="font-medium">{profile?.institutionName || "Not specified"}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Degree</span>
-              <span className="font-medium">{profile?.degreeType || "Not specified"}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Graduation</span>
-              <span className="font-medium">{profile?.graduationYear || "Not specified"}</span>
-            </div>
-          </div>
+          <Button 
+            onClick={onEditClick}
+            className="w-full transition-all duration-300 ease-in-out hover:scale-105"
+            size="sm"
+          >
+            <Edit className="mr-2 h-4 w-4" />
+            Edit Profile
+          </Button>
         </div>
       </div>
     </div>

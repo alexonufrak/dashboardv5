@@ -28,23 +28,8 @@ const DashboardSidebar = ({ profile, onEditClick }) => {
   const { user } = useUser()
   const [openMobile, setOpenMobile] = useState(false)
 
-  const links = [
-    {
-      href: "/dashboard",
-      label: "Hub",
-      icon: <Home className="h-5 w-5" />
-    },
-    {
-      href: "#programs",
-      label: "Programs",
-      icon: <Compass className="h-5 w-5" />
-    },
-    {
-      href: "#teams",
-      label: "My Team",
-      icon: <Users className="h-5 w-5" />
-    }
-  ]
+  // Hide navigation links for now as requested
+  const links = []
   
   const externalLinks = [
     {
@@ -109,7 +94,8 @@ const DashboardSidebar = ({ profile, onEditClick }) => {
         </h2>
         
         <div className="md:hidden">
-          <Button variant="ghost" size="icon" onClick={() => setOpenMobile(false)}>
+          <Button variant="ghost" size="icon" onClick={() => setOpenMobile(false)}
+            className="transition-transform duration-300 ease-in-out hover:rotate-90">
             <XCircle className="h-5 w-5" />
           </Button>
         </div>

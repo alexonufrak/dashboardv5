@@ -30,19 +30,31 @@ const Layout = ({ children, title = "xFoundry Hub", profile, onEditClick }) => {
       </Head>
 
       <div className="min-h-screen bg-background">
+        {/* Mobile Header */}
+        {showSidebar && (
+          <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-background border-b py-3 px-4 flex justify-between items-center">
+            <h2 className="text-lg font-bold tracking-tight text-primary ml-9">
+              xFoundry Hub
+            </h2>
+            <div className="text-xs">
+              {profile?.institutionName || "Institution"}
+            </div>
+          </div>
+        )}
+        
         {/* Sidebar - only shown on protected pages */}
         {showSidebar && <DashboardSidebar profile={profile} onEditClick={onEditClick} />}
         
         {/* Main Content */}
-        <main className={`flex-1 ${showSidebar ? 'md:ml-64' : ''} pt-4`}>
+        <main className={`flex-1 ${showSidebar ? 'md:ml-64' : ''} ${showSidebar ? 'pt-16 md:pt-4' : 'pt-4'}`}>
           <div className="container max-w-6xl mx-auto px-4 md:px-6">
             {showBreadcrumbs && <Breadcrumbs />}
             {children}
           </div>
         </main>
 
-        {/* Footer */}
-        <footer className={`border-t py-4 text-center text-muted-foreground text-sm ${showSidebar ? 'md:ml-64' : ''}`}>
+        {/* Footer with added padding */}
+        <footer className={`border-t py-8 mt-8 text-center text-muted-foreground text-sm ${showSidebar ? 'md:ml-64' : ''}`}>
           <p>© {currentYear} xFoundry Education Platform. All rights reserved.</p>
         </footer>
       </div>

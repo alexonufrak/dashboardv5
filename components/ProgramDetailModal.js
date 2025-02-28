@@ -46,7 +46,7 @@ const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply }) => {
   const format = cohort["Format"] || null
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onClose} className="transition-all duration-300 ease-in-out">
       <DialogContent className="sm:max-w-[650px]">
         <DialogHeader>
           <div className="flex flex-wrap gap-2 mb-1">

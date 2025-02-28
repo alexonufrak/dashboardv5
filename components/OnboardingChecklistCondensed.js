@@ -148,13 +148,6 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
             
             <div className="flex gap-2">
               <Button 
-                variant="outline" 
-                size="sm"
-                onClick={skipOnboarding}
-              >
-                Skip for Now
-              </Button>
-              <Button 
                 size="sm"
                 className="gap-1"
                 onClick={onViewAll}
