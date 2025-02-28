@@ -220,12 +220,12 @@ export default function SignUp() {
               className="w-full"
             >
               {/* Clean Minimal Progress Steps */}
-              <div className="mb-8 w-full max-w-xs mx-auto">
+              <div className="mb-8 w-full max-w-[180px] mx-auto">
                 <div className="relative pt-4 pb-8">
-                  {/* Step Indicators */}
-                  <div className="flex justify-between">
+                  {/* Step Indicators with Exact Spacing */}
+                  <div className="flex justify-between relative">
                     {/* Step 1 */}
-                    <div className="text-center">
+                    <div className="text-center w-10">
                       <div 
                         className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center text-sm mb-2 transition-all duration-300
                           ${currentStep >= 1 
@@ -240,7 +240,7 @@ export default function SignUp() {
                     </div>
                     
                     {/* Step 2 */}
-                    <div className="text-center">
+                    <div className="text-center w-10">
                       <div 
                         className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center text-sm mb-2 transition-all duration-300
                           ${currentStep >= 2 
@@ -255,14 +255,14 @@ export default function SignUp() {
                     </div>
                   </div>
                   
-                  {/* Connecting Line */}
-                  <div className="absolute h-0.5 bg-gray-200 top-8 left-12 right-12 -mt-[2px] -translate-y-1/2"></div>
+                  {/* Connecting Line (Background) */}
+                  <div className="absolute h-[2px] bg-gray-200 top-[20px] left-[30px] right-[30px]"></div>
                   
-                  {/* Active Progress Line */}
+                  {/* Active Progress Line - With Exact Cutoff */}
                   <div 
-                    className="absolute h-0.5 bg-primary top-8 left-12 -mt-[2px] -translate-y-1/2 transition-all duration-500 ease-in-out"
+                    className="absolute h-[2px] bg-primary top-[20px] left-[30px] transition-all duration-500 ease-in-out"
                     style={{ 
-                      width: currentStep === 1 ? '0' : 'calc(100% - 48px)' // 24px padding on each side (48px total)
+                      width: currentStep === 1 ? '0' : 'calc(100% - 68px)' // Ensures it stops before the second circle
                     }}
                   ></div>
                 </div>
