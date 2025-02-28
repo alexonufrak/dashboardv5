@@ -219,52 +219,36 @@ export default function SignUp() {
               value={currentStep === 1 ? "step1" : "step2"}
               className="w-full"
             >
-              {/* Clean Minimal Progress Steps */}
-              <div className="mb-8 w-full max-w-[180px] mx-auto">
-                <div className="relative pt-4 pb-8">
-                  {/* Step Indicators with Exact Spacing */}
-                  <div className="flex justify-between relative">
-                    {/* Step 1 */}
-                    <div className="text-center w-10">
-                      <div 
-                        className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center text-sm mb-2 transition-all duration-300
-                          ${currentStep >= 1 
-                            ? 'bg-primary text-white' 
-                            : 'bg-gray-100 text-gray-400'}`}
-                      >
-                        1
-                      </div>
-                      <span className={`text-xs font-medium ${currentStep >= 1 ? 'text-primary' : 'text-gray-400'}`}>
-                        Institution
-                      </span>
-                    </div>
-                    
-                    {/* Step 2 */}
-                    <div className="text-center w-10">
-                      <div 
-                        className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center text-sm mb-2 transition-all duration-300
-                          ${currentStep >= 2 
-                            ? 'bg-primary text-white' 
-                            : 'bg-gray-100 text-gray-400'}`}
-                      >
-                        2
-                      </div>
-                      <span className={`text-xs font-medium ${currentStep >= 2 ? 'text-primary' : 'text-gray-400'}`}>
-                        Profile
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Connecting Line (Background) */}
-                  <div className="absolute h-[2px] bg-gray-200 top-[20px] left-[30px] right-[30px]"></div>
-                  
-                  {/* Active Progress Line - With Exact Cutoff */}
+              {/* Simple Step Indicators Only */}
+              <div className="mb-8 w-full flex justify-center space-x-16">
+                {/* Step 1 */}
+                <div className="text-center">
                   <div 
-                    className="absolute h-[2px] bg-primary top-[20px] left-[30px] transition-all duration-500 ease-in-out"
-                    style={{ 
-                      width: currentStep === 1 ? '0' : 'calc(100% - 68px)' // Ensures it stops before the second circle
-                    }}
-                  ></div>
+                    className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center text-sm font-medium mb-2 transition-all duration-300 shadow-sm
+                      ${currentStep >= 1 
+                        ? 'bg-primary text-white' 
+                        : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
+                  >
+                    1
+                  </div>
+                  <span className={`text-xs font-medium ${currentStep >= 1 ? 'text-primary' : 'text-gray-400'}`}>
+                    Institution
+                  </span>
+                </div>
+                
+                {/* Step 2 */}
+                <div className="text-center">
+                  <div 
+                    className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center text-sm font-medium mb-2 transition-all duration-300 shadow-sm
+                      ${currentStep >= 2 
+                        ? 'bg-primary text-white' 
+                        : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
+                  >
+                    2
+                  </div>
+                  <span className={`text-xs font-medium ${currentStep >= 2 ? 'text-primary' : 'text-gray-400'}`}>
+                    Profile
+                  </span>
                 </div>
               </div>
               
