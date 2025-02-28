@@ -6,19 +6,26 @@ module.exports = {
   ],
   theme: {
   	extend: {
-      colors: {
-        // xFoundry brand colors
-        primary: {
-          DEFAULT: "#24A9E0", // Curious Blue
-          dark: "#0E445A",    // Eden
-          light: "#55C4F1"    // Lighter shade of Curious Blue
-        },
-        secondary: "#0E445A",  // Eden
-        accent: "#FFD200",     // Gold
-        eden: "#0E445A",
-        curious: "#24A9E0",
-        gold: "#FFD200"
-      },
+  		colors: {
+  			primary: {
+  				DEFAULT: '#24A9E0',
+  				dark: '#0E445A',
+  				light: '#55C4F1'
+  			},
+  			secondary: '#0E445A',
+  			accent: '#FFD200',
+  			eden: '#0E445A',
+  			curious: '#24A9E0',
+  			gold: '#FFD200',
+  			sidebar: {
+  				DEFAULT: 'hsl(var(--sidebar))',
+  				foreground: 'hsl(var(--sidebar-foreground))',
+  				accent: 'hsl(var(--sidebar-accent))',
+  				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
+  				border: 'hsl(var(--sidebar-border))',
+  				ring: 'hsl(var(--sidebar-ring))'
+  			}
+  		},
   		keyframes: {
   			'accordion-down': {
   				from: {
