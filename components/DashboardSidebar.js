@@ -156,7 +156,7 @@ const DashboardSidebar = ({ profile, onEditClick }) => {
       
       {/* Mobile Sidebar */}
       <Sheet open={openMobile} onOpenChange={setOpenMobile}>
-        <SheetContent side="left" className="p-0 max-w-[300px] shadow-md">
+        <SheetContent side="left" className="p-0 max-w-[300px] shadow-md data-[state=open]:slide-in-from-left data-[state=closed]:slide-out-to-left">
           {renderSidebarContent()}
         </SheetContent>
       </Sheet>
