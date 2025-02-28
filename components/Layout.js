@@ -3,13 +3,18 @@
 import Head from "next/head"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
-import Navbar from "./Navbar"
-import ResourcesToolbar from "./ResourcesToolbar"
+import { useUser } from "@auth0/nextjs-auth0/client"
 
-const Layout = ({ children, title = "xFoundry Student Dashboard" }) => {
+import DashboardSidebar from "./DashboardSidebar"
+import ResourceToolbarNew from "./ResourceToolbarNew"
+import Breadcrumbs from "./Breadcrumbs"
+
+const Layout = ({ children, title = "xFoundry Student Dashboard", profile }) => {
   const [currentYear, setCurrentYear] = useState("")
   const router = useRouter()
-  const isDashboard = router.pathname === "/dashboard"
+  const { user } = useUser()
+  const isDashboard = router.pathname === "/dashboard" || router.pathname === "/profile"
+  const showSidebar = isDashboard && user
 
   useEffect(() => {
     setCurrentYear(new Date().getFullYear())
@@ -24,19 +29,23 @@ const Layout = ({ children, title = "xFoundry Student Dashboard" }) => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div style={{
-        ...styles.pageContainer,
-        paddingTop: isDashboard ? "30px" : "0"
-      }}>
-        {/* Resources Toolbar - only shown on dashboard */}
-        {isDashboard && <ResourcesToolbar />}
+      <div className="min-h-screen bg-background">
+        {/* Resources Toolbar - only shown when logged in */}
+        {showSidebar && <ResourceToolbarNew />}
         
-        {/* Main Navbar */}
-        <Navbar />
+        {/* Sidebar - only shown on protected pages */}
+        {showSidebar && <DashboardSidebar profile={profile} />}
+        
+        {/* Main Content */}
+        <main className={`flex-1 ${showSidebar ? 'md:ml-64 pt-12' : 'pt-4'}`}>
+          <div className="container max-w-7xl mx-auto px-4 md:px-6">
+            {showSidebar && <Breadcrumbs />}
+            {children}
+          </div>
+        </main>
 
-        <main style={styles.mainContent}>{children}</main>
-
-        <footer style={styles.footer}>
+        {/* Footer */}
+        <footer className={`border-t py-4 text-center text-muted-foreground text-sm ${showSidebar ? 'md:ml-64' : ''}`}>
           <p>© {currentYear} xFoundry Education Platform. All rights reserved.</p>
         </footer>
       </div>
@@ -44,28 +53,4 @@ const Layout = ({ children, title = "xFoundry Student Dashboard" }) => {
   )
 }
 
-const styles = {
-  pageContainer: {
-    display: "flex",
-    flexDirection: "column",
-    minHeight: "100vh",
-  },
-  mainContent: {
-    flex: 1,
-    maxWidth: "1200px",
-    margin: "0 auto",
-    padding: "20px",
-    width: "100%",
-  },
-  footer: {
-    borderTop: "1px solid var(--color-light)",
-    backgroundColor: "var(--color-white)",
-    color: "var(--color-secondary)",
-    textAlign: "center",
-    padding: "1rem 0",
-    marginTop: "2rem",
-  },
-}
-
 export default Layout
-

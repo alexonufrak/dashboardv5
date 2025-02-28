@@ -3,15 +3,39 @@
 import { withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { useEffect, useState } from "react"
+import dynamic from 'next/dynamic'
+import { toast } from "sonner"
+
+// Import components
 import Layout from "../components/Layout"
 import ProfileCard from "../components/ProfileCard"
 import ProfileEditModal from "../components/ProfileEditModal"
 import TeamCard from "../components/TeamCard"
-import LoadingScreen from "../components/LoadingScreen"
 import { FilloutPopupEmbed } from "@fillout/react"
 
+// Import UI components
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
+
+// Import icons
+import { 
+  BookOpen, 
+  Users, 
+  UserCircle, 
+  BellRing, 
+  Terminal, 
+  CheckCircle, 
+  XCircle, 
+  Clock, 
+  AlertTriangle 
+} from "lucide-react"
+
 // Import the OnboardingChecklist component dynamically to avoid hook issues
-import dynamic from 'next/dynamic'
 const OnboardingChecklist = dynamic(
   () => import('../components/OnboardingChecklist'),
   { ssr: false }
@@ -29,6 +53,7 @@ const Dashboard = () => {
   const [isUpdating, setIsUpdating] = useState(false)
   const [activeFilloutForm, setActiveFilloutForm] = useState(null)
   const [dashboardContent, setDashboardContent] = useState(false)
+  const [activeTab, setActiveTab] = useState("overview")
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -41,6 +66,7 @@ const Dashboard = () => {
         setProfile(data)
       } catch (err) {
         setError(err.message)
+        toast.error("Failed to load your profile")
       } finally {
         setIsLoading(false)
       }
@@ -56,6 +82,7 @@ const Dashboard = () => {
         setTeamData(data.team)
       } catch (err) {
         console.error("Error fetching team data:", err)
+        toast.error("Failed to load team information")
       } finally {
         setIsTeamLoading(false)
       }
@@ -85,12 +112,37 @@ const Dashboard = () => {
 
   // Show loading screen while data is loading
   if (isUserLoading || isLoading) {
-    return <LoadingScreen />
+    return (
+      <Layout title="xFoundry Dashboard">
+        <div className="flex flex-col gap-6 mt-10">
+          <Skeleton className="h-[50px] w-[250px]" />
+          
+          <div className="flex flex-col gap-6">
+            <Skeleton className="h-[250px] w-full rounded-xl" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Skeleton className="h-[150px] rounded-xl" />
+              <Skeleton className="h-[150px] rounded-xl" />
+              <Skeleton className="h-[150px] rounded-xl" />
+            </div>
+          </div>
+        </div>
+      </Layout>
+    )
   }
 
   // Show error message if there's an error
   if (error) {
-    return <div>Error: {error}</div>
+    return (
+      <Layout title="xFoundry Dashboard">
+        <Alert variant="destructive" className="mt-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {error}. Please try refreshing the page or contact support if the issue persists.
+          </AlertDescription>
+        </Alert>
+      </Layout>
+    )
   }
   
   // Handler functions
@@ -121,8 +173,10 @@ const Dashboard = () => {
       
       const updatedProfile = await response.json();
       setProfile(updatedProfile);
+      toast.success("Profile updated successfully");
     } catch (err) {
       console.error("Error updating profile:", err);
+      toast.error(err.message || "Failed to update profile");
       throw err;
     } finally {
       setIsUpdating(false);
@@ -131,30 +185,16 @@ const Dashboard = () => {
 
   // Function to render individual cohort cards
   const renderCohortCard = (cohort) => {
-    // Get initiative name from enhancedCohorts data
     const initiativeName = cohort.initiativeDetails?.name || "Unknown Initiative";
-    
-    // Get topics and classes from our enhanced data
     const topics = cohort.topicNames || [];
     const classes = cohort.classNames || [];
-    
-    // Set button action based on the Action Button field
-    const actionButtonText = cohort["Action Button"] || "Apply Now";
-    
-    // Set status indicator
     const status = cohort["Status"] || "Unknown";
-    
-    // Get Fillout form ID from Airtable
+    const actionButtonText = cohort["Action Button"] || "Apply Now";
     const filloutFormId = cohort["Application Form ID (Fillout)"];
-    
-    // Define different action button styles based on status
-    const buttonStyle = {
-      ...styles.actionButton,
-      backgroundColor: status === "Applications Open" ? "var(--color-primary)" : "var(--color-secondary)",
-    };
+    const isOpen = status === "Applications Open";
     
     const handleButtonClick = () => {
-      if (status === "Applications Open" && filloutFormId) {
+      if (isOpen && filloutFormId) {
         setActiveFilloutForm({
           formId: filloutFormId,
           cohortId: cohort.id,
@@ -164,213 +204,283 @@ const Dashboard = () => {
     };
     
     return (
-      <div key={cohort.id} style={styles.cohortCard}>
-        <div style={styles.cohortHeader}>
-          <div>
-            <h3 style={styles.cohortTitle}>{initiativeName}</h3>
+      <Card key={cohort.id} className="overflow-hidden">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">{initiativeName}</CardTitle>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {Array.isArray(topics) && topics.length > 0 && 
+              topics.map((topic, index) => (
+                <Badge key={`topic-${index}`} variant="secondary" className="bg-cyan-50 text-cyan-800">
+                  {topic}
+                </Badge>
+              ))
+            }
             
-            <div style={styles.badgesContainer}>
-              {/* Only show topic badges if topics exist */}
-              {Array.isArray(topics) && topics.length > 0 && 
-                topics.map((topic, index) => (
-                  <span key={`topic-${index}`} style={styles.topicBadge}>{topic}</span>
-                ))
-              }
-              
-              {/* Only show class badges if classes exist */}
-              {Array.isArray(classes) && classes.length > 0 && 
-                classes.map((className, index) => (
-                  <span key={`class-${index}`} style={styles.classBadge}>{className}</span>
-                ))
-              }
-              
-              <span style={{
-                ...styles.statusBadge,
-                backgroundColor: status === "Applications Open" ? "#dff0d8" : "#f2dede",
-                color: status === "Applications Open" ? "#3c763d" : "#a94442",
-              }}>
-                {status}
-              </span>
-            </div>
+            {Array.isArray(classes) && classes.length > 0 && 
+              classes.map((className, index) => (
+                <Badge key={`class-${index}`} variant="outline" className="bg-amber-50 text-amber-800">
+                  {className}
+                </Badge>
+              ))
+            }
+            
+            <Badge variant={isOpen ? "success" : "destructive"} 
+              className={isOpen ? 
+                "bg-green-50 text-green-800" : 
+                "bg-red-50 text-red-800"
+              }>
+              {status}
+            </Badge>
           </div>
-        </div>
+        </CardHeader>
         
-        <div style={styles.cohortContent}>
-          <div style={styles.actionButtonContainer}>
-            <button 
-              style={buttonStyle} 
-              disabled={status !== "Applications Open" || !filloutFormId}
-              onClick={handleButtonClick}
-            >
-              {actionButtonText}
-            </button>
-          </div>
-        </div>
-      </div>
+        <CardFooter className="pt-2 pb-4">
+          <Button 
+            className="w-full" 
+            variant={isOpen ? "default" : "secondary"}
+            disabled={!isOpen || !filloutFormId}
+            onClick={handleButtonClick}
+          >
+            {actionButtonText}
+          </Button>
+        </CardFooter>
+      </Card>
     );
   };
   
   // Main JSX content
   return (
-    <Layout title="xFoundry Dashboard">
-      <div style={styles.container}>
-        {/* Fillout form popup */}
-        {activeFilloutForm && (
-          <FilloutPopupEmbed
-            filloutId={activeFilloutForm.formId}
-            onClose={() => setActiveFilloutForm(null)}
-            parameters={{
-              cohortId: activeFilloutForm.cohortId,
-              initiativeName: activeFilloutForm.initiativeName,
-              userEmail: user?.email,
-              userName: user?.name,
-              userContactId: profile?.contactId
-            }}
-          />
-        )}
-        
-        {/* Onboarding Checklist - Only render when we have profile data */}
-        {profile && (
-          <OnboardingChecklist 
-            profile={profile}
-            onComplete={() => setDashboardContent(true)}
-          />
-        )}
-        
-        {/* Dashboard Content - Only shown after onboarding is completed or skipped */}
-        {dashboardContent && (
-          <div style={styles.content}>
-            <div style={styles.profileSection}>
-              <h2 style={styles.sectionHeading}>Your Profile</h2>
-              <ProfileCard profile={profile} onEditClick={handleEditClick} />
-              
-              {isEditModalOpen && (
-                <ProfileEditModal
-                  isOpen={isEditModalOpen}
-                  onClose={handleEditClose}
-                  profile={profile}
-                  onSave={handleProfileUpdate}
-                />
-              )}
+    <Layout title="xFoundry Dashboard" profile={profile}>
+      {/* Fillout form popup */}
+      {activeFilloutForm && (
+        <FilloutPopupEmbed
+          filloutId={activeFilloutForm.formId}
+          onClose={() => setActiveFilloutForm(null)}
+          parameters={{
+            cohortId: activeFilloutForm.cohortId,
+            initiativeName: activeFilloutForm.initiativeName,
+            userEmail: user?.email,
+            userName: user?.name,
+            userContactId: profile?.contactId
+          }}
+        />
+      )}
+      
+      {/* Onboarding Checklist - Only render when we have profile data */}
+      {profile && (
+        <OnboardingChecklist 
+          profile={profile}
+          onComplete={() => setDashboardContent(true)}
+        />
+      )}
+      
+      {/* Dashboard Content - Only shown after onboarding is completed or skipped */}
+      {dashboardContent && (
+        <div className="space-y-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+              <p className="text-muted-foreground">
+                Welcome back, {profile?.firstName || user?.name?.split(' ')[0] || 'Student'}
+              </p>
             </div>
             
-            <div style={styles.teamSection}>
-              <h2 style={styles.sectionHeading}>Your Team</h2>
-              {isTeamLoading ? (
-                <div style={styles.card}>
-                  <p style={styles.loadingText}>Loading team information...</p>
-                </div>
-              ) : (
-                <>
-                  <TeamCard team={teamData} />
-                  {process.env.NODE_ENV !== 'production' && (
-                    <div style={styles.debugInfo}>
-                      <p><strong>Team Data:</strong> {teamData ? 'Available' : 'Not available'}</p>
-                      <p><strong>Contact ID:</strong> {profile?.contactId || 'Not available'}</p>
-                      <div style={styles.debugActions}>
-                        <button 
-                          onClick={async () => {
-                            try {
-                              const response = await fetch('/api/debug/team-data');
-                              const data = await response.json();
-                              console.log("Debug team data:", data);
-                              
-                              // Create a more user-friendly summary
-                              const summary = [
-                                `Contact ID: ${data.contactId}`,
-                                `Email: ${data.email}`,
-                                `Member records: ${data.memberRecords?.length || 0}`,
-                                `Team records: ${data.teamRecords?.length || 0}`,
-                                `Table IDs configured: ${data.tableConfig.membersTableId ? 'Yes' : 'No'} (Members), ${data.tableConfig.teamsTableId ? 'Yes' : 'No'} (Teams)`,
-                              ];
-                              
-                              if (data.memberRecords?.length === 0) {
-                                summary.push("ISSUE: No member records found for this user");
-                              } else if (data.extractedTeamIds?.length === 0) {
-                                summary.push("ISSUE: Member records don't have Team links");
-                              } else if (data.memberAnalysis?.activeMembers === 0) {
-                                summary.push(`ISSUE: No ACTIVE members (statuses: ${data.memberAnalysis.statuses.join(', ')})`);
-                              } else if (data.teamRecords?.length === 0) {
-                                summary.push("ISSUE: Team records not found");
-                              }
-                              
-                              alert(summary.join('\n'));
-                            } catch (error) {
-                              console.error("Error debugging teams:", error);
-                              alert(`Error debugging teams: ${error.message}`);
-                            }
-                          }}
-                          style={styles.debugButton}
-                        >
-                          Enhanced Team Debug
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-            
-            <div style={styles.cohortsSection}>
-              <h2 style={styles.sectionHeading}>Available Programs</h2>
-              
-              {/* Add debug info */}
-              {process.env.NODE_ENV !== 'production' && (
-                <div style={styles.debugInfo}>
-                  <p><strong>Institution ID:</strong> {profile.institution?.id || 'Not available'}</p>
-                  <p><strong>Cohorts data available:</strong> {profile.cohorts ? 'Yes' : 'No'}</p>
-                  <p><strong>Number of cohorts:</strong> {profile.cohorts?.length || 0}</p>
-                  {profile.cohorts && profile.cohorts.length > 0 && (
-                    <div>
-                      <p><strong>Cohort IDs:</strong></p>
-                      <ul>
-                        {profile.cohorts.map((cohort, index) => (
-                          <li key={index}>{cohort.id} - Status: {cohort.Status || 'Unknown'}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {/* Add check action */}
-                  <div style={styles.debugActions}>
-                    <button 
-                      onClick={async () => {
-                        if (!profile.institution?.id) {
-                          alert("No institution ID available");
-                          return;
-                        }
-                        
-                        try {
-                          // Try to fetch partnerships directly
-                          const response = await fetch(`/api/debug/partnerships?institutionId=${profile.institution.id}`);
-                          const data = await response.json();
-                          console.log("Debug partnerships data:", data);
-                          alert(`Found ${data.partnerships?.length || 0} partnerships and ${data.cohorts?.length || 0} cohorts.\nCheck console for details.`);
-                        } catch (error) {
-                          console.error("Error checking partnerships:", error);
-                          alert(`Error checking partnerships: ${error.message}`);
-                        }
-                      }}
-                      style={styles.debugButton}
-                    >
-                      Check Partnerships
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {profile.cohorts && profile.cohorts.length > 0 ? (
-                <div style={styles.cohortsGrid}>
-                  {profile.cohorts.map(cohort => renderCohortCard(cohort))}
-                </div>
-              ) : (
-                <div style={styles.card}>
-                  <p style={styles.noCohorts}>No programs are currently available for your institution. Check back later for updates.</p>
-                </div>
-              )}
-            </div>
+            <Tabs 
+              defaultValue="overview" 
+              className="w-full md:w-auto"
+              value={activeTab}
+              onValueChange={setActiveTab}
+            >
+              <TabsList className="grid w-full md:w-auto grid-cols-3">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="teams">Team</TabsTrigger>
+                <TabsTrigger value="programs">Programs</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
-        )}
-      </div>
+          
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="col-span-2" id="profile">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <UserCircle className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-xl">Profile Information</CardTitle>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={handleEditClick}>
+                      Edit Profile
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <ProfileCard profile={profile} onEditClick={handleEditClick} />
+                </CardContent>
+              </Card>
+              
+              <Card id="notifications">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <BellRing className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-xl">Notifications</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-4 rounded-lg border p-3">
+                    <div className="rounded-full bg-primary/10 p-1">
+                      <CheckCircle className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-sm font-medium">Application Complete</p>
+                      <p className="text-xs text-muted-foreground">
+                        Your program application has been received
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="flex items-center gap-4 rounded-lg border p-3">
+                    <div className="rounded-full bg-amber-100 p-1">
+                      <Clock className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-sm font-medium">Complete Your Profile</p>
+                      <p className="text-xs text-muted-foreground">
+                        Add your education details to see more programs
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card id="team-overview">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-xl">Team Status</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {isTeamLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Skeleton className="h-32 w-full rounded-xl" />
+                    </div>
+                  ) : (
+                    teamData ? (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <h3 className="font-medium text-primary">{teamData.name}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {teamData.members?.filter(m => m.status === "Active").length || 0} active members
+                            </p>
+                          </div>
+                          <Button variant="ghost" size="sm" onClick={() => setActiveTab("teams")}>
+                            View Details
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <p>You're not part of any team yet.</p>
+                        <Button variant="outline" className="mt-4">Join a Team</Button>
+                      </div>
+                    )
+                  )}
+                </CardContent>
+              </Card>
+              
+              <Card id="program-overview">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-xl">Available Programs</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {profile.cohorts && profile.cohorts.length > 0 ? (
+                    <div className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        You have {profile.cohorts.length} programs available to join
+                      </p>
+                      <Button onClick={() => setActiveTab("programs")}>
+                        Browse Programs
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No programs are currently available for your institution.</p>
+                      <p className="text-sm mt-2">Check back later for updates.</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="teams" className="space-y-6" id="teams">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-xl">Your Team</CardTitle>
+                </div>
+                <CardDescription>
+                  View and manage your team information
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isTeamLoading ? (
+                  <Skeleton className="h-48 w-full" />
+                ) : (
+                  <TeamCard team={teamData} />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="programs" className="space-y-6" id="programs">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-xl">Available Programs</CardTitle>
+                </div>
+                <CardDescription>
+                  Browse and apply for programs available to you
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {profile.cohorts && profile.cohorts.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {profile.cohorts.map(cohort => renderCohortCard(cohort))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground italic">
+                    No programs are currently available for your institution. Check back later for updates.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {isEditModalOpen && (
+            <ProfileEditModal
+              isOpen={isEditModalOpen}
+              onClose={handleEditClose}
+              profile={profile}
+              onSave={handleProfileUpdate}
+            />
+          )}
+        </div>
+      )}
     </Layout>
   )
 }
@@ -378,155 +488,3 @@ const Dashboard = () => {
 export const getServerSideProps = withPageAuthRequired()
 
 export default Dashboard
-
-const styles = {
-  container: {
-    maxWidth: "1200px",
-    margin: "0 auto",
-    padding: "20px",
-    position: "relative",
-  },
-  institutionBadge: {
-    display: "inline-block",
-    padding: "6px 12px",
-    background: "var(--color-primary)",
-    color: "white",
-    borderRadius: "4px",
-    fontWeight: "bold",
-    marginBottom: "20px",
-    fontSize: "14px",
-  },
-  content: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "30px",
-  },
-  profileSection: {
-    width: "100%",
-  },
-  teamSection: {
-    width: "100%",
-    marginBottom: "10px",
-  },
-  cohortsSection: {
-    width: "100%",
-  },
-  sectionHeading: {
-    fontSize: "1.5rem",
-    color: "var(--color-primary)",
-    marginBottom: "15px",
-  },
-  loadingText: {
-    padding: "20px",
-    textAlign: "center",
-    color: "var(--color-secondary)",
-    fontStyle: "italic",
-  },
-  debugInfo: {
-    backgroundColor: "#f9f9f9",
-    padding: "15px",
-    border: "1px solid #ddd",
-    borderRadius: "4px",
-    fontSize: "14px",
-    marginBottom: "20px",
-    fontFamily: "monospace",
-    whiteSpace: "pre-wrap",
-  },
-  debugActions: {
-    marginTop: "10px",
-    borderTop: "1px solid #ddd",
-    paddingTop: "10px",
-  },
-  debugButton: {
-    padding: "5px 10px",
-    backgroundColor: "#333",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-  },
-  card: {
-    backgroundColor: "var(--color-white)",
-    borderRadius: "8px",
-    padding: "20px",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-    marginBottom: "20px",
-  },
-  noCohorts: {
-    color: "var(--color-secondary)",
-    fontStyle: "italic",
-    textAlign: "center",
-    padding: "20px 0",
-  },
-  cohortsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-    gap: "20px",
-  },
-  cohortCard: {
-    backgroundColor: "var(--color-white)",
-    borderRadius: "8px",
-    overflow: "hidden",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-  },
-  cohortHeader: {
-    padding: "20px",
-    borderBottom: "1px solid #eee",
-  },
-  cohortTitle: {
-    fontSize: "1.2rem",
-    fontWeight: "bold",
-    marginBottom: "10px",
-  },
-  badgesContainer: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "8px",
-    marginTop: "8px",
-  },
-  topicBadge: {
-    display: "inline-block",
-    padding: "4px 8px",
-    backgroundColor: "#e0f7fa",
-    color: "#00838f",
-    borderRadius: "4px",
-    fontSize: "0.8rem",
-  },
-  classBadge: {
-    display: "inline-block",
-    padding: "4px 8px",
-    backgroundColor: "#fff3e0",
-    color: "#e65100",
-    borderRadius: "4px",
-    fontSize: "0.8rem",
-  },
-  statusBadge: {
-    display: "inline-block",
-    padding: "4px 8px",
-    borderRadius: "4px",
-    fontSize: "0.8rem",
-  },
-  cohortContent: {
-    padding: "20px",
-  },
-  topicsContainer: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "8px",
-    marginBottom: "15px",
-  },
-  actionButtonContainer: {
-    display: "flex",
-    justifyContent: "center",
-    marginTop: "15px",
-  },
-  actionButton: {
-    padding: "10px 20px",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
-    fontWeight: "bold",
-    cursor: "pointer",
-    transition: "opacity 0.3s ease",
-  },
-}
