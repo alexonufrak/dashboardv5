@@ -20,6 +20,9 @@ const Layout = ({ children, title = "xFoundry Hub", profile, onEditClick }) => {
     setCurrentYear(new Date().getFullYear())
   }, [])
 
+  // Add debug logs
+  console.log("Layout props:", { profile, isDashboard, showSidebar })
+
   return (
     <>
       <Head>

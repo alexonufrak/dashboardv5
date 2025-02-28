@@ -31,6 +31,7 @@ import {
 } from "./ui/sidebar"
 
 const NewDashboardSidebar = ({ profile, onEditClick }) => {
+  console.log("Profile in sidebar:", profile) // Add logging to debug
   const router = useRouter()
   const { user } = useUser()
   
