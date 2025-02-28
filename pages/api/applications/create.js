@@ -58,14 +58,18 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     // Prepare application data
     const applicationData = {
       'Contact': [userProfile.contactId],
+      'Contacts': [userProfile.contactId], // Add alternate field name for compatibility
       'Cohort': [cohortId],
+      'Cohorts': [cohortId], // Add alternate field name for compatibility
       'Status': 'Submitted',
-      'Submission Date': new Date().toISOString()
+      'Submission Date': new Date().toISOString(),
+      'Date': new Date().toISOString() // Add alternate field name for compatibility
     }
     
     // If team ID is provided, add it to the application
     if (teamId) {
       applicationData['Team'] = [teamId]
+      applicationData['Teams'] = [teamId] // Add alternate field name for compatibility
     }
     
     // Create the application record
@@ -87,6 +91,17 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     })
   } catch (error) {
     console.error('Error creating application:', error)
-    return res.status(500).json({ error: 'Failed to create application' })
+    console.error('Error details:', error.message, error.stack)
+    
+    // Check for specific Airtable error types for better error messages
+    if (error.statusCode === 422) {
+      return res.status(422).json({ error: 'Invalid field data in application creation. Please check field names match the Airtable schema.' })
+    } else if (error.statusCode === 404) {
+      return res.status(404).json({ error: 'Applications table not found. Please check environment variables.' })
+    } else if (error.statusCode === 403) {
+      return res.status(403).json({ error: 'Permission denied to create application. Please check API key permissions.' })
+    }
+    
+    return res.status(500).json({ error: 'Failed to create application: ' + error.message })
   }
 })

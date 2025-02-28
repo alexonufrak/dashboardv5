@@ -60,6 +60,7 @@ export default withApiAuthRequired(async function createTeamHandler(req, res) {
     console.log(`Creating new team: ${name}`)
     const teamRecord = await teamsTable.create({
       'Name': name.trim(),
+      'Team Name': name.trim(), // Adding both field names for compatibility
       'Description': description?.trim() || '',
       'Status': 'Active'
     })
@@ -90,6 +91,17 @@ export default withApiAuthRequired(async function createTeamHandler(req, res) {
     })
   } catch (error) {
     console.error('Error creating team:', error)
-    return res.status(500).json({ error: 'Failed to create team' })
+    console.error('Error details:', error.message, error.stack)
+    
+    // Check for specific Airtable error types for better error messages
+    if (error.statusCode === 422) {
+      return res.status(422).json({ error: 'Invalid field data in team creation. Please check field names match the Airtable schema.' })
+    } else if (error.statusCode === 404) {
+      return res.status(404).json({ error: 'Teams table not found. Please check environment variables.' })
+    } else if (error.statusCode === 403) {
+      return res.status(403).json({ error: 'Permission denied to create team. Please check API key permissions.' })
+    }
+    
+    return res.status(500).json({ error: 'Failed to create team: ' + error.message })
   }
 })
