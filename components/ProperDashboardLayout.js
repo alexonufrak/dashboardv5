@@ -54,14 +54,16 @@ const ProperDashboardLayout = ({
           
           {/* Main Content */}
           <SidebarInset className="bg-background">
-            <div className="pt-[60px] md:pt-4 px-4 md:px-6 overflow-x-hidden">
-              {showBreadcrumbs && <Breadcrumbs />}
-              {children}
-              
-              {/* Footer */}
-              <footer className="border-t py-8 mt-8 text-center text-muted-foreground text-sm">
-                <p>© {currentYear} xFoundry Education Platform. All rights reserved.</p>
-              </footer>
+            <div className="pt-[60px] md:pt-4 overflow-x-hidden">
+              <div className="mx-auto max-w-6xl px-4 md:px-6">
+                {showBreadcrumbs && <Breadcrumbs />}
+                {children}
+                
+                {/* Footer */}
+                <footer className="border-t py-8 mt-8 text-center text-muted-foreground text-sm">
+                  <p>© {currentYear} xFoundry Education Platform. All rights reserved.</p>
+                </footer>
+              </div>
             </div>
           </SidebarInset>
         </SidebarProvider>
