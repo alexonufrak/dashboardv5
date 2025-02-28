@@ -289,18 +289,24 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         <p className="text-muted-foreground">Complete these steps to get started</p>
       </CardHeader>
       
-      {/* Fillout form popup */}
+      {/* Fillout form popup with required parameters */}
       {activeFilloutForm && (
         <FilloutPopupEmbed
           filloutId={activeFilloutForm.formId}
           onClose={() => setActiveFilloutForm(null)}
           onSubmit={handleFormCompleted}
+          data-user_id={user?.sub}
+          data-contact={profile?.contactId}
+          data-institution={profile?.institution?.id}
           parameters={{
             cohortId: activeFilloutForm.cohortId,
             initiativeName: activeFilloutForm.initiativeName,
             userEmail: user?.email,
             userName: user?.name,
-            userContactId: profile?.contactId
+            userContactId: profile?.contactId,
+            user_id: user?.sub,
+            contact: profile?.contactId,
+            institution: profile?.institution?.id
           }}
         />
       )}

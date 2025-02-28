@@ -276,17 +276,23 @@ const Dashboard = () => {
   // Main JSX content
   return (
     <Layout title="xFoundry Hub" profile={profile} onEditClick={handleEditClick}>
-      {/* Fillout form popup */}
+      {/* Fillout form popup with required parameters */}
       {activeFilloutForm && (
         <FilloutPopupEmbed
           filloutId={activeFilloutForm.formId}
           onClose={() => setActiveFilloutForm(null)}
+          data-user_id={user?.sub}
+          data-contact={profile?.contactId}
+          data-institution={profile?.institution?.id}
           parameters={{
             cohortId: activeFilloutForm.cohortId,
             initiativeName: activeFilloutForm.initiativeName,
             userEmail: user?.email,
             userName: user?.name,
-            userContactId: profile?.contactId
+            userContactId: profile?.contactId,
+            user_id: user?.sub,
+            contact: profile?.contactId,
+            institution: profile?.institution?.id
           }}
         />
       )}
