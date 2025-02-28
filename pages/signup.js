@@ -5,6 +5,7 @@ import { useRouter } from "next/router"
 import Layout from "../components/Layout"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import LoadingScreen from "../components/LoadingScreen"
+import Logo from "../components/Logo"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -204,6 +205,9 @@ export default function SignUp() {
       <div className="container mx-auto flex flex-col items-center justify-center py-12 px-4 lg:px-8">
         <div className="max-w-5xl w-full">
           <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <Logo variant="horizontal" color="eden" height={50} />
+            </div>
             <h1 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
               Join Our Multidisciplinary Community
             </h1>

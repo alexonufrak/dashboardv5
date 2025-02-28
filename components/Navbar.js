@@ -5,6 +5,7 @@ import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { useState, useEffect } from "react"
 import ProfileEditModal from "./ProfileEditModal"
+import Logo from "./Logo"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 
@@ -91,9 +92,7 @@ const Navbar = () => {
     <>
       <nav className="h-[70px] bg-background border-b w-full">
         <div className="max-w-[1200px] mx-auto px-4 h-full flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold text-primary">
-            xFoundry
-          </Link>
+          <Logo variant="horizontal" color="eden" height={36} />
           
           <div className="flex items-center gap-6">
             {isLoading ? (

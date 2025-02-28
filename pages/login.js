@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import Layout from "../components/Layout";
 import LoadingScreen from "../components/LoadingScreen";
+import Logo from "../components/Logo";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -142,6 +143,9 @@ export default function Login() {
         <div className="w-full max-w-md">
           <Card className="p-6 md:p-8 shadow-md border-0 bg-white">
             <div className="space-y-6">
+              <div className="flex justify-center mb-6">
+                <Logo variant="horizontal" color="eden" height={40} />
+              </div>
               <div className="space-y-2 text-center">
                 <h1 className="text-2xl font-bold tracking-tight text-curious">Sign In</h1>
                 <p className="text-muted-foreground text-sm">Enter your institutional email to continue</p>

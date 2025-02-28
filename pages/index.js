@@ -6,6 +6,7 @@ import { useEffect } from "react"
 import Layout from "../components/Layout"
 import LoadingScreen from "../components/LoadingScreen"
 import DashboardRedirect from "../components/DashboardRedirect"
+import Logo from "../components/Logo"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { RocketIcon, Users, BookOpenText, GraduationCap, ArrowRight, CheckIcon } from "lucide-react"
@@ -37,6 +38,9 @@ export default function Home() {
           <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
             <div className="flex flex-col justify-center space-y-8">
               <div className="space-y-6">
+                <div className="mb-8">
+                  <Logo variant="horizontal" color="eden" height={80} />
+                </div>
                 <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl/none text-primary">
                   Break Down Silos, Build Better Solutions
                 </h1>

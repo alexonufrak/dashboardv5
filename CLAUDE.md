@@ -6,6 +6,13 @@
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 
+## Logo Files
+Located in `/public/logos/`:
+- `xFoundry Blue 900 (1).svg` - Full horizontal logo with text in blue
+- `xFoundry Logo.svg` - Full horizontal logo with text in white
+- `X Icon Blue.svg` - X icon only in blue
+- `X Icon White.svg` - X icon only in white
+
 ## Code Style Guidelines
 - **Imports**: Import React components first, followed by hooks, then utilities
 - **Component Structure**: Use functional components with React hooks

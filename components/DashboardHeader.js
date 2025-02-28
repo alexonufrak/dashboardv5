@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Logo from "./Logo"
 
 const DashboardHeader = ({ profile }) => {
   // Get first name from full name or use "Student" as fallback
@@ -6,7 +7,8 @@ const DashboardHeader = ({ profile }) => {
   
   return (
     <header style={styles.header}>
-      <div>
+      <div style={styles.headerTop}>
+        <Logo variant="horizontal" color="eden" height={40} className="mb-4" />
         <h1 style={styles.heading}>Welcome, {firstName}!</h1>
         <p style={styles.subtitle}>
           Welcome to your xFoundry student dashboard. Here you can view your profile information and explore available programs.
@@ -38,6 +40,11 @@ const styles = {
     borderRadius: "8px",
     padding: "30px 20px",
     marginBottom: "30px",
+  },
+  headerTop: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
   },
   heading: {
     fontSize: "2rem",
