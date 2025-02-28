@@ -32,7 +32,7 @@ const Layout = ({ children, title = "xFoundry Hub", profile, onEditClick }) => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background overflow-x-hidden">
         {/* Mobile Header */}
         {showSidebar && (
           <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white border-b py-3 px-4 flex justify-between items-center shadow-sm">
@@ -54,7 +54,7 @@ const Layout = ({ children, title = "xFoundry Hub", profile, onEditClick }) => {
             <DashboardSidebar profile={profile} onEditClick={onEditClick} />
             
             {/* Main Content with sidebar */}
-            <div className="flex-1 w-full">
+            <div className="flex-1 w-full overflow-x-hidden">
               <main className={`w-full ${showSidebar ? 'md:ml-64' : ''} ${showSidebar ? 'pt-[60px] md:pt-4' : 'pt-4'}`}>
                 <div className="max-w-6xl mx-auto px-4 md:px-6">
                   {showBreadcrumbs && <Breadcrumbs />}
@@ -65,7 +65,7 @@ const Layout = ({ children, title = "xFoundry Hub", profile, onEditClick }) => {
           </div>
         ) : (
           /* Main Content without sidebar */
-          <main className="flex-1 pt-4">
+          <main className="flex-1 pt-4 overflow-x-hidden">
             <div className="container max-w-6xl mx-auto px-4 md:px-6">
               {children}
             </div>
