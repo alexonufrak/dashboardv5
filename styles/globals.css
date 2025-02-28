@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Custom Font Import */
 @font-face {
   font-family: 'Hanken Grotesk';
@@ -254,4 +258,6 @@ h6 {
     max-width: 100%;
   }
 }
+
+@layer base {}
 
