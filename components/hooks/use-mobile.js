@@ -2,23 +2,22 @@
 
 import { useState, useEffect } from "react";
 
+const MOBILE_BREAKPOINT = 768;
+
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(undefined);
 
   useEffect(() => {
-    const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+    const onChange = () => {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
     };
-
-    // Check on mount
-    checkIfMobile();
-
-    // Listen for window resize events
-    window.addEventListener("resize", checkIfMobile);
-
-    // Clean up
-    return () => window.removeEventListener("resize", checkIfMobile);
+    
+    mql.addEventListener("change", onChange);
+    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    
+    return () => mql.removeEventListener("change", onChange);
   }, []);
 
-  return isMobile;
+  return !!isMobile;
 }
