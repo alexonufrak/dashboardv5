@@ -115,13 +115,6 @@ const DashboardSidebar = ({ profile, onEditClick }) => {
         <h2 className="text-xl font-bold tracking-tight text-primary">
           xFoundry Hub
         </h2>
-        
-        <div className="md:hidden">
-          <Button variant="ghost" size="icon" onClick={() => setOpenMobile(false)}
-            className="transition-transform duration-300 ease-in-out hover:rotate-90">
-            <XCircle className="h-5 w-5" />
-          </Button>
-        </div>
       </div>
       
       {/* Profile Section */}
@@ -163,7 +156,7 @@ const DashboardSidebar = ({ profile, onEditClick }) => {
       
       {/* Mobile Sidebar */}
       <Sheet open={openMobile} onOpenChange={setOpenMobile}>
-        <SheetContent side="left" className="p-0 max-w-[300px]">
+        <SheetContent side="left" className="p-0 max-w-[300px] shadow-md">
           {renderSidebarContent()}
         </SheetContent>
       </Sheet>

@@ -32,7 +32,7 @@ const Layout = ({ children, title = "xFoundry Hub", profile, onEditClick }) => {
       <div className="min-h-screen bg-background">
         {/* Mobile Header */}
         {showSidebar && (
-          <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-background border-b py-3 px-4 flex justify-between items-center">
+          <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-background border-b py-3 px-4 flex justify-between items-center shadow-sm">
             <h2 className="text-lg font-bold tracking-tight text-primary ml-9">
               xFoundry Hub
             </h2>
