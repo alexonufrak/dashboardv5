@@ -49,6 +49,28 @@ const ProfileMenuButton = ({ user, profile, onEditClick }) => {
   return (
     <div className="px-3 pb-5 border-b">
       <div className="flex flex-col items-center pt-5">
+        {/* Institution Badge */}
+        {profile?.institution && (
+          <Badge 
+            variant="outline" 
+            className="mb-4 py-1 px-3 bg-primary/5 hover:bg-primary/10"
+          >
+            {institutionUrl ? (
+              <a 
+                href={institutionUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-1"
+              >
+                {institutionName}
+                <ExternalLink className="h-3 w-3 ml-1" />
+              </a>
+            ) : (
+              institutionName
+            )}
+          </Badge>
+        )}
+        
         {/* Profile Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -73,13 +95,6 @@ const ProfileMenuButton = ({ user, profile, onEditClick }) => {
               <Edit className="mr-2 h-4 w-4" />
               <span>Edit Profile</span>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOut className="mr-2 h-4 w-4" />
-              <Link href="/api/auth/logout" className="w-full">
-                Sign Out
-              </Link>
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         
@@ -100,7 +115,7 @@ const ProfileMenuButton = ({ user, profile, onEditClick }) => {
           
           <Button 
             onClick={onEditClick}
-            className="w-full transition-all duration-300 ease-in-out hover:scale-105"
+            className="w-full"
             size="sm"
           >
             <Edit className="mr-2 h-4 w-4" />

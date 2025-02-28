@@ -261,12 +261,20 @@ h6 {
 
 @layer base {
   /* Simple, subtle animation transitions */
-  .dialog-overlay {
+  .dialog-overlay[data-state="open"] {
     animation: fadeIn 180ms ease;
   }
   
-  .dialog-content {
+  .dialog-overlay[data-state="closed"] {
+    animation: fadeOut 180ms ease;
+  }
+  
+  .dialog-content[data-state="open"] {
     animation: fadeIn 200ms ease;
+  }
+  
+  .dialog-content[data-state="closed"] {
+    animation: fadeOut 200ms ease;
   }
   
   @keyframes fadeIn {
@@ -274,14 +282,14 @@ h6 {
     to { opacity: 1; }
   }
   
-  /* Add animation transitions to common elements */
-  button, a, .card, .badge, .alert {
-    transition: all 0.2s ease-in-out;
+  @keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
   }
   
-  /* Simple hover effects */
-  button:hover {
-    transform: translateY(-1px);
+  /* Add animation transitions to common elements */
+  button, a, .card, .badge, .alert {
+    transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, opacity 0.2s ease-in-out;
   }
 }
 

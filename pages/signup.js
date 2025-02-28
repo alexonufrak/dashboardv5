@@ -15,7 +15,6 @@ const SignupStep = ({ currentStep, stepNumber, children }) => {
     <div 
       style={{
         ...styles.formStep,
-        transform: `translateX(${(stepNumber - currentStep) * 100}%)`,
         opacity: isActive ? 1 : 0,
         zIndex: isActive ? 1 : 0,
         // When not active, remove from layout flow to prevent issues with container sizing
@@ -476,7 +475,7 @@ const styles = {
   },
   formStep: {
     width: "100%",
-    transition: "transform 0.5s ease, opacity 0.5s ease",
+    transition: "transform 0.3s ease, opacity 0.3s ease",
     height: "auto", // Allow height to adjust to content
   },
   stepHeading: {

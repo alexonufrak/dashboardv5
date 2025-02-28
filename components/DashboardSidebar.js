@@ -20,7 +20,8 @@ import {
   Users, 
   Menu, 
   ExternalLink,
-  XCircle
+  XCircle,
+  LogOut
 } from "lucide-react"
 
 const DashboardSidebar = ({ profile, onEditClick }) => {
@@ -41,6 +42,11 @@ const DashboardSidebar = ({ profile, onEditClick }) => {
       href: "https://xfoundry.org",
       label: "xFoundry Website",
       icon: <ExternalLink className="h-4 w-4" />
+    },
+    {
+      href: "/api/auth/logout",
+      label: "Sign Out",
+      icon: <LogOut className="h-4 w-4" />
     }
   ]
 
@@ -73,18 +79,35 @@ const DashboardSidebar = ({ profile, onEditClick }) => {
     )
   }
   
-  const renderExternalLink = (link) => (
-    <a
-      key={link.label}
-      href={link.href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-    >
-      {link.label}
-      {link.icon}
-    </a>
-  )
+  const renderExternalLink = (link) => {
+    // Special case for logout link
+    if (link.label === "Sign Out") {
+      return (
+        <Link
+          key={link.label}
+          href={link.href}
+          className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+        >
+          {link.label}
+          {link.icon}
+        </Link>
+      )
+    }
+    
+    // Regular external links
+    return (
+      <a
+        key={link.label}
+        href={link.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+      >
+        {link.label}
+        {link.icon}
+      </a>
+    )
+  }
 
   const renderSidebarContent = () => (
     <div className="flex h-full flex-col">

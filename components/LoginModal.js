@@ -113,8 +113,8 @@ const LoginModal = ({ isOpen, onClose, initialEmail = "" }) => {
   if (!isOpen) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={isOpen} onOpenChange={onClose} className="transition-all duration-200">
+      <DialogContent className="sm:max-w-[500px] dialog-content">
         <DialogHeader>
           <DialogTitle>Sign In to xFoundry</DialogTitle>
         </DialogHeader>
