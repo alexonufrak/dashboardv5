@@ -1,6 +1,12 @@
 "use client"
 
 import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
   const [formData, setFormData] = useState({
@@ -43,13 +49,6 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
   }, [isOpen, profile?.showMajor]);
 
   if (!isOpen) return null;
-  
-  // Handle clicking outside the modal to close it
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -69,6 +68,13 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
       return;
     }
     
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSelectChange = (name, value) => {
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -117,108 +123,112 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
   };
 
   return (
-    <div style={styles.modalOverlay} onClick={handleOverlayClick}>
-      <div style={styles.modalContent}>
-        <div style={styles.modalHeader}>
-          <h3 style={styles.modalTitle}>Edit Profile</h3>
-          <button style={styles.closeButton} onClick={onClose}>×</button>
-        </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Edit Profile</DialogTitle>
+        </DialogHeader>
         
-        {error && <div style={styles.errorMessage}>{error}</div>}
+        {error && (
+          <Alert variant="destructive" className="my-2">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         
-        <form onSubmit={handleSubmit}>
-          <div style={styles.formSection}>
-            <h4 style={styles.sectionTitle}>Personal Information</h4>
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label htmlFor="firstName" style={styles.label}>First Name</label>
-                <input
-                  type="text"
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <h4 className="text-lg font-semibold border-b pb-2">Personal Information</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
                   id="firstName"
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleInputChange}
-                  style={styles.input}
                   required
                 />
               </div>
-              <div style={styles.formGroup}>
-                <label htmlFor="lastName" style={styles.label}>Last Name</label>
-                <input
-                  type="text"
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
                   id="lastName"
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleInputChange}
-                  style={styles.input}
                   required
                 />
               </div>
             </div>
           </div>
           
-          <div style={styles.formSection}>
-            <h4 style={styles.sectionTitle}>Academic Information</h4>
-            <div style={styles.formGroup}>
-              <label htmlFor="institution" style={styles.label}>Institution</label>
+          <div className="space-y-4">
+            <h4 className="text-lg font-semibold border-b pb-2">Academic Information</h4>
+            
+            <div className="space-y-2">
+              <Label htmlFor="institution">Institution</Label>
               {profile.needsInstitutionConfirm && profile.suggestedInstitution ? (
-                <>
-                  <div style={styles.suggestedInstitution}>
-                    <p>Based on your email domain, we suggest:</p>
-                    <div style={styles.institutionOption}>
-                      <input
-                        type="radio"
-                        id="suggestedInstitution"
-                        name="institutionId"
-                        value={profile.suggestedInstitution.id}
-                        checked={formData.institutionId === profile.suggestedInstitution.id}
-                        onChange={handleInputChange}
-                        style={styles.radioInput}
-                      />
-                      <label htmlFor="suggestedInstitution" style={styles.radioLabel}>
-                        {profile.suggestedInstitution.name}
-                      </label>
-                    </div>
-                    <div style={styles.institutionOption}>
-                      <input
-                        type="radio"
-                        id="noInstitution"
-                        name="institutionId"
-                        value=""
-                        checked={!formData.institutionId}
-                        onChange={() => setFormData(prev => ({...prev, institutionId: null}))}
-                        style={styles.radioInput}
-                      />
-                      <label htmlFor="noInstitution" style={styles.radioLabel}>
-                        None of the above / Other Institution
-                      </label>
-                    </div>
-                    <small style={styles.helperText}>Please confirm your institution to see relevant programs.</small>
+                <div className="bg-blue-50 p-3 rounded-md border border-blue-200 space-y-2">
+                  <p className="text-sm">Based on your email domain, we suggest:</p>
+                  
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="suggestedInstitution"
+                      name="institutionId"
+                      value={profile.suggestedInstitution.id}
+                      checked={formData.institutionId === profile.suggestedInstitution.id}
+                      onChange={handleInputChange}
+                      className="rounded"
+                    />
+                    <Label htmlFor="suggestedInstitution" className="font-medium cursor-pointer">
+                      {profile.suggestedInstitution.name}
+                    </Label>
                   </div>
-                </>
+                  
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="noInstitution"
+                      name="institutionId"
+                      value=""
+                      checked={!formData.institutionId}
+                      onChange={() => setFormData(prev => ({...prev, institutionId: null}))}
+                      className="rounded"
+                    />
+                    <Label htmlFor="noInstitution" className="font-medium cursor-pointer">
+                      None of the above / Other Institution
+                    </Label>
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground">
+                    Please confirm your institution to see relevant programs.
+                  </p>
+                </div>
               ) : (
-                <>
-                  <input
-                    type="text"
+                <div>
+                  <Input
                     id="institution"
                     value={profile.institutionName || profile.institution?.name || "Not specified"}
-                    style={{...styles.input, ...styles.disabledInput}}
+                    className="bg-muted"
                     disabled
                   />
-                  <small style={styles.helperText}>Institution cannot be changed. Contact support if needed.</small>
-                </>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Institution cannot be changed. Contact support if needed.
+                  </p>
+                </div>
               )}
             </div>
             
-            <div style={styles.formRow}>
-              <div style={styles.formGroup}>
-                <label htmlFor="degreeType" style={styles.label}>Degree Type</label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="degreeType">Degree Type</Label>
                 <select
                   id="degreeType"
                   name="degreeType"
                   value={formData.degreeType}
                   onChange={handleInputChange}
-                  style={styles.input}
+                  className="w-full p-2 border rounded-md"
                   required
                 >
                   <option value="">Select Degree Type</option>
@@ -228,18 +238,19 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
                   <option value="Certificate">Certificate</option>
                 </select>
               </div>
+              
               {profile.showMajor && (
-                <div style={styles.formGroup}>
-                  <label htmlFor="major" style={styles.label}>Major/Field of Study</label>
+                <div className="space-y-2">
+                  <Label htmlFor="major">Major/Field of Study</Label>
                   {isLoadingMajors ? (
-                    <div style={styles.loadingText}>Loading majors...</div>
+                    <div className="text-sm text-muted-foreground italic p-2">Loading majors...</div>
                   ) : (
                     <select
                       id="major"
                       name="major"
                       value={formData.major}
                       onChange={handleInputChange}
-                      style={styles.input}
+                      className="w-full p-2 border rounded-md"
                       required={profile.showMajor}
                     >
                       <option value="">Select a Major</option>
@@ -254,184 +265,35 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
               )}
             </div>
             
-            <div style={styles.formGroup}>
-              <label htmlFor="graduationYear" style={styles.label}>Expected Graduation Year</label>
-              <input
-                type="text"
+            <div className="space-y-2">
+              <Label htmlFor="graduationYear">Expected Graduation Year</Label>
+              <Input
                 id="graduationYear"
                 name="graduationYear"
                 value={formData.graduationYear}
                 onChange={handleInputChange}
-                style={styles.input}
                 placeholder="YYYY"
-                pattern="[0-9]{4}"
-                inputMode="numeric"
                 maxLength="4"
-                title="Please enter a valid 4-digit year (e.g., 2025)"
                 required
               />
-              <small style={styles.helperText}>Enter 4-digit year (e.g., 2025)</small>
+              <p className="text-xs text-muted-foreground">
+                Enter 4-digit year (e.g., 2025)
+              </p>
             </div>
           </div>
           
-          <div style={styles.actionButtons}>
-            <button type="button" style={styles.cancelButton} onClick={onClose}>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
-            </button>
-            <button type="submit" style={styles.saveButton} disabled={isSubmitting}>
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : "Save Changes"}
-            </button>
+            </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
-};
-
-const styles = {
-  modalOverlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.6)", // Darker background
-    backdropFilter: "blur(5px)", // Blur effect
-    WebkitBackdropFilter: "blur(5px)", // Safari support
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-  },
-  loadingText: {
-    padding: "8px 12px",
-    color: "#777",
-    fontSize: "0.9rem",
-    fontStyle: "italic",
-  },
-  modalContent: {
-    backgroundColor: "white",
-    borderRadius: "8px",
-    width: "90%",
-    maxWidth: "600px",
-    maxHeight: "90vh",
-    overflow: "auto",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-  },
-  modalHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "15px 20px",
-    borderBottom: "1px solid #eee",
-  },
-  modalTitle: {
-    margin: 0,
-    fontSize: "1.25rem",
-    fontWeight: "bold",
-    color: "var(--color-primary, #333)",
-  },
-  closeButton: {
-    background: "none",
-    border: "none",
-    fontSize: "1.5rem",
-    cursor: "pointer",
-    color: "#777",
-  },
-  formSection: {
-    padding: "15px 20px",
-    borderBottom: "1px solid #eee",
-  },
-  sectionTitle: {
-    fontSize: "1rem",
-    marginTop: 0,
-    marginBottom: "15px",
-    color: "var(--color-primary, #333)",
-  },
-  formRow: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "15px",
-    marginBottom: "15px",
-  },
-  formGroup: {
-    flex: "1 1 calc(50% - 7.5px)",
-    minWidth: "200px",
-    marginBottom: "15px",
-  },
-  label: {
-    display: "block",
-    marginBottom: "5px",
-    fontWeight: "500",
-  },
-  input: {
-    width: "100%",
-    padding: "8px 12px",
-    borderRadius: "4px",
-    border: "1px solid #ddd",
-    fontSize: "1rem",
-  },
-  disabledInput: {
-    backgroundColor: "#f9f9f9",
-    color: "#777",
-  },
-  helperText: {
-    display: "block",
-    fontSize: "0.8rem",
-    color: "#777",
-    marginTop: "5px",
-  },
-  suggestedInstitution: {
-    backgroundColor: "#f5f9ff",
-    padding: "12px",
-    borderRadius: "5px",
-    marginBottom: "10px",
-    border: "1px solid #e0eaff"
-  },
-  institutionOption: {
-    display: "flex",
-    alignItems: "center",
-    margin: "8px 0",
-  },
-  radioInput: {
-    margin: "0 10px 0 0",
-  },
-  radioLabel: {
-    fontWeight: "500",
-    color: "#333",
-  },
-  errorMessage: {
-    backgroundColor: "#ffebee",
-    color: "#c62828",
-    padding: "10px 15px",
-    borderRadius: "4px",
-    margin: "10px 20px",
-    fontSize: "0.9rem",
-  },
-  actionButtons: {
-    display: "flex",
-    justifyContent: "flex-end",
-    padding: "15px 20px",
-    gap: "10px",
-  },
-  cancelButton: {
-    padding: "8px 15px",
-    backgroundColor: "#f5f5f5",
-    color: "#333",
-    border: "1px solid #ddd",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontSize: "0.9rem",
-  },
-  saveButton: {
-    padding: "8px 15px",
-    backgroundColor: "var(--color-primary, #4285f4)",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontSize: "0.9rem",
-  },
 };
 
 export default ProfileEditModal;
