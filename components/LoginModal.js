@@ -116,13 +116,13 @@ const LoginModal = ({ isOpen, onClose, initialEmail = "" }) => {
     <Dialog open={isOpen} onOpenChange={onClose} className="transition-all duration-200">
       <DialogContent className="sm:max-w-[500px] dialog-content">
         <DialogHeader>
-          <DialogTitle>Sign In to xFoundry</DialogTitle>
+          <DialogTitle className="text-xl font-semibold text-primary">Enter Your School Email</DialogTitle>
         </DialogHeader>
         
-        <div className="py-4">
-          <p className="text-sm text-muted-foreground mb-4">
-            Please enter your institutional email to continue. 
-            We'll verify your institution and check if you already have an account.
+        <div className="py-5">
+          <p className="text-sm text-muted-foreground mb-6">
+            Please use your school email address. We'll verify your institution 
+            and either sign you in or help you create a new account.
           </p>
           
           <div className="grid gap-4 mb-4">
@@ -153,9 +153,17 @@ const LoginModal = ({ isOpen, onClose, initialEmail = "" }) => {
             <Button 
               onClick={verifyEmailAndInstitution}
               disabled={isVerifying || !email || isRedirecting}
-              className="w-full"
+              className="w-full py-6 text-base font-medium transition-all duration-200 bg-primary hover:bg-primary/90"
             >
-              {isVerifying ? "Verifying..." : "Continue"}
+              {isVerifying ? 
+                <div className="flex items-center justify-center">
+                  <span className="mr-2">Verifying</span>
+                  <span className="inline-block animate-pulse">•</span>
+                  <span className="inline-block animate-pulse delay-75">•</span>
+                  <span className="inline-block animate-pulse delay-150">•</span>
+                </div> 
+                : "Continue"
+              }
             </Button>
           )}
           
@@ -207,9 +215,17 @@ const LoginModal = ({ isOpen, onClose, initialEmail = "" }) => {
             <Button
               onClick={proceedToAuth}
               disabled={isRedirecting}
-              className="w-full mt-4 bg-green-600 hover:bg-green-700"
+              className="w-full mt-4 py-6 text-base font-medium transition-all duration-200 bg-green-600 hover:bg-green-700"
             >
-              {isRedirecting ? "Redirecting..." : "Sign In to Your Account"}
+              {isRedirecting ? 
+                <div className="flex items-center justify-center">
+                  <span className="mr-2">Redirecting</span>
+                  <span className="inline-block animate-pulse">•</span>
+                  <span className="inline-block animate-pulse delay-75">•</span>
+                  <span className="inline-block animate-pulse delay-150">•</span>
+                </div> 
+                : "Sign In to Your Account"
+              }
             </Button>
           )}
           
@@ -218,9 +234,17 @@ const LoginModal = ({ isOpen, onClose, initialEmail = "" }) => {
             <Button
               onClick={proceedToAuth}
               disabled={isRedirecting}
-              className="w-full mt-4 bg-green-600 hover:bg-green-700"
+              className="w-full mt-4 py-6 text-base font-medium transition-all duration-200 bg-green-600 hover:bg-green-700"
             >
-              {isRedirecting ? "Redirecting..." : "Create New Account"}
+              {isRedirecting ? 
+                <div className="flex items-center justify-center">
+                  <span className="mr-2">Redirecting</span>
+                  <span className="inline-block animate-pulse">•</span>
+                  <span className="inline-block animate-pulse delay-75">•</span>
+                  <span className="inline-block animate-pulse delay-150">•</span>
+                </div> 
+                : "Create New Account"
+              }
             </Button>
           )}
         </div>
