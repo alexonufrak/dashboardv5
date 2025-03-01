@@ -51,10 +51,10 @@ const Dashboard = () => {
   const [error, setError] = useState(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
-  const [dashboardContent, setDashboardContent] = useState(false)
+  
+  // Onboarding state
   const [showFullOnboarding, setShowFullOnboarding] = useState(false)
-  const [showOnboardingBanner, setShowOnboardingBanner] = useState(true)
-  const [selectedProgram, setSelectedProgram] = useState(null)
+  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -89,43 +89,35 @@ const Dashboard = () => {
       }
     }
 
+    // Handle onboarding state based on metadata and completion status
     const checkOnboardingStatus = async () => {
       try {
-        // First check session storage for quick initial UI rendering
-        const sessionCompleted = sessionStorage.getItem('xFoundry_onboardingCompleted') === 'true';
-        const sessionSkipped = sessionStorage.getItem('xFoundry_onboardingSkipped') === 'true';
-        
-        // Always fetch from API for the definitive data
+        // Get user metadata from API
         const response = await fetch("/api/user/metadata");
         
         if (response.ok) {
           const metadata = await response.json();
           console.log("User metadata from API:", metadata);
           
-          // Determine onboarding steps completed
+          // Check onboarding steps
           const onboardingSteps = metadata.onboarding || [];
           const hasCompletedRegister = Array.isArray(onboardingSteps) && onboardingSteps.includes('register');
           const hasAppliedToProgram = Array.isArray(onboardingSteps) && onboardingSteps.includes('selectCohort');
           
-          console.log("Onboarding steps:", {
+          console.log("Onboarding status:", {
             steps: onboardingSteps,
             hasCompletedRegister,
             hasAppliedToProgram
           });
           
-          // CRITICAL: Only consider onboarding fully complete when user has applied to a program
+          // Determine which onboarding view to show
           if (hasAppliedToProgram) {
             // User has applied to a program - hide all onboarding
             setShowFullOnboarding(false);
             setShowOnboardingBanner(false);
-            setDashboardContent(true);
             
-            // Update session storage
-            sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
-            sessionStorage.removeItem('xFoundry_onboardingSkipped');
-            
-            // Also update the onboardingCompleted flag in API for persistence
-            if (metadata.onboardingCompleted !== true) {
+            // Update metadata if needed
+            if (!metadata.onboardingCompleted) {
               await fetch('/api/user/metadata', {
                 method: 'POST',
                 headers: {
@@ -139,16 +131,11 @@ const Dashboard = () => {
               });
             }
           } else if (hasCompletedRegister) {
-            // User has registered but not applied - show condensed banner
+            // User has registered but not applied - show banner
             setShowFullOnboarding(false);
             setShowOnboardingBanner(true);
-            setDashboardContent(true);
             
-            // Update session storage
-            sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
-            sessionStorage.removeItem('xFoundry_onboardingCompleted');
-            
-            // Update metadata to reflect status
+            // Make sure metadata reflects this
             if (!metadata.onboardingSkipped) {
               await fetch('/api/user/metadata', {
                 method: 'POST',
@@ -165,67 +152,41 @@ const Dashboard = () => {
             // New user - show full onboarding
             setShowFullOnboarding(true);
             setShowOnboardingBanner(false);
-            setDashboardContent(false);
+            
+            // Explicitly mark register step as completed for new users
+            await fetch('/api/user/metadata', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                onboarding: ['register']
+              })
+            });
           }
         } else {
-          console.warn("Error fetching metadata from API, falling back to session storage");
-          
-          // Session storage fallback logic
-          if (sessionCompleted) {
-            setDashboardContent(true);
-            setShowFullOnboarding(false);
-            setShowOnboardingBanner(false);
-          } else if (sessionSkipped) {
-            setDashboardContent(true);
-            setShowFullOnboarding(false);
-            setShowOnboardingBanner(true);
-          } else {
-            // For new users, show full onboarding
-            setDashboardContent(false);
-            setShowFullOnboarding(true);
-            setShowOnboardingBanner(false);
-          }
-        }
-      } catch (err) {
-        console.error("Error checking onboarding status:", err);
-        
-        // Fallback to session data if available
-        const sessionCompleted = sessionStorage.getItem('xFoundry_onboardingCompleted') === 'true';
-        const sessionSkipped = sessionStorage.getItem('xFoundry_onboardingSkipped') === 'true';
-        
-        if (sessionCompleted) {
-          setDashboardContent(true);
-          setShowFullOnboarding(false);
-          setShowOnboardingBanner(false);
-        } else if (sessionSkipped) {
-          setDashboardContent(true);
-          setShowFullOnboarding(false);
-          setShowOnboardingBanner(true);
-        } else {
-          // For new users without session data, show full onboarding
-          setDashboardContent(false);
+          console.warn("Error fetching metadata from API");
+          // Default to showing full onboarding for new users
           setShowFullOnboarding(true);
           setShowOnboardingBanner(false);
         }
+      } catch (err) {
+        console.error("Error checking onboarding status:", err);
+        // Default to showing full onboarding for new users
+        setShowFullOnboarding(true);
+        setShowOnboardingBanner(false);
       }
-    }
+    };
 
     if (user) {
-      // Start loading profile and team data
-      fetchProfile()
-      fetchTeamData()
+      // Load user data
+      fetchProfile();
+      fetchTeamData();
       
-      // For initial rendering, show loading state
-      // We'll let the checkOnboardingStatus determine what to show
-      // based on the API response
-      setDashboardContent(false);
-      setShowFullOnboarding(true);
-      setShowOnboardingBanner(false);
-      
-      // Check onboarding status right away
-      checkOnboardingStatus()
+      // Check onboarding status
+      checkOnboardingStatus();
     }
-  }, [user])
+  }, [user]);
 
   // Show loading screen while data is loading
   if (isUserLoading || isLoading) {
@@ -300,199 +261,123 @@ const Dashboard = () => {
     }
   };
 
+  // Handle onboarding completion/skip
   const handleCompletion = (skipOnly = false, hasAppliedToProgram = false) => {
     console.log("Handling onboarding completion:", { skipOnly, hasAppliedToProgram });
     
-    // IMPORTANT: Only update API and storage if user has actually applied
-    // Otherwise just update the UI temporarily
     if (hasAppliedToProgram) {
-      // User has completed program application - mark onboarding as fully complete
-      sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
-      sessionStorage.removeItem('xFoundry_onboardingSkipped');
-      
-      // Update the API for persistence
-      fetch('/api/user/metadata', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          onboardingCompleted: true,
-          onboardingSkipped: false,
-          keepOnboardingVisible: false
-        })
-      }).catch(err => console.error("Error updating metadata:", err));
-    } else if (skipOnly) {
-      // User explicitly skipped - show banner but keep metadata
-      sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
-      sessionStorage.removeItem('xFoundry_onboardingCompleted');
-      
-      // Update API to mark as skipped but keep visible
-      fetch('/api/user/metadata', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          onboardingSkipped: true,
-          keepOnboardingVisible: true
-        })
-      }).catch(err => console.error("Error updating metadata:", err));
-    } else {
-      // User clicked "Complete" without applying - just show banner without updating API
-      // This ensures they'll still see the full checklist on next page load
-      sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
-      sessionStorage.removeItem('xFoundry_onboardingCompleted');
-    }
-    
-    // Animate the checklist closing with CSS transitions
-    const fullChecklist = document.querySelector('.onboarding-checklist-wrapper');
-    if (fullChecklist) {
-      fullChecklist.classList.remove('onboarding-checklist-visible');
-      fullChecklist.classList.add('onboarding-checklist-hidden');
-    }
-    
-    // After a short delay to let the animation play, update state
-    setTimeout(() => {
+      // Hide all onboarding when application is complete
       setShowFullOnboarding(false);
-      setDashboardContent(true);
-      
-      // Always show the banner unless the user has applied to a program
-      const shouldShowBanner = !hasAppliedToProgram;
-      setShowOnboardingBanner(shouldShowBanner);
-      
-      // If showing the banner, ensure it animates in nicely
-      if (shouldShowBanner) {
-        const banner = document.querySelector('.onboarding-condensed');
-        if (banner) {
-          banner.classList.remove('onboarding-condensed-hidden');
-          banner.classList.add('onboarding-condensed-visible');
-        }
-      }
-    }, 400);
+      setShowOnboardingBanner(false);
+    } else {
+      // Otherwise show condensed banner
+      setShowFullOnboarding(false);
+      setShowOnboardingBanner(true);
+    }
   };
   
-  // These functions are now handled by the CohortGrid component
-
-  // This function is now handled by the shared CohortGrid and CohortCard components
-  
   // Main JSX content
-  // Debug info - remove in production
-  console.log("Render state:", {
-    showFullOnboarding,
-    dashboardContent,
-    showOnboardingBanner,
-    hasProfile: !!profile
-  });
-  
   return (
     <ProperDashboardLayout title="xFoundry Hub" profile={profile} onEditClick={handleEditClick}>
       {profile && (
-        <div className="onboarding-container">
-          {/* Email mismatch alert (always at top) */}
+        <div className="dashboard-content space-y-6">
+          {/* Email mismatch alert */}
           {user?.emailMismatch && <EmailMismatchAlert emailMismatch={user.emailMismatch} />}
           
-          {/* Full Onboarding Checklist - expands/collapses in place */}
-          <div className={`onboarding-checklist-wrapper ${showFullOnboarding ? 'onboarding-checklist-visible' : 'onboarding-checklist-hidden'}`}>
+          {/* Full Onboarding Checklist */}
+          {showFullOnboarding && (
             <OnboardingChecklist 
               profile={profile}
               onComplete={handleCompletion}
             />
+          )}
+          
+          {/* Condensed Onboarding Banner */}
+          {showOnboardingBanner && !showFullOnboarding && (
+            <OnboardingChecklistCondensed 
+              profile={profile}
+              onViewAll={() => {
+                setShowFullOnboarding(true);
+                setShowOnboardingBanner(false);
+              }}
+              onComplete={handleCompletion}
+            />
+          )}
+          
+          {/* Page Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Your Hub</h1>
+              <p className="text-muted-foreground">
+                Welcome, {profile?.firstName || user?.name?.split(' ')[0] || 'Student'}
+              </p>
+            </div>
           </div>
           
-          {/* Condensed Onboarding Banner - only shown when applicable */}
-          <div className={`${showOnboardingBanner ? 'onboarding-condensed-visible' : 'onboarding-condensed-hidden'} onboarding-condensed`}>
-            {showOnboardingBanner && (
-              <OnboardingChecklistCondensed 
-                profile={profile}
-                onViewAll={() => {
-                  // Apply appropriate classes during transition
-                  const condensedBanner = document.querySelector('.onboarding-condensed');
-                  if (condensedBanner) {
-                    condensedBanner.classList.add('onboarding-condensed-hidden');
-                  }
-                  
-                  // Update state after a small delay
-                  setTimeout(() => {
-                    setShowFullOnboarding(true);
-                    setShowOnboardingBanner(false);
-                    
-                    // Ensure dashboard content is still shown behind the expanded checklist
-                    // but don't hide it completely
-                    setDashboardContent(true);
-                    
-                    // Scroll to the top of the checklist with smooth animation
-                    setTimeout(() => {
-                      const checklist = document.querySelector('.onboarding-checklist-wrapper');
-                      if (checklist) {
-                        checklist.scrollIntoView({
-                          behavior: 'smooth',
-                          block: 'start'
-                        });
-                      }
-                    }, 100);
-                  }, 200);
-                }}
-                onComplete={handleCompletion}
-              />
-            )}
-          </div>
-          
-          {/* Main Dashboard Content - always rendered, just pushed down */}
-          <div className="dashboard-main-content space-y-8">
-            {/* User welcome */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight">Your Hub</h1>
-                <p className="text-muted-foreground">
-                  Welcome, {profile?.firstName || user?.name?.split(' ')[0] || 'Student'}
-                </p>
+          {/* Main Content */}
+          <div className="space-y-8">
+            {/* Programs Section */}
+            <section id="programs" className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Compass className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-semibold">Available Programs</h2>
               </div>
-            </div>
-            
-            {/* Main Content */}
-            <div className="space-y-8">
-              {/* Programs Section */}
-              <section id="programs" className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Compass className="h-5 w-5 text-primary" />
-                  <h2 className="text-xl font-semibold">Available Programs</h2>
-                </div>
-                
-                <CohortGrid 
-                  cohorts={profile.cohorts || []}
-                  profile={profile}
-                  onApplySuccess={(cohort) => {
-                    toast.success(`Applied to ${cohort.initiativeDetails?.name || 'program'} successfully!`);
-                  }}
-                />
-              </section>
               
-              {/* Team Section */}
-              <section id="teams" className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
-                  <h2 className="text-xl font-semibold">Your Team</h2>
-                </div>
-                
-                {isTeamLoading ? (
-                  <Skeleton className="h-48 w-full rounded-lg" />
-                ) : (
-                  <TeamCard team={teamData} />
-                )}
-              </section>
-            </div>
+              <CohortGrid 
+                cohorts={profile.cohorts || []}
+                profile={profile}
+                onApplySuccess={(cohort) => {
+                  toast.success(`Applied to ${cohort.initiativeDetails?.name || 'program'} successfully!`);
+                  
+                  // Check onboarding status again after application
+                  fetch('/api/user/metadata').then(res => res.json()).then(metadata => {
+                    // Update onboarding steps to include selectCohort
+                    const currentSteps = metadata.onboarding || ['register'];
+                    if (!currentSteps.includes('selectCohort')) {
+                      fetch('/api/user/metadata', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                          onboarding: [...currentSteps, 'selectCohort']
+                        })
+                      }).then(() => {
+                        // Hide full onboarding after application
+                        setShowFullOnboarding(false);
+                        setShowOnboardingBanner(false);
+                      });
+                    }
+                  });
+                }}
+              />
+            </section>
+            
+            {/* Team Section */}
+            <section id="teams" className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Users className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-semibold">Your Team</h2>
+              </div>
+              
+              {isTeamLoading ? (
+                <Skeleton className="h-48 w-full rounded-lg" />
+              ) : (
+                <TeamCard team={teamData} />
+              )}
+            </section>
           </div>
+          
+          {/* Modals */}
+          {isEditModalOpen && (
+            <ProfileEditModal
+              isOpen={isEditModalOpen}
+              onClose={handleEditClose}
+              profile={profile}
+              onSave={handleProfileUpdate}
+            />
+          )}
         </div>
-      )}
-      
-      {isEditModalOpen && (
-        <ProfileEditModal
-          isOpen={isEditModalOpen}
-          onClose={handleEditClose}
-          profile={profile}
-          onSave={handleProfileUpdate}
-        />
       )}
     </ProperDashboardLayout>
   )

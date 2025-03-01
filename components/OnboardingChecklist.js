@@ -3,11 +3,23 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useUser } from '@auth0/nextjs-auth0/client'
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, Circle, Users, UserRound } from "lucide-react"
+import { 
+  CheckCircle, 
+  Circle, 
+  Users, 
+  UserRound, 
+  ChevronDown, 
+  ChevronUp,
+  ArrowRight,
+  ExternalLink,
+  UserPlus,
+  Compass
+} from "lucide-react"
 import CohortGrid from './shared/CohortGrid'
 import TeamCreateDialog from './TeamCreateDialog'
 import TeamSelectDialog from './TeamSelectDialog'
@@ -16,139 +28,152 @@ import FilloutPopupEmbed from './FilloutPopupEmbed'
 const OnboardingChecklist = ({ profile, onComplete }) => {
   const { user } = useUser()
   const router = useRouter()
+  
+  // Core state
   const [steps, setSteps] = useState([
-    { id: 'register', title: 'Create an account', completed: true, description: 'Sign up with your institutional email' },
-    { id: 'selectCohort', title: 'Get involved', completed: false, description: 'Select a program to join' },
-    { id: 'connexions', title: 'Join ConneXions', completed: false, description: 'Connect with the community' }
+    { 
+      id: 'register', 
+      title: 'Create an account', 
+      completed: true, 
+      description: 'Sign up with your institutional email',
+      icon: <UserPlus className="h-5 w-5" />
+    },
+    { 
+      id: 'selectCohort', 
+      title: 'Get involved', 
+      completed: false, 
+      description: 'Select a program to join',
+      icon: <Compass className="h-5 w-5" />
+    },
+    { 
+      id: 'connexions', 
+      title: 'Join ConneXions', 
+      completed: false, 
+      description: 'Connect with the community',
+      icon: <Users className="h-5 w-5" />
+    }
   ])
+  
+  // UI state
+  const [activeTab, setActiveTab] = useState("overview")
+  const [isExpanded, setIsExpanded] = useState(true)
+  const [completionPercentage, setCompletionPercentage] = useState(33)
+  
+  // Functional state
   const [activeFilloutForm, setActiveFilloutForm] = useState(null)
   const [activeTeamSelectDialog, setActiveTeamSelectDialog] = useState(null)
   const [activeTeamCreateDialog, setActiveTeamCreateDialog] = useState(false)
   const [checkedCohortSubmission, setCheckedCohortSubmission] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedCohort, setSelectedCohort] = useState(null)
-  const [showOnboarding, setShowOnboarding] = useState(true)
-  const [expandedAccordion, setExpandedAccordion] = useState({})
   const [userTeams, setUserTeams] = useState([])
   const [isLoadingTeams, setIsLoadingTeams] = useState(false)
   
-  // Setup expanded state initially based on completion status
+  // Initialize onboarding state
   useEffect(() => {
-    const newExpandedState = {};
-    steps.forEach(step => {
-      // Auto-expand incomplete sections (except the first one which is already completed)
-      newExpandedState[step.id] = !step.completed && step.id !== 'register';
-    });
-    setExpandedAccordion(newExpandedState);
-  }, []);
-
-  // Check if user came from a specific cohort link
-  useEffect(() => {
-    const checkUserMetadata = async () => {
-      try {
-        // Fetch user metadata to see if steps are already completed
-        const response = await fetch('/api/user/metadata')
-        if (response.ok) {
-          const metadata = await response.json()
-          
-          // Update steps based on metadata
-          if (metadata.onboarding) {
-            const updatedSteps = steps.map(step => ({
-              ...step,
-              completed: metadata.onboarding.includes(step.id)
-            }));
-            
-            setSteps(updatedSteps);
-            
-            // Update accordion expanded state based on completion
-            const newExpandedState = {};
-            updatedSteps.forEach(step => {
-              // Auto-collapse completed sections
-              newExpandedState[step.id] = !step.completed && step.id !== 'register';
-            });
-            setExpandedAccordion(newExpandedState);
-          }
-          
-          // Check if onboarding is completed or skipped
-          if (metadata.onboardingCompleted || metadata.onboardingSkipped) {
-            setShowOnboarding(false)
-            if (onComplete) onComplete()
-          }
-          
-          // Set selected cohort if any
-          if (metadata.selectedCohort) {
-            setSelectedCohort(metadata.selectedCohort)
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching user metadata:', error)
-      }
-    }
-
-    // Check URL params for cohort ID
-    const cohortId = router.query.cohortId
-    if (cohortId && !selectedCohort) {
+    // Check for cohort ID in URL
+    const cohortId = router.query.cohortId;
+    if (cohortId) {
       // Save cohort ID to user metadata
-      saveCohortToMetadata(cohortId)
-      setSelectedCohort(cohortId)
+      saveCohortToMetadata(cohortId);
+      setSelectedCohort(cohortId);
     }
     
-    // Make sure to load existing metadata
-    checkUserMetadata()
+    // Load user metadata
+    loadUserMetadata();
     
-    // Ensure register step is completed for all users (this is always true by definition)
-    // This handles the case of new users who might not have this step marked yet
-    completeStep('register')
-  }, [router.query, user])
-
-  // Check if user has already submitted an application for the selected cohort
+    // Always mark register step as completed
+    completeStep('register', false);
+  }, []);
+  
+  // When profile changes, fetch team data
   useEffect(() => {
-    const checkCohortSubmission = async () => {
-      if (selectedCohort && !checkedCohortSubmission && profile?.contactId) {
-        setIsLoading(true)
-        try {
-          const response = await fetch(`/api/user/check-application?cohortId=${selectedCohort}&contactId=${profile.contactId}`)
-          if (response.ok) {
-            const data = await response.json()
-            if (data.hasApplied) {
-              // Mark the selectCohort step as completed
-              completeStep('selectCohort')
-            }
-          }
-        } catch (error) {
-          console.error('Error checking cohort submission:', error)
-        } finally {
-          setCheckedCohortSubmission(true)
-          setIsLoading(false)
+    if (profile?.contactId) {
+      fetchUserTeams();
+      checkCohortSubmission();
+    }
+  }, [profile]);
+  
+  // Update completion percentage when steps change
+  useEffect(() => {
+    const completedCount = steps.filter(step => step.completed).length;
+    const percentage = Math.round((completedCount / steps.length) * 100);
+    setCompletionPercentage(percentage);
+    
+    // Find first incomplete step and set as active tab
+    const firstIncompleteStep = steps.find(step => !step.completed);
+    if (firstIncompleteStep && activeTab === "overview") {
+      setActiveTab(firstIncompleteStep.id);
+    }
+  }, [steps]);
+  
+  // Load user metadata from API
+  const loadUserMetadata = async () => {
+    try {
+      const response = await fetch('/api/user/metadata');
+      if (response.ok) {
+        const metadata = await response.json();
+        
+        // Update steps based on metadata
+        if (metadata.onboarding && Array.isArray(metadata.onboarding)) {
+          const updatedSteps = steps.map(step => ({
+            ...step,
+            completed: metadata.onboarding.includes(step.id)
+          }));
+          
+          setSteps(updatedSteps);
+        }
+        
+        // Set selected cohort if available
+        if (metadata.selectedCohort) {
+          setSelectedCohort(metadata.selectedCohort);
         }
       }
+    } catch (error) {
+      console.error('Error loading user metadata:', error);
     }
+  };
+  
+  // Fetch user teams
+  const fetchUserTeams = async () => {
+    if (!profile?.contactId || isLoadingTeams) return;
     
-    checkCohortSubmission()
-  }, [selectedCohort, profile, checkedCohortSubmission])
-
-  // Fetch user's teams when needed
-  useEffect(() => {
-    const fetchUserTeams = async () => {
-      if (!profile?.contactId || isLoadingTeams) return
-      
-      setIsLoadingTeams(true)
+    setIsLoadingTeams(true);
+    try {
+      const response = await fetch('/api/teams');
+      if (response.ok) {
+        const data = await response.json();
+        setUserTeams(data.teams || []);
+      }
+    } catch (error) {
+      console.error('Error fetching user teams:', error);
+    } finally {
+      setIsLoadingTeams(false);
+    }
+  };
+  
+  // Check if user has already applied to the selected cohort
+  const checkCohortSubmission = async () => {
+    if (selectedCohort && !checkedCohortSubmission && profile?.contactId) {
+      setIsLoading(true);
       try {
-        const response = await fetch('/api/teams')
+        const response = await fetch(`/api/user/check-application?cohortId=${selectedCohort}&contactId=${profile.contactId}`);
         if (response.ok) {
-          const data = await response.json()
-          setUserTeams(data.teams || [])
+          const data = await response.json();
+          if (data.hasApplied) {
+            // Mark the selectCohort step as completed
+            completeStep('selectCohort');
+          }
         }
       } catch (error) {
-        console.error('Error fetching user teams:', error)
+        console.error('Error checking cohort submission:', error);
       } finally {
-        setIsLoadingTeams(false)
+        setCheckedCohortSubmission(true);
+        setIsLoading(false);
       }
     }
-    
-    fetchUserTeams()
-  }, [profile])
-
+  };
+  
   // Save selected cohort to user metadata
   const saveCohortToMetadata = async (cohortId) => {
     try {
@@ -160,14 +185,14 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         body: JSON.stringify({
           selectedCohort: cohortId
         })
-      })
+      });
     } catch (error) {
-      console.error('Error saving cohort to metadata:', error)
+      console.error('Error saving cohort to metadata:', error);
     }
-  }
-
+  };
+  
   // Complete a step
-  const completeStep = async (stepId) => {
+  const completeStep = async (stepId, saveToApi = true) => {
     // Update local state
     const updatedSteps = steps.map(step => 
       step.id === stepId ? { ...step, completed: true } : step
@@ -175,79 +200,77 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     
     setSteps(updatedSteps);
     
-    // Auto-collapse completed section
-    setExpandedAccordion(prev => ({
-      ...prev,
-      [stepId]: false
-    }));
-    
-    // Save to user metadata
-    try {
-      await fetch('/api/user/metadata', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          onboarding: [...steps.filter(s => s.completed).map(s => s.id), stepId]
-        })
-      })
-    } catch (error) {
-      console.error('Error saving step completion to metadata:', error)
+    // Save to user metadata if requested
+    if (saveToApi) {
+      try {
+        // Get all completed step IDs including the new one
+        const completedStepIds = [
+          ...updatedSteps.filter(s => s.completed).map(s => s.id)
+        ];
+        
+        // Ensure unique step IDs
+        const uniqueStepIds = [...new Set(completedStepIds)];
+        
+        await fetch('/api/user/metadata', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            onboarding: uniqueStepIds
+          })
+        });
+        
+        // If this was the selectCohort step, we should transition to completed state
+        if (stepId === 'selectCohort') {
+          // Check if all steps are now completed
+          const allCompleted = updatedSteps.every(s => s.completed);
+          if (allCompleted) {
+            // Auto-complete the onboarding if all steps are done
+            completeOnboarding();
+          } else {
+            // Find and set the next incomplete step as active tab
+            const nextIncompleteStep = updatedSteps.find(s => !s.completed);
+            if (nextIncompleteStep) {
+              setActiveTab(nextIncompleteStep.id);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error saving step completion to metadata:', error);
+      }
     }
-  }
-
-  // Handle accordion value change
-  const handleAccordionChange = (value) => {
-    setExpandedAccordion(prev => ({
-      ...prev,
-      [value]: !prev[value]
-    }));
   };
-
+  
+  // Toggle the entire checklist expanded/collapsed state
+  const toggleExpanded = () => {
+    setIsExpanded(prev => !prev);
+  };
+  
   // Handle clicking a cohort card to apply
   const handleCohortApply = (cohort) => {
-    console.log("Applying to cohort:", cohort);
-    console.log("Cohort initiative details:", cohort.initiativeDetails);
-    
-    // Check if initiative has participation type 
-    // First try the direct property added in enhanced cohorts
-    // Then try the nested path, and finally fall back to Individual
+    // Determine participation type
     const participationType = cohort.participationType || 
                              cohort.initiativeDetails?.["Participation Type"] || 
                              "Individual";
-                             
-    console.log(`Participation type for cohort ${cohort.id}: ${participationType}`);
-    console.log("Full cohort object:", JSON.stringify(cohort, null, 2));
     
-    // Team applications require a different flow
-    // Added more robust checking for various values that might indicate team participation
-    if (participationType.toLowerCase() === "team" || 
-        participationType.toLowerCase().includes("team") ||
-        participationType.toLowerCase() === "teams") {
-      console.log("Team participation type detected");
-      console.log("User teams:", userTeams);
-      
+    // Check if this is a team or individual application
+    if (participationType.toLowerCase().includes("team")) {
+      // Team application flow
       if (userTeams.length === 0) {
         // User doesn't have a team, show team creation dialog
-        console.log("No teams found, opening team creation dialog");
         setActiveTeamCreateDialog(true);
-        
-        // Store the cohort for later use after team creation
         setSelectedCohort(cohort.id);
       } else {
         // User has teams, show team selection dialog
-        console.log("User has teams, opening team selection dialog");
         setActiveTeamSelectDialog({
           cohort: cohort,
           teams: userTeams
         });
       }
     } else {
-      // Individual participation - use Fillout form
-      console.log("Individual participation type, using Fillout form");
+      // Individual application - use Fillout form
       if (cohort && cohort["Application Form ID (Fillout)"]) {
-        console.log(`Using Fillout form ID: ${cohort["Application Form ID (Fillout)"]}`);
         setActiveFilloutForm({
           formId: cohort["Application Form ID (Fillout)"],
           cohortId: cohort.id,
@@ -257,136 +280,82 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         console.error("No Fillout form ID found for individual participation");
       }
     }
-  }
-
+  };
+  
   // Handle team creation
   const handleTeamCreated = (team) => {
-    console.log("Team created successfully:", team);
-    
     // Add new team to user's teams
-    setUserTeams(prev => {
-      const newTeams = [...prev, team];
-      console.log("Updated teams list:", newTeams);
-      return newTeams;
-    });
-    
+    setUserTeams(prev => [...prev, team]);
     setActiveTeamCreateDialog(false);
     
-    // If we have a pending team application, open the team selection dialog with the newly created team
-    if (activeTeamSelectDialog) {
-      console.log("Updating existing team selection dialog with new team");
-      setActiveTeamSelectDialog({
-        ...activeTeamSelectDialog,
-        teams: [team] // Prioritize the newly created team
-      });
-    } else if (selectedCohort) {
-      // If no active dialog but we have a selected cohort, find the cohort and open the team selection dialog
-      console.log(`Finding cohort with ID ${selectedCohort} to continue application`);
+    // If we have a pending cohort, open the team selection dialog
+    if (selectedCohort) {
       const cohort = profile.cohorts?.find(c => c.id === selectedCohort);
-      
       if (cohort) {
-        console.log("Found cohort, opening team selection dialog:", cohort);
         setActiveTeamSelectDialog({
           cohort: cohort,
           teams: [team]
         });
-      } else {
-        console.error(`No cohort found with ID ${selectedCohort}`);
       }
-    } else {
-      console.log("No pending cohort application to continue with");
     }
-  }
-
+  };
+  
   // Handle completion of form submission
   const handleFormCompleted = () => {
-    setActiveFilloutForm(null)
-    completeStep('selectCohort')
-  }
-
+    setActiveFilloutForm(null);
+    completeStep('selectCohort');
+  };
+  
   // Handle team application submission
   const handleTeamApplicationSubmitted = (application) => {
-    setActiveTeamSelectDialog(null)
-    completeStep('selectCohort')
-  }
-
+    setActiveTeamSelectDialog(null);
+    completeStep('selectCohort');
+  };
+  
   // Complete onboarding
   const completeOnboarding = async () => {
+    // Check if the user has completed the program application step
+    const selectCohortStep = steps.find(step => step.id === 'selectCohort');
+    const hasAppliedToProgram = selectCohortStep && selectCohortStep.completed;
+    
     try {
-      // First, check if the user has completed the "selectCohort" step
-      const selectCohortStep = steps.find(step => step.id === 'selectCohort');
-      const hasAppliedToProgram = selectCohortStep && selectCohortStep.completed;
-      
-      console.log("Completing onboarding, applied to program:", hasAppliedToProgram);
-      
-      // Get the onboarding element for animation
-      const onboardingElement = document.querySelector('.onboarding-full');
-      if (onboardingElement) {
-        onboardingElement.classList.add('onboarding-transitioning-out');
-      }
-      
-      // IMPORTANT: Only mark as truly completed if they've applied to a program
-      // Otherwise, mark as skipped with keepOnboardingVisible=true
-      if (hasAppliedToProgram) {
-        // User has completed program application - mark as fully complete
-        await fetch('/api/user/metadata', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
+      // Only fully complete if the user has applied to a program
+      const metadata = hasAppliedToProgram 
+        ? {
             onboardingCompleted: true,
-            onboardingSkipped: false,
-            keepOnboardingVisible: false
-          })
-        });
-      } else {
-        // User hasn't applied yet - keep showing the banner
-        await fetch('/api/user/metadata', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            // Don't mark as onboardingCompleted yet
+            onboardingSkipped: false
+          }
+        : {
             onboardingSkipped: true,
             keepOnboardingVisible: true
-          })
-        });
-      }
+          };
       
-      // Short delay to allow animation to play
-      setTimeout(() => {
-        setShowOnboarding(false);
-        
-        // Provide completion info to parent component
-        // false = not skipped, hasAppliedToProgram = whether they've applied to a program
-        if (onComplete) onComplete(false, hasAppliedToProgram);
-      }, 250);
+      // Save to API
+      await fetch('/api/user/metadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(metadata)
+      });
+      
+      // Call parent callback
+      if (onComplete) {
+        onComplete(false, hasAppliedToProgram);
+      }
     } catch (error) {
       console.error('Error completing onboarding:', error);
-      // Still try to complete the UI flow even if API fails
-      setShowOnboarding(false);
-      
-      // Simply hide the full view and show the banner
-      if (onComplete) onComplete(false, false);
+      // Still try to complete UI flow
+      if (onComplete) {
+        onComplete(false, hasAppliedToProgram);
+      }
     }
-  }
-
+  };
+  
   // Skip onboarding
   const skipOnboarding = async () => {
     try {
-      // Get the onboarding element for animation
-      const onboardingElement = document.querySelector('.onboarding-full');
-      if (onboardingElement) {
-        onboardingElement.classList.add('onboarding-transitioning-out');
-      }
-      
-      // Store in session storage for immediate access
-      sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
-      sessionStorage.removeItem('xFoundry_onboardingCompleted');
-      
-      // Send to API for persistence
+      // Mark as skipped but still visible in condensed form
       await fetch('/api/user/metadata', {
         method: 'POST',
         headers: {
@@ -394,104 +363,115 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         },
         body: JSON.stringify({
           onboardingSkipped: true,
-          onboardingCompleted: false,
           keepOnboardingVisible: true
         })
       });
       
-      // Short delay to allow animation to play
-      setTimeout(() => {
-        setShowOnboarding(false);
-        
-        // Provide true to indicate this was a skip, not a complete
-        if (onComplete) onComplete(true);
-      }, 250);
+      // Call parent callback with skipOnly=true
+      if (onComplete) {
+        onComplete(true, false);
+      }
     } catch (error) {
       console.error('Error skipping onboarding:', error);
-      // Still try to complete the UI flow even if API fails
-      setShowOnboarding(false);
-      if (onComplete) onComplete(true);
+      // Still try to complete UI flow
+      if (onComplete) {
+        onComplete(true, false);
+      }
     }
-  }
-
-  // Function to render individual cohort cards
-  const renderCohortCard = (cohort) => {
-    const initiativeName = cohort.initiativeDetails?.name || "Unknown Initiative"
-    const topics = cohort.topicNames || []
-    const status = cohort["Status"] || "Unknown"
-    const actionButtonText = cohort["Action Button"] || "Apply Now"
-    const filloutFormId = cohort["Application Form ID (Fillout)"]
-    const participationType = cohort.initiativeDetails?.["Participation Type"] || "Individual"
-    
-    const isOpen = status === "Applications Open"
-    const isDisabled = !isOpen || (participationType === "Individual" && !filloutFormId)
-    
+  };
+  
+  // Check if all steps are completed
+  const allStepsCompleted = steps.every(step => step.completed);
+  
+  // Render the progress bar with step indicators
+  const renderProgressBar = () => {
     return (
-      <Card key={cohort.id} className="overflow-hidden">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">{initiativeName}</CardTitle>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {Array.isArray(topics) && topics.length > 0 && 
-              topics.map((topic, index) => (
-                <Badge key={`topic-${index}`} variant="secondary" className="bg-cyan-50 text-cyan-800 hover:bg-cyan-100">
-                  {topic}
-                </Badge>
-              ))
-            }
-            
-            <Badge variant={isOpen ? "success" : "destructive"} 
-              className={isOpen ? 
-                "bg-green-50 text-green-800 hover:bg-green-100" : 
-                "bg-red-50 text-red-800 hover:bg-red-100"
-              }>
-              {status}
-            </Badge>
-            
-            <Badge variant="outline" className="flex items-center gap-1">
-              {participationType === "Team" ? (
-                <>
-                  <Users className="h-3 w-3" />
-                  <span>Team</span>
-                </>
-              ) : (
-                <>
-                  <UserRound className="h-3 w-3" />
-                  <span>Individual</span>
-                </>
-              )}
-            </Badge>
-          </div>
-        </CardHeader>
-        
-        <CardFooter className="pt-3 pb-5">
-          <Button 
-            className="w-full" 
-            variant={isOpen ? "default" : "secondary"}
-            disabled={isDisabled}
-            onClick={() => handleCohortApply(cohort)}
-          >
-            {actionButtonText}
-          </Button>
-        </CardFooter>
-      </Card>
-    )
-  }
-
-  // If onboarding is hidden, don't render anything
-  if (!showOnboarding) {
-    return null
-  }
-
-  const allStepsCompleted = steps.every(step => step.completed)
-
+      <div className="relative mt-6 mb-8">
+        <Progress value={completionPercentage} className="h-2" />
+        <div className="flex justify-between mt-1">
+          {steps.map((step, index) => {
+            const position = `${(index / (steps.length - 1)) * 100}%`;
+            return (
+              <div 
+                key={step.id}
+                className="absolute flex flex-col items-center"
+                style={{ left: position, transform: 'translateX(-50%)' }}
+              >
+                <div 
+                  className={`
+                    w-4 h-4 rounded-full flex items-center justify-center 
+                    ${step.completed 
+                      ? 'bg-primary text-white' 
+                      : 'bg-gray-200 text-gray-500'}
+                  `}
+                >
+                  {step.completed && <CheckCircle className="h-3 w-3" />}
+                </div>
+                <span className="text-xs mt-1 whitespace-nowrap font-medium text-gray-500">
+                  {step.title}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+  
   return (
-    <Card className="mb-0 mt-2 shadow-lg border-primary/20">
-      <CardHeader className="text-center bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950 rounded-t-lg border-b border-primary/10">
-        <CardTitle className="text-3xl text-primary">Welcome to xFoundry!</CardTitle>
-        <p className="text-muted-foreground">Complete these steps to get started</p>
+    <Card className="mb-6 shadow-md border-primary/10 overflow-hidden">
+      {/* Card Header */}
+      <CardHeader 
+        className={`
+          cursor-pointer transition-colors duration-200 py-5
+          bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950
+        `}
+        onClick={toggleExpanded}
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-xl md:text-2xl text-primary">
+              Welcome to xFoundry!
+            </CardTitle>
+            <CardDescription className="mt-1">
+              Complete these steps to set up your account
+            </CardDescription>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={e => { 
+              e.stopPropagation();
+              toggleExpanded();
+            }}
+            className="h-9 w-9 p-0 rounded-full bg-white/50"
+          >
+            {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+          </Button>
+        </div>
+        
+        {/* Show progress indicator in collapsed state */}
+        {!isExpanded && (
+          <div className="flex items-center mt-3">
+            <div className="w-full">
+              <Progress 
+                value={completionPercentage} 
+                className="h-2 bg-white/50" 
+              />
+              <div className="flex items-center justify-between mt-1">
+                <span className="text-xs font-medium text-primary/80">
+                  Progress: {completionPercentage}% complete
+                </span>
+                <span className="text-xs text-primary/80">
+                  {steps.filter(s => s.completed).length}/{steps.length} steps
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </CardHeader>
       
-      {/* Fillout form popup with required parameters */}
+      {/* Fillout form popup */}
       {activeFilloutForm && (
         <FilloutPopupEmbed
           filloutId={activeFilloutForm.formId}
@@ -531,104 +511,239 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         onCreateTeam={handleTeamCreated}
       />
       
-      <CardContent className="bg-white">
-        <Accordion type="multiple" value={Object.keys(expandedAccordion).filter(key => expandedAccordion[key])}>
-          {steps.map((step, index) => {
-            // Skip rendering content area for register step as it's already completed
-            const hasContent = !(step.id === 'register');
-            
-            return (
-              <AccordionItem 
-                key={step.id} 
-                value={step.id}
-                className="border rounded-md mb-4 overflow-hidden"
-                disabled={step.id === 'register'}
-              >
-                <div className="flex items-center p-4 bg-muted/30">
-                  <div className={`shrink-0 w-8 h-8 flex items-center justify-center rounded-full mr-3 
-                    ${step.completed ? 'text-green-600' : 'text-primary'}`}>
-                    {step.completed ? <CheckCircle className="h-7 w-7" /> : <Circle className="h-7 w-7" />}
-                  </div>
+      {/* Expanded content */}
+      {isExpanded && (
+        <>
+          <CardContent className="p-0">
+            <Tabs 
+              value={activeTab} 
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
+              {/* Tab List */}
+              <div className="border-b px-6 pt-4">
+                <TabsList className="w-full grid grid-cols-4 bg-transparent p-0 gap-2 h-auto">
+                  <TabsTrigger 
+                    value="overview"
+                    className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg text-sm py-2 px-3 h-auto"
+                  >
+                    Overview
+                  </TabsTrigger>
                   
-                  <div className="grow">
-                    <h3 className="text-base font-medium">{step.title}</h3>
-                    <p className="text-sm text-muted-foreground">{step.description}</p>
-                  </div>
-                  
-                  {hasContent && !step.completed && (
-                    <AccordionTrigger 
-                      onClick={() => handleAccordionChange(step.id)} 
-                      className="ml-2 shrink-0 p-0"
-                    />
-                  )}
+                  {steps.map((step) => (
+                    <TabsTrigger 
+                      key={step.id}
+                      value={step.id}
+                      className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg text-sm py-2 px-3 h-auto"
+                      disabled={step.id === 'register'}
+                    >
+                      {step.title}
+                      {step.completed && (
+                        <CheckCircle className="h-3.5 w-3.5 ml-1 text-green-400" />
+                      )}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
+              
+              {/* Overview Tab Content */}
+              <TabsContent value="overview" className="mt-0 px-6 py-6">
+                <div className="text-center mb-4">
+                  <h3 className="text-lg font-medium mb-2">
+                    Your onboarding progress
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Complete these steps to get started with xFoundry
+                  </p>
                 </div>
                 
-                {hasContent && (
-                  <AccordionContent>
-                    <div className="p-4 border-t">
-                      {step.id === 'selectCohort' && !step.completed && (
-                        <>
-                          <p className="text-base mb-4">
-                            Select a program to apply for:
-                          </p>
-                          
-                          {/* Available Programs using shared component */}
-                          <CohortGrid 
-                            cohorts={profile.cohorts || []}
-                            profile={profile}
-                            isLoading={isLoading}
-                            onApplySuccess={(cohort) => completeStep('selectCohort')}
-                            columns={{ default: 1, md: 2, lg: 3 }}
-                            emptyMessage="No programs are currently available for your institution."
-                          />
-                        </>
+                {/* Progress Bar */}
+                {renderProgressBar()}
+                
+                {/* Step List */}
+                <div className="space-y-3 mt-8">
+                  {steps.map((step) => (
+                    <div 
+                      key={step.id}
+                      className={`
+                        flex items-center p-4 rounded-lg border border-gray-100 
+                        ${step.completed ? 'bg-green-50' : 'bg-white hover:bg-gray-50'}
+                        transition-colors duration-200
+                      `}
+                    >
+                      <div className={`
+                        w-10 h-10 rounded-full flex items-center justify-center mr-4
+                        ${step.completed 
+                          ? 'bg-green-100 text-green-600' 
+                          : 'bg-primary/10 text-primary'}
+                      `}>
+                        {step.completed ? <CheckCircle className="h-5 w-5" /> : step.icon}
+                      </div>
+                      
+                      <div className="flex-1">
+                        <h4 className={`
+                          font-medium
+                          ${step.completed ? 'text-green-700' : 'text-gray-900'}
+                        `}>
+                          {step.title}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          {step.description}
+                        </p>
+                      </div>
+                      
+                      {!step.completed && step.id !== 'register' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="ml-2"
+                          onClick={() => setActiveTab(step.id)}
+                        >
+                          Start
+                          <ArrowRight className="ml-1 h-3.5 w-3.5" />
+                        </Button>
                       )}
                       
-                      {step.id === 'connexions' && (
-                        <div className="text-center py-4">
-                          <p className="mb-4">
-                            Join ConneXions to connect with students, mentors, and faculty in your program.
-                          </p>
-                          <Button 
-                            onClick={() => {
-                              completeStep('connexions');
-                              window.open("https://connexions.app", "_blank");
-                            }}
-                          >
-                            Go to ConneXions
-                          </Button>
-                        </div>
+                      {step.completed && (
+                        <Badge variant="success" className="ml-2 bg-green-100 text-green-800 hover:bg-green-200">
+                          Completed
+                        </Badge>
                       )}
                     </div>
-                  </AccordionContent>
+                  ))}
+                </div>
+              </TabsContent>
+              
+              {/* Register Tab Content (always completed) */}
+              <TabsContent value="register" className="mt-0 px-6 py-6">
+                <div className="flex items-center justify-center flex-col text-center p-8">
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                  <h3 className="text-xl font-medium text-green-700 mb-2">
+                    Account created successfully!
+                  </h3>
+                  <p className="text-muted-foreground max-w-md">
+                    You've successfully created your xFoundry account. Continue with the next steps to complete your onboarding.
+                  </p>
+                </div>
+              </TabsContent>
+              
+              {/* Select Cohort Tab Content */}
+              <TabsContent value="selectCohort" className="mt-0 px-6 py-6">
+                {!steps.find(s => s.id === 'selectCohort')?.completed ? (
+                  <>
+                    <h3 className="text-lg font-medium mb-2">
+                      Select a program to apply for
+                    </h3>
+                    <p className="text-muted-foreground mb-6">
+                      Choose from the available programs below to join the xFoundry community
+                    </p>
+                    
+                    {/* Available Programs */}
+                    <CohortGrid 
+                      cohorts={profile.cohorts || []}
+                      profile={profile}
+                      isLoading={isLoading}
+                      onApply={handleCohortApply}
+                      onApplySuccess={(cohort) => completeStep('selectCohort')}
+                      columns={{ default: 1, md: 2, lg: 2 }}
+                      emptyMessage="No programs are currently available for your institution."
+                    />
+                  </>
+                ) : (
+                  <div className="flex items-center justify-center flex-col text-center p-8">
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                      <CheckCircle className="h-8 w-8 text-green-600" />
+                    </div>
+                    <h3 className="text-xl font-medium text-green-700 mb-2">
+                      You've applied to a program!
+                    </h3>
+                    <p className="text-muted-foreground max-w-md mb-4">
+                      Your application has been submitted. You'll receive updates about your application status soon.
+                    </p>
+                    <Button variant="outline" onClick={() => setActiveTab("connexions")}>
+                      Continue to next step
+                      <ArrowRight className="ml-1 h-4 w-4" />
+                    </Button>
+                  </div>
                 )}
-              </AccordionItem>
-            );
-          })}
-        </Accordion>
-      </CardContent>
-      
-      <CardFooter className="justify-center bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 rounded-b-lg">
-        {allStepsCompleted ? (
-          <Button
-            variant="success" 
-            className="bg-green-600 hover:bg-green-700 shadow-sm transition-all duration-200 px-6"
-            onClick={completeOnboarding}
-          >
-            Complete Onboarding
-          </Button>
-        ) : (
-          <Button 
-            variant="outline"
-            className="hover:bg-gray-100 transition-all duration-200 px-6"
-            onClick={skipOnboarding}
-          >
-            Skip for Now
-          </Button>
-        )}
-      </CardFooter>
+              </TabsContent>
+              
+              {/* ConneXions Tab Content */}
+              <TabsContent value="connexions" className="mt-0 px-6 py-6">
+                {!steps.find(s => s.id === 'connexions')?.completed ? (
+                  <div className="flex flex-col items-center text-center p-4">
+                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                      <Users className="h-8 w-8 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-medium mb-4">
+                      Join ConneXions Community
+                    </h3>
+                    <p className="text-muted-foreground max-w-lg mb-6">
+                      Connect with students, mentors, and faculty in your program. Join ConneXions to collaborate, share resources, and get support for your projects.
+                    </p>
+                    <Button 
+                      className="gap-2"
+                      onClick={() => {
+                        completeStep('connexions');
+                        window.open("https://connexions.xfoundry.org", "_blank");
+                      }}
+                    >
+                      Go to ConneXions
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center flex-col text-center p-8">
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                      <CheckCircle className="h-8 w-8 text-green-600" />
+                    </div>
+                    <h3 className="text-xl font-medium text-green-700 mb-2">
+                      You're connected!
+                    </h3>
+                    <p className="text-muted-foreground max-w-md mb-4">
+                      You've successfully joined the ConneXions community.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      className="gap-2"
+                      onClick={() => window.open("https://connexions.xfoundry.org", "_blank")}
+                    >
+                      Visit ConneXions
+                      <ExternalLink className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+          
+          <CardFooter className="justify-between bg-gray-50 border-t border-gray-100 p-4">
+            <span className="text-sm text-muted-foreground">
+              {completionPercentage}% complete • {steps.filter(s => s.completed).length} of {steps.length} tasks done
+            </span>
+            
+            {allStepsCompleted ? (
+              <Button
+                className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={completeOnboarding}
+              >
+                Complete Onboarding
+              </Button>
+            ) : (
+              <Button 
+                variant="outline"
+                onClick={skipOnboarding}
+              >
+                Continue to Dashboard
+              </Button>
+            )}
+          </CardFooter>
+        </>
+      )}
     </Card>
-  )
-}
+  );
+};
 
-export default OnboardingChecklist
+export default OnboardingChecklist;
