@@ -156,29 +156,52 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
     )
   }
 
+  // Check if the user has completed the program application step
+  const hasAppliedToProgram = steps.find(step => step.id === 'selectCohort')?.completed || false;
+  
   return (
-    <Alert className="mb-6 border-primary/20 shadow-sm bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950">
-      <AlertCircle className="h-4 w-4 text-primary" />
-      <AlertTitle className="text-primary-foreground">Continue Setting Up Your Account</AlertTitle>
+    <Alert className={`mb-6 border-primary/20 shadow-sm ${
+      hasAppliedToProgram 
+        ? "bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950" 
+        : "bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950"
+    }`}>
+      <AlertCircle className={`h-4 w-4 ${hasAppliedToProgram ? "text-green-600" : "text-primary"}`} />
+      <AlertTitle className="text-primary-foreground">
+        {hasAppliedToProgram 
+          ? "You've applied to a program!" 
+          : "Continue Setting Up Your Account"}
+      </AlertTitle>
       <AlertDescription className="mt-2">
         <div className="flex flex-col space-y-4">
           <div className="flex justify-between items-center text-sm">
             <span className="font-medium text-primary-foreground">Progress: {progress}% complete</span>
           </div>
           
-          <Progress value={progress} className="h-2.5 bg-white/50" indicatorClassName="bg-primary" />
+          <Progress 
+            value={progress} 
+            className="h-2.5 bg-white/50" 
+            indicatorClassName={hasAppliedToProgram ? "bg-green-600" : "bg-primary"} 
+          />
           
           <div className="flex justify-between items-center mt-2">
             {nextIncompleteStep && (
               <div className="flex-1">
-                <span className="text-sm font-medium text-primary-foreground">Next: {nextIncompleteStep.title}</span>
+                <span className="text-sm font-medium text-primary-foreground">
+                  {hasAppliedToProgram
+                    ? "Great job applying to a program!"
+                    : `Next: ${nextIncompleteStep.title}`}
+                </span>
               </div>
             )}
             
             <div className="flex gap-2">
               <Button 
                 size="sm"
-                className="gap-1 bg-primary hover:bg-primary/90 transition-all duration-200 hover:translate-x-0.5 active:scale-95 shadow-sm"
+                className={`gap-1 transition-all duration-200 hover:translate-x-0.5 active:scale-95 shadow-sm ${
+                  hasAppliedToProgram 
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-primary hover:bg-primary/90"
+                }`}
                 onClick={() => {
                   // Apply animation to hide this banner
                   const banner = document.querySelector('.onboarding-condensed');

@@ -314,9 +314,24 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         onboardingElement.classList.add('onboarding-transitioning-out');
       }
       
-      // Store in session storage for immediate access
-      sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
-      sessionStorage.removeItem('xFoundry_onboardingSkipped');
+      // Check if the user has completed the "selectCohort" step
+      const selectCohortStep = steps.find(step => step.id === 'selectCohort');
+      const hasAppliedToProgram = selectCohortStep && selectCohortStep.completed;
+      
+      // Determine persistence flags based on completion of program application
+      const persistenceFlags = hasAppliedToProgram ? 
+        {
+          onboardingCompleted: true,
+          onboardingSkipped: false,
+          keepOnboardingVisible: false
+        } : 
+        {
+          onboardingCompleted: false,
+          onboardingSkipped: true, 
+          keepOnboardingVisible: true
+        };
+      
+      // Store in session storage for immediate access (handled in dashboard.js)
       
       // Send to API for persistence
       await fetch('/api/user/metadata', {
@@ -324,25 +339,22 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          onboardingCompleted: true,
-          onboardingSkipped: false,
-          keepOnboardingVisible: false
-        })
+        body: JSON.stringify(persistenceFlags)
       });
       
       // Short delay to allow animation to play
       setTimeout(() => {
         setShowOnboarding(false);
         
-        // Provide false to indicate this was a complete, not a skip
-        if (onComplete) onComplete(false);
+        // Provide completion info to parent component
+        // false = not skipped, hasAppliedToProgram = whether they've applied to a program
+        if (onComplete) onComplete(false, hasAppliedToProgram);
       }, 250);
     } catch (error) {
       console.error('Error completing onboarding:', error);
       // Still try to complete the UI flow even if API fails
       setShowOnboarding(false);
-      if (onComplete) onComplete(false);
+      if (onComplete) onComplete(false, false);
     }
   }
 

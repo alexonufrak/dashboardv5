@@ -119,7 +119,14 @@ const Dashboard = () => {
           
           // If there's a conflict between session storage and API data,
           // trust the API data and update session storage
-          if (metadata.onboardingCompleted === true) {
+          
+          // Check if user has applied to a program by checking if the selectCohort step is completed
+          const hasAppliedToProgram = metadata.onboarding && 
+                                     Array.isArray(metadata.onboarding) && 
+                                     metadata.onboarding.includes('selectCohort');
+          
+          if (metadata.onboardingCompleted === true && hasAppliedToProgram) {
+            // Only fully complete onboarding if they've applied to a program
             // Only update state if it's different from current state to avoid unnecessary re-renders
             if (!dashboardContent || showFullOnboarding || showOnboardingBanner) {
               setShowFullOnboarding(false);
@@ -129,9 +136,19 @@ const Dashboard = () => {
             // Update session storage
             sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
             sessionStorage.removeItem('xFoundry_onboardingSkipped');
+          } else if (metadata.onboardingCompleted === true && !hasAppliedToProgram) {
+            // If marked as completed but they haven't applied to a program yet, still show the banner
+            if (!dashboardContent || showFullOnboarding || !showOnboardingBanner) {
+              setShowFullOnboarding(false);
+              setShowOnboardingBanner(true);
+              setDashboardContent(true);
+            }
+            // Update session storage to show they've made progress but not fully completed
+            sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
+            sessionStorage.removeItem('xFoundry_onboardingCompleted');
           } else if (metadata.onboardingSkipped === true) {
-            // Show banner based on keepOnboardingVisible flag
-            const keepVisible = metadata.keepOnboardingVisible !== false;
+            // Show banner based on keepOnboardingVisible flag or if they haven't applied to a program
+            const keepVisible = metadata.keepOnboardingVisible !== false || !hasAppliedToProgram;
             
             // Only update state if it's different from current state
             if (!dashboardContent || showFullOnboarding || showOnboardingBanner !== keepVisible) {
@@ -180,10 +197,14 @@ const Dashboard = () => {
       
       // If we have session data, show dashboard content immediately
       if (hasSessionData) {
-        const isCompleted = sessionStorage.getItem('xFoundry_onboardingCompleted') === 'true';
+        const isFullyCompleted = sessionStorage.getItem('xFoundry_onboardingCompleted') === 'true';
+        
         setDashboardContent(true);
         setShowFullOnboarding(false);
-        setShowOnboardingBanner(!isCompleted); // Show banner only when skipped, not completed
+        
+        // Always show the condensed banner unless they have explicitly completed 
+        // the entire onboarding process (which requires applying to a program)
+        setShowOnboardingBanner(!isFullyCompleted);
       } else {
         // For new users with no session data, show full onboarding
         setDashboardContent(false);
@@ -271,14 +292,19 @@ const Dashboard = () => {
     }
   };
 
-  const handleCompletion = (skipOnly = false) => {
+  const handleCompletion = (skipOnly = false, hasAppliedToProgram = false) => {
     // Update session storage immediately for responsive UI
     if (skipOnly) {
       sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
       sessionStorage.removeItem('xFoundry_onboardingCompleted');
-    } else {
+    } else if (hasAppliedToProgram) {
+      // Only fully complete if user has applied to a program
       sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
       sessionStorage.removeItem('xFoundry_onboardingSkipped');
+    } else {
+      // Otherwise just temporarily hide full view but keep condensed banner
+      sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
+      sessionStorage.removeItem('xFoundry_onboardingCompleted');
     }
     
     // Animate the checklist closing with CSS transitions
@@ -291,10 +317,15 @@ const Dashboard = () => {
     // After a short delay to let the animation play, update state
     setTimeout(() => {
       setShowFullOnboarding(false);
-      setShowOnboardingBanner(skipOnly); // Only show banner if skipped, not if completed
+      
+      // We want to show the banner if:
+      // - User explicitly skipped the onboarding, OR
+      // - User didn't skip but also hasn't applied to a program
+      const shouldShowBanner = skipOnly || !hasAppliedToProgram;
+      setShowOnboardingBanner(shouldShowBanner);
       
       // If showing the banner, ensure it animates in nicely
-      if (skipOnly) {
+      if (shouldShowBanner) {
         const banner = document.querySelector('.onboarding-condensed');
         if (banner) {
           banner.classList.remove('onboarding-condensed-hidden');
