@@ -98,19 +98,22 @@ const Dashboard = () => {
         const sessionCompleted = sessionStorage.getItem('xFoundry_onboardingCompleted') === 'true';
         const sessionSkipped = sessionStorage.getItem('xFoundry_onboardingSkipped') === 'true';
         
-        // Default state - show dashboard content
-        setDashboardContent(true);
-        
         // Apply session storage state immediately for better UX
         if (sessionCompleted) {
           console.log("Session storage indicates onboarding is completed");
+          setDashboardContent(true);
+          setShowFullOnboarding(false);
           setShowOnboardingBanner(false);
           // Still fetch from API to ensure server and client are in sync, but don't change UI
         } else if (sessionSkipped) {
           console.log("Session storage indicates onboarding was skipped");
+          setDashboardContent(true);
+          setShowFullOnboarding(false);
           setShowOnboardingBanner(true);
         } else {
           // For new users, default to showing onboarding
+          console.log("No session data, showing full onboarding");
+          setDashboardContent(false);
           setShowFullOnboarding(true);
           setShowOnboardingBanner(false);
         }
@@ -170,12 +173,21 @@ const Dashboard = () => {
     }
 
     if (user) {
-      // Always show dashboard content by default
-      setDashboardContent(true)
+      // For new users, don't show dashboard content until we check onboarding status
+      setDashboardContent(false)
       
       // Fetch profile and team data
       fetchProfile()
       fetchTeamData()
+      
+      // Check if we have session storage data to use immediately
+      const hasSessionData = sessionStorage.getItem('xFoundry_onboardingCompleted') === 'true' || 
+                             sessionStorage.getItem('xFoundry_onboardingSkipped') === 'true';
+      
+      // If we have session data, show dashboard content
+      if (hasSessionData) {
+        setDashboardContent(true);
+      }
       
       // Check onboarding status with a small delay to ensure state updates
       setTimeout(() => {
@@ -291,12 +303,20 @@ const Dashboard = () => {
   // This function is now handled by the shared CohortGrid and CohortCard components
   
   // Main JSX content
+  // Debug info - remove in production
+  console.log("Render state:", {
+    showFullOnboarding,
+    dashboardContent,
+    showOnboardingBanner,
+    hasProfile: !!profile
+  });
+  
   return (
     <ProperDashboardLayout title="xFoundry Hub" profile={profile} onEditClick={handleEditClick}>
       {/* No longer needed - CohortGrid component handles this */}
       
       {/* Full Onboarding Checklist - Only when shown */}
-      {profile && showFullOnboarding && (
+      {profile && showFullOnboarding && !dashboardContent && (
         <div className="onboarding-slide-in">
           <OnboardingChecklist 
             profile={profile}
@@ -306,7 +326,7 @@ const Dashboard = () => {
       )}
       
       {/* Dashboard Content - Either condensed onboarding or full dashboard */}
-      {profile && !showFullOnboarding && (
+      {profile && dashboardContent && (
         <div className="space-y-8 pt-4 dashboard-content">
           {/* Email mismatch alert - appears if user authenticated with different email than verified */}
           {user?.emailMismatch && <EmailMismatchAlert emailMismatch={user.emailMismatch} />}
