@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { ArrowRight, CheckCircle, XCircle, AlertCircle, GraduationCap, Mail, User } from "lucide-react"
+import { toast } from "sonner"
 
 export default function SignUp() {
   const { user, isLoading } = useUser();
@@ -28,6 +29,7 @@ export default function SignUp() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [userExists, setUserExists] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [hasPrefilledData, setHasPrefilledData] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -105,16 +107,14 @@ export default function SignUp() {
         
         // Delay redirect to show message to user for 2 seconds
         setTimeout(() => {
-          // Encode the email to use as a query parameter
-          const encodedEmail = encodeURIComponent(email);
           window.location.href = `/api/auth/login?prompt=login`;
         }, 2000);
         return;
       }
       
-      // Check if they exist in Airtable only (Auth0 account was deleted)
-      if (userCheckData.airtableExists && !userCheckData.auth0Exists) {
-        console.log("User exists in Airtable but not in Auth0, continuing with signup");
+      // If the user is found in Airtable but not Auth0, prefill the form data
+      if (userCheckData.airtableExists) {
+        console.log("User exists in Airtable but not in Auth0, prefilling form data");
         // Store the Airtable ID in localStorage to associate during signup
         localStorage.setItem('xFoundry_airtableId', userCheckData.airtableId || '');
         
@@ -123,14 +123,32 @@ export default function SignUp() {
           console.log("Found Airtable metadata for signup:", userCheckData.signupMetadata);
           localStorage.setItem('xFoundry_signupMetadata', JSON.stringify(userCheckData.signupMetadata));
           
-          // Pre-fill form data if we have names
-          if (userCheckData.signupMetadata.firstName || userCheckData.signupMetadata.lastName) {
-            setFormData({
-              ...formData,
-              firstName: userCheckData.signupMetadata.firstName || '',
-              lastName: userCheckData.signupMetadata.lastName || ''
-            });
+          // Pre-fill form data with all available information
+          const metadata = userCheckData.signupMetadata;
+          const updatedFormData = {
+            ...formData,
+            firstName: metadata.firstName || '',
+            lastName: metadata.lastName || '',
+            graduationYear: metadata.graduationYear || '',
+            degreeType: metadata.degreeType || formData.degreeType
+          };
+          
+          console.log("Prefilling form data:", updatedFormData);
+          setFormData(updatedFormData);
+          setHasPrefilledData(true);
+          
+          // Automatically proceed to step 2 if we have good prefilled data
+          if (metadata.firstName && metadata.lastName) {
+            // Brief delay to ensure institution verification completes
+            setTimeout(() => {
+              if (institutionStatus === "success" || institutionStatus === null) {
+                nextStep();
+              }
+            }, 500);
           }
+          
+          // Show notification about found details
+          toast.success("We found your existing details! Continue with signup to access your account.");
         }
       }
       
@@ -426,9 +444,18 @@ export default function SignUp() {
                     </div>
                     
                     <h2 className="text-xl font-semibold text-center">Complete Your Profile</h2>
-                    <p className="text-gray-500 text-center">
-                      Please provide the following information to complete your profile.
-                    </p>
+                    {hasPrefilledData ? (
+                      <Alert className="mt-2 bg-blue-50 text-blue-800 border-blue-200">
+                        <CheckCircle className="h-4 w-4 mr-2 text-blue-500" />
+                        <AlertDescription>
+                          We found your existing information! Please verify it's correct before continuing.
+                        </AlertDescription>
+                      </Alert>
+                    ) : (
+                      <p className="text-gray-500 text-center">
+                        Please provide the following information to complete your profile.
+                      </p>
+                    )}
                     
                     <div className="space-y-6">
                       {/* Name Fields */}

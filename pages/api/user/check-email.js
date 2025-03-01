@@ -61,22 +61,29 @@ export default async function handler(req, res) {
         }
       }
       
-      // Return information about where the user exists
+      // Changed behavior: Only consider a user to exist if found in Auth0
+      // If they are only in Airtable, still let them sign up with prefilled data
+      
+      // Modify the response based on the new behavior:
+      // 1. If user exists in Auth0, they should sign in instead (return exists: true)
+      // 2. If user only exists in Airtable, let them sign up with prefilled data (return exists: false)
+      // 3. If user doesn't exist anywhere, let them sign up (return exists: false)
+      
       const message = auth0Exists 
         ? 'User exists in Auth0' 
         : (airtableExists 
-           ? 'User exists in Airtable but may need Auth0 account linking'
+           ? 'User exists in Airtable only, allowing signup with prefilled data'
            : 'User does not exist in either system');
       
       return res.status(200).json({ 
-        exists: userExists,
+        // Only report user as existing if found in Auth0
+        exists: auth0Exists,
         airtableExists: airtableExists,
         auth0Exists: auth0Exists,
-        potentialVisibilityIssue: airtableOnlyButLikelyAuthorized,
         message: message,
         // Include Airtable user ID if it exists (for updating during signup)
         airtableId: airtableExists ? airtableUser.contactId : null,
-        // Include signup metadata if available
+        // Include signup metadata if available (for prefilling)
         signupMetadata: signupMetadata
       });
     } catch (error) {
