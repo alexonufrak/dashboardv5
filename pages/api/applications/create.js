@@ -21,15 +21,16 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     }
     
     // Get the request body containing application data
-    const { cohortId, teamId } = req.body
+    const { cohortId, teamId, participationType } = req.body
     
     if (!cohortId) {
       return res.status(400).json({ error: 'Cohort ID is required' })
     }
     
-    // For team applications, team ID is required
-    if (!teamId) {
-      return res.status(400).json({ error: 'Team ID is required' })
+    // Only require team ID for team applications
+    // We get the participation type from the client to avoid having to re-fetch the cohort
+    if (participationType === 'Team' && !teamId) {
+      return res.status(400).json({ error: 'Team ID is required for team applications' })
     }
     
     // Get user profile from Airtable

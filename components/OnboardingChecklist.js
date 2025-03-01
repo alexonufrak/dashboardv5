@@ -204,11 +204,18 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     console.log("Applying to cohort:", cohort);
     console.log("Cohort initiative details:", cohort.initiativeDetails);
     
-    // Check if initiative has participation type
-    const participationType = cohort.initiativeDetails?.["Participation Type"] || "Individual"
-    console.log(`Participation type: ${participationType}`);
+    // Check if initiative has participation type 
+    // First try the direct property added in enhanced cohorts
+    // Then try the nested path, and finally fall back to Individual
+    const participationType = cohort.participationType || 
+                             cohort.initiativeDetails?.["Participation Type"] || 
+                             "Individual";
+                             
+    console.log(`Participation type for cohort ${cohort.id}: ${participationType}`);
+    console.log("Full cohort object:", JSON.stringify(cohort, null, 2));
     
-    if (participationType === "Team") {
+    // Team applications require a different flow
+    if (participationType.toLowerCase() === "team") {
       console.log("Team participation type detected");
       console.log("User teams:", userTeams);
       
@@ -245,27 +252,40 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
 
   // Handle team creation
   const handleTeamCreated = (team) => {
-    // Add new team to user's teams
-    setUserTeams(prev => [...prev, team])
-    setActiveTeamCreateDialog(false)
+    console.log("Team created successfully:", team);
     
-    console.log("Team created:", team);
+    // Add new team to user's teams
+    setUserTeams(prev => {
+      const newTeams = [...prev, team];
+      console.log("Updated teams list:", newTeams);
+      return newTeams;
+    });
+    
+    setActiveTeamCreateDialog(false);
     
     // If we have a pending team application, open the team selection dialog with the newly created team
     if (activeTeamSelectDialog) {
+      console.log("Updating existing team selection dialog with new team");
       setActiveTeamSelectDialog({
         ...activeTeamSelectDialog,
         teams: [team] // Prioritize the newly created team
       });
     } else if (selectedCohort) {
       // If no active dialog but we have a selected cohort, find the cohort and open the team selection dialog
+      console.log(`Finding cohort with ID ${selectedCohort} to continue application`);
       const cohort = profile.cohorts?.find(c => c.id === selectedCohort);
+      
       if (cohort) {
+        console.log("Found cohort, opening team selection dialog:", cohort);
         setActiveTeamSelectDialog({
           cohort: cohort,
           teams: [team]
         });
+      } else {
+        console.error(`No cohort found with ID ${selectedCohort}`);
       }
+    } else {
+      console.log("No pending cohort application to continue with");
     }
   }
 

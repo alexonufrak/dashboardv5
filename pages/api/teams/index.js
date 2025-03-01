@@ -36,7 +36,7 @@ export default withApiAuthRequired(async function teamsHandler(req, res) {
     }
     
     // Restructure the response to match expected format
-    const formattedTeams = [{
+    const formattedTeams = Array.isArray(teams) ? teams : [{
       id: teams.id,
       name: teams.name,
       description: teams.description,
@@ -44,6 +44,7 @@ export default withApiAuthRequired(async function teamsHandler(req, res) {
       points: teams.points
     }]
     
+    console.log('Teams API response:', { count: formattedTeams.length, teams: formattedTeams })
     return res.status(200).json({ teams: formattedTeams })
   } catch (error) {
     console.error('Error fetching teams:', error)

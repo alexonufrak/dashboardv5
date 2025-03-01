@@ -36,6 +36,7 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
   const [selectedTeamId, setSelectedTeamId] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [showCreateTeamDialog, setShowCreateTeamDialog] = useState(false)
   const [userTeams, setUserTeams] = useState(teams)
   
@@ -127,7 +128,8 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
         },
         body: JSON.stringify({
           cohortId: cohort.id,
-          teamId: selectedTeamId
+          teamId: selectedTeamId,
+          participationType: 'Team' // Explicitly specify this is a team application
         })
       })
       
