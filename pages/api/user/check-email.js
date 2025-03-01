@@ -38,17 +38,29 @@ export default async function handler(req, res) {
       const auth0Exists = await auth0Client.checkUserExistsByEmail(normalizedEmail);
       console.log(`Auth0 user existence result: ${auth0Exists}`);
       
-      // User exists only if they exist in Auth0
-      // This way, if user is deleted from Auth0 but still in Airtable,
-      // they'll be treated as a new user
-      const userExists = auth0Exists;
+      // Check for the special case where user exists in Airtable but not in Auth0 via Management API
+      // This could happen when user is authorized for web app but not visible to Management API
+      const airtableOnlyButLikelyAuthorized = airtableExists && !auth0Exists;
+      console.log(`Potential Auth0 visibility issue: ${airtableOnlyButLikelyAuthorized}`);
+      
+      // In production, we should consider a user as existing if they're in Airtable
+      // This ensures users don't create duplicate accounts if there's an Auth0 Management API issue
+      // For thorough checking, we'll look at both Auth0 and Airtable
+      const userExists = auth0Exists || airtableExists;
       
       // Return information about where the user exists
+      const message = auth0Exists 
+        ? 'User exists in Auth0' 
+        : (airtableExists 
+           ? 'User exists in Airtable but may need Auth0 account linking'
+           : 'User does not exist in either system');
+      
       return res.status(200).json({ 
         exists: userExists,
         airtableExists: airtableExists,
         auth0Exists: auth0Exists,
-        message: userExists ? 'User exists in Auth0' : 'User does not exist in Auth0',
+        potentialVisibilityIssue: airtableOnlyButLikelyAuthorized,
+        message: message,
         // Include Airtable user ID if it exists (for updating during signup)
         airtableId: airtableExists ? airtableUser.contactId : null
       });
