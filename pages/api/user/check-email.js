@@ -23,16 +23,20 @@ export default async function handler(req, res) {
 
     // Check user existence in both Airtable and Auth0
     try {
+      // Normalize the email to lowercase for consistency
+      const normalizedEmail = email.toLowerCase().trim();
+      console.log(`Working with normalized email: ${normalizedEmail}`);
+      
       // First check if user exists in Airtable
-      console.log(`Checking if user exists in Airtable with email: ${email}`);
-      const airtableUser = await getUserByEmail(email);
+      console.log(`Checking if user exists in Airtable with email: ${normalizedEmail}`);
+      const airtableUser = await getUserByEmail(normalizedEmail);
       const airtableExists = !!airtableUser;
       console.log(`Airtable user existence: ${airtableExists}`);
       
-      // Then check if user exists in Auth0
-      console.log(`Checking if user exists in Auth0 with email: ${email}`);
-      const auth0Exists = await auth0Client.checkUserExistsByEmail(email);
-      console.log(`Auth0 user existence: ${auth0Exists}`);
+      // Then check if user exists in Auth0 (with detailed logging in the client function)
+      console.log(`Calling Auth0 client to check user existence: ${normalizedEmail}`);
+      const auth0Exists = await auth0Client.checkUserExistsByEmail(normalizedEmail);
+      console.log(`Auth0 user existence result: ${auth0Exists}`);
       
       // User exists only if they exist in Auth0
       // This way, if user is deleted from Auth0 but still in Airtable,
