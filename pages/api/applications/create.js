@@ -58,8 +58,9 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     const applicationData = {
       'Contact': [userProfile.contactId],
       'Cohort': [cohortId],
-      'Status': 'Submitted',
-      'Submission Date': new Date().toISOString()
+      'Status': 'Submitted'
+      // Removed 'Submission Date' as it doesn't exist in the Airtable schema
+      // The 'Created' field is automatically handled by Airtable
     }
     
     // If team ID is provided, add it to the application
@@ -82,7 +83,7 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
       contactId: userProfile.contactId,
       cohortId: cohortId,
       teamId: teamId,
-      submissionDate: applicationRecord.fields['Submission Date']
+      createdTime: applicationRecord.fields['Created'] || new Date().toISOString()
     })
   } catch (error) {
     console.error('Error creating application:', error)
