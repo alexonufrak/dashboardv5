@@ -458,8 +458,8 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
   const allStepsCompleted = steps.every(step => step.completed)
 
   return (
-    <Card className="mb-8">
-      <CardHeader className="text-center">
+    <Card className="mb-0 mt-2 shadow-lg border-primary/20">
+      <CardHeader className="text-center bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950 rounded-t-lg border-b border-primary/10">
         <CardTitle className="text-3xl text-primary">Welcome to xFoundry!</CardTitle>
         <p className="text-muted-foreground">Complete these steps to get started</p>
       </CardHeader>
@@ -504,7 +504,7 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         onCreateTeam={handleTeamCreated}
       />
       
-      <CardContent>
+      <CardContent className="bg-white">
         <Accordion type="multiple" value={Object.keys(expandedAccordion).filter(key => expandedAccordion[key])}>
           {steps.map((step, index) => {
             // Skip rendering content area for register step as it's already completed
@@ -581,11 +581,11 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         </Accordion>
       </CardContent>
       
-      <CardFooter className="justify-center">
+      <CardFooter className="justify-center bg-gray-50 dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 rounded-b-lg">
         {allStepsCompleted ? (
           <Button
             variant="success" 
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600 hover:bg-green-700 shadow-sm transition-all duration-200 px-6"
             onClick={completeOnboarding}
           >
             Complete Onboarding
@@ -593,6 +593,7 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         ) : (
           <Button 
             variant="outline"
+            className="hover:bg-gray-100 transition-all duration-200 px-6"
             onClick={skipOnboarding}
           >
             Skip for Now

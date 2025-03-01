@@ -350,63 +350,92 @@
     animation: fadeOut 200ms ease;
   }
   
-  /* Onboarding transition animations - simplified and more robust */
+  /* Onboarding container and transitions - completely revised approach */
   .onboarding-container {
-    position: relative;
-    min-height: 400px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
   }
   
-  /* Full onboarding view */
-  .onboarding-full {
-    opacity: 0;
-    animation: fadeIn 350ms ease-out forwards;
-    position: relative;
-    z-index: 20;
-  }
-  
-  /* Condensed onboarding view */
-  .onboarding-condensed {
-    animation: slideIn 300ms ease-out;
-  }
-  
-  /* Dashboard content */
-  .dashboard-main-content {
-    opacity: 0;
-    animation: fadeIn 350ms ease-out forwards;
-    position: relative;
-    z-index: 10;
-  }
-  
-  /* Active/inactive states */
-  .onboarding-active {
-    opacity: 1;
-    z-index: 20;
-  }
-  
-  .onboarding-inactive {
-    opacity: 0;
-    z-index: 10;
-    pointer-events: none;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-  }
-  
-  /* Animation for transitioning between views */
-  .onboarding-transitioning-in {
-    animation: fadeIn 300ms ease-out forwards;
-  }
-  
-  .onboarding-transitioning-out {
-    animation: fadeOut 300ms ease-in forwards;
-  }
-  
-  /* Parent container for proper positioning */
-  .proper-dashboard-layout-content {
-    min-height: 400px;
-    position: relative;
+  /* Checklist wrapper */
+  .onboarding-checklist-wrapper {
+    width: 100%; 
+    transition: max-height 0.5s ease, opacity 0.4s ease, margin 0.5s ease;
     overflow: hidden;
+  }
+  
+  /* Checklist states */  
+  .onboarding-checklist-visible {
+    max-height: 2000px; /* Large enough to fit all content */
+    opacity: 1;
+    margin-bottom: 2rem;
+  }
+  
+  .onboarding-checklist-hidden {
+    max-height: 0;
+    opacity: 0;
+    margin: 0;
+    pointer-events: none;
+  }
+  
+  /* Condensed banner */
+  .onboarding-condensed {
+    width: 100%;
+    transition: max-height 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+    animation: slideInTop 0.4s ease-out;
+  }
+  
+  .onboarding-condensed-visible {
+    max-height: 200px; 
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .onboarding-condensed-hidden {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-20px);
+    pointer-events: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Dashboard main content */
+  .dashboard-main-content {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    width: 100%;
+  }
+  
+  /* Animation for sliding in from top */
+  @keyframes slideInTop {
+    from { 
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+    to { 
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  /* Animation for sliding in from bottom */
+  @keyframes slideInBottom {
+    from { 
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    to { 
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  /* For mobile responsiveness */
+  @media (max-width: 768px) {
+    .onboarding-checklist-visible {
+      margin-bottom: 1rem;
+    }
   }
   
   @keyframes fadeIn {

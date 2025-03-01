@@ -281,34 +281,27 @@ const Dashboard = () => {
       sessionStorage.removeItem('xFoundry_onboardingSkipped');
     }
     
-    // First mark the full onboarding as transitioning out
-    const fullOnboarding = document.querySelector('.onboarding-full');
-    if (fullOnboarding) {
-      fullOnboarding.classList.add('onboarding-transitioning-out');
+    // Animate the checklist closing with CSS transitions
+    const fullChecklist = document.querySelector('.onboarding-checklist-wrapper');
+    if (fullChecklist) {
+      fullChecklist.classList.remove('onboarding-checklist-visible');
+      fullChecklist.classList.add('onboarding-checklist-hidden');
     }
     
-    // After a short delay, update state
+    // After a short delay to let the animation play, update state
     setTimeout(() => {
       setShowFullOnboarding(false);
-      setDashboardContent(true);
       setShowOnboardingBanner(skipOnly); // Only show banner if skipped, not if completed
       
-      // Then animate the dashboard content in
-      const dashboardContent = document.querySelector('.dashboard-main-content');
-      if (dashboardContent) {
-        dashboardContent.classList.add('onboarding-transitioning-in');
+      // If showing the banner, ensure it animates in nicely
+      if (skipOnly) {
+        const banner = document.querySelector('.onboarding-condensed');
+        if (banner) {
+          banner.classList.remove('onboarding-condensed-hidden');
+          banner.classList.add('onboarding-condensed-visible');
+        }
       }
-      
-      // Clean up animation classes after transition completes
-      setTimeout(() => {
-        if (fullOnboarding) {
-          fullOnboarding.classList.remove('onboarding-transitioning-out');
-        }
-        if (dashboardContent) {
-          dashboardContent.classList.remove('onboarding-transitioning-in');
-        }
-      }, 350);
-    }, 300);
+    }, 400);
   };
   
   // These functions are now handled by the CohortGrid component
@@ -328,59 +321,57 @@ const Dashboard = () => {
     <ProperDashboardLayout title="xFoundry Hub" profile={profile} onEditClick={handleEditClick}>
       {profile && (
         <div className="onboarding-container">
-          {/* Full Onboarding Checklist */}
-          <div className={`${showFullOnboarding ? 'onboarding-active' : 'onboarding-inactive'} onboarding-full`}>
+          {/* Email mismatch alert (always at top) */}
+          {user?.emailMismatch && <EmailMismatchAlert emailMismatch={user.emailMismatch} />}
+          
+          {/* Full Onboarding Checklist - expands/collapses in place */}
+          <div className={`onboarding-checklist-wrapper ${showFullOnboarding ? 'onboarding-checklist-visible' : 'onboarding-checklist-hidden'}`}>
             <OnboardingChecklist 
               profile={profile}
               onComplete={handleCompletion}
             />
           </div>
           
-          {/* Dashboard Content with Condensed Onboarding */}
-          <div className={`${dashboardContent ? 'onboarding-active' : 'onboarding-inactive'} dashboard-main-content space-y-8 pt-4`}>
-            {/* Email mismatch alert */}
-            {user?.emailMismatch && <EmailMismatchAlert emailMismatch={user.emailMismatch} />}
-            
-            {/* Condensed onboarding if not completed */}
+          {/* Condensed Onboarding Banner - only shown when applicable */}
+          <div className={`${showOnboardingBanner ? 'onboarding-condensed-visible' : 'onboarding-condensed-hidden'} onboarding-condensed`}>
             {showOnboardingBanner && (
-              <div className="onboarding-condensed">
-                <OnboardingChecklistCondensed 
-                  profile={profile}
-                  onViewAll={() => {
-                    // First mark the dashboard content as transitioning out
-                    const dashboardContent = document.querySelector('.dashboard-main-content');
-                    if (dashboardContent) {
-                      dashboardContent.classList.add('onboarding-transitioning-out');
-                    }
+              <OnboardingChecklistCondensed 
+                profile={profile}
+                onViewAll={() => {
+                  // Apply appropriate classes during transition
+                  const condensedBanner = document.querySelector('.onboarding-condensed');
+                  if (condensedBanner) {
+                    condensedBanner.classList.add('onboarding-condensed-hidden');
+                  }
+                  
+                  // Update state after a small delay
+                  setTimeout(() => {
+                    setShowFullOnboarding(true);
+                    setShowOnboardingBanner(false);
                     
-                    // After a short delay, update state and show the full onboarding
+                    // Ensure dashboard content is still shown behind the expanded checklist
+                    // but don't hide it completely
+                    setDashboardContent(true);
+                    
+                    // Scroll to the top of the checklist with smooth animation
                     setTimeout(() => {
-                      setDashboardContent(false);
-                      setShowFullOnboarding(true);
-                      setShowOnboardingBanner(false);
-                      
-                      // Then animate the full onboarding in
-                      const fullOnboarding = document.querySelector('.onboarding-full');
-                      if (fullOnboarding) {
-                        fullOnboarding.classList.add('onboarding-transitioning-in');
+                      const checklist = document.querySelector('.onboarding-checklist-wrapper');
+                      if (checklist) {
+                        checklist.scrollIntoView({
+                          behavior: 'smooth',
+                          block: 'start'
+                        });
                       }
-                      
-                      // Clean up animation classes after transition completes
-                      setTimeout(() => {
-                        if (dashboardContent) {
-                          dashboardContent.classList.remove('onboarding-transitioning-out');
-                        }
-                        if (fullOnboarding) {
-                          fullOnboarding.classList.remove('onboarding-transitioning-in');
-                        }
-                      }, 350);
-                    }, 300);
-                  }}
-                  onComplete={handleCompletion}
-                />
-              </div>
+                    }, 100);
+                  }, 200);
+                }}
+                onComplete={handleCompletion}
+              />
             )}
-            
+          </div>
+          
+          {/* Main Dashboard Content - always rendered, just pushed down */}
+          <div className="dashboard-main-content space-y-8">
             {/* User welcome */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>

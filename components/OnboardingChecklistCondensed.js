@@ -157,49 +157,39 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
   }
 
   return (
-    <Alert className="mb-6">
-      <AlertCircle className="h-4 w-4" />
-      <AlertTitle>Continue Setting Up Your Account</AlertTitle>
+    <Alert className="mb-6 border-primary/20 shadow-sm bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950">
+      <AlertCircle className="h-4 w-4 text-primary" />
+      <AlertTitle className="text-primary-foreground">Continue Setting Up Your Account</AlertTitle>
       <AlertDescription className="mt-2">
         <div className="flex flex-col space-y-4">
           <div className="flex justify-between items-center text-sm">
-            <span>Progress: {progress}% complete</span>
+            <span className="font-medium text-primary-foreground">Progress: {progress}% complete</span>
           </div>
           
-          <Progress value={progress} className="h-2" />
+          <Progress value={progress} className="h-2.5 bg-white/50" indicatorClassName="bg-primary" />
           
           <div className="flex justify-between items-center mt-2">
             {nextIncompleteStep && (
               <div className="flex-1">
-                <span className="text-sm font-medium">Next: {nextIncompleteStep.title}</span>
+                <span className="text-sm font-medium text-primary-foreground">Next: {nextIncompleteStep.title}</span>
               </div>
             )}
             
             <div className="flex gap-2">
               <Button 
                 size="sm"
-                className="gap-1 transition-all duration-200 hover:bg-slate-700 hover:translate-x-0.5 active:scale-95"
+                className="gap-1 bg-primary hover:bg-primary/90 transition-all duration-200 hover:translate-x-0.5 active:scale-95 shadow-sm"
                 onClick={() => {
-                  // First add animation class to the current content
-                  const dashboardContent = document.querySelector('.dashboard-content');
-                  if (dashboardContent) {
-                    dashboardContent.classList.add('dashboard-content-exit');
+                  // Apply animation to hide this banner
+                  const banner = document.querySelector('.onboarding-condensed');
+                  if (banner) {
+                    banner.classList.remove('onboarding-condensed-visible');
+                    banner.classList.add('onboarding-condensed-hidden');
                   }
-                  
-                  // Add animation class to body during transition
-                  document.body.classList.add('onboarding-transition');
                   
                   // Small delay to ensure the animation is visible
                   setTimeout(() => {
                     if (onViewAll) onViewAll();
-                    
-                    // Remove animation class after transition
-                    setTimeout(() => {
-                      document.body.classList.remove('onboarding-transition');
-                      if (dashboardContent) {
-                        dashboardContent.classList.remove('dashboard-content-exit');
-                      }
-                    }, 300);
                   }, 100);
                 }}
               >
