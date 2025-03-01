@@ -56,8 +56,11 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
   // Complete onboarding
   const completeOnboarding = async () => {
     try {
-      // Add animation class for transition
-      document.body.classList.add('onboarding-transition');
+      // Get the condensed onboarding element for animation
+      const condensedElement = document.querySelector('.onboarding-condensed');
+      if (condensedElement) {
+        condensedElement.classList.add('onboarding-transitioning-out');
+      }
       
       // Update session storage immediately for responsive UI
       sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
@@ -79,12 +82,7 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
       // Slight delay before completing to allow for animation
       setTimeout(() => {
         if (onComplete) onComplete(false); // Pass false to indicate completed, not skipped
-        
-        // Remove animation class after transition completes
-        setTimeout(() => {
-          document.body.classList.remove('onboarding-transition');
-        }, 300);
-      }, 200);
+      }, 250);
     } catch (error) {
       console.error('Error completing onboarding:', error);
       
@@ -96,11 +94,15 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
   // Skip onboarding (but keep notification visible)
   const skipOnboarding = async () => {
     try {
-      // Add animation class for transition
-      document.body.classList.add('onboarding-transition');
+      // Get the condensed onboarding element for animation
+      const condensedElement = document.querySelector('.onboarding-condensed');
+      if (condensedElement) {
+        condensedElement.classList.add('onboarding-transitioning-out');
+      }
       
       // Update session storage immediately for responsive UI
       sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
+      sessionStorage.removeItem('xFoundry_onboardingCompleted');
       
       // Call API to persist the preference
       await fetch('/api/user/metadata', {
@@ -110,6 +112,7 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
         },
         body: JSON.stringify({
           onboardingSkipped: true,
+          onboardingCompleted: false,
           keepOnboardingVisible: true
         })
       });
@@ -117,12 +120,7 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
       // Slight delay before completing to allow for animation
       setTimeout(() => {
         if (onComplete) onComplete(true); // Pass true to indicate skipped, not completed
-        
-        // Remove animation class after transition completes
-        setTimeout(() => {
-          document.body.classList.remove('onboarding-transition');
-        }, 300);
-      }, 200);
+      }, 250);
     } catch (error) {
       console.error('Error skipping onboarding:', error);
       

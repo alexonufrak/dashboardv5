@@ -308,8 +308,11 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
   // Complete onboarding
   const completeOnboarding = async () => {
     try {
-      // Start animation
-      document.body.classList.add('onboarding-transition');
+      // Get the onboarding element for animation
+      const onboardingElement = document.querySelector('.onboarding-full');
+      if (onboardingElement) {
+        onboardingElement.classList.add('onboarding-transitioning-out');
+      }
       
       // Store in session storage for immediate access
       sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
@@ -328,18 +331,13 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         })
       });
       
-      // Animate out with a small delay
+      // Short delay to allow animation to play
       setTimeout(() => {
         setShowOnboarding(false);
         
         // Provide false to indicate this was a complete, not a skip
         if (onComplete) onComplete(false);
-        
-        // Remove animation class after transition
-        setTimeout(() => {
-          document.body.classList.remove('onboarding-transition');
-        }, 300);
-      }, 150);
+      }, 250);
     } catch (error) {
       console.error('Error completing onboarding:', error);
       // Still try to complete the UI flow even if API fails
@@ -351,8 +349,11 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
   // Skip onboarding
   const skipOnboarding = async () => {
     try {
-      // Start animation
-      document.body.classList.add('onboarding-transition');
+      // Get the onboarding element for animation
+      const onboardingElement = document.querySelector('.onboarding-full');
+      if (onboardingElement) {
+        onboardingElement.classList.add('onboarding-transitioning-out');
+      }
       
       // Store in session storage for immediate access
       sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
@@ -371,18 +372,13 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         })
       });
       
-      // Animate out with a small delay
+      // Short delay to allow animation to play
       setTimeout(() => {
         setShowOnboarding(false);
         
         // Provide true to indicate this was a skip, not a complete
         if (onComplete) onComplete(true);
-        
-        // Remove animation class after transition
-        setTimeout(() => {
-          document.body.classList.remove('onboarding-transition');
-        }, 300);
-      }, 150);
+      }, 250);
     } catch (error) {
       console.error('Error skipping onboarding:', error);
       // Still try to complete the UI flow even if API fails

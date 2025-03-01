@@ -350,41 +350,63 @@
     animation: fadeOut 200ms ease;
   }
   
-  /* Onboarding transition animations */
-  .onboarding-transition {
-    animation: fadeOut 250ms ease;
+  /* Onboarding transition animations - simplified and more robust */
+  .onboarding-container {
+    position: relative;
+    min-height: 400px;
   }
   
-  .onboarding-fade-in {
-    animation: fadeIn 300ms ease;
-  }
-  
-  .onboarding-slide-in {
-    animation: slideIn 350ms ease-out;
-    will-change: transform, opacity;
-  }
-  
-  .onboarding-slide-out {
-    animation: slideOut 250ms ease-in;
-    will-change: transform, opacity;
-  }
-  
-  /* Ensure dashboard content and onboarding checklist don't display simultaneously */
-  .dashboard-content {
-    opacity: 1;
-    transition: opacity 300ms ease;
-  }
-
-  /* Additional transitions for onboarding */
-  .dashboard-content-exit {
+  /* Full onboarding view */
+  .onboarding-full {
     opacity: 0;
-    pointer-events: none;
+    animation: fadeIn 350ms ease-out forwards;
+    position: relative;
+    z-index: 20;
   }
-
-  /* Add animation to parent container for smooth transitions */
+  
+  /* Condensed onboarding view */
+  .onboarding-condensed {
+    animation: slideIn 300ms ease-out;
+  }
+  
+  /* Dashboard content */
+  .dashboard-main-content {
+    opacity: 0;
+    animation: fadeIn 350ms ease-out forwards;
+    position: relative;
+    z-index: 10;
+  }
+  
+  /* Active/inactive states */
+  .onboarding-active {
+    opacity: 1;
+    z-index: 20;
+  }
+  
+  .onboarding-inactive {
+    opacity: 0;
+    z-index: 10;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+  
+  /* Animation for transitioning between views */
+  .onboarding-transitioning-in {
+    animation: fadeIn 300ms ease-out forwards;
+  }
+  
+  .onboarding-transitioning-out {
+    animation: fadeOut 300ms ease-in forwards;
+  }
+  
+  /* Parent container for proper positioning */
   .proper-dashboard-layout-content {
     min-height: 400px;
     position: relative;
+    overflow: hidden;
   }
   
   @keyframes fadeIn {
