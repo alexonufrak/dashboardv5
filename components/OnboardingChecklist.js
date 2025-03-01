@@ -78,7 +78,15 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     completeStep('register', false);
     
     // Expand the first step by default
-    setStepExpanded('register', true);
+    setTimeout(() => {
+      console.log("Forcing expansion of register step");
+      setSteps(currentSteps => 
+        currentSteps.map(step => ({
+          ...step,
+          expanded: step.id === 'register'
+        }))
+      );
+    }, 100);
   }, []);
   
   // When profile changes, fetch team data
@@ -263,6 +271,7 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
   
   // Toggle a step's expanded state
   const toggleStepExpanded = (stepId) => {
+    console.log(`Toggling step: ${stepId}`);
     setSteps(prevSteps => 
       prevSteps.map(step => 
         step.id === stepId 
@@ -403,7 +412,6 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
             flex items-center p-4 cursor-pointer transition-colors duration-200
             ${isCompleted ? 'bg-green-50 hover:bg-green-100/80' : 'bg-gray-50 hover:bg-gray-100/80'}
           `}
-          onClick={() => toggleStepExpanded(step.id)}
         >
           <div className={`
             shrink-0 w-10 h-10 flex items-center justify-center rounded-full mr-4 transition-all duration-300
@@ -412,7 +420,7 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
             {isCompleted ? <CheckCircle className="h-5 w-5" /> : step.icon}
           </div>
           
-          <div className="grow">
+          <div className="grow" onClick={() => toggleStepExpanded(step.id)}>
             <h3 className={`
               text-base font-medium transition-colors duration-200
               ${isCompleted ? 'text-green-800' : 'text-gray-800'}
@@ -426,12 +434,13 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
             variant="ghost" 
             size="sm" 
             className="ml-2 h-8 w-8 p-0"
-            onClick={(e) => {
-              e.stopPropagation(); // Prevent the parent onClick from firing
-              toggleStepExpanded(step.id);
-            }}
+            onClick={() => toggleStepExpanded(step.id)}
+            type="button"
           >
-            {step.expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {step.expanded ? 
+              <ChevronUp className="h-4 w-4" /> : 
+              <ChevronDown className="h-4 w-4" />
+            }
           </Button>
         </div>
         
