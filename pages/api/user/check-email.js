@@ -48,6 +48,18 @@ export default async function handler(req, res) {
       // For thorough checking, we'll look at both Auth0 and Airtable
       const userExists = auth0Exists || airtableExists;
       
+      // If user exists in Airtable but not in Auth0, try to sync the data
+      if (airtableExists && !auth0Exists) {
+        try {
+          console.log(`Attempting to sync Airtable data to Auth0 for email: ${normalizedEmail}`);
+          await auth0Client.syncAirtableToAuth0(normalizedEmail, airtableUser);
+          console.log(`Successfully synced Airtable data to Auth0 for email: ${normalizedEmail}`);
+        } catch (syncError) {
+          console.error('Error syncing user to Auth0:', syncError);
+          // Continue with the check even if sync fails
+        }
+      }
+      
       // Return information about where the user exists
       const message = auth0Exists 
         ? 'User exists in Auth0' 
