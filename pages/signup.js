@@ -93,9 +93,9 @@ export default function SignUp() {
       const userCheckData = await userCheckResponse.json();
       console.log("User check data:", userCheckData);
       
-      // If user exists, show message and prepare for redirect
+      // If user exists in Auth0, show message and prepare for redirect
       if (userCheckData.exists) {
-        console.log("User already exists, redirecting to login");
+        console.log("User already exists in Auth0, redirecting to login");
         setUserExists(true);
         setIsRedirecting(true);
         
@@ -110,6 +110,13 @@ export default function SignUp() {
           window.location.href = `/api/auth/login?login_hint=${encodedEmail}`;
         }, 2000);
         return;
+      }
+      
+      // Check if they exist in Airtable only (Auth0 account was deleted)
+      if (userCheckData.airtableExists && !userCheckData.auth0Exists) {
+        console.log("User exists in Airtable but not in Auth0, continuing with signup");
+        // Store the Airtable ID in localStorage to associate during signup
+        localStorage.setItem('xFoundry_airtableId', userCheckData.airtableId || '');
       }
       
       // If user doesn't exist, continue with institution verification
@@ -184,6 +191,14 @@ export default function SignUp() {
     // Add cohortId if it exists in URL parameters
     if (router.query.cohortId) {
       queryParams.append("cohortId", router.query.cohortId);
+    }
+    
+    // Add Airtable ID if available in localStorage
+    // This happens when a user exists in Airtable but not in Auth0
+    const airtableId = localStorage.getItem('xFoundry_airtableId');
+    if (airtableId) {
+      queryParams.append("airtableId", airtableId);
+      console.log("Adding existing Airtable ID to auth params:", airtableId);
     }
     
     // Store the verified email in localStorage before redirecting

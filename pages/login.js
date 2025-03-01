@@ -77,8 +77,16 @@ export default function Login() {
       const userCheckData = await userCheckResponse.json();
       console.log("User check data:", userCheckData);
       
-      // Set whether the user exists
+      // Set user existence based on Auth0 existence
       setUserExists(userCheckData.exists);
+      
+      // If user exists in Airtable but not in Auth0, they need to be re-created
+      // This happens when a user is deleted from Auth0 but their Airtable record remains
+      const airtableOnly = userCheckData.airtableExists && !userCheckData.auth0Exists;
+      if (airtableOnly) {
+        console.log("User exists in Airtable but not in Auth0, treating as new signup");
+        setUserExists(false);
+      }
       
       // Check institution regardless of whether user exists
       console.log(`Verifying institution for email: ${email}`);
