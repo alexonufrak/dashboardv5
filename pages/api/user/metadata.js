@@ -1,5 +1,5 @@
 import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0';
-import auth0 from '../../../lib/auth0';
+import auth0Client from '../../../lib/auth0';
 
 /**
  * API endpoint to get and update user metadata
@@ -32,41 +32,47 @@ export default withApiAuthRequired(async function userMetadata(req, res) {
       }
 
       try {
-        // First get current user metadata 
-        const userInfo = await auth0.management.getUser({ id: userId });
+        console.log(`Fetching user info for ${userId} from Auth0...`);
+        
+        // First get current metadata directly from Auth0
+        const userResponse = await auth0Client.getUser({ id: userId });
+        const userInfo = userResponse.data || userResponse;
+        
+        console.log('User info retrieved:', userInfo ? 'success' : 'failed');
         
         // Merge existing metadata with updates
         const currentMetadata = userInfo.user_metadata || {};
         const newMetadata = { ...currentMetadata, ...updates };
         
-        // Update user metadata
-        await auth0.management.updateUserMetadata({ id: userId }, newMetadata);
+        console.log(`Updating user metadata for ${userId} in Auth0...`);
+        console.log('Metadata to store:', newMetadata);
+        
+        // Update user metadata in Auth0
+        await auth0Client.updateUserMetadata({ id: userId }, newMetadata);
+        
+        console.log('Metadata update successful');
         
         // Return updated metadata
         return res.status(200).json(newMetadata);
       } catch (error) {
         console.error('Error updating user metadata:', error);
-        console.error('Error details:', error.message, error.stack);
+        console.error('Error details:', error.message);
+        if (error.stack) console.error('Stack trace:', error.stack);
         
-        // Provide more detailed error messages for common issues
-        if (error.message && error.message.includes('Missing required Auth0 environment variables')) {
-          return res.status(500).json({ 
-            error: 'Auth0 configuration error: Missing required environment variables',
-            details: 'Check AUTH0_ISSUER_BASE_URL, AUTH0_CLIENT_ID, and AUTH0_CLIENT_SECRET'
-          });
-        }
+        // Provide more detailed error messages
+        let errorMessage = 'Failed to update user metadata';
+        let statusCode = 500;
         
         if (error.statusCode === 401 || error.statusCode === 403) {
-          return res.status(error.statusCode).json({ 
-            error: 'Auth0 API authentication error',
-            details: 'Check API credentials and permissions'
-          });
+          errorMessage = 'Auth0 API authentication error. Check API credentials and permissions.';
+          statusCode = error.statusCode;
+        } else if (error.message && error.message.includes('Missing required Auth0 environment variables')) {
+          errorMessage = 'Auth0 configuration is incomplete. Check environment variables.';
         }
         
-        // Fallback message
-        return res.status(500).json({ 
-          error: 'Failed to update user metadata', 
-          details: error.message 
+        return res.status(statusCode).json({ 
+          error: errorMessage,
+          details: error.message
         });
       }
     }
@@ -75,15 +81,8 @@ export default withApiAuthRequired(async function userMetadata(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
     console.error('Error in userMetadata API:', error);
-    console.error('Error details:', error.message, error.stack);
-    
-    // Check if it's a session-related error
-    if (error.message && error.message.includes('session')) {
-      return res.status(401).json({ 
-        error: 'Authentication error',
-        details: 'Unable to get user session. Please try logging in again.'
-      });
-    }
+    console.error('Error details:', error.message);
+    if (error.stack) console.error('Stack trace:', error.stack);
     
     return res.status(500).json({ 
       error: 'Internal server error',
