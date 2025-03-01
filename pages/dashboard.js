@@ -326,9 +326,6 @@ const Dashboard = () => {
   
   return (
     <ProperDashboardLayout title="xFoundry Hub" profile={profile} onEditClick={handleEditClick}>
-      {/* No longer needed - CohortGrid component handles this */}
-      
-      {/* Onboarding Container - Holds both views with proper transitions */}
       {profile && (
         <div className="onboarding-container">
           {/* Full Onboarding Checklist */}
@@ -341,7 +338,7 @@ const Dashboard = () => {
           
           {/* Dashboard Content with Condensed Onboarding */}
           <div className={`${dashboardContent ? 'onboarding-active' : 'onboarding-inactive'} dashboard-main-content space-y-8 pt-4`}>
-            {/* Email mismatch alert - appears if user authenticated with different email than verified */}
+            {/* Email mismatch alert */}
             {user?.emailMismatch && <EmailMismatchAlert emailMismatch={user.emailMismatch} />}
             
             {/* Condensed onboarding if not completed */}
@@ -384,6 +381,7 @@ const Dashboard = () => {
               </div>
             )}
             
+            {/* User welcome */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h1 className="text-3xl font-bold tracking-tight">Your Hub</h1>
@@ -397,44 +395,45 @@ const Dashboard = () => {
             <div className="space-y-8">
               {/* Programs Section */}
               <section id="programs" className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Compass className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-semibold">Available Programs</h2>
-              </div>
+                <div className="flex items-center gap-2">
+                  <Compass className="h-5 w-5 text-primary" />
+                  <h2 className="text-xl font-semibold">Available Programs</h2>
+                </div>
+                
+                <CohortGrid 
+                  cohorts={profile.cohorts || []}
+                  profile={profile}
+                  onApplySuccess={(cohort) => {
+                    toast.success(`Applied to ${cohort.initiativeDetails?.name || 'program'} successfully!`);
+                  }}
+                />
+              </section>
               
-              <CohortGrid 
-                cohorts={profile.cohorts || []}
-                profile={profile}
-                onApplySuccess={(cohort) => {
-                  toast.success(`Applied to ${cohort.initiativeDetails?.name || 'program'} successfully!`);
-                }}
-              />
-            </section>
-            
-            {/* Team Section */}
-            <section id="teams" className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-semibold">Your Team</h2>
-              </div>
-              
-              {isTeamLoading ? (
-                <Skeleton className="h-48 w-full rounded-lg" />
-              ) : (
-                <TeamCard team={teamData} />
-              )}
-            </section>
+              {/* Team Section */}
+              <section id="teams" className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  <h2 className="text-xl font-semibold">Your Team</h2>
+                </div>
+                
+                {isTeamLoading ? (
+                  <Skeleton className="h-48 w-full rounded-lg" />
+                ) : (
+                  <TeamCard team={teamData} />
+                )}
+              </section>
+            </div>
           </div>
         </div>
-        
-        {isEditModalOpen && (
-          <ProfileEditModal
-            isOpen={isEditModalOpen}
-            onClose={handleEditClose}
-            profile={profile}
-            onSave={handleProfileUpdate}
-          />
-        )}
+      )}
+      
+      {isEditModalOpen && (
+        <ProfileEditModal
+          isOpen={isEditModalOpen}
+          onClose={handleEditClose}
+          profile={profile}
+          onSave={handleProfileUpdate}
+        />
       )}
     </ProperDashboardLayout>
   )
