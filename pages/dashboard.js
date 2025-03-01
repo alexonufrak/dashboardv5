@@ -12,7 +12,10 @@ import ProfileEditModal from "../components/ProfileEditModal"
 import TeamCard from "../components/TeamCard"
 import OnboardingChecklistCondensed from "../components/OnboardingChecklistCondensed"
 import EmailMismatchAlert from "../components/EmailMismatchAlert"
-import CohortGrid from "../components/shared/CohortGrid" // New shared component
+import CohortGrid from "../components/shared/CohortGrid"
+import TeamCreateDialog from "../components/TeamCreateDialog"
+import TeamSelectDialog from "../components/TeamSelectDialog"
+import ProgramDetailModal from "../components/ProgramDetailModal"
 
 // Import UI components
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -28,7 +31,8 @@ import {
   AlertTriangle, 
   Compass,
   ExternalLink,
-  ArrowRight
+  ArrowRight,
+  Eye
 } from "lucide-react"
 
 // Import the OnboardingChecklist component dynamically to avoid hook issues
