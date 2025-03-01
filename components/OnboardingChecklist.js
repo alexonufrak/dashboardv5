@@ -9,7 +9,6 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { 
   CheckCircle, 
-  Circle, 
   Users, 
   ChevronDown, 
   ChevronUp,
@@ -27,25 +26,14 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
   const { user } = useUser()
   const router = useRouter()
   
-  // Core state
-  const [steps, setSteps] = useState([
-    { 
-      id: 'register', 
-      title: 'Create an account', 
-      completed: true, 
-      description: 'Sign up with your institutional email',
-      icon: <UserPlus className="h-5 w-5" />,
-      expanded: false
-    },
-    { 
-      id: 'selectCohort', 
-      title: 'Get involved', 
-      completed: false, 
-      description: 'Select a program to join',
-      icon: <Compass className="h-5 w-5" />,
-      expanded: false
-    }
-  ])
+  // Core state - separate state for each step's expansion status
+  const [registerExpanded, setRegisterExpanded] = useState(true)
+  const [cohortExpanded, setCohortExpanded] = useState(false)
+  
+  const [stepStatus, setStepStatus] = useState({
+    register: { completed: true, title: 'Create an account', description: 'Sign up with your institutional email' },
+    selectCohort: { completed: false, title: 'Get involved', description: 'Select a program to join' }
+  })
   
   // UI state
   const [isExpanded, setIsExpanded] = useState(true)
@@ -75,18 +63,11 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     loadUserMetadata();
     
     // Always mark register step as completed
-    completeStep('register', false);
+    markStepComplete('register', false);
     
     // Expand the first step by default
-    setTimeout(() => {
-      console.log("Forcing expansion of register step");
-      setSteps(currentSteps => 
-        currentSteps.map(step => ({
-          ...step,
-          expanded: step.id === 'register'
-        }))
-      );
-    }, 100);
+    setRegisterExpanded(true);
+    setCohortExpanded(false);
   }, []);
   
   // When profile changes, fetch team data
@@ -99,19 +80,15 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
   
   // Update completion percentage when steps change
   useEffect(() => {
-    const completedCount = steps.filter(step => step.completed).length;
-    const percentage = Math.round((completedCount / steps.length) * 100);
+    const completedCount = Object.values(stepStatus).filter(step => step.completed).length;
+    const percentage = Math.round((completedCount / Object.keys(stepStatus).length) * 100);
     setCompletionPercentage(percentage);
     
-    // Find first incomplete step and expand it
-    const completedSteps = steps.filter(step => step.completed);
-    if (completedSteps.length < steps.length) {
-      const firstIncompleteStep = steps.find(step => !step.completed);
-      if (firstIncompleteStep) {
-        expandOnlyStep(firstIncompleteStep.id);
-      }
+    // Auto-expand the cohort step if register is completed
+    if (stepStatus.register.completed && !stepStatus.selectCohort.completed) {
+      setCohortExpanded(true);
     }
-  }, [steps]);
+  }, [stepStatus]);
   
   // Load user metadata from API
   const loadUserMetadata = async () => {
@@ -122,12 +99,13 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         
         // Update steps based on metadata
         if (metadata.onboarding && Array.isArray(metadata.onboarding)) {
-          const updatedSteps = steps.map(step => ({
-            ...step,
-            completed: metadata.onboarding.includes(step.id)
-          }));
+          const updatedStatus = { ...stepStatus };
           
-          setSteps(updatedSteps);
+          Object.keys(updatedStatus).forEach(stepId => {
+            updatedStatus[stepId].completed = metadata.onboarding.includes(stepId);
+          });
+          
+          setStepStatus(updatedStatus);
         }
         
         // Set selected cohort if available
@@ -138,27 +116,6 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     } catch (error) {
       console.error('Error loading user metadata:', error);
     }
-  };
-  
-  // Set a step's expanded state
-  const setStepExpanded = (stepId, isExpanded) => {
-    setSteps(prevSteps => 
-      prevSteps.map(step => 
-        step.id === stepId 
-          ? { ...step, expanded: isExpanded } 
-          : step
-      )
-    );
-  };
-  
-  // Expand only one step, collapse all others
-  const expandOnlyStep = (stepId) => {
-    setSteps(prevSteps => 
-      prevSteps.map(step => ({
-        ...step,
-        expanded: step.id === stepId
-      }))
-    );
   };
   
   // Fetch user teams
@@ -189,7 +146,7 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
           const data = await response.json();
           if (data.hasApplied) {
             // Mark the selectCohort step as completed
-            completeStep('selectCohort');
+            markStepComplete('selectCohort');
           }
         }
       } catch (error) {
@@ -218,25 +175,27 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     }
   };
   
-  // Complete a step
-  const completeStep = async (stepId, saveToApi = true) => {
+  // Mark a step as complete
+  const markStepComplete = async (stepId, saveToApi = true) => {
     // Update local state
-    const updatedSteps = steps.map(step => 
-      step.id === stepId ? { ...step, completed: true } : step
-    );
-    
-    setSteps(updatedSteps);
+    setStepStatus(prev => ({
+      ...prev,
+      [stepId]: {
+        ...prev[stepId],
+        completed: true
+      }
+    }));
     
     // Save to user metadata if requested
     if (saveToApi) {
       try {
-        // Get all completed step IDs including the new one
-        const completedStepIds = [
-          ...updatedSteps.filter(s => s.completed).map(s => s.id)
-        ];
-        
-        // Ensure unique step IDs
-        const uniqueStepIds = [...new Set(completedStepIds)];
+        // Get all completed step IDs
+        const completedStepIds = [];
+        Object.entries(stepStatus).forEach(([id, step]) => {
+          if (step.completed || id === stepId) {
+            completedStepIds.push(id);
+          }
+        });
         
         await fetch('/api/user/metadata', {
           method: 'POST',
@@ -244,41 +203,22 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            onboarding: uniqueStepIds
+            onboarding: completedStepIds
           })
         });
         
         // If this was the selectCohort step, we should transition to completed state
         if (stepId === 'selectCohort') {
           // Check if all steps are now completed
-          const allCompleted = updatedSteps.every(s => s.completed);
-          if (allCompleted) {
+          if (stepStatus.register.completed) {
             // Auto-complete the onboarding if all steps are done
             completeOnboarding();
-          } else {
-            // Find and expand the next incomplete step
-            const nextIncompleteStep = updatedSteps.find(s => !s.completed);
-            if (nextIncompleteStep) {
-              expandOnlyStep(nextIncompleteStep.id);
-            }
           }
         }
       } catch (error) {
         console.error('Error saving step completion to metadata:', error);
       }
     }
-  };
-  
-  // Toggle a step's expanded state
-  const toggleStepExpanded = (stepId) => {
-    console.log(`Toggling step: ${stepId}`);
-    setSteps(prevSteps => 
-      prevSteps.map(step => 
-        step.id === stepId 
-          ? { ...step, expanded: !step.expanded } 
-          : step
-      )
-    );
   };
   
   // Toggle the entire checklist expanded/collapsed state
@@ -342,20 +282,19 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
   // Handle completion of form submission
   const handleFormCompleted = () => {
     setActiveFilloutForm(null);
-    completeStep('selectCohort');
+    markStepComplete('selectCohort');
   };
   
   // Handle team application submission
   const handleTeamApplicationSubmitted = (application) => {
     setActiveTeamSelectDialog(null);
-    completeStep('selectCohort');
+    markStepComplete('selectCohort');
   };
   
   // Complete onboarding
   const completeOnboarding = async () => {
     // Check if the user has completed the program application step
-    const selectCohortStep = steps.find(step => step.id === 'selectCohort');
-    const hasAppliedToProgram = selectCohortStep && selectCohortStep.completed;
+    const hasAppliedToProgram = stepStatus.selectCohort.completed;
     
     try {
       // Only fully complete if the user has applied to a program
@@ -392,142 +331,7 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
   };
   
   // Check if all steps are completed
-  const allStepsCompleted = steps.every(step => step.completed);
-  
-  // Render an individual step
-  const renderStep = (step) => {
-    const isCompleted = step.completed;
-    
-    return (
-      <div 
-        key={step.id}
-        className={`
-          border rounded-lg overflow-hidden mb-4 shadow-sm
-          ${isCompleted ? 'border-green-100' : 'border-gray-200'}
-        `}
-      >
-        {/* Step Header */}
-        <div 
-          className={`
-            flex items-center p-4 cursor-pointer transition-colors duration-200
-            ${isCompleted ? 'bg-green-50 hover:bg-green-100/80' : 'bg-gray-50 hover:bg-gray-100/80'}
-          `}
-        >
-          <div className={`
-            shrink-0 w-10 h-10 flex items-center justify-center rounded-full mr-4 transition-all duration-300
-            ${isCompleted ? 'text-green-600 bg-green-100' : 'text-primary bg-primary/10'}
-          `}>
-            {isCompleted ? <CheckCircle className="h-5 w-5" /> : step.icon}
-          </div>
-          
-          <div className="grow" onClick={() => toggleStepExpanded(step.id)}>
-            <h3 className={`
-              text-base font-medium transition-colors duration-200
-              ${isCompleted ? 'text-green-800' : 'text-gray-800'}
-            `}>
-              {step.title}
-            </h3>
-            <p className="text-sm text-muted-foreground">{step.description}</p>
-          </div>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="ml-2 h-8 w-8 p-0"
-            onClick={() => toggleStepExpanded(step.id)}
-            type="button"
-          >
-            {step.expanded ? 
-              <ChevronUp className="h-4 w-4" /> : 
-              <ChevronDown className="h-4 w-4" />
-            }
-          </Button>
-        </div>
-        
-        {/* Step Content - Animated */}
-        <div 
-          className={`
-            overflow-hidden transition-all duration-300 ease-in-out
-            ${step.expanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}
-          `}
-        >
-          <div className="p-4 border-t border-gray-100">
-            {/* Register step content */}
-            {step.id === 'register' && (
-              <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                </div>
-                <h3 className="text-lg font-medium text-green-700 mb-3">
-                  Your account is set up!
-                </h3>
-                <p className="text-muted-foreground max-w-lg mb-6">
-                  Welcome to xFoundry! You now have access to ConneXions, our community hub where you 
-                  can connect with other students, mentors, and faculty in your program.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Button 
-                    variant="outline"
-                    className="gap-2"
-                    onClick={() => window.open("https://connexions.xfoundry.org", "_blank")}
-                  >
-                    Visit ConneXions
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      expandOnlyStep('selectCohort');
-                    }}
-                  >
-                    Continue to next step
-                    <ArrowRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-            
-            {/* Select Cohort step content */}
-            {step.id === 'selectCohort' && !isCompleted && (
-              <div>
-                <h3 className="text-lg font-medium mb-2">
-                  Choose a program to join
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  Select from the available programs below to apply and get started with xFoundry
-                </p>
-                
-                {/* Available Programs */}
-                <CohortGrid 
-                  cohorts={profile.cohorts || []}
-                  profile={profile}
-                  isLoading={isLoading}
-                  onApply={handleCohortApply}
-                  onApplySuccess={(cohort) => completeStep('selectCohort')}
-                  columns={{ default: 1, md: 2, lg: 2 }}
-                  emptyMessage="No programs are currently available for your institution."
-                />
-              </div>
-            )}
-            
-            {/* Select Cohort completed content */}
-            {step.id === 'selectCohort' && isCompleted && (
-              <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                </div>
-                <h3 className="text-xl font-medium text-green-700 mb-2">
-                  You've applied to a program!
-                </h3>
-                <p className="text-muted-foreground max-w-md mb-4">
-                  Your application has been submitted. You'll receive updates about your application status soon.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const allStepsCompleted = Object.values(stepStatus).every(step => step.completed);
   
   return (
     <Card className="mb-6 shadow-md border-primary/10 overflow-hidden">
@@ -577,7 +381,7 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
                 Progress: {completionPercentage}% complete
               </span>
               <span className="text-xs text-primary/80">
-                {steps.filter(s => s.completed).length}/{steps.length} steps
+                {Object.values(stepStatus).filter(s => s.completed).length}/{Object.keys(stepStatus).length} steps
               </span>
             </div>
           </div>
@@ -635,7 +439,7 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
             <div className="flex justify-between mb-1">
               <div className="text-sm font-medium text-primary">Your progress</div>
               <div className="text-sm text-muted-foreground">
-                {steps.filter(s => s.completed).length}/{steps.length} complete
+                {Object.values(stepStatus).filter(s => s.completed).length}/{Object.keys(stepStatus).length} complete
               </div>
             </div>
             <Progress value={completionPercentage} className="h-2" />
@@ -643,7 +447,175 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
           
           {/* Steps */}
           <div className="space-y-1">
-            {steps.map(renderStep)}
+            {/* Register Step */}
+            <div className="border rounded-lg overflow-hidden mb-4 shadow-sm border-green-100">
+              {/* Step Header */}
+              <div 
+                className="flex items-center p-4 cursor-pointer transition-colors duration-200 bg-green-50 hover:bg-green-100/80"
+                onClick={() => setRegisterExpanded(!registerExpanded)}
+              >
+                <div className="shrink-0 w-10 h-10 flex items-center justify-center rounded-full mr-4 transition-all duration-300 text-green-600 bg-green-100">
+                  <CheckCircle className="h-5 w-5" />
+                </div>
+                
+                <div className="grow">
+                  <h3 className="text-base font-medium transition-colors duration-200 text-green-800">
+                    {stepStatus.register.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">{stepStatus.register.description}</p>
+                </div>
+                
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="ml-2 h-8 w-8 p-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setRegisterExpanded(!registerExpanded);
+                  }}
+                  type="button"
+                >
+                  {registerExpanded ? 
+                    <ChevronUp className="h-4 w-4" /> : 
+                    <ChevronDown className="h-4 w-4" />
+                  }
+                </Button>
+              </div>
+              
+              {/* Step Content - Animated */}
+              <div 
+                className={`
+                  overflow-hidden transition-all duration-300 ease-in-out
+                  ${registerExpanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}
+                `}
+              >
+                <div className="p-4 border-t border-gray-100">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                      <CheckCircle className="h-8 w-8 text-green-600" />
+                    </div>
+                    <h3 className="text-lg font-medium text-green-700 mb-3">
+                      Your account is set up!
+                    </h3>
+                    <p className="text-muted-foreground max-w-lg mb-6">
+                      Welcome to xFoundry! You now have access to ConneXions, our community hub where you 
+                      can connect with other students, mentors, and faculty in your program.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button 
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => window.open("https://connexions.xfoundry.org", "_blank")}
+                      >
+                        Visit ConneXions
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setRegisterExpanded(false);
+                          setCohortExpanded(true);
+                        }}
+                      >
+                        Continue to next step
+                        <ArrowRight className="ml-1 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Get Involved Step */}
+            <div className={`
+              border rounded-lg overflow-hidden mb-4 shadow-sm 
+              ${stepStatus.selectCohort.completed ? 'border-green-100' : 'border-gray-200'}
+            `}>
+              {/* Step Header */}
+              <div 
+                className={`
+                  flex items-center p-4 cursor-pointer transition-colors duration-200
+                  ${stepStatus.selectCohort.completed ? 'bg-green-50 hover:bg-green-100/80' : 'bg-gray-50 hover:bg-gray-100/80'}
+                `}
+                onClick={() => setCohortExpanded(!cohortExpanded)}
+              >
+                <div className={`
+                  shrink-0 w-10 h-10 flex items-center justify-center rounded-full mr-4 transition-all duration-300
+                  ${stepStatus.selectCohort.completed ? 'text-green-600 bg-green-100' : 'text-primary bg-primary/10'}
+                `}>
+                  {stepStatus.selectCohort.completed ? <CheckCircle className="h-5 w-5" /> : <Compass className="h-5 w-5" />}
+                </div>
+                
+                <div className="grow">
+                  <h3 className={`
+                    text-base font-medium transition-colors duration-200
+                    ${stepStatus.selectCohort.completed ? 'text-green-800' : 'text-gray-800'}
+                  `}>
+                    {stepStatus.selectCohort.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">{stepStatus.selectCohort.description}</p>
+                </div>
+                
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="ml-2 h-8 w-8 p-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCohortExpanded(!cohortExpanded);
+                  }}
+                  type="button"
+                >
+                  {cohortExpanded ? 
+                    <ChevronUp className="h-4 w-4" /> : 
+                    <ChevronDown className="h-4 w-4" />
+                  }
+                </Button>
+              </div>
+              
+              {/* Step Content - Animated */}
+              <div 
+                className={`
+                  overflow-hidden transition-all duration-300 ease-in-out
+                  ${cohortExpanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}
+                `}
+              >
+                <div className="p-4 border-t border-gray-100">
+                  {!stepStatus.selectCohort.completed ? (
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">
+                        Choose a program to join
+                      </h3>
+                      <p className="text-muted-foreground mb-6">
+                        Select from the available programs below to apply and get started with xFoundry
+                      </p>
+                      
+                      {/* Available Programs */}
+                      <CohortGrid 
+                        cohorts={profile.cohorts || []}
+                        profile={profile}
+                        isLoading={isLoading}
+                        onApply={handleCohortApply}
+                        onApplySuccess={(cohort) => markStepComplete('selectCohort')}
+                        columns={{ default: 1, md: 2, lg: 2 }}
+                        emptyMessage="No programs are currently available for your institution."
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center text-center">
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                        <CheckCircle className="h-8 w-8 text-green-600" />
+                      </div>
+                      <h3 className="text-xl font-medium text-green-700 mb-2">
+                        You've applied to a program!
+                      </h3>
+                      <p className="text-muted-foreground max-w-md mb-4">
+                        Your application has been submitted. You'll receive updates about your application status soon.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
         
