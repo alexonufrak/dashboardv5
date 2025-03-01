@@ -10,10 +10,9 @@ import { toast } from "sonner"
 import ProperDashboardLayout from "../components/ProperDashboardLayout"
 import ProfileEditModal from "../components/ProfileEditModal"
 import TeamCard from "../components/TeamCard"
-import { FilloutPopupEmbed } from "@fillout/react"
 import OnboardingChecklistCondensed from "../components/OnboardingChecklistCondensed"
-import ProgramDetailModal from "../components/ProgramDetailModal"
 import EmailMismatchAlert from "../components/EmailMismatchAlert"
+import CohortGrid from "../components/shared/CohortGrid" // New shared component
 
 // Import UI components
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -29,7 +28,6 @@ import {
   AlertTriangle, 
   Compass,
   ExternalLink,
-  Eye,
   ArrowRight
 } from "lucide-react"
 
@@ -49,7 +47,6 @@ const Dashboard = () => {
   const [error, setError] = useState(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
-  const [activeFilloutForm, setActiveFilloutForm] = useState(null)
   const [dashboardContent, setDashboardContent] = useState(false)
   const [showFullOnboarding, setShowFullOnboarding] = useState(false)
   const [showOnboardingBanner, setShowOnboardingBanner] = useState(true)
@@ -91,6 +88,28 @@ const Dashboard = () => {
     const checkOnboardingStatus = async () => {
       try {
         console.log("Checking onboarding status...")
+        
+        // First check session storage for immediate state 
+        // This helps preserve state across page navigations and refreshes
+        const sessionCompleted = sessionStorage.getItem('xFoundry_onboardingCompleted') === 'true';
+        const sessionSkipped = sessionStorage.getItem('xFoundry_onboardingSkipped') === 'true';
+        
+        if (sessionCompleted) {
+          console.log("Session storage indicates onboarding is completed");
+          setDashboardContent(true);
+          setShowOnboardingBanner(false);
+          // No need to check API if we know it's completed
+          return;
+        }
+        
+        if (sessionSkipped) {
+          console.log("Session storage indicates onboarding was skipped");
+          setDashboardContent(true);
+          setShowOnboardingBanner(true);
+          // Continue with API check to validate
+        }
+        
+        // Fetch from API as backup
         const response = await fetch("/api/user/metadata")
         if (response.ok) {
           const metadata = await response.json()
@@ -103,24 +122,37 @@ const Dashboard = () => {
             // If onboarding is fully completed, don't show any onboarding UI
             console.log("Onboarding completed, hiding banner")
             setShowOnboardingBanner(false)
+            // Update session storage
+            sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
           } else if (metadata.onboardingSkipped === true) {
             // If onboarding was skipped, show banner only if explicitly requested
             console.log("Onboarding skipped, banner visibility:", metadata.keepOnboardingVisible)
             setShowOnboardingBanner(metadata.keepOnboardingVisible === true)
+            // Update session storage
+            sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
           } else {
-            // By default, always show the condensed banner for new users
-            console.log("New user or incomplete onboarding, showing banner")
-            setShowOnboardingBanner(true)
+            // Check if we already know from session storage that it was skipped
+            if (!sessionSkipped) {
+              // By default, always show the condensed banner for new users
+              console.log("New user or incomplete onboarding, showing banner")
+              setShowOnboardingBanner(true)
+            }
           }
         } else {
-          // If there's an error fetching metadata, show the onboarding banner
-          console.log("Error fetching metadata, showing default banner")
-          setShowOnboardingBanner(true)
+          // If there's an error fetching metadata but we have session data, trust that
+          if (!sessionCompleted && !sessionSkipped) {
+            // Default to showing the banner for new users
+            console.log("Error fetching metadata, showing default banner")
+            setShowOnboardingBanner(true)
+          }
         }
       } catch (err) {
         console.error("Error checking onboarding status:", err)
-        // If there's an error, we'll default to showing the onboarding
-        setShowOnboardingBanner(true)
+        // If there's an error but we have session data, trust that
+        if (!sessionStorage.getItem('xFoundry_onboardingCompleted') === 'true') {
+          // Default to showing the banner
+          setShowOnboardingBanner(true)
+        }
       }
     }
 
@@ -212,123 +244,37 @@ const Dashboard = () => {
     }
   };
 
-  const handleCompletion = () => {
-    setShowFullOnboarding(false);
-    setDashboardContent(true);
-  };
-  
-  const handleProgramApply = (cohort) => {
-    if (cohort && cohort["Application Form ID (Fillout)"]) {
-      setActiveFilloutForm({
-        formId: cohort["Application Form ID (Fillout)"],
-        cohortId: cohort.id,
-        initiativeName: cohort.initiativeDetails?.name || "Program Application"
-      })
+  const handleCompletion = (skipOnly = false) => {
+    // Save the current state to sessionStorage for immediate persistence
+    if (skipOnly) {
+      sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
+    } else {
+      sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
     }
-  }
-  
-  const handleViewProgramDetails = (cohort) => {
-    setSelectedProgram(cohort)
-  }
-
-  // Function to render individual cohort cards
-  const renderCohortCard = (cohort) => {
-    const initiativeName = cohort.initiativeDetails?.name || "Unknown Initiative";
-    const topics = cohort.topicNames || [];
-    const status = cohort["Status"] || "Unknown";
-    const actionButtonText = cohort["Action Button"] || "Apply Now";
-    const filloutFormId = cohort["Application Form ID (Fillout)"];
-    const isOpen = status === "Applications Open";
     
-    return (
-      <Card key={cohort.id} className="overflow-hidden h-full flex flex-col">
-        <CardHeader className="pb-2">
-          <div className="flex justify-between items-start">
-            <CardTitle className="text-lg">{initiativeName}</CardTitle>
-            <Badge variant={isOpen ? "success" : "destructive"} 
-              className={isOpen ? 
-                "bg-green-50 text-green-800" : 
-                "bg-red-50 text-red-800"
-              }>
-              {status}
-            </Badge>
-          </div>
-          
-          <div className="flex flex-wrap gap-2 mt-2">
-            {Array.isArray(topics) && topics.length > 0 && 
-              topics.slice(0, 2).map((topic, index) => (
-                <Badge key={`topic-${index}`} variant="secondary" className="bg-cyan-50 text-cyan-800">
-                  {topic} {cohort.className && index === 0 ? `- ${cohort.className}` : ''}
-                </Badge>
-              ))
-            }
-            {topics.length > 2 && (
-              <Badge variant="outline">+{topics.length - 2} more</Badge>
-            )}
-          </div>
-        </CardHeader>
-        
-        <CardContent className="grow">
-          <p className="text-sm text-muted-foreground line-clamp-3">
-            {cohort.description || cohort.initiativeDetails?.description || 
-             "Join this program to connect with mentors and build career skills."}
-          </p>
-        </CardContent>
-        
-        <CardFooter className="pt-2 pb-4 flex flex-col sm:flex-row gap-2">
-          <Button 
-            variant="outline"
-            className="w-full sm:w-auto sm:flex-1"
-            onClick={() => handleViewProgramDetails(cohort)}
-          >
-            <Eye className="mr-2 h-4 w-4" />
-            View Details
-          </Button>
-          
-          <Button 
-            className="w-full sm:w-auto sm:flex-1" 
-            variant={isOpen ? "default" : "secondary"}
-            disabled={!isOpen || !filloutFormId}
-            onClick={() => handleProgramApply(cohort)}
-          >
-            {actionButtonText}
-          </Button>
-        </CardFooter>
-      </Card>
-    );
+    // Update local state with smooth animation
+    document.body.classList.add('onboarding-transition');
+    
+    setTimeout(() => {
+      setShowFullOnboarding(false);
+      setDashboardContent(true);
+      setShowOnboardingBanner(skipOnly); // Only show banner if skipped, not if completed
+      
+      // Remove animation class after transition
+      setTimeout(() => {
+        document.body.classList.remove('onboarding-transition');
+      }, 300);
+    }, 150);
   };
+  
+  // These functions are now handled by the CohortGrid component
+
+  // This function is now handled by the shared CohortGrid and CohortCard components
   
   // Main JSX content
   return (
     <ProperDashboardLayout title="xFoundry Hub" profile={profile} onEditClick={handleEditClick}>
-      {/* Fillout form popup with required parameters */}
-      {activeFilloutForm && (
-        <FilloutPopupEmbed
-          filloutId={activeFilloutForm.formId}
-          onClose={() => setActiveFilloutForm(null)}
-          data-user_id={user?.sub}
-          data-contact={profile?.contactId}
-          data-institution={profile?.institution?.id}
-          parameters={{
-            cohortId: activeFilloutForm.cohortId,
-            initiativeName: activeFilloutForm.initiativeName,
-            userEmail: user?.email,
-            userName: user?.name,
-            userContactId: profile?.contactId,
-            user_id: user?.sub,
-            contact: profile?.contactId,
-            institution: profile?.institution?.id
-          }}
-        />
-      )}
-      
-      {/* Program Detail Modal */}
-      <ProgramDetailModal 
-        cohort={selectedProgram}
-        isOpen={!!selectedProgram}
-        onClose={() => setSelectedProgram(null)}
-        onApply={handleProgramApply}
-      />
+      {/* No longer needed - CohortGrid component handles this */}
       
       {/* Full Onboarding Checklist - Only when shown */}
       {profile && showFullOnboarding && (
@@ -373,18 +319,13 @@ const Dashboard = () => {
                 <h2 className="text-xl font-semibold">Available Programs</h2>
               </div>
               
-              {profile.cohorts && profile.cohorts.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full">
-                  {profile.cohorts.map(cohort => renderCohortCard(cohort))}
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className="text-center py-12 text-muted-foreground italic">
-                    <p>No programs are currently available for your institution.</p>
-                    <p className="text-sm mt-2">Check back later for updates.</p>
-                  </CardContent>
-                </Card>
-              )}
+              <CohortGrid 
+                cohorts={profile.cohorts || []}
+                profile={profile}
+                onApplySuccess={(cohort) => {
+                  toast.success(`Applied to ${cohort.initiativeDetails?.name || 'program'} successfully!`);
+                }}
+              />
             </section>
             
             {/* Team Section */}

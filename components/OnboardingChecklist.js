@@ -3,14 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useUser } from '@auth0/nextjs-auth0/client'
-import { FilloutPopupEmbed } from "@fillout/react"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle, Circle, Users, UserRound } from "lucide-react"
-import TeamSelectDialog from './TeamSelectDialog'
-import TeamCreateDialog from './TeamCreateDialog'
+import CohortGrid from './shared/CohortGrid'
 
 const OnboardingChecklist = ({ profile, onComplete }) => {
   const { user } = useUser()
@@ -327,6 +325,13 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
   // Skip onboarding
   const skipOnboarding = async () => {
     try {
+      // Start animation
+      document.body.classList.add('onboarding-transition');
+      
+      // Store in session storage for immediate access
+      sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
+      
+      // Send to API for persistence
       await fetch('/api/user/metadata', {
         method: 'POST',
         headers: {
@@ -335,12 +340,25 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         body: JSON.stringify({
           onboardingSkipped: true
         })
-      })
+      });
       
-      setShowOnboarding(false)
-      if (onComplete) onComplete()
+      // Animate out with a small delay
+      setTimeout(() => {
+        setShowOnboarding(false);
+        
+        // Provide true to indicate this was a skip, not a complete
+        if (onComplete) onComplete(true);
+        
+        // Remove animation class after transition
+        setTimeout(() => {
+          document.body.classList.remove('onboarding-transition');
+        }, 300);
+      }, 150);
     } catch (error) {
-      console.error('Error skipping onboarding:', error)
+      console.error('Error skipping onboarding:', error);
+      // Still try to complete the UI flow even if API fails
+      setShowOnboarding(false);
+      if (onComplete) onComplete(true);
     }
   }
 
@@ -502,19 +520,15 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
                             Select a program to apply for:
                           </p>
                           
-                          {isLoading ? (
-                            <div className="text-center py-4 text-muted-foreground">
-                              <p>Loading available programs...</p>
-                            </div>
-                          ) : profile.cohorts && profile.cohorts.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {profile.cohorts.map(cohort => renderCohortCard(cohort))}
-                            </div>
-                          ) : (
-                            <div className="text-center py-4 text-muted-foreground italic">
-                              No programs are currently available for your institution.
-                            </div>
-                          )}
+                          {/* Available Programs using shared component */}
+                          <CohortGrid 
+                            cohorts={profile.cohorts || []}
+                            profile={profile}
+                            isLoading={isLoading}
+                            onApplySuccess={(cohort) => completeStep('selectCohort')}
+                            columns={{ default: 1, md: 2, lg: 3 }}
+                            emptyMessage="No programs are currently available for your institution."
+                          />
                         </>
                       )}
                       
