@@ -140,8 +140,9 @@ export default function Login() {
     
     if (userExists) {
       // If user exists, redirect to login
-      // Removed the login_hint parameter to avoid Auth0 JavaScript errors
-      window.location.href = `/api/auth/login?email=${encodedEmail}&prefill=true`;
+      // Use connection and prompt parameters without login_hint or email
+      // This avoids the Auth0 JavaScript error while still providing a good UX
+      window.location.href = `/api/auth/login?prompt=login`;
     } else {
       // If user doesn't exist, redirect to signup with email prefilled
       router.push(`/signup?email=${encodedEmail}`);
