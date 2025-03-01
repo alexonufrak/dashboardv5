@@ -66,11 +66,11 @@ const TeamCard = ({ team, cohorts = [], profile }) => {
           )}
           
           {/* Team's Cohorts/Programs Section */}
-          {cohorts && cohorts.length > 0 && (
-            <div className="mt-4">
-              <h4 className="text-sm font-semibold mb-2">Team Programs:</h4>
-              <div className="space-y-2">
-                {cohorts.map(cohort => (
+          <div className="mt-4">
+            <h4 className="text-sm font-semibold mb-2">Team Programs:</h4>
+            <div className="space-y-2">
+              {cohorts && cohorts.length > 0 ? (
+                cohorts.map(cohort => (
                   <CohortCard 
                     key={cohort.id}
                     cohort={{
@@ -80,10 +80,12 @@ const TeamCard = ({ team, cohorts = [], profile }) => {
                     profile={profile}
                     condensed={true}
                   />
-                ))}
-              </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground italic">No programs associated with this team yet.</p>
+              )}
             </div>
-          )}
+          </div>
         </CardContent>
         
         <CardFooter>

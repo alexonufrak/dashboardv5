@@ -339,10 +339,14 @@ const Dashboard = () => {
                     <TeamCard 
                       key={team.id} 
                       team={team}
-                      cohorts={profile.cohorts?.filter(cohort => 
-                        // Filter cohorts for this team - for now we'll show all cohorts with team participation
-                        cohort.participationType?.toLowerCase().includes('team')
-                      ) || []}
+                      cohorts={profile.cohorts?.filter(cohort => {
+                        // Check if the cohort ID is in this team's cohortIds array
+                        if (team.cohortIds?.length > 0) {
+                          return team.cohortIds.includes(cohort.id);
+                        }
+                        // As a fallback, show team-based cohorts if no specific cohort IDs available
+                        return cohort.participationType?.toLowerCase().includes('team');
+                      }) || []}
                       profile={profile}
                     />
                   ))}
