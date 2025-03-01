@@ -91,12 +91,108 @@ const Dashboard = () => {
 
     const checkOnboardingStatus = async () => {
       try {
-        // First check session storage for immediate state 
-        // This provides faster UI response across page navigations and refreshes
+        // First check session storage for quick initial UI rendering
         const sessionCompleted = sessionStorage.getItem('xFoundry_onboardingCompleted') === 'true';
         const sessionSkipped = sessionStorage.getItem('xFoundry_onboardingSkipped') === 'true';
         
-        // Apply session storage state immediately for better UX
+        // Always fetch from API for the definitive data
+        const response = await fetch("/api/user/metadata");
+        
+        if (response.ok) {
+          const metadata = await response.json();
+          console.log("User metadata from API:", metadata);
+          
+          // Determine onboarding steps completed
+          const onboardingSteps = metadata.onboarding || [];
+          const hasCompletedRegister = Array.isArray(onboardingSteps) && onboardingSteps.includes('register');
+          const hasAppliedToProgram = Array.isArray(onboardingSteps) && onboardingSteps.includes('selectCohort');
+          
+          console.log("Onboarding steps:", {
+            steps: onboardingSteps,
+            hasCompletedRegister,
+            hasAppliedToProgram
+          });
+          
+          // CRITICAL: Only consider onboarding fully complete when user has applied to a program
+          if (hasAppliedToProgram) {
+            // User has applied to a program - hide all onboarding
+            setShowFullOnboarding(false);
+            setShowOnboardingBanner(false);
+            setDashboardContent(true);
+            
+            // Update session storage
+            sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
+            sessionStorage.removeItem('xFoundry_onboardingSkipped');
+            
+            // Also update the onboardingCompleted flag in API for persistence
+            if (metadata.onboardingCompleted !== true) {
+              await fetch('/api/user/metadata', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  onboardingCompleted: true,
+                  onboardingSkipped: false,
+                  keepOnboardingVisible: false
+                })
+              });
+            }
+          } else if (hasCompletedRegister) {
+            // User has registered but not applied - show condensed banner
+            setShowFullOnboarding(false);
+            setShowOnboardingBanner(true);
+            setDashboardContent(true);
+            
+            // Update session storage
+            sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
+            sessionStorage.removeItem('xFoundry_onboardingCompleted');
+            
+            // Update metadata to reflect status
+            if (!metadata.onboardingSkipped) {
+              await fetch('/api/user/metadata', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  onboardingSkipped: true,
+                  keepOnboardingVisible: true
+                })
+              });
+            }
+          } else {
+            // New user - show full onboarding
+            setShowFullOnboarding(true);
+            setShowOnboardingBanner(false);
+            setDashboardContent(false);
+          }
+        } else {
+          console.warn("Error fetching metadata from API, falling back to session storage");
+          
+          // Session storage fallback logic
+          if (sessionCompleted) {
+            setDashboardContent(true);
+            setShowFullOnboarding(false);
+            setShowOnboardingBanner(false);
+          } else if (sessionSkipped) {
+            setDashboardContent(true);
+            setShowFullOnboarding(false);
+            setShowOnboardingBanner(true);
+          } else {
+            // For new users, show full onboarding
+            setDashboardContent(false);
+            setShowFullOnboarding(true);
+            setShowOnboardingBanner(false);
+          }
+        }
+      } catch (err) {
+        console.error("Error checking onboarding status:", err);
+        
+        // Fallback to session data if available
+        const sessionCompleted = sessionStorage.getItem('xFoundry_onboardingCompleted') === 'true';
+        const sessionSkipped = sessionStorage.getItem('xFoundry_onboardingSkipped') === 'true';
+        
         if (sessionCompleted) {
           setDashboardContent(true);
           setShowFullOnboarding(false);
@@ -106,80 +202,8 @@ const Dashboard = () => {
           setShowFullOnboarding(false);
           setShowOnboardingBanner(true);
         } else {
-          // For new users, default to showing onboarding
+          // For new users without session data, show full onboarding
           setDashboardContent(false);
-          setShowFullOnboarding(true);
-          setShowOnboardingBanner(false);
-        }
-        
-        // Always fetch from API to ensure data consistency
-        const response = await fetch("/api/user/metadata");
-        if (response.ok) {
-          const metadata = await response.json();
-          
-          // If there's a conflict between session storage and API data,
-          // trust the API data and update session storage
-          
-          // Check if user has applied to a program by checking if the selectCohort step is completed
-          const hasAppliedToProgram = metadata.onboarding && 
-                                     Array.isArray(metadata.onboarding) && 
-                                     metadata.onboarding.includes('selectCohort');
-          
-          if (metadata.onboardingCompleted === true && hasAppliedToProgram) {
-            // Only fully complete onboarding if they've applied to a program
-            // Only update state if it's different from current state to avoid unnecessary re-renders
-            if (!dashboardContent || showFullOnboarding || showOnboardingBanner) {
-              setShowFullOnboarding(false);
-              setShowOnboardingBanner(false);
-              setDashboardContent(true);
-            }
-            // Update session storage
-            sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
-            sessionStorage.removeItem('xFoundry_onboardingSkipped');
-          } else if (metadata.onboardingCompleted === true && !hasAppliedToProgram) {
-            // If marked as completed but they haven't applied to a program yet, still show the banner
-            if (!dashboardContent || showFullOnboarding || !showOnboardingBanner) {
-              setShowFullOnboarding(false);
-              setShowOnboardingBanner(true);
-              setDashboardContent(true);
-            }
-            // Update session storage to show they've made progress but not fully completed
-            sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
-            sessionStorage.removeItem('xFoundry_onboardingCompleted');
-          } else if (metadata.onboardingSkipped === true) {
-            // Show banner based on keepOnboardingVisible flag or if they haven't applied to a program
-            const keepVisible = metadata.keepOnboardingVisible !== false || !hasAppliedToProgram;
-            
-            // Only update state if it's different from current state
-            if (!dashboardContent || showFullOnboarding || showOnboardingBanner !== keepVisible) {
-              setShowFullOnboarding(false);
-              setShowOnboardingBanner(keepVisible);
-              setDashboardContent(true);
-            }
-            // Update session storage
-            sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
-            sessionStorage.removeItem('xFoundry_onboardingCompleted');
-          } else if (!sessionCompleted && !sessionSkipped) {
-            // New user with no stored preferences - show the full onboarding
-            if (dashboardContent || !showFullOnboarding || showOnboardingBanner) {
-              setShowFullOnboarding(true);
-              setShowOnboardingBanner(false);
-              setDashboardContent(false);
-            }
-          }
-        } else {
-          // If API fails but we have no session data, prefer showing onboarding
-          if (!sessionCompleted && !sessionSkipped) {
-            setShowFullOnboarding(true);
-            setShowOnboardingBanner(false);
-          }
-        }
-      } catch (err) {
-        console.error("Error checking onboarding status:", err);
-        
-        // If there's an error and no reliable session data, default to showing onboarding
-        if (sessionStorage.getItem('xFoundry_onboardingCompleted') !== 'true' && 
-            sessionStorage.getItem('xFoundry_onboardingSkipped') !== 'true') {
           setShowFullOnboarding(true);
           setShowOnboardingBanner(false);
         }
@@ -187,35 +211,19 @@ const Dashboard = () => {
     }
 
     if (user) {
-      // Fetch profile and team data
+      // Start loading profile and team data
       fetchProfile()
       fetchTeamData()
       
-      // Check if we have session storage data to use immediately
-      const hasSessionData = sessionStorage.getItem('xFoundry_onboardingCompleted') === 'true' || 
-                             sessionStorage.getItem('xFoundry_onboardingSkipped') === 'true';
+      // For initial rendering, show loading state
+      // We'll let the checkOnboardingStatus determine what to show
+      // based on the API response
+      setDashboardContent(false);
+      setShowFullOnboarding(true);
+      setShowOnboardingBanner(false);
       
-      // If we have session data, show dashboard content immediately
-      if (hasSessionData) {
-        const isFullyCompleted = sessionStorage.getItem('xFoundry_onboardingCompleted') === 'true';
-        
-        setDashboardContent(true);
-        setShowFullOnboarding(false);
-        
-        // Always show the condensed banner unless they have explicitly completed 
-        // the entire onboarding process (which requires applying to a program)
-        setShowOnboardingBanner(!isFullyCompleted);
-      } else {
-        // For new users with no session data, show full onboarding
-        setDashboardContent(false);
-        setShowFullOnboarding(true);
-        setShowOnboardingBanner(false);
-      }
-      
-      // Check onboarding status with the API after initial render
-      setTimeout(() => {
-        checkOnboardingStatus()
-      }, 100)
+      // Check onboarding status right away
+      checkOnboardingStatus()
     }
   }, [user])
 
@@ -293,16 +301,46 @@ const Dashboard = () => {
   };
 
   const handleCompletion = (skipOnly = false, hasAppliedToProgram = false) => {
-    // Update session storage immediately for responsive UI
-    if (skipOnly) {
-      sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
-      sessionStorage.removeItem('xFoundry_onboardingCompleted');
-    } else if (hasAppliedToProgram) {
-      // Only fully complete if user has applied to a program
+    console.log("Handling onboarding completion:", { skipOnly, hasAppliedToProgram });
+    
+    // IMPORTANT: Only update API and storage if user has actually applied
+    // Otherwise just update the UI temporarily
+    if (hasAppliedToProgram) {
+      // User has completed program application - mark onboarding as fully complete
       sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
       sessionStorage.removeItem('xFoundry_onboardingSkipped');
+      
+      // Update the API for persistence
+      fetch('/api/user/metadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          onboardingCompleted: true,
+          onboardingSkipped: false,
+          keepOnboardingVisible: false
+        })
+      }).catch(err => console.error("Error updating metadata:", err));
+    } else if (skipOnly) {
+      // User explicitly skipped - show banner but keep metadata
+      sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
+      sessionStorage.removeItem('xFoundry_onboardingCompleted');
+      
+      // Update API to mark as skipped but keep visible
+      fetch('/api/user/metadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          onboardingSkipped: true,
+          keepOnboardingVisible: true
+        })
+      }).catch(err => console.error("Error updating metadata:", err));
     } else {
-      // Otherwise just temporarily hide full view but keep condensed banner
+      // User clicked "Complete" without applying - just show banner without updating API
+      // This ensures they'll still see the full checklist on next page load
       sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
       sessionStorage.removeItem('xFoundry_onboardingCompleted');
     }
@@ -317,11 +355,10 @@ const Dashboard = () => {
     // After a short delay to let the animation play, update state
     setTimeout(() => {
       setShowFullOnboarding(false);
+      setDashboardContent(true);
       
-      // We want to show the banner if:
-      // - User explicitly skipped the onboarding, OR
-      // - User didn't skip but also hasn't applied to a program
-      const shouldShowBanner = skipOnly || !hasAppliedToProgram;
+      // Always show the banner unless the user has applied to a program
+      const shouldShowBanner = !hasAppliedToProgram;
       setShowOnboardingBanner(shouldShowBanner);
       
       // If showing the banner, ensure it animates in nicely

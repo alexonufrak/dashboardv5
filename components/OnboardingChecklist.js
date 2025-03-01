@@ -93,7 +93,12 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
       setSelectedCohort(cohortId)
     }
     
+    // Make sure to load existing metadata
     checkUserMetadata()
+    
+    // Ensure register step is completed for all users (this is always true by definition)
+    // This handles the case of new users who might not have this step marked yet
+    completeStep('register')
   }, [router.query, user])
 
   // Check if user has already submitted an application for the selected cohort
@@ -308,39 +313,47 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
   // Complete onboarding
   const completeOnboarding = async () => {
     try {
+      // First, check if the user has completed the "selectCohort" step
+      const selectCohortStep = steps.find(step => step.id === 'selectCohort');
+      const hasAppliedToProgram = selectCohortStep && selectCohortStep.completed;
+      
+      console.log("Completing onboarding, applied to program:", hasAppliedToProgram);
+      
       // Get the onboarding element for animation
       const onboardingElement = document.querySelector('.onboarding-full');
       if (onboardingElement) {
         onboardingElement.classList.add('onboarding-transitioning-out');
       }
       
-      // Check if the user has completed the "selectCohort" step
-      const selectCohortStep = steps.find(step => step.id === 'selectCohort');
-      const hasAppliedToProgram = selectCohortStep && selectCohortStep.completed;
-      
-      // Determine persistence flags based on completion of program application
-      const persistenceFlags = hasAppliedToProgram ? 
-        {
-          onboardingCompleted: true,
-          onboardingSkipped: false,
-          keepOnboardingVisible: false
-        } : 
-        {
-          onboardingCompleted: false,
-          onboardingSkipped: true, 
-          keepOnboardingVisible: true
-        };
-      
-      // Store in session storage for immediate access (handled in dashboard.js)
-      
-      // Send to API for persistence
-      await fetch('/api/user/metadata', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(persistenceFlags)
-      });
+      // IMPORTANT: Only mark as truly completed if they've applied to a program
+      // Otherwise, mark as skipped with keepOnboardingVisible=true
+      if (hasAppliedToProgram) {
+        // User has completed program application - mark as fully complete
+        await fetch('/api/user/metadata', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            onboardingCompleted: true,
+            onboardingSkipped: false,
+            keepOnboardingVisible: false
+          })
+        });
+      } else {
+        // User hasn't applied yet - keep showing the banner
+        await fetch('/api/user/metadata', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            // Don't mark as onboardingCompleted yet
+            onboardingSkipped: true,
+            keepOnboardingVisible: true
+          })
+        });
+      }
       
       // Short delay to allow animation to play
       setTimeout(() => {
@@ -354,6 +367,8 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
       console.error('Error completing onboarding:', error);
       // Still try to complete the UI flow even if API fails
       setShowOnboarding(false);
+      
+      // Simply hide the full view and show the banner
       if (onComplete) onComplete(false, false);
     }
   }
