@@ -54,21 +54,17 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     // Create the application record
     console.log(`Creating application for contact ${userProfile.contactId}, cohort ${cohortId}, team ${teamId}`)
     
-    // Prepare application data
+    // Prepare application data - using only the current field names
     const applicationData = {
       'Contact': [userProfile.contactId],
-      'Contacts': [userProfile.contactId], // Add alternate field name for compatibility
       'Cohort': [cohortId],
-      'Cohorts': [cohortId], // Add alternate field name for compatibility
       'Status': 'Submitted',
-      'Submission Date': new Date().toISOString(),
-      'Date': new Date().toISOString() // Add alternate field name for compatibility
+      'Submission Date': new Date().toISOString()
     }
     
     // If team ID is provided, add it to the application
     if (teamId) {
       applicationData['Team'] = [teamId]
-      applicationData['Teams'] = [teamId] // Add alternate field name for compatibility
     }
     
     // Create the application record

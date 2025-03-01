@@ -9,6 +9,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle, Circle, Users, UserRound } from "lucide-react"
 import CohortGrid from './shared/CohortGrid'
+import TeamCreateDialog from './TeamCreateDialog'
+import TeamSelectDialog from './TeamSelectDialog'
+import FilloutPopupEmbed from './FilloutPopupEmbed'
 
 const OnboardingChecklist = ({ profile, onComplete }) => {
   const { user } = useUser()

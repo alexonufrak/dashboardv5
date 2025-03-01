@@ -57,8 +57,7 @@ export default withApiAuthRequired(async function createTeamHandler(req, res) {
     // Create a new team
     console.log(`Creating new team: ${name}`)
     const teamRecord = await teamsTable.create({
-      'Name': name.trim(),
-      'Team Name': name.trim(), // Adding both field names for compatibility
+      'Team Name': name.trim(),
       'Description': description?.trim() || '',
       'Status': 'Active'
     })
