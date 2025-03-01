@@ -107,8 +107,29 @@ const afterCallback = async (req, res, session, state) => {
       
       console.log("Updating user metadata in Auth0:", metadata);
       
-      // Update user metadata in Auth0
-      await auth0.updateUserMetadata({ id: userId }, metadata);
+      // Get direct management API token for Auth0
+      const token = await auth0.getDirectAuth0Token();
+      if (token) {
+        const domain = (process.env.AUTH0_ISSUER_BASE_URL || '').replace('https://', '');
+        
+        // Use Axios to make a direct API call since there's an issue with the getManagementClient function
+        const axios = (await import('axios')).default;
+        const updateResponse = await axios({
+          method: 'PATCH',
+          url: `https://${domain}/api/v2/users/${userId}`,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          data: {
+            user_metadata: metadata
+          }
+        });
+        
+        console.log("Auth0 metadata update response status:", updateResponse.status);
+      } else {
+        console.error("Failed to get Auth0 token for metadata update");
+      }
       
       console.log("Successfully updated user metadata in Auth0");
     } catch (err) {
