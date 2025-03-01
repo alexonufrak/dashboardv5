@@ -10,7 +10,6 @@ import { toast } from "sonner"
 import ProperDashboardLayout from "../components/ProperDashboardLayout"
 import ProfileEditModal from "../components/ProfileEditModal"
 import TeamCard from "../components/TeamCard"
-import OnboardingChecklistCondensed from "../components/OnboardingChecklistCondensed"
 import EmailMismatchAlert from "../components/EmailMismatchAlert"
 import CohortGrid from "../components/shared/CohortGrid"
 import TeamCreateDialog from "../components/TeamCreateDialog"
@@ -53,8 +52,7 @@ const Dashboard = () => {
   const [isUpdating, setIsUpdating] = useState(false)
   
   // Onboarding state
-  const [showFullOnboarding, setShowFullOnboarding] = useState(false)
-  const [showOnboardingBanner, setShowOnboardingBanner] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -110,11 +108,10 @@ const Dashboard = () => {
             hasAppliedToProgram
           });
           
-          // Determine which onboarding view to show
+          // Determine whether to show onboarding
           if (hasAppliedToProgram) {
-            // User has applied to a program - hide all onboarding
-            setShowFullOnboarding(false);
-            setShowOnboardingBanner(false);
+            // User has applied to a program - hide onboarding
+            setShowOnboarding(false);
             
             // Update metadata if needed
             if (!metadata.onboardingCompleted) {
@@ -130,51 +127,32 @@ const Dashboard = () => {
                 })
               });
             }
-          } else if (hasCompletedRegister) {
-            // User has registered but not applied - show banner
-            setShowFullOnboarding(false);
-            setShowOnboardingBanner(true);
+          } else {
+            // Show onboarding if user hasn't completed it
+            setShowOnboarding(!metadata.onboardingCompleted);
             
-            // Make sure metadata reflects this
-            if (!metadata.onboardingSkipped) {
+            // Explicitly mark register step as completed for new users
+            if (!hasCompletedRegister) {
               await fetch('/api/user/metadata', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                  onboardingSkipped: true,
-                  keepOnboardingVisible: true
+                  onboarding: ['register']
                 })
               });
             }
-          } else {
-            // New user - show full onboarding
-            setShowFullOnboarding(true);
-            setShowOnboardingBanner(false);
-            
-            // Explicitly mark register step as completed for new users
-            await fetch('/api/user/metadata', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                onboarding: ['register']
-              })
-            });
           }
         } else {
           console.warn("Error fetching metadata from API");
-          // Default to showing full onboarding for new users
-          setShowFullOnboarding(true);
-          setShowOnboardingBanner(false);
+          // Default to showing onboarding for new users
+          setShowOnboarding(true);
         }
       } catch (err) {
         console.error("Error checking onboarding status:", err);
-        // Default to showing full onboarding for new users
-        setShowFullOnboarding(true);
-        setShowOnboardingBanner(false);
+        // Default to showing onboarding for new users
+        setShowOnboarding(true);
       }
     };
 
@@ -265,15 +243,8 @@ const Dashboard = () => {
   const handleCompletion = (skipOnly = false, hasAppliedToProgram = false) => {
     console.log("Handling onboarding completion:", { skipOnly, hasAppliedToProgram });
     
-    if (hasAppliedToProgram) {
-      // Hide all onboarding when application is complete
-      setShowFullOnboarding(false);
-      setShowOnboardingBanner(false);
-    } else {
-      // Otherwise show condensed banner
-      setShowFullOnboarding(false);
-      setShowOnboardingBanner(true);
-    }
+    // Hide onboarding when complete
+    setShowOnboarding(false);
   };
   
   // Main JSX content
@@ -284,22 +255,10 @@ const Dashboard = () => {
           {/* Email mismatch alert */}
           {user?.emailMismatch && <EmailMismatchAlert emailMismatch={user.emailMismatch} />}
           
-          {/* Full Onboarding Checklist */}
-          {showFullOnboarding && (
+          {/* Onboarding Checklist */}
+          {showOnboarding && (
             <OnboardingChecklist 
               profile={profile}
-              onComplete={handleCompletion}
-            />
-          )}
-          
-          {/* Condensed Onboarding Banner */}
-          {showOnboardingBanner && !showFullOnboarding && (
-            <OnboardingChecklistCondensed 
-              profile={profile}
-              onViewAll={() => {
-                setShowFullOnboarding(true);
-                setShowOnboardingBanner(false);
-              }}
               onComplete={handleCompletion}
             />
           )}
@@ -343,9 +302,8 @@ const Dashboard = () => {
                           onboarding: [...currentSteps, 'selectCohort']
                         })
                       }).then(() => {
-                        // Hide full onboarding after application
-                        setShowFullOnboarding(false);
-                        setShowOnboardingBanner(false);
+                        // Hide onboarding after application
+                        setShowOnboarding(false);
                       });
                     }
                   });
