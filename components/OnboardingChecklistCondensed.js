@@ -61,6 +61,7 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
       
       // Update session storage immediately for responsive UI
       sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
+      sessionStorage.removeItem('xFoundry_onboardingSkipped');
       
       // Call API to persist the preference
       await fetch('/api/user/metadata', {
@@ -70,7 +71,8 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
         },
         body: JSON.stringify({
           onboardingCompleted: true,
-          onboardingSkipped: false // Explicitly set skipped to false
+          onboardingSkipped: false, // Explicitly set skipped to false
+          keepOnboardingVisible: false
         })
       });
       

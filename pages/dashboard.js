@@ -91,8 +91,6 @@ const Dashboard = () => {
 
     const checkOnboardingStatus = async () => {
       try {
-        console.log("Checking onboarding status...");
-        
         // First check session storage for immediate state 
         // This provides faster UI response across page navigations and refreshes
         const sessionCompleted = sessionStorage.getItem('xFoundry_onboardingCompleted') === 'true';
@@ -100,19 +98,15 @@ const Dashboard = () => {
         
         // Apply session storage state immediately for better UX
         if (sessionCompleted) {
-          console.log("Session storage indicates onboarding is completed");
           setDashboardContent(true);
           setShowFullOnboarding(false);
           setShowOnboardingBanner(false);
-          // Still fetch from API to ensure server and client are in sync, but don't change UI
         } else if (sessionSkipped) {
-          console.log("Session storage indicates onboarding was skipped");
           setDashboardContent(true);
           setShowFullOnboarding(false);
           setShowOnboardingBanner(true);
         } else {
           // For new users, default to showing onboarding
-          console.log("No session data, showing full onboarding");
           setDashboardContent(false);
           setShowFullOnboarding(true);
           setShowOnboardingBanner(false);
@@ -122,38 +116,41 @@ const Dashboard = () => {
         const response = await fetch("/api/user/metadata");
         if (response.ok) {
           const metadata = await response.json();
-          console.log("User metadata:", metadata);
           
           // If there's a conflict between session storage and API data,
           // trust the API data and update session storage
           if (metadata.onboardingCompleted === true) {
-            console.log("API confirms onboarding completed");
-            setShowFullOnboarding(false);
-            setShowOnboardingBanner(false);
-            setDashboardContent(true);
+            // Only update state if it's different from current state to avoid unnecessary re-renders
+            if (!dashboardContent || showFullOnboarding || showOnboardingBanner) {
+              setShowFullOnboarding(false);
+              setShowOnboardingBanner(false);
+              setDashboardContent(true);
+            }
             // Update session storage
             sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
             sessionStorage.removeItem('xFoundry_onboardingSkipped');
           } else if (metadata.onboardingSkipped === true) {
-            console.log("API confirms onboarding skipped");
-            setShowFullOnboarding(false);
             // Show banner based on keepOnboardingVisible flag
             const keepVisible = metadata.keepOnboardingVisible !== false;
-            setShowOnboardingBanner(keepVisible);
-            setDashboardContent(true);
+            
+            // Only update state if it's different from current state
+            if (!dashboardContent || showFullOnboarding || showOnboardingBanner !== keepVisible) {
+              setShowFullOnboarding(false);
+              setShowOnboardingBanner(keepVisible);
+              setDashboardContent(true);
+            }
             // Update session storage
             sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
             sessionStorage.removeItem('xFoundry_onboardingCompleted');
           } else if (!sessionCompleted && !sessionSkipped) {
             // New user with no stored preferences - show the full onboarding
-            console.log("New user - showing full onboarding");
-            setShowFullOnboarding(true);
-            setShowOnboardingBanner(false);
-            setDashboardContent(false);
+            if (dashboardContent || !showFullOnboarding || showOnboardingBanner) {
+              setShowFullOnboarding(true);
+              setShowOnboardingBanner(false);
+              setDashboardContent(false);
+            }
           }
         } else {
-          console.warn("Error fetching metadata, using session storage as fallback");
-          
           // If API fails but we have no session data, prefer showing onboarding
           if (!sessionCompleted && !sessionSkipped) {
             setShowFullOnboarding(true);
@@ -173,9 +170,6 @@ const Dashboard = () => {
     }
 
     if (user) {
-      // For new users, don't show dashboard content until we check onboarding status
-      setDashboardContent(false)
-      
       // Fetch profile and team data
       fetchProfile()
       fetchTeamData()
@@ -184,12 +178,20 @@ const Dashboard = () => {
       const hasSessionData = sessionStorage.getItem('xFoundry_onboardingCompleted') === 'true' || 
                              sessionStorage.getItem('xFoundry_onboardingSkipped') === 'true';
       
-      // If we have session data, show dashboard content
+      // If we have session data, show dashboard content immediately
       if (hasSessionData) {
+        const isCompleted = sessionStorage.getItem('xFoundry_onboardingCompleted') === 'true';
         setDashboardContent(true);
+        setShowFullOnboarding(false);
+        setShowOnboardingBanner(!isCompleted); // Show banner only when skipped, not completed
+      } else {
+        // For new users with no session data, show full onboarding
+        setDashboardContent(false);
+        setShowFullOnboarding(true);
+        setShowOnboardingBanner(false);
       }
       
-      // Check onboarding status with a small delay to ensure state updates
+      // Check onboarding status with the API after initial render
       setTimeout(() => {
         checkOnboardingStatus()
       }, 100)
@@ -272,6 +274,15 @@ const Dashboard = () => {
   const handleCompletion = (skipOnly = false) => {
     // Add animation class for transition
     document.body.classList.add('onboarding-transition');
+    
+    // Update session storage immediately for responsive UI
+    if (skipOnly) {
+      sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
+      sessionStorage.removeItem('xFoundry_onboardingCompleted');
+    } else {
+      sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
+      sessionStorage.removeItem('xFoundry_onboardingSkipped');
+    }
     
     // Add a small delay to ensure animation is visible
     setTimeout(() => {

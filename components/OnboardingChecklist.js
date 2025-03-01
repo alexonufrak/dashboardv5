@@ -308,20 +308,43 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
   // Complete onboarding
   const completeOnboarding = async () => {
     try {
+      // Start animation
+      document.body.classList.add('onboarding-transition');
+      
+      // Store in session storage for immediate access
+      sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
+      sessionStorage.removeItem('xFoundry_onboardingSkipped');
+      
+      // Send to API for persistence
       await fetch('/api/user/metadata', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          onboardingCompleted: true
+          onboardingCompleted: true,
+          onboardingSkipped: false,
+          keepOnboardingVisible: false
         })
-      })
+      });
       
-      setShowOnboarding(false)
-      if (onComplete) onComplete()
+      // Animate out with a small delay
+      setTimeout(() => {
+        setShowOnboarding(false);
+        
+        // Provide false to indicate this was a complete, not a skip
+        if (onComplete) onComplete(false);
+        
+        // Remove animation class after transition
+        setTimeout(() => {
+          document.body.classList.remove('onboarding-transition');
+        }, 300);
+      }, 150);
     } catch (error) {
-      console.error('Error completing onboarding:', error)
+      console.error('Error completing onboarding:', error);
+      // Still try to complete the UI flow even if API fails
+      setShowOnboarding(false);
+      if (onComplete) onComplete(false);
     }
   }
 
@@ -333,6 +356,7 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
       
       // Store in session storage for immediate access
       sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
+      sessionStorage.removeItem('xFoundry_onboardingCompleted');
       
       // Send to API for persistence
       await fetch('/api/user/metadata', {
@@ -341,7 +365,9 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          onboardingSkipped: true
+          onboardingSkipped: true,
+          onboardingCompleted: false,
+          keepOnboardingVisible: true
         })
       });
       

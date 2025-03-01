@@ -361,10 +361,18 @@
   
   .onboarding-slide-in {
     animation: slideIn 350ms ease-out;
+    will-change: transform, opacity;
   }
   
   .onboarding-slide-out {
     animation: slideOut 250ms ease-in;
+    will-change: transform, opacity;
+  }
+  
+  /* Ensure dashboard content and onboarding checklist don't display simultaneously */
+  .dashboard-content {
+    opacity: 1;
+    transition: opacity 300ms ease;
   }
   
   @keyframes fadeIn {
