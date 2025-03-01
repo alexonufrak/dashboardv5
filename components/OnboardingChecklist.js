@@ -400,13 +400,13 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         {/* Step Header */}
         <div 
           className={`
-            flex items-center p-4 cursor-pointer
-            ${isCompleted ? 'bg-green-50' : 'bg-gray-50'}
+            flex items-center p-4 cursor-pointer transition-colors duration-200
+            ${isCompleted ? 'bg-green-50 hover:bg-green-100/80' : 'bg-gray-50 hover:bg-gray-100/80'}
           `}
           onClick={() => toggleStepExpanded(step.id)}
         >
           <div className={`
-            shrink-0 w-10 h-10 flex items-center justify-center rounded-full mr-4
+            shrink-0 w-10 h-10 flex items-center justify-center rounded-full mr-4 transition-all duration-300
             ${isCompleted ? 'text-green-600 bg-green-100' : 'text-primary bg-primary/10'}
           `}>
             {isCompleted ? <CheckCircle className="h-5 w-5" /> : step.icon}
@@ -414,7 +414,7 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
           
           <div className="grow">
             <h3 className={`
-              text-base font-medium
+              text-base font-medium transition-colors duration-200
               ${isCompleted ? 'text-green-800' : 'text-gray-800'}
             `}>
               {step.title}
@@ -426,13 +426,22 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
             variant="ghost" 
             size="sm" 
             className="ml-2 h-8 w-8 p-0"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent the parent onClick from firing
+              toggleStepExpanded(step.id);
+            }}
           >
             {step.expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </div>
         
-        {/* Step Content */}
-        {step.expanded && (
+        {/* Step Content - Animated */}
+        <div 
+          className={`
+            overflow-hidden transition-all duration-300 ease-in-out
+            ${step.expanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}
+          `}
+        >
           <div className="p-4 border-t border-gray-100">
             {/* Register step content */}
             {step.id === 'register' && (
@@ -506,7 +515,7 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
               </div>
             )}
           </div>
-        )}
+        </div>
       </div>
     );
   };
@@ -518,6 +527,7 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         className={`
           cursor-pointer transition-colors duration-200 py-5
           bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950
+          hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900 dark:hover:to-cyan-900
         `}
         onClick={toggleExpanded}
       >
@@ -537,31 +547,32 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
               e.stopPropagation();
               toggleExpanded();
             }}
-            className="h-9 w-9 p-0 rounded-full bg-white/50"
+            className="h-9 w-9 p-0 rounded-full bg-white/50 hover:bg-white/80 transition-all duration-200"
           >
             {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
           </Button>
         </div>
         
-        {/* Show progress indicator in collapsed state */}
-        {!isExpanded && (
-          <div className="flex items-center mt-3">
-            <div className="w-full">
-              <Progress 
-                value={completionPercentage} 
-                className="h-2 bg-white/50" 
-              />
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-xs font-medium text-primary/80">
-                  Progress: {completionPercentage}% complete
-                </span>
-                <span className="text-xs text-primary/80">
-                  {steps.filter(s => s.completed).length}/{steps.length} steps
-                </span>
-              </div>
+        {/* Show progress indicator in collapsed state - Animated */}
+        <div className={`
+          mt-3 transition-all duration-300 ease-in-out overflow-hidden
+          ${!isExpanded ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}
+        `}>
+          <div className="w-full">
+            <Progress 
+              value={completionPercentage} 
+              className="h-2 bg-white/50" 
+            />
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-xs font-medium text-primary/80">
+                Progress: {completionPercentage}% complete
+              </span>
+              <span className="text-xs text-primary/80">
+                {steps.filter(s => s.completed).length}/{steps.length} steps
+              </span>
             </div>
           </div>
-        )}
+        </div>
       </CardHeader>
       
       {/* Fillout form popup */}
@@ -604,50 +615,52 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         onCreateTeam={handleTeamCreated}
       />
       
-      {/* Expanded content */}
-      {isExpanded && (
-        <>
-          <CardContent className="p-6">
-            {/* Progress indicator */}
-            <div className="mb-6">
-              <div className="flex justify-between mb-1">
-                <div className="text-sm font-medium text-primary">Your progress</div>
-                <div className="text-sm text-muted-foreground">
-                  {steps.filter(s => s.completed).length}/{steps.length} complete
-                </div>
+      {/* Expanded content with animation */}
+      <div className={`
+        transition-all duration-500 ease-in-out overflow-hidden
+        ${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}
+      `}>
+        <CardContent className="p-6">
+          {/* Progress indicator */}
+          <div className="mb-6">
+            <div className="flex justify-between mb-1">
+              <div className="text-sm font-medium text-primary">Your progress</div>
+              <div className="text-sm text-muted-foreground">
+                {steps.filter(s => s.completed).length}/{steps.length} complete
               </div>
-              <Progress value={completionPercentage} className="h-2" />
             </div>
-            
-            {/* Steps */}
-            <div className="space-y-1">
-              {steps.map(renderStep)}
-            </div>
-          </CardContent>
+            <Progress value={completionPercentage} className="h-2" />
+          </div>
           
-          <CardFooter className="justify-between bg-gray-50 border-t border-gray-100 p-4">
-            <span className="text-sm text-muted-foreground">
-              {completionPercentage}% complete
-            </span>
-            
-            {allStepsCompleted ? (
-              <Button
-                className="bg-green-600 hover:bg-green-700 text-white"
-                onClick={completeOnboarding}
-              >
-                Complete Onboarding
-              </Button>
-            ) : (
-              <Button 
-                variant="outline"
-                onClick={toggleExpanded}
-              >
-                Collapse Checklist
-              </Button>
-            )}
-          </CardFooter>
-        </>
-      )}
+          {/* Steps */}
+          <div className="space-y-1">
+            {steps.map(renderStep)}
+          </div>
+        </CardContent>
+        
+        <CardFooter className="justify-between bg-gray-50 border-t border-gray-100 p-4">
+          <span className="text-sm text-muted-foreground">
+            {completionPercentage}% complete
+          </span>
+          
+          {allStepsCompleted ? (
+            <Button
+              className="bg-green-600 hover:bg-green-700 text-white transition-all duration-200"
+              onClick={completeOnboarding}
+            >
+              Complete Onboarding
+            </Button>
+          ) : (
+            <Button 
+              variant="outline"
+              className="transition-all duration-200"
+              onClick={toggleExpanded}
+            >
+              Collapse Checklist
+            </Button>
+          )}
+        </CardFooter>
+      </div>
     </Card>
   );
 };
