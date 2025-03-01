@@ -374,6 +374,18 @@
     opacity: 1;
     transition: opacity 300ms ease;
   }
+
+  /* Additional transitions for onboarding */
+  .dashboard-content-exit {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Add animation to parent container for smooth transitions */
+  .proper-dashboard-layout-content {
+    min-height: 400px;
+    position: relative;
+  }
   
   @keyframes fadeIn {
     from { opacity: 0; }

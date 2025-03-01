@@ -351,6 +351,8 @@ const Dashboard = () => {
                 document.body.classList.add('onboarding-transition');
                 
                 setTimeout(() => {
+                  // Need to set dashboardContent to false to show the full onboarding
+                  setDashboardContent(false);
                   setShowFullOnboarding(true);
                   setShowOnboardingBanner(false);
                   

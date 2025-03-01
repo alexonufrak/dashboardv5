@@ -57,7 +57,10 @@ const ProperDashboardLayout = ({
             <div className="pt-[60px] md:pt-4 overflow-x-hidden">
               <div className="mx-auto max-w-6xl px-4 md:px-6">
                 {showBreadcrumbs && <Breadcrumbs />}
-                {children}
+                {/* Added proper-dashboard-layout-content class for better transitions */}
+                <div className="proper-dashboard-layout-content">
+                  {children}
+                </div>
                 
                 {/* Footer */}
                 <footer className="border-t py-8 mt-8 text-center text-muted-foreground text-sm">

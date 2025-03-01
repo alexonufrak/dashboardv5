@@ -182,6 +182,12 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
                 size="sm"
                 className="gap-1 transition-all duration-200 hover:bg-slate-700 hover:translate-x-0.5 active:scale-95"
                 onClick={() => {
+                  // First add animation class to the current content
+                  const dashboardContent = document.querySelector('.dashboard-content');
+                  if (dashboardContent) {
+                    dashboardContent.classList.add('dashboard-content-exit');
+                  }
+                  
                   // Add animation class to body during transition
                   document.body.classList.add('onboarding-transition');
                   
@@ -192,8 +198,11 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
                     // Remove animation class after transition
                     setTimeout(() => {
                       document.body.classList.remove('onboarding-transition');
+                      if (dashboardContent) {
+                        dashboardContent.classList.remove('dashboard-content-exit');
+                      }
                     }, 300);
-                  }, 50);
+                  }, 100);
                 }}
               >
                 Continue
