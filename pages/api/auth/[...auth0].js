@@ -12,15 +12,21 @@ const afterCallback = async (req, res, session, state) => {
       lastName,
       referralSource,
       cohortId,
-      login_hint  // This contains the pre-verified email address
+      email, // New parameter that replaces login_hint
+      contactId, // Airtable contact ID if available
+      educationId, // Airtable education ID if available
+      airtableId // Legacy parameter for contactId
     } = req.query
 
-    // Check if there's a login_hint (pre-verified email) to compare against
-    if (login_hint && session.user.email && login_hint !== session.user.email) {
-      console.error(`Email mismatch: Verified ${login_hint} but authenticated with ${session.user.email}`);
+    // The verified email might come from either email or login_hint
+    const verifiedEmail = email || req.query.login_hint;
+    
+    // Check if there's a verified email to compare against
+    if (verifiedEmail && session.user.email && verifiedEmail !== session.user.email) {
+      console.error(`Email mismatch: Verified ${verifiedEmail} but authenticated with ${session.user.email}`);
       // Add a flag to indicate email mismatch - this will be checked on the frontend
       session.user.emailMismatch = {
-        verifiedEmail: login_hint,
+        verifiedEmail: verifiedEmail,
         authEmail: session.user.email
       };
     }
@@ -60,7 +66,11 @@ const afterCallback = async (req, res, session, state) => {
           ...(referralSource ? { referralSource } : {}),
           ...(cohortId ? { selectedCohort: cohortId } : {}),
           // Store the verified email in metadata for future reference
-          ...(login_hint ? { verifiedEmail: login_hint } : {})
+          ...(verifiedEmail ? { verifiedEmail: verifiedEmail } : {}),
+          // Store Airtable IDs in metadata if available
+          ...(contactId ? { contactId } : {}),
+          ...(airtableId ? { airtableId } : {}),
+          ...(educationId ? { educationId } : {})
         };
         
         // Update user metadata in Auth0
@@ -78,7 +88,10 @@ const afterCallback = async (req, res, session, state) => {
         lastName,
         referralSource,
         cohortId,
-        login_hint,
+        verifiedEmail,
+        contactId,
+        airtableId,
+        educationId,
         metadata: session.user.user_metadata
       });
     }

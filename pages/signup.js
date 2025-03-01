@@ -107,7 +107,7 @@ export default function SignUp() {
         setTimeout(() => {
           // Encode the email to use as a query parameter
           const encodedEmail = encodeURIComponent(email);
-          window.location.href = `/api/auth/login?login_hint=${encodedEmail}`;
+          window.location.href = `/api/auth/login?email=${encodedEmail}&prefill=true`;
         }, 2000);
         return;
       }
@@ -242,6 +242,9 @@ export default function SignUp() {
     }
     
     // Redirect to Auth0 login with Google, directly bypassing the Auth0 login screen if possible
+    // We pass email as a custom parameter instead of login_hint to avoid JavaScript errors
+    queryParams.append("email", email);
+    queryParams.append("prefill", "true");
     window.location.href = `/api/auth/login?connection=google-oauth2&${queryParams.toString()}&prompt=login`;
   };
 

@@ -139,8 +139,9 @@ export default function Login() {
     }
     
     if (userExists) {
-      // If user exists, redirect to login with email prefilled
-      window.location.href = `/api/auth/login?login_hint=${encodedEmail}`;
+      // If user exists, redirect to login
+      // Removed the login_hint parameter to avoid Auth0 JavaScript errors
+      window.location.href = `/api/auth/login?email=${encodedEmail}&prefill=true`;
     } else {
       // If user doesn't exist, redirect to signup with email prefilled
       router.push(`/signup?email=${encodedEmail}`);
