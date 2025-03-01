@@ -47,6 +47,7 @@ const Dashboard = () => {
   const [teamData, setTeamData] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isTeamLoading, setIsTeamLoading] = useState(true)
+  const [teamsData, setTeamsData] = useState([])
   const [error, setError] = useState(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
@@ -73,12 +74,24 @@ const Dashboard = () => {
 
     const fetchTeamData = async () => {
       try {
-        const response = await fetch("/api/user/team")
-        if (!response.ok) {
-          throw new Error("Failed to fetch team data")
+        // Fetch multiple teams
+        const teamsResponse = await fetch("/api/teams")
+        if (!teamsResponse.ok) {
+          throw new Error("Failed to fetch teams data")
         }
-        const data = await response.json()
-        setTeamData(data.team)
+        
+        const teamsData = await teamsResponse.json()
+        
+        // For backward compatibility, also set the first team to teamData
+        if (teamsData.teams && teamsData.teams.length > 0) {
+          setTeamData(teamsData.teams[0])
+          setTeamsData(teamsData.teams)
+        } else {
+          setTeamData(null)
+          setTeamsData([])
+        }
+        
+        console.log("Teams data loaded:", teamsData)
       } catch (err) {
         console.error("Error fetching team data:", err)
         toast.error("Failed to load team information")
@@ -311,17 +324,31 @@ const Dashboard = () => {
               />
             </section>
             
-            {/* Team Section */}
+            {/* Teams Section */}
             <section id="teams" className="space-y-4">
               <div className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-semibold">Your Team</h2>
+                <h2 className="text-xl font-semibold">Your Teams</h2>
               </div>
               
               {isTeamLoading ? (
                 <Skeleton className="h-48 w-full rounded-lg" />
+              ) : teamsData && teamsData.length > 0 ? (
+                <div className="space-y-6">
+                  {teamsData.map((team) => (
+                    <TeamCard 
+                      key={team.id} 
+                      team={team}
+                      cohorts={profile.cohorts?.filter(cohort => 
+                        // Filter cohorts for this team - for now we'll show all cohorts with team participation
+                        cohort.participationType?.toLowerCase().includes('team')
+                      ) || []}
+                      profile={profile}
+                    />
+                  ))}
+                </div>
               ) : (
-                <TeamCard team={teamData} />
+                <TeamCard team={null} />
               )}
             </section>
           </div>

@@ -19,8 +19,12 @@ import TeamCreateDialog from '../TeamCreateDialog'
 /**
  * A shared cohort card component to display cohort/initiative information
  * Used in both the dashboard and the onboarding checklist
+ * @param {Object} cohort - The cohort data
+ * @param {Object} profile - The user profile
+ * @param {Function} onApplySuccess - Callback when application is successful
+ * @param {boolean} condensed - If true, displays a condensed version of the card
  */
-const CohortCard = ({ cohort, profile, onApplySuccess }) => {
+const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false }) => {
   const [activeFilloutForm, setActiveFilloutForm] = useState(null)
   const [activeTeamSelectDialog, setActiveTeamSelectDialog] = useState(null)
   const [activeTeamCreateDialog, setActiveTeamCreateDialog] = useState(false)
@@ -153,6 +157,41 @@ const CohortCard = ({ cohort, profile, onApplySuccess }) => {
     }
   }
   
+  // Render a condensed version of the card for team sections
+  if (condensed) {
+    return (
+      <>
+        <Card key={cohort.id} className="overflow-hidden flex flex-row items-center justify-between transition-all duration-200 hover:shadow-md">
+          <div className="p-3 flex-1">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium">{initiativeName}</h3>
+            </div>
+            
+            <div className="flex flex-wrap gap-1 mt-1">
+              {Array.isArray(topics) && topics.length > 0 && 
+                <span className="text-xs text-muted-foreground">
+                  {topics[0]} {cohort.className ? `- ${cohort.className}` : ''}
+                </span>
+              }
+            </div>
+          </div>
+          
+          <div className="p-3">
+            <Button 
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2"
+              onClick={handleViewDetails}
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          </div>
+        </Card>
+      </>
+    );
+  }
+
+  // Regular full card
   return (
     <>
       <Card key={cohort.id} className="overflow-hidden h-full flex flex-col transition-all duration-200 hover:shadow-md">

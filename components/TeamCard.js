@@ -5,9 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, Info } from "lucide-react";
 import TeamDetailModal from "./TeamDetailModal";
+import CohortCard from "./shared/CohortCard";
 
-const TeamCard = ({ team }) => {
+/**
+ * TeamCard component displays team information with associated cohorts.
+ * @param {Object} props - Component props
+ * @param {Object} props.team - Team data object
+ * @param {Array} props.cohorts - Array of cohorts associated with the team
+ * @param {Object} props.profile - User profile data
+ */
+const TeamCard = ({ team, cohorts = [], profile }) => {
   const [showDetails, setShowDetails] = useState(false);
+  const [selectedCohort, setSelectedCohort] = useState(null);
+  
+  // Handle viewing cohort details
+  const handleViewCohortDetails = (cohort) => {
+    setSelectedCohort(cohort);
+  };
   
   // If no team data is provided, show a not found message
   if (!team) {
@@ -41,13 +55,33 @@ const TeamCard = ({ team }) => {
           </p>
           
           {activeMembers.length > 0 && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
               <Users className="h-4 w-4" />
               <span>
                 {activeMembers.filter(m => m.isCurrentUser).length > 0 ? 
                   "You and " + (activeMembers.length - 1) + " others" : 
                   activeMembers.length + " team members"}
               </span>
+            </div>
+          )}
+          
+          {/* Team's Cohorts/Programs Section */}
+          {cohorts && cohorts.length > 0 && (
+            <div className="mt-4">
+              <h4 className="text-sm font-semibold mb-2">Team Programs:</h4>
+              <div className="space-y-2">
+                {cohorts.map(cohort => (
+                  <CohortCard 
+                    key={cohort.id}
+                    cohort={{
+                      ...cohort,
+                      onViewDetails: () => handleViewCohortDetails(cohort)
+                    }}
+                    profile={profile}
+                    condensed={true}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </CardContent>
@@ -69,6 +103,48 @@ const TeamCard = ({ team }) => {
         isOpen={showDetails} 
         onClose={() => setShowDetails(false)} 
       />
+      
+      {/* Program Detail Modal for cohorts */}
+      {selectedCohort && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
+          onClick={() => setSelectedCohort(null)}
+        >
+          <div 
+            className="bg-white rounded-lg p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <h2 className="text-xl font-bold mb-4">{selectedCohort.initiativeDetails?.name || "Program Details"}</h2>
+            
+            {selectedCohort.topicNames && selectedCohort.topicNames.length > 0 && (
+              <div className="mb-4">
+                <h3 className="text-sm font-semibold mb-1">Topics:</h3>
+                <div className="flex flex-wrap gap-2">
+                  {selectedCohort.topicNames.map((topic, index) => (
+                    <Badge key={index} variant="secondary">{topic}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {selectedCohort.className && (
+              <div className="mb-4">
+                <h3 className="text-sm font-semibold mb-1">Class:</h3>
+                <p className="text-sm">{selectedCohort.className}</p>
+              </div>
+            )}
+            
+            <div className="mb-4">
+              <h3 className="text-sm font-semibold mb-1">Description:</h3>
+              <p className="text-sm">{selectedCohort.description || selectedCohort.initiativeDetails?.description || "No description available."}</p>
+            </div>
+            
+            <div className="flex justify-end mt-6">
+              <Button onClick={() => setSelectedCohort(null)}>Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
