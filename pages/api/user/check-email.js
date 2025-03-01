@@ -48,15 +48,16 @@ export default async function handler(req, res) {
       // For thorough checking, we'll look at both Auth0 and Airtable
       const userExists = auth0Exists || airtableExists;
       
-      // If user exists in Airtable but not in Auth0, try to sync the data
+      // If user exists in Airtable but not in Auth0, prepare signup metadata
+      let signupMetadata = null;
       if (airtableExists && !auth0Exists) {
         try {
-          console.log(`Attempting to sync Airtable data to Auth0 for email: ${normalizedEmail}`);
-          await auth0Client.syncAirtableToAuth0(normalizedEmail, airtableUser);
-          console.log(`Successfully synced Airtable data to Auth0 for email: ${normalizedEmail}`);
-        } catch (syncError) {
-          console.error('Error syncing user to Auth0:', syncError);
-          // Continue with the check even if sync fails
+          console.log(`Preparing Airtable metadata for signup: ${normalizedEmail}`);
+          signupMetadata = await auth0Client.getSignupMetadata(normalizedEmail, airtableUser);
+          console.log(`Prepared metadata for signup:`, signupMetadata);
+        } catch (metadataError) {
+          console.error('Error preparing signup metadata:', metadataError);
+          // Continue with the check even if metadata preparation fails
         }
       }
       
@@ -74,7 +75,9 @@ export default async function handler(req, res) {
         potentialVisibilityIssue: airtableOnlyButLikelyAuthorized,
         message: message,
         // Include Airtable user ID if it exists (for updating during signup)
-        airtableId: airtableExists ? airtableUser.contactId : null
+        airtableId: airtableExists ? airtableUser.contactId : null,
+        // Include signup metadata if available
+        signupMetadata: signupMetadata
       });
     } catch (error) {
       console.error('Error checking user existence:', error);

@@ -85,7 +85,13 @@ export default function Login() {
       if (userCheckData.potentialVisibilityIssue) {
         console.log("NOTE: User exists in Airtable but not visible to Auth0 Management API");
         console.log("This could be due to application authorization configuration in Auth0");
-        // We'll still direct them to login as an existing user since they have an Airtable record
+        
+        // If we have signup metadata from Airtable, store it for the signup process
+        if (userCheckData.signupMetadata) {
+          console.log("Storing Airtable metadata for signup:", userCheckData.signupMetadata);
+          // Store in localStorage to use during signup
+          localStorage.setItem('xFoundry_signupMetadata', JSON.stringify(userCheckData.signupMetadata));
+        }
       }
       
       // Check institution regardless of whether user exists

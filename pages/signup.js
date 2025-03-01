@@ -117,6 +117,21 @@ export default function SignUp() {
         console.log("User exists in Airtable but not in Auth0, continuing with signup");
         // Store the Airtable ID in localStorage to associate during signup
         localStorage.setItem('xFoundry_airtableId', userCheckData.airtableId || '');
+        
+        // If there's metadata from Airtable, store it for the signup
+        if (userCheckData.signupMetadata) {
+          console.log("Found Airtable metadata for signup:", userCheckData.signupMetadata);
+          localStorage.setItem('xFoundry_signupMetadata', JSON.stringify(userCheckData.signupMetadata));
+          
+          // Pre-fill form data if we have names
+          if (userCheckData.signupMetadata.firstName || userCheckData.signupMetadata.lastName) {
+            setFormData({
+              ...formData,
+              firstName: userCheckData.signupMetadata.firstName || '',
+              lastName: userCheckData.signupMetadata.lastName || ''
+            });
+          }
+        }
       }
       
       // If user doesn't exist, continue with institution verification
@@ -199,6 +214,25 @@ export default function SignUp() {
     if (airtableId) {
       queryParams.append("airtableId", airtableId);
       console.log("Adding existing Airtable ID to auth params:", airtableId);
+    }
+    
+    // Add signup metadata from Airtable if available
+    const signupMetadata = localStorage.getItem('xFoundry_signupMetadata');
+    if (signupMetadata) {
+      try {
+        const metadata = JSON.parse(signupMetadata);
+        
+        // Add all metadata fields as query parameters
+        Object.entries(metadata).forEach(([key, value]) => {
+          if (value) {
+            queryParams.append(key, value);
+          }
+        });
+        
+        console.log("Added Airtable metadata to auth params");
+      } catch (error) {
+        console.error("Error parsing signup metadata:", error);
+      }
     }
     
     // Store the verified email in localStorage before redirecting
