@@ -86,6 +86,11 @@ const Dashboard = () => {
         if (teamsData.teams && teamsData.teams.length > 0) {
           setTeamData(teamsData.teams[0])
           setTeamsData(teamsData.teams)
+          
+          // Log team cohort IDs for debugging
+          teamsData.teams.forEach(team => {
+            console.log(`Team "${team.name}" (${team.id}) has cohort IDs:`, team.cohortIds || []);
+          });
         } else {
           setTeamData(null)
           setTeamsData([])
@@ -177,6 +182,14 @@ const Dashboard = () => {
       // Check onboarding status
       checkOnboardingStatus();
     }
+    
+    // Add debugging to check when profile and teams are loaded
+    if (profile && teamsData) {
+      console.log("Profile and teams data loaded:", {
+        cohorts: profile.cohorts?.length || 0,
+        teams: teamsData.length
+      });
+    }
   }, [user]);
 
   // Show loading screen while data is loading
@@ -260,6 +273,39 @@ const Dashboard = () => {
     setShowOnboarding(false);
   };
   
+  // Helper function to filter cohorts for a specific team
+  const filterTeamCohorts = (team, allCohorts) => {
+    console.log(`Filtering cohorts for team "${team.name}"`, {
+      teamId: team.id,
+      cohortIds: team.cohortIds || [],
+      allCohortsCount: allCohorts?.length || 0
+    });
+    
+    if (!allCohorts || !Array.isArray(allCohorts)) return [];
+    
+    // Filter only cohorts with "Applications Open" status that are associated with this team
+    const filteredCohorts = allCohorts.filter(cohort => {
+      // Check if the cohort has "Applications Open" status
+      const isOpen = cohort.Status === "Applications Open";
+      if (!isOpen) return false;
+      
+      // Check if this cohort is specifically associated with this team
+      if (team.cohortIds && Array.isArray(team.cohortIds) && team.cohortIds.length > 0) {
+        return team.cohortIds.includes(cohort.id);
+      }
+      
+      // If no specific association, check if it's a team-based cohort (fallback for single team)
+      if (teamsData.length === 1 && cohort.participationType?.toLowerCase().includes('team')) {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    console.log(`Filtered ${filteredCohorts.length} cohorts for team "${team.name}"`);
+    return filteredCohorts;
+  };
+  
   // Main JSX content
   return (
     <ProperDashboardLayout title="xFoundry Hub" profile={profile} onEditClick={handleEditClick}>
@@ -339,14 +385,7 @@ const Dashboard = () => {
                     <TeamCard 
                       key={team.id} 
                       team={team}
-                      cohorts={profile.cohorts?.filter(cohort => {
-                        // Check if the cohort ID is in this team's cohortIds array
-                        if (team.cohortIds?.length > 0) {
-                          return team.cohortIds.includes(cohort.id);
-                        }
-                        // As a fallback, show team-based cohorts if no specific cohort IDs available
-                        return cohort.participationType?.toLowerCase().includes('team');
-                      }) || []}
+                      cohorts={filterTeamCohorts(team, profile.cohorts)}
                       profile={profile}
                     />
                   ))}
