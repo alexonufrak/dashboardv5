@@ -200,7 +200,8 @@ export default function SignUp() {
       firstName: formData.firstName,
       lastName: formData.lastName,
       referralSource: formData.referralSource,
-      login_hint: email, // Pre-fill email in Auth0
+      // Use email parameter instead of login_hint to ensure metadata is captured correctly
+      email: email, 
     });
     
     // Add cohortId if it exists in URL parameters
@@ -241,9 +242,12 @@ export default function SignUp() {
       localStorage.setItem('xFoundry_verifiedEmail', email);
     }
     
-    // Redirect to Auth0 login with Google, directly bypassing the Auth0 login screen if possible
-    // Store the email in localStorage only, avoid passing it in URL params
-    window.location.href = `/api/auth/login?connection=google-oauth2&${queryParams.toString()}&prompt=login`;
+    // Encode the email to use as login_hint for Google authentication
+    const encodedEmail = encodeURIComponent(email);
+    
+    // Redirect directly to Google authentication, bypassing Auth0 login screen
+    // Use login_hint with connection=google-oauth2 to go straight to Google
+    window.location.href = `/api/auth/login?connection=google-oauth2&${queryParams.toString()}&prompt=login&login_hint=${encodedEmail}`;
   };
 
   if (isLoading) {

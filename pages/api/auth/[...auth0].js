@@ -2,6 +2,8 @@ import { handleAuth, handleCallback } from "@auth0/nextjs-auth0"
 
 const afterCallback = async (req, res, session, state) => {
   try {
+    console.log("Auth0 callback received with query params:", req.query);
+    
     const { 
       institution, 
       institutionId, 
@@ -12,13 +14,13 @@ const afterCallback = async (req, res, session, state) => {
       lastName,
       referralSource,
       cohortId,
-      email, // New parameter that replaces login_hint
+      email, // User's email address from query params
       contactId, // Airtable contact ID if available
       educationId, // Airtable education ID if available
       airtableId // Legacy parameter for contactId
     } = req.query
 
-    // The verified email might come from either email or login_hint
+    // The verified email might come from query parameters or login_hint
     const verifiedEmail = email || req.query.login_hint;
     
     // Check if there's a verified email to compare against
@@ -31,6 +33,10 @@ const afterCallback = async (req, res, session, state) => {
       };
     }
 
+    // Add metadata to the session regardless of whether institution is provided
+    // This ensures we always capture metadata even when going straight to Google auth
+    
+    // Process institution info if available
     if (institution && institutionId) {
       session.user.institution = {
         name: institution,
@@ -39,62 +45,92 @@ const afterCallback = async (req, res, session, state) => {
         major: major || "",
         graduationYear: graduationYear || "",
       }
-      
-      // Add personal information
-      if (firstName) session.user.firstName = firstName;
-      if (lastName) session.user.lastName = lastName;
-      
-      // Add referral source and cohortId as user metadata
-      if (referralSource) session.user.referralSource = referralSource;
-      if (cohortId) session.user.cohortId = cohortId;
-
-      // Initialize onboarding steps - first step is always completed
-      session.user.user_metadata = {
-        ...session.user.user_metadata,
-        onboarding: ['register'],
-        ...(cohortId ? { selectedCohort: cohortId } : {})
-      };
-
-      // Update user metadata in Auth0 using Management API
-      try {
-        const auth0Management = await import('../../../lib/auth0').then(mod => mod.auth0ManagementClient());
-        const userId = session.user.sub;
-        
-        // Prepare user metadata updates
-        const metadata = {
-          onboarding: ['register'], // First step is always completed for new users
-          ...(referralSource ? { referralSource } : {}),
-          ...(cohortId ? { selectedCohort: cohortId } : {}),
-          // Store the verified email in metadata for future reference
-          ...(verifiedEmail ? { verifiedEmail: verifiedEmail } : {}),
-          // Store Airtable IDs in metadata if available
-          ...(contactId ? { contactId } : {}),
-          ...(airtableId ? { airtableId } : {}),
-          ...(educationId ? { educationId } : {})
-        };
-        
-        // Update user metadata in Auth0
-        await auth0Management.updateUserMetadata({ id: userId }, metadata);
-        
-        console.log("Updated user metadata in Auth0:", metadata);
-      } catch (err) {
-        console.error("Error updating Auth0 user metadata:", err);
-      }
-      
-      // Log all the metadata we're capturing
-      console.log("User session data:", {
-        institution: session.user.institution,
-        firstName,
-        lastName,
-        referralSource,
-        cohortId,
-        verifiedEmail,
-        contactId,
-        airtableId,
-        educationId,
-        metadata: session.user.user_metadata
-      });
     }
+    
+    // Add personal information if available
+    if (firstName) session.user.firstName = firstName;
+    if (lastName) session.user.lastName = lastName;
+    
+    // Add referral source and cohortId as user metadata
+    if (referralSource) session.user.referralSource = referralSource;
+    if (cohortId) session.user.cohortId = cohortId;
+
+    // Initialize onboarding steps - first step is always completed
+    session.user.user_metadata = {
+      ...session.user.user_metadata,
+      onboarding: ['register'],
+      ...(cohortId ? { selectedCohort: cohortId } : {})
+    };
+
+    // Update user metadata in Auth0 using Management API
+    try {
+      // Import the Auth0 module
+      const auth0Module = await import('../../../lib/auth0');
+      
+      // This is a fix for updated auth0 module - using default export
+      const auth0 = auth0Module.default;
+      const userId = session.user.sub;
+      
+      // Get the current date for timestamp
+      const now = new Date().toISOString();
+      
+      // Prepare user metadata updates
+      const metadata = {
+        // Personal info
+        firstName: firstName || session.user.given_name || '',
+        lastName: lastName || session.user.family_name || '',
+        
+        // Institution info
+        ...(institution ? { institution } : {}),
+        ...(institutionId ? { institutionId } : {}),
+        ...(degreeType ? { degreeType } : {}),
+        ...(graduationYear ? { graduationYear } : {}),
+        ...(major ? { major } : {}),
+        
+        // Additional metadata
+        onboarding: ['register'], // First step is always completed for new users
+        ...(referralSource ? { referralSource } : {}),
+        ...(cohortId ? { selectedCohort: cohortId } : {}),
+        
+        // Store the verified email in metadata for future reference
+        ...(verifiedEmail ? { verifiedEmail } : {}),
+        
+        // Store Airtable IDs in metadata if available
+        ...(contactId ? { contactId } : {}),
+        ...(airtableId ? { airtableId } : {}),
+        ...(educationId ? { educationId } : {}),
+        
+        // Add timestamps
+        lastLogin: now,
+        ...(session.user.user_metadata?.createdAt ? {} : { createdAt: now })
+      };
+      
+      console.log("Updating user metadata in Auth0:", metadata);
+      
+      // Update user metadata in Auth0
+      await auth0.updateUserMetadata({ id: userId }, metadata);
+      
+      console.log("Successfully updated user metadata in Auth0");
+    } catch (err) {
+      console.error("Error updating Auth0 user metadata:", err);
+      console.error("Error details:", err.stack);
+    }
+    
+    // Log all the metadata we're capturing
+    console.log("User session data:", {
+      email: session.user.email,
+      sub: session.user.sub,
+      institution: session.user.institution,
+      firstName: session.user.firstName || firstName,
+      lastName: session.user.lastName || lastName,
+      referralSource,
+      cohortId,
+      verifiedEmail,
+      contactId,
+      airtableId,
+      educationId,
+      metadata: session.user.user_metadata
+    });
 
     return session
   } catch (error) {
