@@ -127,14 +127,6 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
         <div className="flex flex-col space-y-4">
           <div className="flex justify-between items-center text-sm">
             <span>Progress: {progress}% complete</span>
-            <Button 
-              variant="link" 
-              size="sm" 
-              className="h-auto p-0"
-              onClick={onViewAll}
-            >
-              View All Steps
-            </Button>
           </div>
           
           <Progress value={progress} className="h-2" />
@@ -149,8 +141,21 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
             <div className="flex gap-2">
               <Button 
                 size="sm"
-                className="gap-1"
-                onClick={onViewAll}
+                className="gap-1 transition-all duration-200 hover:bg-slate-700 hover:translate-x-0.5 active:scale-95"
+                onClick={() => {
+                  // Add animation class to body during transition
+                  document.body.classList.add('onboarding-transition');
+                  
+                  // Small delay to ensure the animation is visible
+                  setTimeout(() => {
+                    if (onViewAll) onViewAll();
+                    
+                    // Remove animation class after transition
+                    setTimeout(() => {
+                      document.body.classList.remove('onboarding-transition');
+                    }, 300);
+                  }, 50);
+                }}
               >
                 Continue
                 <ArrowRight className="h-3.5 w-3.5" />

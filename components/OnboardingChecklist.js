@@ -215,7 +215,10 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     console.log("Full cohort object:", JSON.stringify(cohort, null, 2));
     
     // Team applications require a different flow
-    if (participationType.toLowerCase() === "team") {
+    // Added more robust checking for various values that might indicate team participation
+    if (participationType.toLowerCase() === "team" || 
+        participationType.toLowerCase().includes("team") ||
+        participationType.toLowerCase() === "teams") {
       console.log("Team participation type detected");
       console.log("User teams:", userTeams);
       

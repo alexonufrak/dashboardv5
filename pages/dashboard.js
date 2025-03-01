@@ -90,27 +90,52 @@ const Dashboard = () => {
 
     const checkOnboardingStatus = async () => {
       try {
+        console.log("Checking onboarding status...")
         const response = await fetch("/api/user/metadata")
         if (response.ok) {
           const metadata = await response.json()
-          if (metadata.onboardingCompleted) {
-            setDashboardContent(true)
+          console.log("User metadata:", metadata)
+          
+          // Always enable dashboard content by default
+          setDashboardContent(true)
+          
+          if (metadata.onboardingCompleted === true) {
+            // If onboarding is fully completed, don't show any onboarding UI
+            console.log("Onboarding completed, hiding banner")
             setShowOnboardingBanner(false)
-          } else if (metadata.onboardingSkipped) {
-            setDashboardContent(true)
+          } else if (metadata.onboardingSkipped === true) {
+            // If onboarding was skipped, show banner only if explicitly requested
+            console.log("Onboarding skipped, banner visibility:", metadata.keepOnboardingVisible)
             setShowOnboardingBanner(metadata.keepOnboardingVisible === true)
+          } else {
+            // By default, always show the condensed banner for new users
+            console.log("New user or incomplete onboarding, showing banner")
+            setShowOnboardingBanner(true)
           }
+        } else {
+          // If there's an error fetching metadata, show the onboarding banner
+          console.log("Error fetching metadata, showing default banner")
+          setShowOnboardingBanner(true)
         }
       } catch (err) {
         console.error("Error checking onboarding status:", err)
         // If there's an error, we'll default to showing the onboarding
+        setShowOnboardingBanner(true)
       }
     }
 
     if (user) {
+      // Always show dashboard content by default
+      setDashboardContent(true)
+      
+      // Fetch profile and team data
       fetchProfile()
       fetchTeamData()
-      checkOnboardingStatus()
+      
+      // Check onboarding status with a small delay to ensure state updates
+      setTimeout(() => {
+        checkOnboardingStatus()
+      }, 100)
     }
   }, [user])
 
@@ -307,10 +332,12 @@ const Dashboard = () => {
       
       {/* Full Onboarding Checklist - Only when shown */}
       {profile && showFullOnboarding && (
-        <OnboardingChecklist 
-          profile={profile}
-          onComplete={handleCompletion}
-        />
+        <div className="animate-in slide-in-from-bottom-5 duration-300">
+          <OnboardingChecklist 
+            profile={profile}
+            onComplete={handleCompletion}
+          />
+        </div>
       )}
       
       {/* Dashboard Content - Either condensed onboarding or full dashboard */}

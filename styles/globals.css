@@ -350,6 +350,11 @@
     animation: fadeOut 200ms ease;
   }
   
+  /* Onboarding transition animation */
+  .onboarding-transition {
+    animation: fadeOut 150ms ease;
+  }
+  
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -360,9 +365,19 @@
     to { opacity: 0; }
   }
   
+  @keyframes slideIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  
+  @keyframes slideOut {
+    from { transform: translateY(0); opacity: 1; }
+    to { transform: translateY(-20px); opacity: 0; }
+  }
+  
   /* Add animation transitions to common elements */
   button, a, .card, .badge, .alert {
-    transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, opacity 0.2s ease-in-out;
+    transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
   }
   
   :root {
