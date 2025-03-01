@@ -56,25 +56,51 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
   // Complete onboarding
   const completeOnboarding = async () => {
     try {
+      // Add animation class for transition
+      document.body.classList.add('onboarding-transition');
+      
+      // Update session storage immediately for responsive UI
+      sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
+      
+      // Call API to persist the preference
       await fetch('/api/user/metadata', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          onboardingCompleted: true
+          onboardingCompleted: true,
+          onboardingSkipped: false // Explicitly set skipped to false
         })
-      })
+      });
       
-      if (onComplete) onComplete()
+      // Slight delay before completing to allow for animation
+      setTimeout(() => {
+        if (onComplete) onComplete(false); // Pass false to indicate completed, not skipped
+        
+        // Remove animation class after transition completes
+        setTimeout(() => {
+          document.body.classList.remove('onboarding-transition');
+        }, 300);
+      }, 200);
     } catch (error) {
-      console.error('Error completing onboarding:', error)
+      console.error('Error completing onboarding:', error);
+      
+      // Even on error, we should still update the UI
+      if (onComplete) onComplete(false);
     }
   }
 
   // Skip onboarding (but keep notification visible)
   const skipOnboarding = async () => {
     try {
+      // Add animation class for transition
+      document.body.classList.add('onboarding-transition');
+      
+      // Update session storage immediately for responsive UI
+      sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
+      
+      // Call API to persist the preference
       await fetch('/api/user/metadata', {
         method: 'POST',
         headers: {
@@ -84,11 +110,22 @@ const OnboardingChecklistCondensed = ({ profile, onViewAll, onComplete }) => {
           onboardingSkipped: true,
           keepOnboardingVisible: true
         })
-      })
+      });
       
-      if (onComplete) onComplete()
+      // Slight delay before completing to allow for animation
+      setTimeout(() => {
+        if (onComplete) onComplete(true); // Pass true to indicate skipped, not completed
+        
+        // Remove animation class after transition completes
+        setTimeout(() => {
+          document.body.classList.remove('onboarding-transition');
+        }, 300);
+      }, 200);
     } catch (error) {
-      console.error('Error skipping onboarding:', error)
+      console.error('Error skipping onboarding:', error);
+      
+      // Even on error, we should still update the UI
+      if (onComplete) onComplete(true);
     }
   }
 

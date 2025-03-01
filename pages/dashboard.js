@@ -87,71 +87,80 @@ const Dashboard = () => {
 
     const checkOnboardingStatus = async () => {
       try {
-        console.log("Checking onboarding status...")
+        console.log("Checking onboarding status...");
         
         // First check session storage for immediate state 
-        // This helps preserve state across page navigations and refreshes
+        // This provides faster UI response across page navigations and refreshes
         const sessionCompleted = sessionStorage.getItem('xFoundry_onboardingCompleted') === 'true';
         const sessionSkipped = sessionStorage.getItem('xFoundry_onboardingSkipped') === 'true';
         
+        // Default state - show dashboard content
+        setDashboardContent(true);
+        
+        // Apply session storage state immediately for better UX
         if (sessionCompleted) {
           console.log("Session storage indicates onboarding is completed");
-          setDashboardContent(true);
           setShowOnboardingBanner(false);
-          // No need to check API if we know it's completed
-          return;
-        }
-        
-        if (sessionSkipped) {
+          // Still fetch from API to ensure server and client are in sync, but don't change UI
+        } else if (sessionSkipped) {
           console.log("Session storage indicates onboarding was skipped");
-          setDashboardContent(true);
           setShowOnboardingBanner(true);
-          // Continue with API check to validate
+        } else {
+          // For new users, default to showing onboarding
+          setShowFullOnboarding(true);
+          setShowOnboardingBanner(false);
         }
         
-        // Fetch from API as backup
-        const response = await fetch("/api/user/metadata")
+        // Always fetch from API to ensure data consistency
+        const response = await fetch("/api/user/metadata");
         if (response.ok) {
-          const metadata = await response.json()
-          console.log("User metadata:", metadata)
+          const metadata = await response.json();
+          console.log("User metadata:", metadata);
           
-          // Always enable dashboard content by default
-          setDashboardContent(true)
-          
+          // If there's a conflict between session storage and API data,
+          // trust the API data and update session storage
           if (metadata.onboardingCompleted === true) {
-            // If onboarding is fully completed, don't show any onboarding UI
-            console.log("Onboarding completed, hiding banner")
-            setShowOnboardingBanner(false)
+            console.log("API confirms onboarding completed");
+            setShowFullOnboarding(false);
+            setShowOnboardingBanner(false);
+            setDashboardContent(true);
             // Update session storage
             sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
+            sessionStorage.removeItem('xFoundry_onboardingSkipped');
           } else if (metadata.onboardingSkipped === true) {
-            // If onboarding was skipped, show banner only if explicitly requested
-            console.log("Onboarding skipped, banner visibility:", metadata.keepOnboardingVisible)
-            setShowOnboardingBanner(metadata.keepOnboardingVisible === true)
+            console.log("API confirms onboarding skipped");
+            setShowFullOnboarding(false);
+            // Show banner based on keepOnboardingVisible flag
+            const keepVisible = metadata.keepOnboardingVisible !== false;
+            setShowOnboardingBanner(keepVisible);
+            setDashboardContent(true);
             // Update session storage
             sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
-          } else {
-            // Check if we already know from session storage that it was skipped
-            if (!sessionSkipped) {
-              // By default, always show the condensed banner for new users
-              console.log("New user or incomplete onboarding, showing banner")
-              setShowOnboardingBanner(true)
-            }
+            sessionStorage.removeItem('xFoundry_onboardingCompleted');
+          } else if (!sessionCompleted && !sessionSkipped) {
+            // New user with no stored preferences - show the full onboarding
+            console.log("New user - showing full onboarding");
+            setShowFullOnboarding(true);
+            setShowOnboardingBanner(false);
+            setDashboardContent(false);
           }
         } else {
-          // If there's an error fetching metadata but we have session data, trust that
+          console.warn("Error fetching metadata, using session storage as fallback");
+          
+          // If API fails but we have no session data, prefer showing onboarding
           if (!sessionCompleted && !sessionSkipped) {
-            // Default to showing the banner for new users
-            console.log("Error fetching metadata, showing default banner")
-            setShowOnboardingBanner(true)
+            setShowFullOnboarding(true);
+            setShowOnboardingBanner(false);
           }
         }
       } catch (err) {
-        console.error("Error checking onboarding status:", err)
-        // If there's an error but we have session data, trust that
-        if (!sessionStorage.getItem('xFoundry_onboardingCompleted') === 'true') {
-          // Default to showing the banner
-          setShowOnboardingBanner(true)
+        console.error("Error checking onboarding status:", err);
+        
+        // If there's an error and no reliable session data, default to showing onboarding
+        if (sessionStorage.getItem('xFoundry_onboardingCompleted') !== 'true' && 
+            sessionStorage.getItem('xFoundry_onboardingSkipped') !== 'true') {
+          setShowFullOnboarding(true);
+          setShowOnboardingBanner(false);
         }
       }
     }
@@ -245,26 +254,32 @@ const Dashboard = () => {
   };
 
   const handleCompletion = (skipOnly = false) => {
-    // Save the current state to sessionStorage for immediate persistence
-    if (skipOnly) {
-      sessionStorage.setItem('xFoundry_onboardingSkipped', 'true');
-    } else {
-      sessionStorage.setItem('xFoundry_onboardingCompleted', 'true');
-    }
-    
-    // Update local state with smooth animation
+    // Add animation class for transition
     document.body.classList.add('onboarding-transition');
     
+    // Add a small delay to ensure animation is visible
     setTimeout(() => {
+      // Update state
       setShowFullOnboarding(false);
       setDashboardContent(true);
       setShowOnboardingBanner(skipOnly); // Only show banner if skipped, not if completed
       
-      // Remove animation class after transition
+      // Remove animation class after UI updates
       setTimeout(() => {
         document.body.classList.remove('onboarding-transition');
+        
+        // Add fade-in animation to the newly visible content
+        const dashboardContent = document.querySelector('.dashboard-content');
+        if (dashboardContent) {
+          dashboardContent.classList.add('onboarding-fade-in');
+          
+          // Remove animation class after completion
+          setTimeout(() => {
+            dashboardContent.classList.remove('onboarding-fade-in');
+          }, 350);
+        }
       }, 300);
-    }, 150);
+    }, 200);
   };
   
   // These functions are now handled by the CohortGrid component
@@ -278,7 +293,7 @@ const Dashboard = () => {
       
       {/* Full Onboarding Checklist - Only when shown */}
       {profile && showFullOnboarding && (
-        <div className="animate-in slide-in-from-bottom-5 duration-300">
+        <div className="onboarding-slide-in">
           <OnboardingChecklist 
             profile={profile}
             onComplete={handleCompletion}
@@ -288,7 +303,7 @@ const Dashboard = () => {
       
       {/* Dashboard Content - Either condensed onboarding or full dashboard */}
       {profile && !showFullOnboarding && (
-        <div className="space-y-8 pt-4">
+        <div className="space-y-8 pt-4 dashboard-content">
           {/* Email mismatch alert - appears if user authenticated with different email than verified */}
           {user?.emailMismatch && <EmailMismatchAlert emailMismatch={user.emailMismatch} />}
           
@@ -296,7 +311,20 @@ const Dashboard = () => {
           {showOnboardingBanner && (
             <OnboardingChecklistCondensed 
               profile={profile}
-              onViewAll={() => setShowFullOnboarding(true)}
+              onViewAll={() => {
+                // Add animation for transitioning to full onboarding
+                document.body.classList.add('onboarding-transition');
+                
+                setTimeout(() => {
+                  setShowFullOnboarding(true);
+                  setShowOnboardingBanner(false);
+                  
+                  // Remove animation class after UI updates
+                  setTimeout(() => {
+                    document.body.classList.remove('onboarding-transition');
+                  }, 300);
+                }, 200);
+              }}
               onComplete={handleCompletion}
             />
           )}
