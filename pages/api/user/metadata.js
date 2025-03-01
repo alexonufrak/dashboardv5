@@ -67,51 +67,41 @@ export default withApiAuthRequired(async function userMetadata(req, res) {
       }
 
       try {
-        // Only attempt to use the Auth0 Management API if properly configured
-        if (shouldAttemptAuth0ManagementAPI()) {
-          try {
-            console.log(`Attempting to use Auth0 Management API for user ${userId}...`);
-            
-            // Get current metadata from Auth0
-            const userResponse = await auth0Client.getUser({ id: userId });
-            const userInfo = userResponse.data || userResponse;
-            
-            // Merge existing metadata with updates
-            const currentMetadata = userInfo.user_metadata || {};
-            const newMetadata = { ...currentMetadata, ...updates };
-            
-            // Update user metadata in Auth0
-            await auth0Client.updateUserMetadata({ id: userId }, newMetadata);
-            
-            console.log('Auth0 metadata update successful');
-            
-            // Also store in our fallback storage
-            metadataStore.set(userId, newMetadata);
-            
-            return res.status(200).json(newMetadata);
-          } catch (auth0Error) {
-            // If Auth0 API fails, log detailed error and fall back to in-memory storage
-            console.warn('Auth0 Management API access failed:', auth0Error.message);
-            console.warn('Error details:', auth0Error);
-            console.log('Falling back to in-memory metadata storage');
-            
-            // Continue to fallback approach
-          }
-        } else {
-          console.log('Auth0 Management API not configured, using in-memory storage');
-        }
-        
-        // Fallback: Use in-memory storage
+        // Get current metadata state
         const sessionMetadata = session.user.user_metadata || {};
         const storedMetadata = metadataStore.get(userId) || {};
         const currentMetadata = { ...sessionMetadata, ...storedMetadata };
         
-        // Merge with updates
+        // Merge with new updates
         const newMetadata = { ...currentMetadata, ...updates };
         
-        // Store in memory
+        // First, store in memory as a fallback (always do this)
         metadataStore.set(userId, newMetadata);
         
+        // Attempt to use Auth0 Management API if configured properly
+        if (shouldAttemptAuth0ManagementAPI()) {
+          try {
+            console.log(`Attempting to use Auth0 Management API for user ${userId}...`);
+            
+            // Update the metadata in Auth0 using the update method
+            await auth0Client.updateUserMetadata({ id: userId }, newMetadata);
+            
+            console.log('Auth0 metadata update successful');
+          } catch (auth0Error) {
+            // Log API errors but don't fail the request since we have in-memory backup
+            console.warn('Auth0 Management API access failed:', auth0Error.message);
+            console.log('Continuing to use in-memory metadata storage');
+            
+            // Log more details for debugging in development
+            if (process.env.NODE_ENV === 'development') {
+              console.error('Auth0 API error details:', auth0Error);
+            }
+          }
+        } else {
+          console.log('Auth0 Management API not configured, using in-memory storage only');
+        }
+        
+        // Return the updated metadata, whether it was updated in Auth0 or only in memory
         return res.status(200).json(newMetadata);
       } catch (error) {
         console.error('Error updating user metadata:', error);
