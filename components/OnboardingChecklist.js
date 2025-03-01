@@ -5,14 +5,12 @@ import { useRouter } from 'next/router'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { 
   CheckCircle, 
   Circle, 
   Users, 
-  UserRound, 
   ChevronDown, 
   ChevronUp,
   ArrowRight,
@@ -36,28 +34,22 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
       title: 'Create an account', 
       completed: true, 
       description: 'Sign up with your institutional email',
-      icon: <UserPlus className="h-5 w-5" />
+      icon: <UserPlus className="h-5 w-5" />,
+      expanded: false
     },
     { 
       id: 'selectCohort', 
       title: 'Get involved', 
       completed: false, 
       description: 'Select a program to join',
-      icon: <Compass className="h-5 w-5" />
-    },
-    { 
-      id: 'connexions', 
-      title: 'Join ConneXions', 
-      completed: false, 
-      description: 'Connect with the community',
-      icon: <Users className="h-5 w-5" />
+      icon: <Compass className="h-5 w-5" />,
+      expanded: false
     }
   ])
   
   // UI state
-  const [activeTab, setActiveTab] = useState("overview")
   const [isExpanded, setIsExpanded] = useState(true)
-  const [completionPercentage, setCompletionPercentage] = useState(33)
+  const [completionPercentage, setCompletionPercentage] = useState(50)
   
   // Functional state
   const [activeFilloutForm, setActiveFilloutForm] = useState(null)
@@ -84,6 +76,9 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     
     // Always mark register step as completed
     completeStep('register', false);
+    
+    // Expand the first step by default
+    setStepExpanded('register', true);
   }, []);
   
   // When profile changes, fetch team data
@@ -100,10 +95,13 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     const percentage = Math.round((completedCount / steps.length) * 100);
     setCompletionPercentage(percentage);
     
-    // Find first incomplete step and set as active tab
-    const firstIncompleteStep = steps.find(step => !step.completed);
-    if (firstIncompleteStep && activeTab === "overview") {
-      setActiveTab(firstIncompleteStep.id);
+    // Find first incomplete step and expand it
+    const completedSteps = steps.filter(step => step.completed);
+    if (completedSteps.length < steps.length) {
+      const firstIncompleteStep = steps.find(step => !step.completed);
+      if (firstIncompleteStep) {
+        expandOnlyStep(firstIncompleteStep.id);
+      }
     }
   }, [steps]);
   
@@ -132,6 +130,27 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     } catch (error) {
       console.error('Error loading user metadata:', error);
     }
+  };
+  
+  // Set a step's expanded state
+  const setStepExpanded = (stepId, isExpanded) => {
+    setSteps(prevSteps => 
+      prevSteps.map(step => 
+        step.id === stepId 
+          ? { ...step, expanded: isExpanded } 
+          : step
+      )
+    );
+  };
+  
+  // Expand only one step, collapse all others
+  const expandOnlyStep = (stepId) => {
+    setSteps(prevSteps => 
+      prevSteps.map(step => ({
+        ...step,
+        expanded: step.id === stepId
+      }))
+    );
   };
   
   // Fetch user teams
@@ -229,10 +248,10 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
             // Auto-complete the onboarding if all steps are done
             completeOnboarding();
           } else {
-            // Find and set the next incomplete step as active tab
+            // Find and expand the next incomplete step
             const nextIncompleteStep = updatedSteps.find(s => !s.completed);
             if (nextIncompleteStep) {
-              setActiveTab(nextIncompleteStep.id);
+              expandOnlyStep(nextIncompleteStep.id);
             }
           }
         }
@@ -240,6 +259,17 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         console.error('Error saving step completion to metadata:', error);
       }
     }
+  };
+  
+  // Toggle a step's expanded state
+  const toggleStepExpanded = (stepId) => {
+    setSteps(prevSteps => 
+      prevSteps.map(step => 
+        step.id === stepId 
+          ? { ...step, expanded: !step.expanded } 
+          : step
+      )
+    );
   };
   
   // Toggle the entire checklist expanded/collapsed state
@@ -352,68 +382,131 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     }
   };
   
-  // Skip onboarding
-  const skipOnboarding = async () => {
-    try {
-      // Mark as skipped but still visible in condensed form
-      await fetch('/api/user/metadata', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          onboardingSkipped: true,
-          keepOnboardingVisible: true
-        })
-      });
-      
-      // Call parent callback with skipOnly=true
-      if (onComplete) {
-        onComplete(true, false);
-      }
-    } catch (error) {
-      console.error('Error skipping onboarding:', error);
-      // Still try to complete UI flow
-      if (onComplete) {
-        onComplete(true, false);
-      }
-    }
-  };
-  
   // Check if all steps are completed
   const allStepsCompleted = steps.every(step => step.completed);
   
-  // Render the progress bar with step indicators
-  const renderProgressBar = () => {
+  // Render an individual step
+  const renderStep = (step) => {
+    const isCompleted = step.completed;
+    
     return (
-      <div className="relative mt-6 mb-8">
-        <Progress value={completionPercentage} className="h-2" />
-        <div className="flex justify-between mt-1">
-          {steps.map((step, index) => {
-            const position = `${(index / (steps.length - 1)) * 100}%`;
-            return (
-              <div 
-                key={step.id}
-                className="absolute flex flex-col items-center"
-                style={{ left: position, transform: 'translateX(-50%)' }}
-              >
-                <div 
-                  className={`
-                    w-4 h-4 rounded-full flex items-center justify-center 
-                    ${step.completed 
-                      ? 'bg-primary text-white' 
-                      : 'bg-gray-200 text-gray-500'}
-                  `}
-                >
-                  {step.completed && <CheckCircle className="h-3 w-3" />}
-                </div>
-                <span className="text-xs mt-1 whitespace-nowrap font-medium text-gray-500">
-                  {step.title}
-                </span>
-              </div>
-            );
-          })}
+      <div 
+        key={step.id}
+        className={`
+          border rounded-lg overflow-hidden mb-4 shadow-sm
+          ${isCompleted ? 'border-green-100' : 'border-gray-200'}
+        `}
+      >
+        {/* Step Header */}
+        <div 
+          className={`
+            flex items-center p-4 cursor-pointer
+            ${isCompleted ? 'bg-green-50' : 'bg-gray-50'}
+          `}
+          onClick={() => toggleStepExpanded(step.id)}
+        >
+          <div className={`
+            shrink-0 w-10 h-10 flex items-center justify-center rounded-full mr-4
+            ${isCompleted ? 'text-green-600 bg-green-100' : 'text-primary bg-primary/10'}
+          `}>
+            {isCompleted ? <CheckCircle className="h-5 w-5" /> : step.icon}
+          </div>
+          
+          <div className="grow">
+            <h3 className={`
+              text-base font-medium
+              ${isCompleted ? 'text-green-800' : 'text-gray-800'}
+            `}>
+              {step.title}
+            </h3>
+            <p className="text-sm text-muted-foreground">{step.description}</p>
+          </div>
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="ml-2 h-8 w-8 p-0"
+          >
+            {step.expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
         </div>
+        
+        {/* Step Content */}
+        {step.expanded && (
+          <div className="p-4 border-t border-gray-100">
+            {/* Register step content */}
+            {step.id === 'register' && (
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle className="h-8 w-8 text-green-600" />
+                </div>
+                <h3 className="text-lg font-medium text-green-700 mb-3">
+                  Your account is set up!
+                </h3>
+                <p className="text-muted-foreground max-w-lg mb-6">
+                  Welcome to xFoundry! You now have access to ConneXions, our community hub where you 
+                  can connect with other students, mentors, and faculty in your program.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button 
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => window.open("https://connexions.xfoundry.org", "_blank")}
+                  >
+                    Visit ConneXions
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      expandOnlyStep('selectCohort');
+                    }}
+                  >
+                    Continue to next step
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {/* Select Cohort step content */}
+            {step.id === 'selectCohort' && !isCompleted && (
+              <div>
+                <h3 className="text-lg font-medium mb-2">
+                  Choose a program to join
+                </h3>
+                <p className="text-muted-foreground mb-6">
+                  Select from the available programs below to apply and get started with xFoundry
+                </p>
+                
+                {/* Available Programs */}
+                <CohortGrid 
+                  cohorts={profile.cohorts || []}
+                  profile={profile}
+                  isLoading={isLoading}
+                  onApply={handleCohortApply}
+                  onApplySuccess={(cohort) => completeStep('selectCohort')}
+                  columns={{ default: 1, md: 2, lg: 2 }}
+                  emptyMessage="No programs are currently available for your institution."
+                />
+              </div>
+            )}
+            
+            {/* Select Cohort completed content */}
+            {step.id === 'selectCohort' && isCompleted && (
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle className="h-8 w-8 text-green-600" />
+                </div>
+                <h3 className="text-xl font-medium text-green-700 mb-2">
+                  You've applied to a program!
+                </h3>
+                <p className="text-muted-foreground max-w-md mb-4">
+                  Your application has been submitted. You'll receive updates about your application status soon.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     );
   };
@@ -434,7 +527,7 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
               Welcome to xFoundry!
             </CardTitle>
             <CardDescription className="mt-1">
-              Complete these steps to set up your account
+              Let's get you started in just a few steps
             </CardDescription>
           </div>
           <Button 
@@ -514,214 +607,27 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
       {/* Expanded content */}
       {isExpanded && (
         <>
-          <CardContent className="p-0">
-            <Tabs 
-              value={activeTab} 
-              onValueChange={setActiveTab}
-              className="w-full"
-            >
-              {/* Tab List */}
-              <div className="border-b px-6 pt-4">
-                <TabsList className="w-full grid grid-cols-4 bg-transparent p-0 gap-2 h-auto">
-                  <TabsTrigger 
-                    value="overview"
-                    className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg text-sm py-2 px-3 h-auto"
-                  >
-                    Overview
-                  </TabsTrigger>
-                  
-                  {steps.map((step) => (
-                    <TabsTrigger 
-                      key={step.id}
-                      value={step.id}
-                      className="data-[state=active]:bg-primary data-[state=active]:text-white rounded-lg text-sm py-2 px-3 h-auto"
-                      disabled={step.id === 'register'}
-                    >
-                      {step.title}
-                      {step.completed && (
-                        <CheckCircle className="h-3.5 w-3.5 ml-1 text-green-400" />
-                      )}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
+          <CardContent className="p-6">
+            {/* Progress indicator */}
+            <div className="mb-6">
+              <div className="flex justify-between mb-1">
+                <div className="text-sm font-medium text-primary">Your progress</div>
+                <div className="text-sm text-muted-foreground">
+                  {steps.filter(s => s.completed).length}/{steps.length} complete
+                </div>
               </div>
-              
-              {/* Overview Tab Content */}
-              <TabsContent value="overview" className="mt-0 px-6 py-6">
-                <div className="text-center mb-4">
-                  <h3 className="text-lg font-medium mb-2">
-                    Your onboarding progress
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Complete these steps to get started with xFoundry
-                  </p>
-                </div>
-                
-                {/* Progress Bar */}
-                {renderProgressBar()}
-                
-                {/* Step List */}
-                <div className="space-y-3 mt-8">
-                  {steps.map((step) => (
-                    <div 
-                      key={step.id}
-                      className={`
-                        flex items-center p-4 rounded-lg border border-gray-100 
-                        ${step.completed ? 'bg-green-50' : 'bg-white hover:bg-gray-50'}
-                        transition-colors duration-200
-                      `}
-                    >
-                      <div className={`
-                        w-10 h-10 rounded-full flex items-center justify-center mr-4
-                        ${step.completed 
-                          ? 'bg-green-100 text-green-600' 
-                          : 'bg-primary/10 text-primary'}
-                      `}>
-                        {step.completed ? <CheckCircle className="h-5 w-5" /> : step.icon}
-                      </div>
-                      
-                      <div className="flex-1">
-                        <h4 className={`
-                          font-medium
-                          ${step.completed ? 'text-green-700' : 'text-gray-900'}
-                        `}>
-                          {step.title}
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          {step.description}
-                        </p>
-                      </div>
-                      
-                      {!step.completed && step.id !== 'register' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="ml-2"
-                          onClick={() => setActiveTab(step.id)}
-                        >
-                          Start
-                          <ArrowRight className="ml-1 h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                      
-                      {step.completed && (
-                        <Badge variant="success" className="ml-2 bg-green-100 text-green-800 hover:bg-green-200">
-                          Completed
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </TabsContent>
-              
-              {/* Register Tab Content (always completed) */}
-              <TabsContent value="register" className="mt-0 px-6 py-6">
-                <div className="flex items-center justify-center flex-col text-center p-8">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                    <CheckCircle className="h-8 w-8 text-green-600" />
-                  </div>
-                  <h3 className="text-xl font-medium text-green-700 mb-2">
-                    Account created successfully!
-                  </h3>
-                  <p className="text-muted-foreground max-w-md">
-                    You've successfully created your xFoundry account. Continue with the next steps to complete your onboarding.
-                  </p>
-                </div>
-              </TabsContent>
-              
-              {/* Select Cohort Tab Content */}
-              <TabsContent value="selectCohort" className="mt-0 px-6 py-6">
-                {!steps.find(s => s.id === 'selectCohort')?.completed ? (
-                  <>
-                    <h3 className="text-lg font-medium mb-2">
-                      Select a program to apply for
-                    </h3>
-                    <p className="text-muted-foreground mb-6">
-                      Choose from the available programs below to join the xFoundry community
-                    </p>
-                    
-                    {/* Available Programs */}
-                    <CohortGrid 
-                      cohorts={profile.cohorts || []}
-                      profile={profile}
-                      isLoading={isLoading}
-                      onApply={handleCohortApply}
-                      onApplySuccess={(cohort) => completeStep('selectCohort')}
-                      columns={{ default: 1, md: 2, lg: 2 }}
-                      emptyMessage="No programs are currently available for your institution."
-                    />
-                  </>
-                ) : (
-                  <div className="flex items-center justify-center flex-col text-center p-8">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                      <CheckCircle className="h-8 w-8 text-green-600" />
-                    </div>
-                    <h3 className="text-xl font-medium text-green-700 mb-2">
-                      You've applied to a program!
-                    </h3>
-                    <p className="text-muted-foreground max-w-md mb-4">
-                      Your application has been submitted. You'll receive updates about your application status soon.
-                    </p>
-                    <Button variant="outline" onClick={() => setActiveTab("connexions")}>
-                      Continue to next step
-                      <ArrowRight className="ml-1 h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </TabsContent>
-              
-              {/* ConneXions Tab Content */}
-              <TabsContent value="connexions" className="mt-0 px-6 py-6">
-                {!steps.find(s => s.id === 'connexions')?.completed ? (
-                  <div className="flex flex-col items-center text-center p-4">
-                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                      <Users className="h-8 w-8 text-primary" />
-                    </div>
-                    <h3 className="text-xl font-medium mb-4">
-                      Join ConneXions Community
-                    </h3>
-                    <p className="text-muted-foreground max-w-lg mb-6">
-                      Connect with students, mentors, and faculty in your program. Join ConneXions to collaborate, share resources, and get support for your projects.
-                    </p>
-                    <Button 
-                      className="gap-2"
-                      onClick={() => {
-                        completeStep('connexions');
-                        window.open("https://connexions.xfoundry.org", "_blank");
-                      }}
-                    >
-                      Go to ConneXions
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center flex-col text-center p-8">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                      <CheckCircle className="h-8 w-8 text-green-600" />
-                    </div>
-                    <h3 className="text-xl font-medium text-green-700 mb-2">
-                      You're connected!
-                    </h3>
-                    <p className="text-muted-foreground max-w-md mb-4">
-                      You've successfully joined the ConneXions community.
-                    </p>
-                    <Button 
-                      variant="outline" 
-                      className="gap-2"
-                      onClick={() => window.open("https://connexions.xfoundry.org", "_blank")}
-                    >
-                      Visit ConneXions
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
+              <Progress value={completionPercentage} className="h-2" />
+            </div>
+            
+            {/* Steps */}
+            <div className="space-y-1">
+              {steps.map(renderStep)}
+            </div>
           </CardContent>
           
           <CardFooter className="justify-between bg-gray-50 border-t border-gray-100 p-4">
             <span className="text-sm text-muted-foreground">
-              {completionPercentage}% complete • {steps.filter(s => s.completed).length} of {steps.length} tasks done
+              {completionPercentage}% complete
             </span>
             
             {allStepsCompleted ? (
@@ -734,9 +640,9 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
             ) : (
               <Button 
                 variant="outline"
-                onClick={skipOnboarding}
+                onClick={toggleExpanded}
               >
-                Continue to Dashboard
+                Collapse Checklist
               </Button>
             )}
           </CardFooter>
