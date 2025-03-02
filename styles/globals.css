@@ -333,6 +333,19 @@
 }
 
 @layer base {
+  /* Global cursor styles */
+  button, 
+  .btn,
+  a,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"],
+  input[type="reset"],
+  .cursor-pointer,
+  select {
+    cursor: pointer !important;
+  }
+  
   /* Simple, subtle animation transitions */
   .dialog-overlay[data-state="open"] {
     animation: fadeIn 180ms ease;
@@ -461,6 +474,28 @@
   /* Add animation transitions to common elements */
   button, a, .card, .badge, .alert {
     transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+  }
+  
+  /* Specific cursor fixes for Shadcn components */
+  .btn, 
+  [class*="button"],
+  [class*="Button"],
+  [class*="btn"],
+  [data-state],
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"],
+  [type="checkbox"],
+  [type="radio"],
+  .accordion-trigger,
+  .dropdown-item,
+  .menu-item,
+  .tabs-trigger,
+  .card[onclick],
+  .clickable,
+  .card.cursor-pointer,
+  .hover\\:cursor-pointer:hover {
+    cursor: pointer !important;
   }
   
   :root {
