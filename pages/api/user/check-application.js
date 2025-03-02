@@ -3,7 +3,7 @@ import { base } from '../../../lib/airtable';
 import { getCompleteUserProfile } from '../../../lib/userProfile';
 
 /**
- * API endpoint to get all applications for the current user
+ * API endpoint to check if the current user has applied to a specific cohort
  */
 export default withApiAuthRequired(async function checkApplication(req, res) {
   if (req.method !== 'GET') {
@@ -11,6 +11,16 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
   }
 
   try {
+    // Get cohort ID from query params
+    const { cohortId } = req.query;
+    
+    if (!cohortId) {
+      return res.status(400).json({ 
+        error: 'Missing cohort ID',
+        applications: [] 
+      });
+    }
+
     // Get the user session
     const session = await getSession(req, res);
     
@@ -23,7 +33,7 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
     
     if (!userProfile || !userProfile.contactId) {
       return res.status(404).json({ 
-        error: 'User profile not found or missing contact ID',
+        error: 'User profile not found',
         applications: []
       });
     }
@@ -42,56 +52,36 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
       });
     }
 
-    // Try to find applications for this contact
+    // Query applications where Contact is the user's contact ID AND Cohort is the specified cohort
     let records = [];
     
     try {
-      // Query applications where Contact field contains the user's contact ID
-      // Using proper formula for linked records
       records = await applicationsTable.select({
-        filterByFormula: `FIND("${contactId}", ARRAYJOIN(Contact))>0`
+        filterByFormula: `AND(
+          FIND("${contactId}", ARRAYJOIN(Contact))>0,
+          FIND("${cohortId}", ARRAYJOIN(Cohort))>0
+        )`
       }).firstPage();
     } catch (error) {
-      // If the first query fails, try alternative format
-      try {
-        records = await applicationsTable.select({
-          filterByFormula: `{Contact} = "${contactId}"`
-        }).firstPage();
-      } catch (secondError) {
-        // Just log and continue with empty records
-        console.error('Error finding applications:', secondError);
-      }
+      console.error('Error finding applications:', error);
     }
     
     // Transform to simpler format
-    const applications = records.map(record => {
-      // Get cohort ID from the schema fields
-      let cohortId = null;
-      
-      // Check for Cohort field (linked record)
-      if (record.fields.Cohort && Array.isArray(record.fields.Cohort)) {
-        cohortId = record.fields.Cohort[0];
-      }
-      
-      // Get application status from Status field
-      const status = record.fields.Status || 'Submitted';
-      
-      return {
-        id: record.id,
-        cohortId: cohortId,
-        status: status,
-        createdAt: record._rawJson.createdTime
-      };
-    });
+    const applications = records.map(record => ({
+      id: record.id,
+      cohortId: cohortId,
+      status: record.fields.Status || 'Submitted',
+      createdAt: record._rawJson.createdTime
+    }));
 
-    // Return all applications
+    // Return applications matching the criteria
     return res.status(200).json({
       applications
     });
   } catch (error) {
-    console.error('Error fetching applications:', error);
+    console.error('Error checking application:', error);
     return res.status(500).json({
-      error: 'Failed to fetch applications',
+      error: 'Failed to check application',
       applications: []
     });
   }
