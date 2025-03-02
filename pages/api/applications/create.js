@@ -1,5 +1,5 @@
 import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0'
-import { getUserProfile, base } from '@/lib/airtable'
+import { getUserProfile, base, createParticipationRecord } from '@/lib/airtable'
 
 /**
  * API handler to create a new application
@@ -117,6 +117,17 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
       throw new Error('Failed to create application record')
     }
     
+    // Step 3: After application is created, try to create a participation record
+    // This is based on the initiative's enrollment type (Immediate vs. Review)
+    let participationResult = null;
+    try {
+      participationResult = await createParticipationRecord(userProfile.contactId, cohortId);
+      console.log("Participation record creation result:", participationResult);
+    } catch (participationError) {
+      // Log but don't fail if participation creation fails
+      console.error("Error creating participation record:", participationError);
+    }
+    
     // Return success response
     return res.status(201).json({
       id: applicationRecord.id,
@@ -124,7 +135,9 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
       contactId: userProfile.contactId,
       cohortId: cohortId,
       teamId: teamId,
-      createdTime: applicationRecord.fields['Created'] || new Date().toISOString()
+      createdTime: applicationRecord.fields['Created'] || new Date().toISOString(),
+      // Include participation information if available
+      participation: participationResult || null
     })
   } catch (error) {
     console.error('Error creating application:', error)

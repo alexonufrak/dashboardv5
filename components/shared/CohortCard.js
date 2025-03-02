@@ -112,75 +112,63 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   const [conflictDetails, setConflictDetails] = useState(null)
   
   // Check if a user is already part of an initiative or if their team is part of a cohort
-  const checkInitiativeRestrictions = () => {
-    // Get the current cohort's initiative
-    const currentInitiativeName = cohort.initiativeDetails?.name || "";
-    const currentInitiativeId = cohort.initiativeDetails?.id;
-    
-    console.log("Checking initiative restrictions for:", currentInitiativeName);
-    console.log("User has applications:", applications);
-    
-    // Skip check for Xperiment initiative (which has no restrictions)
-    if (currentInitiativeName.includes("Xperiment")) {
-      console.log("Skipping restrictions for Xperiment initiative");
-      return { allowed: true };
-    }
-    
-    // Check if current initiative is Xperience or Xtrapreneurs
-    const isXperience = currentInitiativeName.toLowerCase().includes("xperience");
-    const isXtrapreneurs = currentInitiativeName.toLowerCase().includes("xtrapreneurs");
-    
-    if (!isXperience && !isXtrapreneurs) {
-      console.log("No restrictions for initiative:", currentInitiativeName);
-      return { allowed: true }; // No restrictions for other initiatives
-    }
-    
-    console.log(`Checking conflicts for ${isXperience ? "Xperience" : "Xtrapreneurs"} initiative`);
-    
-    // Look for applications in conflicting initiatives
-    let conflictingApplication = null;
-    let conflictingInitiative = null;
-    
-    if (Array.isArray(applications)) {
-      for (const app of applications) {
-        console.log("Checking application:", app);
-        // Find matching cohort in cohort details
-        const appCohort = app.cohortDetails || { initiativeDetails: {} };
-        const appInitiative = appCohort.initiativeDetails?.name || "";
-        
-        console.log(`Application initiative: "${appInitiative}"`);
-        
-        // Check if this is a conflicting initiative
-        if ((isXperience && appInitiative.toLowerCase().includes("xtrapreneurs")) || 
-            (isXtrapreneurs && appInitiative.toLowerCase().includes("xperience"))) {
-          console.log("Found conflicting initiative:", appInitiative);
-          conflictingApplication = app;
-          conflictingInitiative = appInitiative;
-          break;
-        }
-      }
-    } else {
-      console.warn("Applications is not an array:", applications);
-    }
-    
-    if (conflictingApplication) {
-      console.log("Returning conflict details:", {
-        currentInitiative: currentInitiativeName,
-        conflictingInitiative: conflictingInitiative
-      });
+  const checkInitiativeRestrictions = async () => {
+    try {
+      // Get the current cohort's initiative
+      const currentInitiativeName = cohort.initiativeDetails?.name || "";
+      const currentInitiativeId = cohort.initiativeDetails?.id;
       
-      return {
-        allowed: false,
-        reason: "initiative_conflict",
-        details: {
-          currentInitiative: currentInitiativeName,
-          conflictingInitiative: conflictingInitiative
-        }
-      };
+      console.log("Checking initiative restrictions for:", currentInitiativeName);
+      
+      // Skip check for Xperiment initiative (which has no restrictions)
+      if (currentInitiativeName.includes("Xperiment")) {
+        console.log("Skipping restrictions for Xperiment initiative");
+        return { allowed: true };
+      }
+      
+      // Check if current initiative is Xperience or Xtrapreneurs
+      const isXperience = currentInitiativeName.toLowerCase().includes("xperience");
+      const isXtrapreneurs = currentInitiativeName.toLowerCase().includes("xtrapreneurs");
+      
+      if (!isXperience && !isXtrapreneurs) {
+        console.log("No restrictions for initiative:", currentInitiativeName);
+        return { allowed: true }; // No restrictions for other initiatives
+      }
+      
+      // We need to make an API call to check if the user has participation records with conflicting initiatives
+      if (!profile?.contactId) {
+        console.error("No contact ID available for initiative conflict check");
+        return { allowed: true };
+      }
+      
+      console.log(`Calling API to check participation records for contact ${profile.contactId}`);
+      const response = await fetch(`/api/user/check-initiative-conflicts?initiative=${encodeURIComponent(currentInitiativeName)}`);
+      
+      if (!response.ok) {
+        console.error("Error checking initiative conflicts:", response.statusText);
+        return { allowed: true }; // Allow if we can't check
+      }
+      
+      const data = await response.json();
+      
+      if (data.hasConflict) {
+        console.log("API found conflicting initiative:", data.conflictingInitiative);
+        return {
+          allowed: false,
+          reason: "initiative_conflict",
+          details: {
+            currentInitiative: currentInitiativeName,
+            conflictingInitiative: data.conflictingInitiative
+          }
+        };
+      }
+      
+      console.log("No conflicts found, allowing application");
+      return { allowed: true };
+    } catch (error) {
+      console.error("Error in initiative restriction check:", error);
+      return { allowed: true }; // In case of error, allow the application
     }
-    
-    console.log("No conflicts found, allowing application");
-    return { allowed: true };
   };
   
   // Handle apply button click
@@ -188,8 +176,8 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
     console.log("Applying to cohort:", cohort)
     console.log("Participation type:", participationType)
     
-    // Check for initiative restrictions
-    const restrictionCheck = checkInitiativeRestrictions();
+    // Check for initiative restrictions (async function now)
+    const restrictionCheck = await checkInitiativeRestrictions();
     if (!restrictionCheck.allowed) {
       console.log("Application restricted:", restrictionCheck);
       setConflictDetails(restrictionCheck.details);
