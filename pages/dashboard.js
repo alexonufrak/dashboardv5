@@ -183,21 +183,20 @@ const Dashboard = () => {
     }
   }, [user]);
   
-  // Update application tracking when new applications are found
+  // Track application submissions but don't auto-complete onboarding
   useEffect(() => {
     // Only run this effect when applications load and we have any
     if (!isLoadingApplications && applications.length > 0) {
       console.log('Applications found, updating application tracking:', applications.length);
       
-      // Simple approach - just POST to the metadata API to track the step
-      // We don't need to depend on current metadata state anymore
+      // Track that the user has submitted an application, but don't set onboardingCompleted
       fetch('/api/user/metadata', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          // Just mark that the user has submitted an application
+          // Mark the steps but don't set onboardingCompleted flag
           onboarding: ['register', 'selectCohort']
         })
       })
@@ -415,21 +414,17 @@ const Dashboard = () => {
                     }
                   ]);
                   
-                  // Update onboarding steps to include selectCohort, but don't hide the checklist
-                  // This allows user to see the confirmation screen
-                  fetch('/api/user/metadata').then(res => res.json()).then(metadata => {
-                    const currentSteps = metadata.onboarding || ['register'];
-                    if (!currentSteps.includes('selectCohort')) {
-                      fetch('/api/user/metadata', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                          onboarding: [...currentSteps, 'selectCohort']
-                        })
-                      });
-                    }
+                  // Simpler approach - just update steps without needing to check current state
+                  fetch('/api/user/metadata', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                      onboarding: ['register', 'selectCohort']
+                    })
+                  }).catch(err => {
+                    console.error("Error updating steps after application:", err);
                   });
                 }}
               />

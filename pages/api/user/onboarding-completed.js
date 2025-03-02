@@ -1,4 +1,5 @@
 import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0';
+import auth0Client from '../../../lib/auth0';
 
 /**
  * Simple dedicated endpoint just for setting onboarding completion
@@ -14,30 +15,46 @@ export default withApiAuthRequired(async function onboardingCompleted(req, res) 
     
     const userId = session.user.sub;
     
+    // Ensure we have a global map to track completed users
+    if (typeof global.onboardingCompletedUsers === 'undefined') {
+      global.onboardingCompletedUsers = new Map();
+    }
+    
     // GET: Check if onboarding is completed
     if (req.method === 'GET') {
-      // Check in memory and session
-      const completed = global.onboardingCompletedUsers?.has(userId) === true;
+      // Check if user is in our global map
+      const completed = global.onboardingCompletedUsers.has(userId);
       
-      return res.status(200).json({ 
-        completed, 
-        userId 
-      });
+      // If not in the map, check Auth0 metadata as a fallback
+      if (!completed) {
+        try {
+          // Try to get from actual metadata if possible
+          const response = await fetch('/api/user/metadata');
+          if (response.ok) {
+            const metadata = await response.json();
+            
+            // If we find it's completed in metadata, add to our map for faster lookups
+            if (metadata.onboardingCompleted === true) {
+              global.onboardingCompletedUsers.set(userId, true);
+              return res.status(200).json({ completed: true, userId });
+            }
+          }
+        } catch (err) {
+          console.error("Error checking metadata for onboarding status:", err);
+        }
+      }
+      
+      return res.status(200).json({ completed, userId });
     }
     
     // POST: Mark onboarding as completed
     if (req.method === 'POST') {
-      // Initialize the global set if it doesn't exist
-      if (!global.onboardingCompletedUsers) {
-        global.onboardingCompletedUsers = new Set();
-      }
+      // Add the user to the global map
+      global.onboardingCompletedUsers.set(userId, true);
       
-      // Add the user to the completed set
-      global.onboardingCompletedUsers.add(userId);
-      
-      // Make regular metadata update in the background, but don't wait for it
+      // Make the update to Auth0 metadata
       try {
-        fetch('/api/user/metadata', {
+        const metadataResponse = await fetch('/api/user/metadata', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -46,9 +63,13 @@ export default withApiAuthRequired(async function onboardingCompleted(req, res) 
             onboardingCompleted: true,
             completedAt: new Date().toISOString()
           })
-        }).catch(e => console.error('Background metadata update failed:', e));
+        });
+        
+        if (!metadataResponse.ok) {
+          console.warn("Failed to update onboarding in metadata, but global map is updated");
+        }
       } catch (error) {
-        console.error('Failed to trigger background metadata update:', error);
+        console.error('Failed to update metadata:', error);
       }
       
       return res.status(200).json({ success: true });
