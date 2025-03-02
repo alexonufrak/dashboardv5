@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Users, Info, Pencil } from "lucide-react";
 import TeamDetailModal from "./TeamDetailModal";
+import TeamEditDialog from "./TeamEditDialog";
 import CohortCard from "./shared/CohortCard";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -20,6 +21,7 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
   const [currentTeam, setCurrentTeam] = useState(team);
   const [showDetails, setShowDetails] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showTeamEditDialog, setShowTeamEditDialog] = useState(false);
   const [selectedCohort, setSelectedCohort] = useState(null);
   const [teamCohorts, setTeamCohorts] = useState([]);
   const [isLoadingCohorts, setIsLoadingCohorts] = useState(false);
@@ -183,10 +185,7 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
               variant="outline"
               className="flex-1"
               size="default"
-              onClick={() => {
-                setShowDetails(true);
-                setTimeout(() => setShowEditDialog(true), 100);
-              }}
+              onClick={() => setShowTeamEditDialog(true)}
             >
               <Pencil className="h-4 w-4" />
               Edit Details
@@ -199,6 +198,13 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
         team={currentTeam} 
         isOpen={showDetails} 
         onClose={() => setShowDetails(false)} 
+        onTeamUpdated={handleTeamUpdated}
+      />
+      
+      <TeamEditDialog 
+        team={currentTeam}
+        open={showTeamEditDialog}
+        onClose={() => setShowTeamEditDialog(false)}
         onTeamUpdated={handleTeamUpdated}
       />
       
