@@ -88,25 +88,25 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     
     // Add Xtrapreneurs-specific data if applicable
     if (applicationType === 'xtrapreneurs') {
-      applicationData['What are you looking to gain as a result of participating in Xperience?'] = reason;
+      applicationData['Xtrapreneurs/Reason'] = reason;
       
       // Map the commitment level to a more descriptive value
       let commitmentDescription;
       switch (commitment) {
         case 'weekly':
-          commitmentDescription = 'Weekly - I can commit to weekly engagement';
+          commitmentDescription = 'Weekly';
           break;
         case 'monthly':
-          commitmentDescription = 'Monthly - I can participate monthly';
+          commitmentDescription = 'Monthly';
           break;
         case 'occasionally':
-          commitmentDescription = 'Occasionally - I will participate when time permits';
+          commitmentDescription = 'Occasionally';
           break;
         default:
           commitmentDescription = commitment;
       }
       
-      applicationData['How much time do you want to commit to Xtrapreneurs this year?'] = commitmentDescription;
+      applicationData['Xtrapreneurs/Commitment'] = commitmentDescription;
     }
     
     // Create the application record
