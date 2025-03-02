@@ -38,7 +38,13 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false }) => {
   const status = cohort["Status"] || "Unknown"
   const actionButtonText = cohort["Action Button"] || "Apply Now"
   const filloutFormId = cohort["Application Form ID (Fillout)"]
+  // Check if cohort is open for applications
   const isOpen = status === "Applications Open"
+  
+  // For condensed view in team card, we'll show all statuses
+  const statusClass = condensed ? 
+    (isOpen ? "bg-green-50 text-green-800" : "bg-blue-50 text-blue-800") : 
+    (isOpen ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800")
   
   // Extract participation type
   const participationType = cohort.participationType || 
@@ -159,20 +165,36 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false }) => {
   
   // Render a condensed version of the card for team sections
   if (condensed) {
+    console.log("Rendering condensed cohort card:", {
+      id: cohort.id,
+      name: initiativeName,
+      topics: topics,
+      className: cohort.className
+    });
+    
     return (
       <>
         <Card key={cohort.id} className="overflow-hidden flex flex-row items-center justify-between transition-all duration-200 hover:shadow-md">
           <div className="p-3 flex-1">
             <div className="flex items-center justify-between">
               <h3 className="font-medium">{initiativeName}</h3>
+              {condensed && (
+                <Badge variant="outline" className="text-xs ml-2" size="sm">
+                  {status}
+                </Badge>
+              )}
             </div>
             
             <div className="flex flex-wrap gap-1 mt-1">
-              {Array.isArray(topics) && topics.length > 0 && 
+              {Array.isArray(topics) && topics.length > 0 ? (
                 <span className="text-xs text-muted-foreground">
                   {topics[0]} {cohort.className ? `- ${cohort.className}` : ''}
                 </span>
-              }
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  {cohort.className || 'Program details'}
+                </span>
+              )}
             </div>
           </div>
           
@@ -199,10 +221,7 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false }) => {
           <div className="flex justify-between items-start">
             <CardTitle className="text-lg">{initiativeName}</CardTitle>
             <Badge variant={isOpen ? "success" : "destructive"} 
-              className={isOpen ? 
-                "bg-green-50 text-green-800" : 
-                "bg-red-50 text-red-800"
-              }>
+              className={statusClass}>
               {status}
             </Badge>
           </div>

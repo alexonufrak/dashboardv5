@@ -123,6 +123,8 @@ export default withApiAuthRequired(async function teamCohortsHandler(req, res) {
           continue
         }
         
+        console.log(`Processing cohort ${cohortId} with status: ${cohort.fields.Status || 'unknown'}`)
+        
         // Create a basic cohort object
         const cohortData = {
           id: cohort.id,

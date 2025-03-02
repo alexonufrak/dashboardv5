@@ -52,10 +52,9 @@ const TeamCard = ({ team, profile }) => {
               });
             });
             
-            // Filter and set cohorts
-            const openCohorts = data.cohorts.filter(cohort => cohort.Status === "Applications Open");
-            console.log(`After filtering for "Applications Open": ${openCohorts.length} cohorts`);
-            setTeamCohorts(openCohorts);
+            // Don't filter by status - show all cohorts associated with this team
+            console.log(`Setting all ${data.cohorts.length} cohorts for team`);
+            setTeamCohorts(data.cohorts);
           } else {
             console.error("Invalid cohorts data:", data);
             setTeamCohorts([]);
