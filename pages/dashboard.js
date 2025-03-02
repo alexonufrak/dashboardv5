@@ -350,89 +350,90 @@ const Dashboard = () => {
   };
 
   // Handle onboarding completion/skip
-  const handleCompletion = async (skipOnly = false, hasAppliedToProgram = false) => {
+  const handleCompletion = (skipOnly = false, hasAppliedToProgram = false) => {
     console.log("Handling onboarding completion:", { skipOnly, hasAppliedToProgram });
     
-    // Refresh data before hiding the checklist to ensure dashboard is up-to-date
-    try {
-      // Refresh applications data
-      const appResponse = await fetch('/api/user/check-application');
-      if (appResponse.ok) {
-        const appData = await appResponse.json();
-        if (appData && Array.isArray(appData.applications)) {
-          setApplications(appData.applications);
-        }
-      }
-      
-      // Refresh team data
-      const teamsResponse = await fetch("/api/teams");
-      if (teamsResponse.ok) {
-        const teamsData = await teamsResponse.json();
-        setTeamsData(teamsData.teams || []);
-        if (teamsData.teams && teamsData.teams.length > 0) {
-          setTeamData(teamsData.teams[0]);
-        }
-      }
-      
-      // Refresh profile data
-      const profileResponse = await fetch("/api/user/profile");
-      if (profileResponse.ok) {
-        const profileData = await profileResponse.json();
-        setProfile(profileData);
-      }
-    } catch (error) {
-      console.error("Error refreshing data before hiding checklist:", error);
-    }
+    // OPTIMIZATION: Immediately hide the checklist for a better user experience
+    setShowOnboarding(false);
     
-    // Save the onboarding completed state to user metadata
-    try {
-      // This is the definitive flag to hide the checklist across sessions
-      const metadataUpdate = {
+    // Optimistically update the local metadata state to prevent checklist from reappearing
+    if (userMetadata) {
+      const updatedMetadata = { 
+        ...userMetadata,
         onboardingCompleted: true,
         onboardingSkipped: skipOnly,
-        // Add timestamp to ensure we can track when the user completed onboarding
         completedAt: new Date().toISOString()
       };
       
-      // If we have existing metadata, preserve other fields
-      if (userMetadata) {
-        // Make sure to maintain onboarding steps
-        const currentSteps = userMetadata.onboarding || [];
-        if (!currentSteps.includes('register')) {
-          currentSteps.push('register');
-        }
-        if (hasAppliedToProgram && !currentSteps.includes('selectCohort')) {
-          currentSteps.push('selectCohort');
-        }
-        
-        metadataUpdate.onboarding = currentSteps;
+      // Make sure steps are included
+      const currentSteps = userMetadata.onboarding || [];
+      if (!currentSteps.includes('register')) {
+        currentSteps.push('register');
       }
-      
-      console.log("Saving completion state to Auth0:", metadataUpdate);
-      
-      const response = await fetch('/api/user/metadata', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(metadataUpdate)
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to save metadata: ${response.status}`);
+      if (hasAppliedToProgram && !currentSteps.includes('selectCohort')) {
+        currentSteps.push('selectCohort');
       }
+      updatedMetadata.onboarding = currentSteps;
       
-      // Update local state
-      const updatedMetadata = await response.json();
+      // Update local state immediately
       setUserMetadata(updatedMetadata);
-      
-      // Only hide the onboarding checklist when explicitly completed by the user
-      setShowOnboarding(false);
-    } catch (error) {
-      console.error("Error saving onboarding completion status:", error);
-      // Still hide the onboarding even if API call fails
-      setShowOnboarding(false);
     }
+    
+    // Perform data refresh and API updates in the background
+    // These will happen AFTER the UI updates for better perceived performance
+    Promise.all([
+      // Background data refresh for applications 
+      fetch('/api/user/check-application')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && Array.isArray(data.applications)) {
+            setApplications(data.applications);
+          }
+        })
+        .catch(err => console.error("Error refreshing applications:", err)),
+      
+      // Background data refresh for teams
+      fetch("/api/teams")
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && data.teams) {
+            setTeamsData(data.teams);
+            if (data.teams.length > 0) {
+              setTeamData(data.teams[0]);
+            }
+          }
+        })
+        .catch(err => console.error("Error refreshing teams:", err)),
+      
+      // Background data refresh for profile
+      fetch("/api/user/profile")
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data) setProfile(data);
+        })
+        .catch(err => console.error("Error refreshing profile:", err)),
+        
+      // Save metadata to Auth0 (most important part for persistence)
+      fetch('/api/user/metadata', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          onboardingCompleted: true,
+          onboardingSkipped: skipOnly,
+          completedAt: new Date().toISOString(),
+          // Include the steps
+          onboarding: userMetadata?.onboarding || 
+                     ['register', ...(hasAppliedToProgram ? ['selectCohort'] : [])]
+        })
+      })
+      .then(res => res.ok ? res.json() : null)
+      .catch(err => console.error("Error updating metadata:", err))
+    ]).then(() => {
+      console.log("All background updates completed after onboarding completion");
+    }).catch(error => {
+      console.error("Error in background updates:", error);
+      // The UI is already updated, so this won't affect the user experience
+    });
   };
   
   

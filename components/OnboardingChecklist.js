@@ -51,6 +51,7 @@ const OnboardingChecklist = ({
   // UI state
   const [isExpanded, setIsExpanded] = useState(true)
   const [completionPercentage, setCompletionPercentage] = useState(hasApplications ? 100 : 50)
+  const [isCompleting, setIsCompleting] = useState(false) // Animation state
   
   // Functional state
   const [activeFilloutForm, setActiveFilloutForm] = useState(null)
@@ -366,62 +367,41 @@ const OnboardingChecklist = ({
     }
   };
   
-  // Complete onboarding
-  const completeOnboarding = async () => {
+  // Complete onboarding with animation
+  const completeOnboarding = () => {
     // Check if the user has completed the program application step
     const hasAppliedToProgram = stepStatus.selectCohort.completed;
     
-    try {
-      // This is the most critical part of onboarding - setting onboardingCompleted to true
-      // This will ensure the checklist doesn't show again
-      const metadata = {
-        onboardingCompleted: true,              // Primary flag for completion
-        onboardingSkipped: !hasAppliedToProgram,// Whether they applied or skipped
-        completedAt: new Date().toISOString(),  // Timestamp for tracking
-        // Ensure onboarding data is complete
-        onboarding: ['register', ...(hasAppliedToProgram ? ['selectCohort'] : [])]
-      };
-      
-      console.log("Completing onboarding with metadata:", metadata);
-      
-      // Make a single API call with all required flags
-      const response = await fetch('/api/user/metadata', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(metadata)
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to save completion metadata: ${response.status}`);
-      }
-      
-      // Call parent callback - this will do any necessary data refreshes and hide the checklist
+    // Start the completion animation
+    setIsCompleting(true);
+    
+    // Delay the actual callback slightly to allow animation to play
+    setTimeout(() => {
+      // Then call parent callback to hide checklist
       if (onComplete) {
-        console.log("Calling parent onComplete to hide checklist");
+        console.log("Calling parent onComplete to hide checklist after animation");
         onComplete(false, hasAppliedToProgram);
       }
-    } catch (error) {
-      console.error('Error completing onboarding:', error);
-      // Still try to complete UI flow
-      if (onComplete) {
-        onComplete(false, hasAppliedToProgram);
-      }
-    }
+    }, 800); // Slight delay for animation to be visible
+    
+    // API call is handled by the parent component to avoid duplicating code
   };
   
   // Check if all steps are completed
   const allStepsCompleted = Object.values(stepStatus).every(step => step.completed);
   
   return (
-    <Card className="mb-6 shadow-md border-primary/10 overflow-hidden">
+    <Card className={`
+      mb-6 shadow-md border-primary/10 overflow-hidden transition-all
+      ${isCompleting ? 'animate-complete-fade' : ''}
+    `}>
       {/* Card Header */}
       <CardHeader 
         className={`
-          cursor-pointer transition-colors duration-200 py-5
+          cursor-pointer transition-all duration-200 py-5
           bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950
           hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900 dark:hover:to-cyan-900
+          ${isCompleting ? 'bg-green-100 dark:bg-green-900' : ''}
         `}
         onClick={toggleExpanded}
       >
@@ -709,10 +689,24 @@ const OnboardingChecklist = ({
           
           {allStepsCompleted ? (
             <Button
-              className="bg-green-600 hover:bg-green-700 text-white transition-all duration-200"
+              className={`
+                transition-all duration-200
+                ${isCompleting 
+                  ? 'bg-green-500 scale-110 shadow-lg animate-pulse' 
+                  : 'bg-green-600 hover:bg-green-700'
+                } text-white
+              `}
               onClick={completeOnboarding}
+              disabled={isCompleting}
             >
-              Complete Onboarding
+              {isCompleting ? (
+                <span className="flex items-center">
+                  <CheckCircle className="mr-2 h-4 w-4 animate-bounce" />
+                  Completing...
+                </span>
+              ) : (
+                "Complete Onboarding"
+              )}
             </Button>
           ) : (
             <Button 
