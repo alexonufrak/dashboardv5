@@ -180,25 +180,21 @@ const Dashboard = () => {
     const fetchApplications = async () => {
       try {
         console.log('Fetching user applications...');
+        setIsLoadingApplications(true);
+        
         const response = await fetch('/api/user/check-application');
-        const responseText = await response.text();
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}: ${response.statusText}`);
+        }
         
-        console.log('Raw response from check-application:', responseText);
+        const data = await response.json();
+        console.log('Applications data from API:', data);
         
-        try {
-          // Parse the response text
-          const data = JSON.parse(responseText);
-          console.log('Parsed user applications:', data);
-          
-          if (data && Array.isArray(data.applications)) {
-            console.log(`Setting ${data.applications.length} applications from API`);
-            setApplications(data.applications);
-          } else {
-            console.warn('No applications array in response', data);
-            setApplications([]);
-          }
-        } catch (parseError) {
-          console.error('Error parsing application response:', parseError);
+        if (data && Array.isArray(data.applications)) {
+          console.log(`Found ${data.applications.length} applications for user`);
+          setApplications(data.applications);
+        } else {
+          console.warn('No applications array in response');
           setApplications([]);
         }
       } catch (error) {
@@ -208,8 +204,6 @@ const Dashboard = () => {
         setIsLoadingApplications(false);
       }
     };
-    
-    // Mock data is now created directly in the useEffect
     
     if (user) {
       // Load user data
@@ -230,31 +224,12 @@ const Dashboard = () => {
     }
   }, [user]);
   
-  // Effect to create mock application data after profile loads
+  // Log when applications data changes
   useEffect(() => {
-    const createDemoMockData = () => {
-      if (!profile || !profile.cohorts || profile.cohorts.length === 0 || applications.length > 0) return;
-      
-      console.warn('Creating mock application data for demonstration purposes');
-      
-      // Mock that the user has applied to the first cohort
-      const mockApplications = [{
-        id: 'mock-app-1',
-        cohortId: profile.cohorts[0].id,
-        status: 'Submitted',
-        createdAt: new Date().toISOString()
-      }];
-      
-      console.log('Using mock application data:', mockApplications);
-      setApplications(mockApplications);
-    };
-    
-    if (profile && profile.cohorts && !isLoadingApplications && applications.length === 0) {
-      // For demonstration purposes only, create mock application data 
-      // if there are no real applications from the API
-      createDemoMockData();
+    if (!isLoadingApplications) {
+      console.log('Applications data updated:', applications);
     }
-  }, [profile, isLoadingApplications, applications.length]);
+  }, [applications, isLoadingApplications]);
 
   // Show loading screen while data is loading
   if (isUserLoading || isLoading) {
