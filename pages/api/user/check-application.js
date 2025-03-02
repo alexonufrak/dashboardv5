@@ -19,9 +19,16 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
     }
     
     // Get user profile to get the contact ID
+    console.log('Getting user profile from session:', session.user.email);
     const userProfile = await getCompleteUserProfile(session.user);
+    console.log('User profile retrieved:', {
+      hasProfile: !!userProfile,
+      hasContactId: userProfile?.contactId ? true : false,
+      contactId: userProfile?.contactId || 'N/A'
+    });
     
     if (!userProfile || !userProfile.contactId) {
+      console.warn('User profile or contact ID missing');
       return res.status(404).json({ 
         error: 'User profile not found or missing contact ID',
         applications: []
@@ -44,13 +51,42 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
       });
     }
 
+    console.log(`Applications table initialized: ${!!applicationsTable}`);
+    console.log('Applications table ID:', process.env.AIRTABLE_APPLICATIONS_TABLE_ID || 'Not set');
+    
+    // Check table fields (for debugging)
+    try {
+      // Try to get just one record to see the schema
+      const sampleRecords = await applicationsTable.select({
+        maxRecords: 1
+      }).firstPage();
+      
+      if (sampleRecords.length > 0) {
+        console.log('Application record fields sample:', Object.keys(sampleRecords[0].fields));
+        console.log('Sample record contact field:', sampleRecords[0].fields.Contact);
+      } else {
+        console.log('No sample records found in Applications table');
+      }
+    } catch (sampleError) {
+      console.error('Error fetching sample record:', sampleError);
+    }
+    
     // Look for all applications for this contact
+    console.log(`Querying applications with formula: {Contact} = "${contactId}"`);
     const records = await applicationsTable.select({
       filterByFormula: `{Contact} = "${contactId}"`,
       fields: ['Cohort', 'Status']
     }).firstPage();
 
     console.log(`Found ${records.length} applications for contact ${contactId}`);
+    
+    if (records.length > 0) {
+      console.log('First application details:', {
+        id: records[0].id,
+        cohortField: records[0].fields.Cohort,
+        statusField: records[0].fields.Status
+      });
+    }
     
     // Transform the records into a simpler format
     const applications = records.map(record => ({

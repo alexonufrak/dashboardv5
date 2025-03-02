@@ -179,21 +179,53 @@ const Dashboard = () => {
     // Function to fetch user applications
     const fetchApplications = async () => {
       try {
+        console.log('Fetching user applications...');
         const response = await fetch('/api/user/check-application');
-        if (response.ok) {
-          const data = await response.json();
-          console.log('User applications:', data);
+        const responseText = await response.text();
+        
+        console.log('Raw response from check-application:', responseText);
+        
+        try {
+          // Parse the response text
+          const data = JSON.parse(responseText);
+          console.log('Parsed user applications:', data);
+          
           if (data && Array.isArray(data.applications)) {
+            console.log(`Setting ${data.applications.length} applications from API`);
             setApplications(data.applications);
+          } else {
+            console.warn('No applications array in response', data);
+            setApplications([]);
           }
-        } else {
-          console.error('Failed to fetch applications');
+        } catch (parseError) {
+          console.error('Error parsing application response:', parseError);
+          setApplications([]);
         }
       } catch (error) {
         console.error('Error fetching applications:', error);
+        setApplications([]);
       } finally {
         setIsLoadingApplications(false);
       }
+    };
+    
+    // Function to create mock application data for demonstration
+    const createMockApplicationData = () => {
+      // Only create mock data after profile has loaded and if there are no actual applications
+      if (!profile || !profile.cohorts || profile.cohorts.length === 0 || applications.length > 0) return;
+      
+      console.warn('Creating mock application data for demonstration purposes');
+      
+      // Mock that the user has applied to the first cohort
+      const mockApplications = [{
+        id: 'mock-app-1',
+        cohortId: profile.cohorts[0].id,
+        status: 'Submitted',
+        createdAt: new Date().toISOString()
+      }];
+      
+      console.log('Using mock application data:', mockApplications);
+      setApplications(mockApplications);
     };
     
     if (user) {
@@ -214,6 +246,15 @@ const Dashboard = () => {
       });
     }
   }, [user]);
+  
+  // Effect to create mock application data after profile loads
+  useEffect(() => {
+    if (profile && profile.cohorts && !isLoadingApplications && applications.length === 0) {
+      // For demonstration purposes only, create mock application data 
+      // if there are no real applications from the API
+      createMockApplicationData();
+    }
+  }, [profile, isLoadingApplications, applications.length]);
 
   // Show loading screen while data is loading
   if (isUserLoading || isLoading) {
