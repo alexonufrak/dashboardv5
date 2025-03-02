@@ -1,5 +1,5 @@
 // components/TeamCard.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,17 +11,46 @@ import CohortCard from "./shared/CohortCard";
  * TeamCard component displays team information with associated cohorts.
  * @param {Object} props - Component props
  * @param {Object} props.team - Team data object
- * @param {Array} props.cohorts - Array of cohorts associated with the team
  * @param {Object} props.profile - User profile data
  */
-const TeamCard = ({ team, cohorts = [], profile }) => {
+const TeamCard = ({ team, profile }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [selectedCohort, setSelectedCohort] = useState(null);
+  const [teamCohorts, setTeamCohorts] = useState([]);
+  const [isLoadingCohorts, setIsLoadingCohorts] = useState(false);
   
   // Handle viewing cohort details
   const handleViewCohortDetails = (cohort) => {
     setSelectedCohort(cohort);
   };
+  
+  // Fetch cohorts for this team
+  useEffect(() => {
+    const fetchTeamCohorts = async () => {
+      if (!team || !team.id) return;
+      
+      try {
+        setIsLoadingCohorts(true);
+        const response = await fetch(`/api/teams/${team.id}/cohorts`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log(`Fetched ${data.cohorts.length} cohorts for team ${team.name}:`, data.cohorts);
+          setTeamCohorts(data.cohorts.filter(cohort => cohort.Status === "Applications Open"));
+        } else {
+          console.error("Failed to fetch team cohorts:", response.statusText);
+          setTeamCohorts([]);
+        }
+      } catch (error) {
+        console.error("Error fetching team cohorts:", error);
+        setTeamCohorts([]);
+      } finally {
+        setIsLoadingCohorts(false);
+      }
+    };
+    
+    fetchTeamCohorts();
+  }, [team]);
   
   // If no team data is provided, show a not found message
   if (!team) {
@@ -69,8 +98,10 @@ const TeamCard = ({ team, cohorts = [], profile }) => {
           <div className="mt-4">
             <h4 className="text-sm font-semibold mb-2">Team Programs:</h4>
             <div className="space-y-2">
-              {cohorts && cohorts.length > 0 ? (
-                cohorts.map(cohort => (
+              {isLoadingCohorts ? (
+                <p className="text-sm text-muted-foreground">Loading programs...</p>
+              ) : teamCohorts && teamCohorts.length > 0 ? (
+                teamCohorts.map(cohort => (
                   <CohortCard 
                     key={cohort.id}
                     cohort={{

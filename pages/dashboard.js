@@ -273,38 +273,6 @@ const Dashboard = () => {
     setShowOnboarding(false);
   };
   
-  // Helper function to filter cohorts for a specific team
-  const filterTeamCohorts = (team, allCohorts) => {
-    console.log(`Filtering cohorts for team "${team.name}"`, {
-      teamId: team.id,
-      cohortIds: team.cohortIds || [],
-      allCohortsCount: allCohorts?.length || 0
-    });
-    
-    if (!allCohorts || !Array.isArray(allCohorts)) return [];
-    
-    // Filter only cohorts with "Applications Open" status that are associated with this team
-    const filteredCohorts = allCohorts.filter(cohort => {
-      // Check if the cohort has "Applications Open" status
-      const isOpen = cohort.Status === "Applications Open";
-      if (!isOpen) return false;
-      
-      // Check if this cohort is specifically associated with this team
-      if (team.cohortIds && Array.isArray(team.cohortIds) && team.cohortIds.length > 0) {
-        return team.cohortIds.includes(cohort.id);
-      }
-      
-      // If no specific association, check if it's a team-based cohort (fallback for single team)
-      if (teamsData.length === 1 && cohort.participationType?.toLowerCase().includes('team')) {
-        return true;
-      }
-      
-      return false;
-    });
-    
-    console.log(`Filtered ${filteredCohorts.length} cohorts for team "${team.name}"`);
-    return filteredCohorts;
-  };
   
   // Main JSX content
   return (
@@ -385,7 +353,6 @@ const Dashboard = () => {
                     <TeamCard 
                       key={team.id} 
                       team={team}
-                      cohorts={filterTeamCohorts(team, profile.cohorts)}
                       profile={profile}
                     />
                   ))}
