@@ -1,14 +1,8 @@
 import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0';
 
-// Use process-global variable to track completion state across requests
-// This is the most reliable approach - no dependencies on other systems
-if (!global.onboardingCompletedUsers) {
-  global.onboardingCompletedUsers = new Set();
-}
-
 /**
- * Simple dedicated endpoint just for setting onboarding completion
- * This ensures a clean, reliable way to mark onboarding as completed
+ * Direct API to check and set onboarding completion status
+ * Uses the user's session metadata as the source of truth
  */
 export default withApiAuthRequired(async function onboardingCompleted(req, res) {
   try {
@@ -20,26 +14,30 @@ export default withApiAuthRequired(async function onboardingCompleted(req, res) 
     
     const userId = session.user.sub;
     
-    // GET: Check if onboarding is completed
+    // GET: Check if onboarding is completed by reading directly from the session
     if (req.method === 'GET') {
-      // Simply check if the user is in our completion set
-      const completed = global.onboardingCompletedUsers.has(userId);
-      console.log(`Checking onboarding completion for user ${userId}: ${completed ? 'COMPLETED' : 'NOT COMPLETED'}`);
+      // Read completion status from user's session metadata (the source of truth)
+      const metadata = session.user.user_metadata || {};
+      const completed = metadata.onboardingCompleted === true;
+      
+      console.log(`Checking onboarding completion for user ${userId}:`, {
+        hasMetadata: !!session.user.user_metadata,
+        completed,
+        onboardingCompleted: metadata.onboardingCompleted,
+        onboardingCompletedType: typeof metadata.onboardingCompleted,
+        metadataKeys: Object.keys(metadata || {})
+      });
       
       return res.status(200).json({ 
-        completed, 
+        completed,
         userId 
       });
     }
     
-    // POST: Mark onboarding as completed
+    // POST: Mark onboarding as completed - this is handled client-side
     if (req.method === 'POST') {
-      console.log(`Marking onboarding as completed for user ${userId}`);
-      
-      // Add the user to the completion set - this is the source of truth
-      global.onboardingCompletedUsers.add(userId);
-      
-      // Return success immediately - this is a critical path
+      // Just acknowledge the request - the client will update metadata directly
+      console.log(`Received completion request for user ${userId}`);
       return res.status(200).json({ success: true });
     }
     

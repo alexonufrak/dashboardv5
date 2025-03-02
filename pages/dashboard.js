@@ -107,23 +107,32 @@ const Dashboard = () => {
       }
     }
 
-    // Simple, direct approach to check if onboarding is completed
+    // Direct approach to check onboarding status from metadata
     const checkOnboardingStatus = async () => {
       try {
-        // Use our dedicated endpoint that only does one thing - check if onboarding is completed
-        const response = await fetch("/api/user/onboarding-completed");
-        
-        if (response.ok) {
-          const { completed } = await response.json();
-          console.log("Onboarding completion status:", completed);
-          
-          // Simple logic: show checklist if not completed
-          setShowOnboarding(!completed);
-        } else {
-          // If we can't get the status, default to showing the checklist
-          console.warn("Error fetching onboarding status, defaulting to show");
-          setShowOnboarding(true);
+        // First check session metadata directly - fastest approach
+        if (user?.user_metadata?.onboardingCompleted === true) {
+          console.log("User metadata has onboardingCompleted = true, hiding checklist");
+          setShowOnboarding(false);
+          return;
         }
+        
+        // Fallback: check metadata API
+        const metadataResponse = await fetch("/api/user/metadata");
+        if (metadataResponse.ok) {
+          const metadata = await metadataResponse.json();
+          console.log("Metadata API response:", metadata);
+          
+          if (metadata.onboardingCompleted === true) {
+            console.log("Metadata API shows onboardingCompleted = true, hiding checklist");
+            setShowOnboarding(false);
+            return;
+          }
+        }
+        
+        // If we couldn't confirm it's completed, show the checklist
+        console.log("Could not confirm onboarding completion, showing checklist");
+        setShowOnboarding(true);
       } catch (err) {
         console.error("Error checking onboarding status:", err);
         // Default to showing for new users
