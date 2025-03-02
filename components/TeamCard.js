@@ -120,7 +120,7 @@ const TeamCard = ({ team, profile }) => {
           {/* Team's Cohorts/Programs Section */}
           <div className="mt-4">
             <h4 className="text-sm font-semibold mb-2">Team Programs:</h4>
-            <div className="space-y-2">
+            <div className="flex flex-wrap">
               {isLoadingCohorts ? (
                 <p className="text-sm text-muted-foreground">Loading programs...</p>
               ) : teamCohorts && teamCohorts.length > 0 ? (

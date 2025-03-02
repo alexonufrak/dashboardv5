@@ -174,41 +174,27 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false }) => {
     
     return (
       <>
-        <Card key={cohort.id} className="overflow-hidden flex flex-row items-center justify-between transition-all duration-200 hover:shadow-md">
-          <div className="p-3 flex-1">
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium">{initiativeName}</h3>
-              {condensed && (
-                <Badge variant="outline" className="text-xs ml-2" size="sm">
-                  {status}
-                </Badge>
-              )}
-            </div>
+        <div 
+          key={cohort.id} 
+          className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-200 bg-white hover:bg-gray-50 shadow-sm transition-all mr-2 mb-2 cursor-pointer group"
+          onClick={handleViewDetails}
+        >
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm">{initiativeName}</span>
             
-            <div className="flex flex-wrap gap-1 mt-1">
-              {Array.isArray(topics) && topics.length > 0 ? (
-                <span className="text-xs text-muted-foreground">
-                  {topics[0]} {cohort.className ? `- ${cohort.className}` : ''}
-                </span>
-              ) : (
-                <span className="text-xs text-muted-foreground">
-                  {cohort.className || 'Program details'}
-                </span>
-              )}
-            </div>
+            <Badge variant="outline" className={`text-xs ${statusClass} border-0`} size="sm">
+              {status}
+            </Badge>
+            
+            {(Array.isArray(topics) && topics.length > 0) && (
+              <span className="text-xs text-muted-foreground hidden group-hover:inline-block">
+                {topics[0].length > 15 ? topics[0].substring(0, 15) + '...' : topics[0]}
+              </span>
+            )}
+            
+            <Eye className="h-3 w-3 text-muted-foreground ml-1" />
           </div>
-          
-          <div className="p-3">
-            <Button 
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2"
-              onClick={handleViewDetails}
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-          </div>
-        </Card>
+        </div>
       </>
     );
   }
