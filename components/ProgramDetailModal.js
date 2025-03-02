@@ -26,14 +26,11 @@ const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply, applications = [
   
   // Check if user has already applied to this cohort
   const hasApplied = Array.isArray(applications) && applications.some(app => 
-    app.cohortId === cohort.id || 
-    (cohort.Connexions && app.cohortId === cohort.Connexions)
+    app.cohortId === cohort.id
   )
   
-  // Get Connexions URL if available
-  const connexionsUrl = cohort.Connexions ? 
-    `https://connexion.xfoundry.org/programs/${cohort.Connexions}` : 
-    null
+  // Set Connexions URL - always use the same URL
+  const connexionsUrl = "https://connexion.xfoundry.org"
   const description = cohort.description || cohort.initiativeDetails?.description || 
     "Join this program to connect with mentors and develop valuable career skills. This opportunity will help you grow professionally and expand your network."
     
@@ -203,8 +200,7 @@ const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply, applications = [
             // Show Connexions button if user has already applied
             <Button 
               variant="secondary"
-              onClick={() => window.open(connexionsUrl || 'https://connexion.xfoundry.org', '_blank')}
-              disabled={!connexionsUrl}
+              onClick={() => window.open(connexionsUrl, '_blank')}
             >
               <ExternalLink className="mr-2 h-4 w-4" />
               Go to Connexions

@@ -44,14 +44,11 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   
   // Check if user has already applied to this cohort
   const hasApplied = Array.isArray(applications) && applications.some(app => 
-    app.cohortId === cohort.id || 
-    (cohort.Connexions && app.cohortId === cohort.Connexions)
+    app.cohortId === cohort.id
   )
   
-  // Get Connexions URL if available
-  const connexionsUrl = cohort.Connexions ? 
-    `https://connexion.xfoundry.org/programs/${cohort.Connexions}` : 
-    null
+  // Set Connexions URL - always use the same URL
+  const connexionsUrl = "https://connexion.xfoundry.org"
   
   // For condensed view in team card, we'll show all statuses
   const statusClass = condensed ? 
@@ -271,8 +268,7 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
             <Button 
               className="w-full sm:w-auto sm:flex-1" 
               variant="secondary"
-              onClick={() => window.open(connexionsUrl || 'https://connexion.xfoundry.org', '_blank')}
-              disabled={!connexionsUrl}
+              onClick={() => window.open(connexionsUrl, '_blank')}
             >
               <ExternalLink className="mr-2 h-4 w-4" />
               Go to Connexions
