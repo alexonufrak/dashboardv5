@@ -3,7 +3,7 @@ import { base } from '../../../../lib/airtable';
 
 /**
  * API endpoint to get a team's cohorts
- * This helps check for initiative conflicts in the application process
+ * Used for displaying team programs and checking for initiative conflicts
  */
 export default withApiAuthRequired(async function getTeamCohorts(req, res) {
   // Only allow GET requests
@@ -51,31 +51,47 @@ export default withApiAuthRequired(async function getTeamCohorts(req, res) {
     if (!teamRecord) {
       return res.status(404).json({ error: 'Team not found', cohorts: [] });
     }
+
+    // Two methods to find cohorts:
+    // 1. Direct team-cohort links (from team.fields.Cohorts)
+    // 2. Through applications (team.applications -> cohorts)
     
-    // Look up the team's applications
-    const applications = await applicationsTable.select({
-      filterByFormula: `{Team} = "${teamId}"`,
-    }).firstPage();
+    let cohortIds = new Set();
     
-    if (!applications || applications.length === 0) {
-      // Team has no applications
+    // Method 1: Direct links from Team.Cohorts field
+    if (teamRecord.fields.Cohorts && Array.isArray(teamRecord.fields.Cohorts) && teamRecord.fields.Cohorts.length > 0) {
+      teamRecord.fields.Cohorts.forEach(id => cohortIds.add(id));
+    }
+    
+    // Method 2: Through applications
+    try {
+      const applications = await applicationsTable.select({
+        filterByFormula: `{Team} = "${teamId}"`,
+      }).firstPage();
+      
+      if (applications && applications.length > 0) {
+        applications.forEach(app => {
+          if (app.fields.Cohort && Array.isArray(app.fields.Cohort) && app.fields.Cohort.length > 0) {
+            cohortIds.add(app.fields.Cohort[0]);
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+      // Continue even if applications fail - we might still have direct cohort links
+    }
+    
+    if (cohortIds.size === 0) {
       return res.status(200).json({ cohorts: [] });
     }
     
-    // Extract cohort IDs from applications
-    const cohortIds = applications
-      .map(app => app.fields.Cohort && Array.isArray(app.fields.Cohort) ? app.fields.Cohort[0] : null)
-      .filter(Boolean);
-    
-    if (cohortIds.length === 0) {
-      // No valid cohort IDs found
-      return res.status(200).json({ cohorts: [] });
-    }
+    // Convert Set to Array
+    const uniqueCohortIds = Array.from(cohortIds);
     
     // Get cohort details
     const cohortDetails = [];
     
-    for (const cohortId of cohortIds) {
+    for (const cohortId of uniqueCohortIds) {
       try {
         const cohortRecord = await cohortsTable.find(cohortId);
         
@@ -101,18 +117,44 @@ export default withApiAuthRequired(async function getTeamCohorts(req, res) {
           
           // Extract topic details
           let topicNames = [];
+          let topicIds = [];
           if (cohortRecord.fields.Topics && Array.isArray(cohortRecord.fields.Topics) && cohortRecord.fields.Topics.length > 0) {
+            topicIds = cohortRecord.fields.Topics;
+            
             const topicsTable = process.env.AIRTABLE_TOPICS_TABLE_ID
               ? base(process.env.AIRTABLE_TOPICS_TABLE_ID)
               : null;
               
             if (topicsTable) {
-              for (const topicId of cohortRecord.fields.Topics) {
-                const topicRecord = await topicsTable.find(topicId).catch(() => null);
-                if (topicRecord && topicRecord.fields.Name) {
-                  topicNames.push(topicRecord.fields.Name);
+              for (const topicId of topicIds) {
+                try {
+                  const topicRecord = await topicsTable.find(topicId);
+                  if (topicRecord && topicRecord.fields.Name) {
+                    topicNames.push(topicRecord.fields.Name);
+                  }
+                } catch (topicError) {
+                  console.error(`Error fetching topic ${topicId}:`, topicError);
                 }
               }
+            }
+          }
+          
+          // Extract class details 
+          let className = null;
+          if (cohortRecord.fields.Classes && Array.isArray(cohortRecord.fields.Classes) && cohortRecord.fields.Classes.length > 0) {
+            try {
+              const classesTable = process.env.AIRTABLE_CLASSES_TABLE_ID
+                ? base(process.env.AIRTABLE_CLASSES_TABLE_ID)
+                : null;
+                
+              if (classesTable) {
+                const classRecord = await classesTable.find(cohortRecord.fields.Classes[0]).catch(() => null);
+                if (classRecord && classRecord.fields.Name) {
+                  className = classRecord.fields.Name;
+                }
+              }
+            } catch (classError) {
+              console.error(`Error fetching class for cohort ${cohortId}:`, classError);
             }
           }
           
@@ -121,7 +163,9 @@ export default withApiAuthRequired(async function getTeamCohorts(req, res) {
             name: cohortRecord.fields['Short Name'] || "Unknown Cohort",
             status: cohortRecord.fields.Status || "Unknown",
             initiativeDetails,
-            topicNames
+            topicNames,
+            className,
+            description: cohortRecord.fields.description || null
           });
         }
       } catch (error) {
