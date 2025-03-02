@@ -54,9 +54,8 @@ const Dashboard = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   
-  // Onboarding state
+  // Onboarding state - much simpler approach with just one boolean flag
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const [userMetadata, setUserMetadata] = useState(null)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -108,78 +107,27 @@ const Dashboard = () => {
       }
     }
 
-    // Handle onboarding state based on metadata and completion status
+    // Simple, direct approach to check if onboarding is completed
     const checkOnboardingStatus = async () => {
       try {
-        // Get user metadata from API - this is the single source of truth
-        const response = await fetch("/api/user/metadata");
+        // Use our dedicated endpoint that only does one thing - check if onboarding is completed
+        const response = await fetch("/api/user/onboarding-completed");
         
         if (response.ok) {
-          const metadata = await response.json();
-          console.log("User metadata from API:", metadata);
+          const { completed } = await response.json();
+          console.log("Onboarding completion status:", completed);
           
-          // Save metadata to state for use throughout the component
-          setUserMetadata(metadata);
-          
-          // Check onboarding steps
-          const onboardingSteps = metadata.onboarding || [];
-          const hasCompletedRegister = Array.isArray(onboardingSteps) && onboardingSteps.includes('register');
-          const hasAppliedToProgram = Array.isArray(onboardingSteps) && onboardingSteps.includes('selectCohort');
-          
-          // The definitive flag for onboarding completion - this is what matters most
-          // Ensure this is a strict boolean comparison
-          const isOnboardingCompleted = metadata.onboardingCompleted === true;
-          
-          console.log("Onboarding status (raw value):", {
-            steps: onboardingSteps,
-            hasCompletedRegister,
-            hasAppliedToProgram,
-            // Show the exact raw value for debugging
-            onboardingCompletedRaw: metadata.onboardingCompleted,
-            onboardingCompleted: isOnboardingCompleted,
-            completedAt: metadata.completedAt || 'Not completed'
-          });
-          
-          // First check: if onboarding is completed, NEVER show checklist
-          if (isOnboardingCompleted) {
-            console.log("Onboarding explicitly completed, hiding checklist");
-            setShowOnboarding(false);
-            return; // Exit early
-          } else {
-            // For first-time users or those who haven't completed onboarding,
-            // we should always show the checklist
-            console.log("Onboarding not completed, showing checklist");
-            setShowOnboarding(true);
-            
-            // Only make an API call if register step is missing
-            if (!hasCompletedRegister) {
-              console.log("Register step missing, adding it to metadata");
-              const registerResponse = await fetch('/api/user/metadata', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  onboarding: ['register']
-                })
-              });
-              
-              if (registerResponse.ok) {
-                const updatedMetadata = await registerResponse.json();
-                setUserMetadata(updatedMetadata);
-              }
-            }
-          }
+          // Simple logic: show checklist if not completed
+          setShowOnboarding(!completed);
         } else {
-          console.warn("Error fetching metadata from API");
-          // Default to showing onboarding for new users
+          // If we can't get the status, default to showing the checklist
+          console.warn("Error fetching onboarding status, defaulting to show");
           setShowOnboarding(true);
         }
       } catch (err) {
         console.error("Error checking onboarding status:", err);
-        // Default to showing onboarding for new users
+        // Default to showing for new users
         setShowOnboarding(true);
-        throw err; // Rethrow to allow catch in the calling code
       }
     };
 
@@ -217,21 +165,13 @@ const Dashboard = () => {
     };
     
     if (user) {
-      // Order is important: first get metadata, then other data
-      checkOnboardingStatus().then(() => {
-        // Then load applications
-        fetchApplications();
-        
-        // Load other data after
-        fetchProfile();
-        fetchTeamData();
-      }).catch(error => {
-        console.error("Error in initialization sequence:", error);
-        // Still load data even if metadata check fails
-        fetchApplications();
-        fetchProfile();
-        fetchTeamData();
-      });
+      // Direct, reliable initialization sequence - first check if onboarding is completed
+      checkOnboardingStatus();
+      
+      // Load all other data in parallel for faster loading
+      fetchApplications();
+      fetchProfile();
+      fetchTeamData();
     }
     
     // Add debugging to check when profile and teams are loaded
@@ -352,89 +292,59 @@ const Dashboard = () => {
     }
   };
 
-  // Handle onboarding completion/skip
-  const handleCompletion = (skipOnly = false, hasAppliedToProgram = false) => {
-    console.log("Handling onboarding completion:", { skipOnly, hasAppliedToProgram });
+  // Simple, focused onboarding completion handler
+  const handleCompletion = () => {
+    console.log("Handling onboarding completion - simple approach");
     
-    // OPTIMIZATION: Immediately hide the checklist for a better user experience
+    // Immediately hide the checklist for better UX
     setShowOnboarding(false);
     
-    // Optimistically update the local metadata state to prevent checklist from reappearing
-    // Create a new metadata object or use the existing one
-    const updatedMetadata = userMetadata ? { ...userMetadata } : {};
+    // Use our dedicated endpoint with a simple POST
+    fetch('/api/user/onboarding-completed', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ completed: true })
+    })
+    .then(response => {
+      if (!response.ok) {
+        console.error("Failed to mark onboarding as completed");
+      }
+    })
+    .catch(error => {
+      console.error("Error marking onboarding as completed:", error);
+    });
     
-    // Critical: Make sure onboardingCompleted is set as a true boolean
-    updatedMetadata.onboardingCompleted = true; // This is a boolean true, not a string
-    updatedMetadata.onboardingSkipped = skipOnly;
-    updatedMetadata.completedAt = new Date().toISOString();
-    
-    // Make sure steps are included
-    const currentSteps = updatedMetadata.onboarding || [];
-    if (!currentSteps.includes('register')) {
-      currentSteps.push('register');
-    }
-    if (hasAppliedToProgram && !currentSteps.includes('selectCohort')) {
-      currentSteps.push('selectCohort');
-    }
-    updatedMetadata.onboarding = currentSteps;
-    
-    // Log the exact metadata we're setting
-    console.log("Setting optimistic metadata update:", JSON.stringify(updatedMetadata, null, 2));
-    
-    // Update local state immediately
-    setUserMetadata(updatedMetadata);
-    
-    // Perform data refresh and API updates in the background
-    // These will happen AFTER the UI updates for better perceived performance
+    // Refresh the data in the background for a fresh view
     Promise.all([
-      // Background data refresh for applications 
+      // Refresh applications data
       fetch('/api/user/check-application')
         .then(res => res.ok ? res.json() : null)
         .then(data => {
-          if (data && Array.isArray(data.applications)) {
-            setApplications(data.applications);
-          }
+          if (data?.applications) setApplications(data.applications);
         })
         .catch(err => console.error("Error refreshing applications:", err)),
       
-      // Background data refresh for teams
+      // Refresh teams data  
       fetch("/api/teams")
         .then(res => res.ok ? res.json() : null)
         .then(data => {
-          if (data && data.teams) {
+          if (data?.teams) {
             setTeamsData(data.teams);
-            if (data.teams.length > 0) {
-              setTeamData(data.teams[0]);
-            }
+            if (data.teams.length > 0) setTeamData(data.teams[0]);
           }
         })
         .catch(err => console.error("Error refreshing teams:", err)),
       
-      // Background data refresh for profile
+      // Refresh profile data
       fetch("/api/user/profile")
         .then(res => res.ok ? res.json() : null)
-        .then(data => {
-          if (data) setProfile(data);
-        })
-        .catch(err => console.error("Error refreshing profile:", err)),
-        
-      // Save metadata to Auth0 (most important part for persistence)
-      fetch('/api/user/metadata', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          // Pass the exact same structure we used for local state
-          ...updatedMetadata
-        })
-      })
-      .then(res => res.ok ? res.json() : null)
-      .catch(err => console.error("Error updating metadata:", err))
-    ]).then(() => {
-      console.log("All background updates completed after onboarding completion");
-    }).catch(error => {
-      console.error("Error in background updates:", error);
-      // The UI is already updated, so this won't affect the user experience
-    });
+        .then(data => { if (data) setProfile(data); })
+        .catch(err => console.error("Error refreshing profile:", err))
+    ])
+    .then(() => console.log("Background data refresh complete"))
+    .catch(err => console.error("Error in background refresh:", err));
   };
   
   
@@ -446,8 +356,8 @@ const Dashboard = () => {
           {/* Email mismatch alert */}
           {user?.emailMismatch && <EmailMismatchAlert emailMismatch={user.emailMismatch} />}
           
-          {/* Onboarding Checklist - show if onboardingCompleted is not explicitly true */}
-          {showOnboarding && userMetadata?.onboardingCompleted !== true && (
+          {/* Simple onboarding checklist display - just based on showOnboarding state */}
+          {showOnboarding && (
             <OnboardingChecklist 
               profile={profile}
               onComplete={handleCompletion}
@@ -457,24 +367,25 @@ const Dashboard = () => {
                 // When application is successful, update data but don't hide checklist
                 toast.success(`Applied to ${cohort.initiativeDetails?.name || 'program'} successfully!`);
                 
-                // Refresh application data
-                fetch('/api/user/check-application')
-                  .then(res => res.json())
-                  .then(data => {
-                    if (data && Array.isArray(data.applications)) {
-                      setApplications(data.applications);
-                    }
-                  });
-                
-                // Refresh teams data
-                fetch("/api/teams")
-                  .then(res => res.json())
-                  .then(data => {
-                    setTeamsData(data.teams || []);
-                    if (data.teams && data.teams.length > 0) {
-                      setTeamData(data.teams[0]);
-                    }
-                  });
+                // Refresh data to show updated state
+                Promise.all([
+                  // Refresh applications
+                  fetch('/api/user/check-application')
+                    .then(res => res.json())
+                    .then(data => {
+                      if (data?.applications) setApplications(data.applications);
+                    })
+                    .catch(err => console.error("Error refreshing apps:", err)),
+                    
+                  // Refresh teams  
+                  fetch("/api/teams")
+                    .then(res => res.json())
+                    .then(data => {
+                      setTeamsData(data.teams || []);
+                      if (data.teams?.length > 0) setTeamData(data.teams[0]);
+                    })
+                    .catch(err => console.error("Error refreshing teams:", err))
+                ]);
               }}
             />
           )}
