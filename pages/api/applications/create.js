@@ -84,6 +84,46 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     // If team ID is provided, add it to the application
     if (teamId) {
       applicationData['Team'] = [teamId]
+      
+      // Also update the team with the cohort ID - this is a critical addition
+      try {
+        // Get the Teams table
+        const teamsTableId = process.env.AIRTABLE_TEAMS_TABLE_ID
+        if (!teamsTableId) {
+          console.error('Teams table ID not configured')
+        } else {
+          // Initialize the teams table
+          const teamsTable = base(teamsTableId)
+          
+          // First, get the current team to check existing cohorts
+          const teamRecord = await teamsTable.find(teamId)
+          
+          if (teamRecord) {
+            // Check if the team already has this cohort
+            const currentCohorts = teamRecord.fields['Cohorts'] || []
+            
+            // Only update if this cohort isn't already associated
+            if (!currentCohorts.includes(cohortId)) {
+              console.log(`Updating team ${teamId} to add cohort ${cohortId}`)
+              
+              // Add the cohort to the team's cohorts array
+              await teamsTable.update(teamId, {
+                'Cohorts': [...currentCohorts, cohortId]
+              })
+              
+              console.log(`Successfully associated cohort ${cohortId} with team ${teamId}`)
+            } else {
+              console.log(`Cohort ${cohortId} already associated with team ${teamId}`)
+            }
+          } else {
+            console.error(`Team ${teamId} not found during application submission`)
+          }
+        }
+      } catch (teamUpdateError) {
+        // Log but don't fail if team update fails
+        console.error('Error updating team with cohort ID:', teamUpdateError)
+        console.error('Application will continue without team-cohort association')
+      }
     }
     
     // Add Xtrapreneurs-specific data if applicable
