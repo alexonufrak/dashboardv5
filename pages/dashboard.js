@@ -209,24 +209,7 @@ const Dashboard = () => {
       }
     };
     
-    // Function to create mock application data for demonstration
-    const createMockApplicationData = () => {
-      // Only create mock data after profile has loaded and if there are no actual applications
-      if (!profile || !profile.cohorts || profile.cohorts.length === 0 || applications.length > 0) return;
-      
-      console.warn('Creating mock application data for demonstration purposes');
-      
-      // Mock that the user has applied to the first cohort
-      const mockApplications = [{
-        id: 'mock-app-1',
-        cohortId: profile.cohorts[0].id,
-        status: 'Submitted',
-        createdAt: new Date().toISOString()
-      }];
-      
-      console.log('Using mock application data:', mockApplications);
-      setApplications(mockApplications);
-    };
+    // Mock data is now created directly in the useEffect
     
     if (user) {
       // Load user data
@@ -249,10 +232,27 @@ const Dashboard = () => {
   
   // Effect to create mock application data after profile loads
   useEffect(() => {
+    const createDemoMockData = () => {
+      if (!profile || !profile.cohorts || profile.cohorts.length === 0 || applications.length > 0) return;
+      
+      console.warn('Creating mock application data for demonstration purposes');
+      
+      // Mock that the user has applied to the first cohort
+      const mockApplications = [{
+        id: 'mock-app-1',
+        cohortId: profile.cohorts[0].id,
+        status: 'Submitted',
+        createdAt: new Date().toISOString()
+      }];
+      
+      console.log('Using mock application data:', mockApplications);
+      setApplications(mockApplications);
+    };
+    
     if (profile && profile.cohorts && !isLoadingApplications && applications.length === 0) {
       // For demonstration purposes only, create mock application data 
       // if there are no real applications from the API
-      createMockApplicationData();
+      createDemoMockData();
     }
   }, [profile, isLoadingApplications, applications.length]);
 
