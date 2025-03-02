@@ -122,22 +122,33 @@ const Dashboard = () => {
           const hasCompletedRegister = Array.isArray(onboardingSteps) && onboardingSteps.includes('register');
           const hasAppliedToProgram = Array.isArray(onboardingSteps) && onboardingSteps.includes('selectCohort');
           
+          // The definitive flag for onboarding completion
+          const isOnboardingCompleted = metadata.onboardingCompleted === true;
+          
           console.log("Onboarding status:", {
             steps: onboardingSteps,
             hasCompletedRegister,
             hasAppliedToProgram,
-            onboardingCompleted: metadata.onboardingCompleted
+            onboardingCompleted: isOnboardingCompleted,
+            completedAt: metadata.completedAt || 'Not completed'
           });
           
-          // Only check if onboarding is explicitly completed
-          // This lets the user see confirmation screen even after application
-          if (metadata.onboardingCompleted === true) {
-            // User has explicitly completed the onboarding
+          // The definitive check for whether to hide onboarding
+          if (isOnboardingCompleted) {
+            // User has explicitly completed the onboarding - HIDE THE CHECKLIST
             console.log("Onboarding explicitly completed, hiding checklist");
             setShowOnboarding(false);
+            return; // Exit early
+          }
+          
+          // If the user has applied to a program but not explicitly completed onboarding,
+          // we should show the checklist in the "confirmed" state so they can complete it
+          if (hasAppliedToProgram) {
+            console.log("User has applied but not completed onboarding, showing checklist in confirmed state");
+            setShowOnboarding(true);
           } else {
-            // Show onboarding if not explicitly completed
-            console.log("Onboarding not explicitly completed, showing checklist");
+            // Show onboarding in regular state
+            console.log("Regular onboarding state, showing checklist");
             setShowOnboarding(true);
             
             // Explicitly mark register step as completed for new users
@@ -299,16 +310,27 @@ const Dashboard = () => {
     
     // Save the onboarding completed state to user metadata
     try {
-      await fetch('/api/user/metadata', {
+      // This is the definitive flag to hide the checklist across sessions
+      const metadata = {
+        onboardingCompleted: true,
+        onboardingSkipped: skipOnly,
+        // Add timestamp to ensure we can track when the user completed onboarding
+        completedAt: new Date().toISOString()
+      };
+      
+      console.log("Saving completion state to Auth0:", metadata);
+      
+      const response = await fetch('/api/user/metadata', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          onboardingCompleted: true,
-          onboardingSkipped: skipOnly,
-        })
+        body: JSON.stringify(metadata)
       });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to save metadata: ${response.status}`);
+      }
       
       // Only hide the onboarding checklist when explicitly completed by the user
       setShowOnboarding(false);

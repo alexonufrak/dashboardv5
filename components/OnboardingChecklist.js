@@ -351,15 +351,19 @@ const OnboardingChecklist = ({
     const hasAppliedToProgram = stepStatus.selectCohort.completed;
     
     try {
-      // Set onboarding as completed
+      // Set onboarding as completed with definitive flags
       const metadata = {
-        onboardingCompleted: true,
-        onboardingSkipped: !hasAppliedToProgram,
-        keepOnboardingVisible: false
+        onboardingCompleted: true,              // Primary flag for completion
+        onboardingSkipped: !hasAppliedToProgram,// Whether they applied or skipped
+        completedAt: new Date().toISOString(),  // Timestamp for tracking
+        // Ensure onboarding data is complete
+        onboarding: ['register', ...(hasAppliedToProgram ? ['selectCohort'] : [])]
       };
       
+      console.log("Completing onboarding with metadata:", metadata);
+      
       // Save to API
-      await fetch('/api/user/metadata', {
+      const response = await fetch('/api/user/metadata', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -367,8 +371,13 @@ const OnboardingChecklist = ({
         body: JSON.stringify(metadata)
       });
       
-      // Call parent callback - this will hide the checklist
+      if (!response.ok) {
+        throw new Error(`Failed to save completion metadata: ${response.status}`);
+      }
+      
+      // Call parent callback - this will hide the checklist and further update metadata
       if (onComplete) {
+        console.log("Calling parent onComplete to hide checklist");
         onComplete(false, hasAppliedToProgram);
       }
     } catch (error) {
