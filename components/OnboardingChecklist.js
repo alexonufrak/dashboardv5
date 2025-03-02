@@ -262,14 +262,8 @@ const OnboardingChecklist = ({
           })
         });
         
-        // If this was the selectCohort step, we should transition to completed state
-        if (stepId === 'selectCohort') {
-          // Check if all steps are now completed
-          if (stepStatus.register.completed) {
-            // Auto-complete the onboarding if all steps are done
-            completeOnboarding();
-          }
-        }
+        // REMOVED auto-completion - we want the user to explicitly click "Complete Onboarding"
+        // Now the user must always click the button to complete onboarding
       } catch (error) {
         console.error('Error saving step completion to metadata:', error);
       }
