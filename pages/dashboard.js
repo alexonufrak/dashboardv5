@@ -127,12 +127,15 @@ const Dashboard = () => {
           const hasAppliedToProgram = Array.isArray(onboardingSteps) && onboardingSteps.includes('selectCohort');
           
           // The definitive flag for onboarding completion - this is what matters most
-          const isOnboardingCompleted = metadata.onboardingCompleted === true;
+          // Convert to boolean with double negation to handle any truthy/falsy values
+          const isOnboardingCompleted = !!metadata.onboardingCompleted;
           
-          console.log("Onboarding status:", {
+          console.log("Onboarding status (raw value):", {
             steps: onboardingSteps,
             hasCompletedRegister,
             hasAppliedToProgram,
+            // Show the exact raw value for debugging
+            onboardingCompletedRaw: metadata.onboardingCompleted,
             onboardingCompleted: isOnboardingCompleted,
             completedAt: metadata.completedAt || 'Not completed'
           });
@@ -357,27 +360,29 @@ const Dashboard = () => {
     setShowOnboarding(false);
     
     // Optimistically update the local metadata state to prevent checklist from reappearing
-    if (userMetadata) {
-      const updatedMetadata = { 
-        ...userMetadata,
-        onboardingCompleted: true,
-        onboardingSkipped: skipOnly,
-        completedAt: new Date().toISOString()
-      };
-      
-      // Make sure steps are included
-      const currentSteps = userMetadata.onboarding || [];
-      if (!currentSteps.includes('register')) {
-        currentSteps.push('register');
-      }
-      if (hasAppliedToProgram && !currentSteps.includes('selectCohort')) {
-        currentSteps.push('selectCohort');
-      }
-      updatedMetadata.onboarding = currentSteps;
-      
-      // Update local state immediately
-      setUserMetadata(updatedMetadata);
+    // Create a new metadata object or use the existing one
+    const updatedMetadata = userMetadata ? { ...userMetadata } : {};
+    
+    // Critical: Make sure onboardingCompleted is set as a boolean true, not a string
+    updatedMetadata.onboardingCompleted = true;
+    updatedMetadata.onboardingSkipped = skipOnly;
+    updatedMetadata.completedAt = new Date().toISOString();
+    
+    // Make sure steps are included
+    const currentSteps = updatedMetadata.onboarding || [];
+    if (!currentSteps.includes('register')) {
+      currentSteps.push('register');
     }
+    if (hasAppliedToProgram && !currentSteps.includes('selectCohort')) {
+      currentSteps.push('selectCohort');
+    }
+    updatedMetadata.onboarding = currentSteps;
+    
+    // Log the exact metadata we're setting
+    console.log("Setting optimistic metadata update:", JSON.stringify(updatedMetadata, null, 2));
+    
+    // Update local state immediately
+    setUserMetadata(updatedMetadata);
     
     // Perform data refresh and API updates in the background
     // These will happen AFTER the UI updates for better perceived performance
@@ -418,12 +423,8 @@ const Dashboard = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          onboardingCompleted: true,
-          onboardingSkipped: skipOnly,
-          completedAt: new Date().toISOString(),
-          // Include the steps
-          onboarding: userMetadata?.onboarding || 
-                     ['register', ...(hasAppliedToProgram ? ['selectCohort'] : [])]
+          // Pass the exact same structure we used for local state
+          ...updatedMetadata
         })
       })
       .then(res => res.ok ? res.json() : null)
