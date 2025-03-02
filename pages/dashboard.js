@@ -111,7 +111,7 @@ const Dashboard = () => {
     // Handle onboarding state based on metadata and completion status
     const checkOnboardingStatus = async () => {
       try {
-        // Get user metadata from API
+        // Get user metadata from API - this is the single source of truth
         const response = await fetch("/api/user/metadata");
         
         if (response.ok) {
@@ -126,7 +126,7 @@ const Dashboard = () => {
           const hasCompletedRegister = Array.isArray(onboardingSteps) && onboardingSteps.includes('register');
           const hasAppliedToProgram = Array.isArray(onboardingSteps) && onboardingSteps.includes('selectCohort');
           
-          // The definitive flag for onboarding completion
+          // The definitive flag for onboarding completion - this is what matters most
           const isOnboardingCompleted = metadata.onboardingCompleted === true;
           
           console.log("Onboarding status:", {
@@ -137,26 +137,18 @@ const Dashboard = () => {
             completedAt: metadata.completedAt || 'Not completed'
           });
           
-          // The definitive check for whether to hide onboarding
+          // First check: if onboarding is completed, NEVER show checklist
           if (isOnboardingCompleted) {
-            // User has explicitly completed the onboarding - HIDE THE CHECKLIST
             console.log("Onboarding explicitly completed, hiding checklist");
             setShowOnboarding(false);
             return; // Exit early
-          }
-          
-          // If the user has applied to a program but not explicitly completed onboarding,
-          // we should show the checklist in the "confirmed" state so they can complete it
-          if (hasAppliedToProgram) {
-            console.log("User has applied but not completed onboarding, showing checklist in confirmed state");
-            setShowOnboarding(true);
           } else {
-            // Show onboarding in regular state
-            console.log("Regular onboarding state, showing checklist");
+            // Otherwise, show the checklist
             setShowOnboarding(true);
             
-            // Explicitly mark register step as completed for new users
+            // Only make an API call if register step is missing
             if (!hasCompletedRegister) {
+              console.log("Register step missing, adding it to metadata");
               const registerResponse = await fetch('/api/user/metadata', {
                 method: 'POST',
                 headers: {
@@ -182,6 +174,7 @@ const Dashboard = () => {
         console.error("Error checking onboarding status:", err);
         // Default to showing onboarding for new users
         setShowOnboarding(true);
+        throw err; // Rethrow to allow catch in the calling code
       }
     };
 
@@ -203,27 +196,8 @@ const Dashboard = () => {
           const apps = data.applications;
           console.log(`Found ${apps.length} applications for user`);
           
-          // DON'T hide checklist when applications exist - let user close it themselves
-          // Check if onboarding is already completed in metadata before deciding to show
-          fetch('/api/user/metadata')
-            .then(res => res.json())
-            .then(metadata => {
-              setUserMetadata(metadata);
-              // Only show if not explicitly completed
-              if (!metadata.onboardingCompleted) {
-                console.log('Applications found, but keeping checklist visible for user confirmation');
-                setShowOnboarding(true);
-              } else {
-                console.log('Applications found, but onboarding already completed, hiding checklist');
-                setShowOnboarding(false);
-              }
-            })
-            .catch(err => {
-              console.error('Error fetching metadata:', err);
-              // Default to showing
-              setShowOnboarding(true);
-            });
-          
+          // We'll use the already loaded metadata in checkOnboardingStatus
+          // so no need to fetch it again here
           setApplications(apps);
         } else {
           console.warn('No applications array in response');
@@ -238,15 +212,21 @@ const Dashboard = () => {
     };
     
     if (user) {
-      // Load applications FIRST to immediately hide checklist if needed
-      fetchApplications();
-      
-      // Load other data after
-      fetchProfile();
-      fetchTeamData();
-      
-      // Check onboarding status as a fallback
-      checkOnboardingStatus();
+      // Order is important: first get metadata, then other data
+      checkOnboardingStatus().then(() => {
+        // Then load applications
+        fetchApplications();
+        
+        // Load other data after
+        fetchProfile();
+        fetchTeamData();
+      }).catch(error => {
+        console.error("Error in initialization sequence:", error);
+        // Still load data even if metadata check fails
+        fetchApplications();
+        fetchProfile();
+        fetchTeamData();
+      });
     }
     
     // Add debugging to check when profile and teams are loaded
@@ -258,41 +238,41 @@ const Dashboard = () => {
     }
   }, [user]);
   
-  // When applications data changes, check if we need to update the checklist state
+  // Update onboarding steps when applications are found, but don't make redundant API calls
   useEffect(() => {
-    if (!isLoadingApplications && applications.length > 0) {
-      console.log('Applications found, updating checklist state:', applications);
+    // Only run this effect when applications load and we have metadata
+    if (!isLoadingApplications && userMetadata && applications.length > 0) {
+      console.log('Applications found, checking if we need to update metadata:', applications);
       
-      // Don't hide checklist automatically when applications are found
-      // Instead, just mark the step as completed in metadata
-      fetch('/api/user/metadata')
-        .then(res => res.json())
-        .then(metadata => {
-          const currentSteps = metadata.onboarding || ['register'];
-          
-          // Only update if application step not already marked as completed
-          if (!currentSteps.includes('selectCohort')) {
-            fetch('/api/user/metadata', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                // Don't set onboardingCompleted: true, to keep checklist visible
-                // Mark that both steps are complete
-                onboarding: [...currentSteps, 'selectCohort']
-              })
-            }).then(() => {
-              console.log('Metadata updated to mark application step as complete');
-            }).catch(err => {
-              console.error('Error updating metadata:', err);
-            });
-          }
+      const currentSteps = userMetadata.onboarding || ['register'];
+      
+      // Only update if application step not already marked as completed 
+      // AND onboarding is not already marked as completed
+      if (!currentSteps.includes('selectCohort') && !userMetadata.onboardingCompleted) {
+        console.log('Application found but not in metadata, updating steps');
+        
+        // Set the updated steps in metadata
+        fetch('/api/user/metadata', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            // Just update the steps array, don't change other metadata
+            onboarding: [...currentSteps, 'selectCohort']
+          })
+        }).then(res => {
+          if (res.ok) return res.json();
+          throw new Error('Failed to update metadata');
+        }).then(updatedMetadata => {
+          console.log('Metadata updated with selectCohort step:', updatedMetadata);
+          setUserMetadata(updatedMetadata);
+        }).catch(err => {
+          console.error('Error updating metadata:', err);
         });
-    } else if (!isLoadingApplications) {
-      console.log('No applications found:', applications);
+      }
     }
-  }, [applications, isLoadingApplications]);
+  }, [applications, isLoadingApplications, userMetadata]);
 
   // Show loading screen while data is loading
   if (isUserLoading || isLoading) {
@@ -462,8 +442,8 @@ const Dashboard = () => {
           {/* Email mismatch alert */}
           {user?.emailMismatch && <EmailMismatchAlert emailMismatch={user.emailMismatch} />}
           
-          {/* Onboarding Checklist - only show if not explicitly completed */}
-          {showOnboarding && (userMetadata && !userMetadata.onboardingCompleted) && (
+          {/* Onboarding Checklist - only show if explicitly set and not completed */}
+          {showOnboarding && !(userMetadata?.onboardingCompleted === true) && (
             <OnboardingChecklist 
               profile={profile}
               onComplete={handleCompletion}

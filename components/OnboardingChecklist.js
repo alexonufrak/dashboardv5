@@ -378,7 +378,8 @@ const OnboardingChecklist = ({
     const hasAppliedToProgram = stepStatus.selectCohort.completed;
     
     try {
-      // Set onboarding as completed with definitive flags
+      // This is the most critical part of onboarding - setting onboardingCompleted to true
+      // This will ensure the checklist doesn't show again
       const metadata = {
         onboardingCompleted: true,              // Primary flag for completion
         onboardingSkipped: !hasAppliedToProgram,// Whether they applied or skipped
@@ -389,7 +390,7 @@ const OnboardingChecklist = ({
       
       console.log("Completing onboarding with metadata:", metadata);
       
-      // Save to API
+      // Make a single API call with all required flags
       const response = await fetch('/api/user/metadata', {
         method: 'POST',
         headers: {
@@ -402,7 +403,7 @@ const OnboardingChecklist = ({
         throw new Error(`Failed to save completion metadata: ${response.status}`);
       }
       
-      // Call parent callback - this will hide the checklist and further update metadata
+      // Call parent callback - this will do any necessary data refreshes and hide the checklist
       if (onComplete) {
         console.log("Calling parent onComplete to hide checklist");
         onComplete(false, hasAppliedToProgram);
