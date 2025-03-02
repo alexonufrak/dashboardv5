@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge'
 import { AlertCircle, PlusCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import TeamCreateDialog from './TeamCreateDialog'
+import InitiativeConflictDialog from './shared/InitiativeConflictDialog'
 
 /**
  * Dialog for selecting or creating a team for an application
@@ -442,72 +443,20 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
         onCreateTeam={handleTeamCreated}
       />
       
-      {/* Team Initiative Conflict Dialog */}
-      {teamConflictDetails && (
-        <Dialog open={showTeamConflictDialog} onOpenChange={() => setShowTeamConflictDialog(false)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Team Initiative Conflict</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              {teamConflictDetails.reason === "initiative_conflict" ? (
-                <>
-                  <p>
-                    This team is already part of the <strong>{teamConflictDetails.teamInitiative}</strong> initiative.
-                  </p>
-                  <p>
-                    Teams can only participate in one of these initiatives at a time:
-                  </p>
-                  <ul className="list-disc pl-6 space-y-1">
-                    <li>Xperience</li>
-                    <li>Xtrapreneurs</li>
-                  </ul>
-                  <p>
-                    To apply for <strong>{teamConflictDetails.currentInitiative}</strong>, your team
-                    would need to exit from <strong>{teamConflictDetails.teamInitiative}</strong> first.
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    If you want to participate in this initiative, you may need to create a new team
-                    or join a different team.
-                  </p>
-                </>
-              ) : teamConflictDetails.reason === "topic_mismatch" ? (
-                <>
-                  <p>
-                    This team is already participating in an Xperiment cohort with a different topic.
-                  </p>
-                  <p>
-                    Current team topic: <strong>{teamConflictDetails.teamTopic}</strong><br />
-                    New cohort topic: <strong>{teamConflictDetails.currentTopic}</strong>
-                  </p>
-                  <p>
-                    For Xperiment initiative, teams must work on the same topic across all cohorts.
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    If you want to work on a different topic, you may need to create a new team.
-                  </p>
-                </>
-              ) : (
-                <p>
-                  There's a conflict with this team's existing applications. Please contact support for assistance.
-                </p>
-              )}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowTeamConflictDialog(false)}>
-                Back
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={handleOpenCreateTeam}
-              >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Create a New Team
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+      {/* Team Initiative Conflict Dialog (using the shared component) */}
+      <InitiativeConflictDialog
+        open={showTeamConflictDialog}
+        onClose={() => setShowTeamConflictDialog(false)}
+        details={teamConflictDetails ? 
+          { 
+            ...teamConflictDetails,
+            onCreateTeam: handleOpenCreateTeam  // Pass the handler for creating a new team
+          } : null
+        }
+        conflictType={teamConflictDetails?.reason === "topic_mismatch" ? 
+          "topic_mismatch" : "team_initiative_conflict"
+        }
+      />
     </>
   )
 }

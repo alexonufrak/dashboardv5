@@ -11,17 +11,11 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogFooter 
-} from '@/components/ui/dialog'
 import { Eye, ExternalLink } from 'lucide-react'
 import { FilloutPopupEmbed } from "@fillout/react"
 import TeamSelectDialog from '../TeamSelectDialog'
 import TeamCreateDialog from '../TeamCreateDialog'
+import InitiativeConflictDialog from './InitiativeConflictDialog'
 
 /**
  * A shared cohort card component to display cohort/initiative information
@@ -417,43 +411,13 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
         onCreateTeam={handleTeamCreated}
       />
       
-      {/* Initiative Conflict Dialog */}
-      {conflictDetails && (
-        <Dialog open={showInitiativeConflictDialog} onOpenChange={() => setShowInitiativeConflictDialog(false)}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Initiative Conflict</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <p>
-                You already have an application for the <strong>{conflictDetails.conflictingInitiative}</strong> initiative.
-              </p>
-              <p>
-                Users can only participate in one of these initiatives at a time:
-              </p>
-              <ul className="list-disc pl-6 space-y-1">
-                <li>Xperience</li>
-                <li>Xtrapreneurs</li>
-              </ul>
-              <p>
-                If you want to apply for <strong>{conflictDetails.currentInitiative}</strong>, you'll
-                need to exit from <strong>{conflictDetails.conflictingInitiative}</strong> first, which means
-                you'll lose access to that initiative.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Note: Your existing application will remain in the system, but you won't be able to
-                access both initiatives simultaneously.
-              </p>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowInitiativeConflictDialog(false)}>
-                Cancel
-              </Button>
-              {/* You could add an option here to directly withdraw from the other initiative */}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+      {/* Initiative Conflict Dialog (using the new component) */}
+      <InitiativeConflictDialog
+        open={showInitiativeConflictDialog}
+        onClose={() => setShowInitiativeConflictDialog(false)}
+        details={conflictDetails}
+        conflictType="initiative_conflict"
+      />
     </>
   )
 }
