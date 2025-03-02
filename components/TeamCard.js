@@ -167,31 +167,31 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
           </div>
         </CardContent>
         
-        <CardFooter className="flex flex-col gap-2">
-          <div className="flex gap-2 w-full">
-            <Button 
+        <CardFooter className="flex gap-2 pt-2">
+          <Button 
+            variant="secondary"
+            className="flex-1"
+            size="default"
+            onClick={() => setShowDetails(true)}
+          >
+            <Info className="h-4 w-4" />
+            View Details
+          </Button>
+          
+          {activeMembers.some(m => m.isCurrentUser) && (
+            <Button
               variant="outline"
               className="flex-1"
-              onClick={() => setShowDetails(true)}
+              size="default"
+              onClick={() => {
+                setShowDetails(true);
+                setTimeout(() => setShowEditDialog(true), 100);
+              }}
             >
-              <Info className="mr-2 h-4 w-4" />
-              View Details
+              <Pencil className="h-4 w-4" />
+              Edit Details
             </Button>
-            
-            {activeMembers.some(m => m.isCurrentUser) && (
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => {
-                  setShowDetails(true);
-                  setTimeout(() => setShowEditDialog(true), 100);
-                }}
-              >
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit Details
-              </Button>
-            )}
-          </div>
+          )}
         </CardFooter>
       </Card>
       

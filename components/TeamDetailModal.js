@@ -135,18 +135,18 @@ const TeamDetailModal = ({ team, isOpen, onClose, onTeamUpdated }) => {
             </div>
           </div>
           
-          <DialogFooter className="flex justify-between sm:justify-between gap-2">
-            <div className="flex-grow"></div>
+          <DialogFooter className="flex justify-end sm:justify-end gap-2">
             {isUserTeamMember && (
               <Button
                 variant="outline"
+                size="default"
                 onClick={() => setShowEditDialog(true)}
               >
-                <Pencil className="mr-2 h-4 w-4" />
+                <Pencil className="h-4 w-4" />
                 Edit Details
               </Button>
             )}
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="secondary" onClick={onClose}>
               Close
             </Button>
           </DialogFooter>
