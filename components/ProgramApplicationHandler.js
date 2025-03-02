@@ -116,6 +116,7 @@ const ProgramApplicationHandler = ({
     try {
       // Get the current cohort's initiative
       const currentInitiativeName = cohort.initiativeDetails?.name || "";
+      const currentInitiativeId = cohort.initiativeDetails?.id;
       
       console.log("Checking initiative restrictions for:", currentInitiativeName);
       
