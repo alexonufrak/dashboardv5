@@ -53,7 +53,7 @@ const TeamEditDialog = ({ team, open, onClose, onTeamUpdated }) => {
     setError("")
     
     try {
-      const response = await fetch(`/api/teams/${team.id}`, {
+      const response = await fetch(`/api/teams/${team.id}/`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
