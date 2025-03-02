@@ -47,7 +47,7 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
     // Look for all applications for this contact
     const records = await applicationsTable.select({
       filterByFormula: `{Contact} = "${contactId}"`,
-      fields: ['Cohort', 'Status', 'Created Time']
+      fields: ['Cohort', 'Status']
     }).firstPage();
 
     console.log(`Found ${records.length} applications for contact ${contactId}`);
@@ -57,7 +57,7 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
       id: record.id,
       cohortId: record.fields.Cohort ? record.fields.Cohort[0] : null,
       status: record.fields.Status || 'Submitted',
-      createdAt: record.fields['Created Time'] || record._rawJson.createdTime
+      createdAt: record._rawJson.createdTime
     }));
 
     // Return all applications
