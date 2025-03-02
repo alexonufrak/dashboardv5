@@ -40,16 +40,8 @@ export default function OnboardingDialog({ profile, applications, isLoadingAppli
     markStepComplete('selectCohort')
   }
   
-  const handleComplete = () => {
-    // Start completion animation
-    setIsCompleting(true)
-    
-    // Delay to show animation
-    setTimeout(() => {
-      completeOnboarding()
-      closeOnboardingDialog()
-    }, 800)
-  }
+  // We no longer need the separate handleComplete function
+  // since we're just closing the dialog when done
   
   // Don't render anything if dialog is closed
   if (!dialogOpen) {
@@ -274,19 +266,19 @@ export default function OnboardingDialog({ profile, applications, isLoadingAppli
               Close
             </Button>
             
-            {allStepsCompleted && (
+            {/* If all steps are completed, show Done button instead of Complete Onboarding */}
+            {allStepsCompleted ? (
               <Button
                 className={`
                   transition-all duration-200
                   ${isCompleting ? 'bg-green-500 animate-pulse' : 'bg-green-600 hover:bg-green-700'} 
                   text-white
                 `}
-                onClick={handleComplete}
-                disabled={isCompleting}
+                onClick={closeOnboardingDialog}
               >
-                {isCompleting ? "Completing..." : "Complete Onboarding"}
+                Done
               </Button>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

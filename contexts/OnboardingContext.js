@@ -142,30 +142,17 @@ export function OnboardingProvider({ children }) {
     }
   }
   
-  // Complete the onboarding process
+  // We no longer need to mark onboarding as explicitly completed
+  // Instead, we'll just track the completion of individual steps
+  // This simplifies our approach and matches the requirement to 
+  // just let users close the dialog after they've completed all steps
   const completeOnboarding = async () => {
     try {
-      // Mark as completed in local state
+      // Mark as completed in local state for this session
       setOnboardingCompleted(true)
       
-      // Make a dedicated API call to mark onboarding as completed
-      const response = await fetch('/api/user/metadata', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          onboardingCompleted: true,
-          completedAt: new Date().toISOString()
-        })
-      })
-      
-      if (response.ok) {
-        console.log("Onboarding marked as completed")
-        
-        // Hide the onboarding UI
-        setShowOnboarding(false)
-      }
+      // Hide the onboarding UI
+      setShowOnboarding(false)
     } catch (error) {
       console.error("Error completing onboarding:", error)
     }

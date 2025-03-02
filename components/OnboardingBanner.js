@@ -22,8 +22,8 @@ export default function OnboardingBanner() {
     completeOnboarding
   } = useOnboarding()
   
-  // Don't show anything if onboarding is completed or loading
-  if (!showOnboarding || isLoading) {
+  // Don't show if: onboarding is completed, loading, or all steps are completed
+  if (!showOnboarding || isLoading || allStepsCompleted) {
     return null
   }
   
