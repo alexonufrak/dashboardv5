@@ -156,7 +156,7 @@ const TeamDetailModal = ({ team, isOpen, onClose, onTeamUpdated }) => {
       
       <TeamEditDialog 
         team={team}
-        isOpen={showEditDialog}
+        open={showEditDialog}
         onClose={() => setShowEditDialog(false)}
         onTeamUpdated={handleTeamUpdated}
       />

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -13,41 +13,30 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/components/ui/use-toast"
+import { AlertCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 /**
  * Dialog component for editing team details
  * @param {Object} props - Component props
  * @param {Object} props.team - Team data object
- * @param {boolean} props.isOpen - Whether the dialog is open
+ * @param {boolean} props.open - Whether the dialog is open
  * @param {Function} props.onClose - Function to close the dialog
  * @param {Function} props.onTeamUpdated - Callback function when team is updated
  */
-const TeamEditDialog = ({ team, isOpen, onClose, onTeamUpdated }) => {
-  const { toast } = useToast()
+const TeamEditDialog = ({ team, open, onClose, onTeamUpdated }) => {
+  const [teamName, setTeamName] = useState("")
+  const [teamDescription, setTeamDescription] = useState("")
+  const [error, setError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [formData, setFormData] = useState({
-    name: team?.name || "",
-    description: team?.description || "",
-  })
 
   // Reset form data when team changes
   useEffect(() => {
     if (team) {
-      setFormData({
-        name: team.name || "",
-        description: team.description || "",
-      })
+      setTeamName(team.name || "")
+      setTeamDescription(team.description || "")
     }
   }, [team])
-
-  const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -55,40 +44,32 @@ const TeamEditDialog = ({ team, isOpen, onClose, onTeamUpdated }) => {
     if (!team?.id) return
     
     // Validate form data
-    if (!formData.name.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Team name is required",
-        variant: "destructive",
-      })
+    if (!teamName.trim()) {
+      setError("Please enter a team name")
       return
     }
     
+    setIsSubmitting(true)
+    setError("")
+    
     try {
-      setIsSubmitting(true)
-      
       const response = await fetch(`/api/teams/${team.id}/`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: formData.name,
-          description: formData.description,
+          name: teamName,
+          description: teamDescription,
         }),
       })
       
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "Failed to update team")
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to update team")
       }
       
       const updatedTeam = await response.json()
-      
-      toast({
-        title: "Team Updated",
-        description: "Your team has been updated successfully",
-      })
       
       // Call the callback with the updated team
       if (onTeamUpdated) {
@@ -98,18 +79,14 @@ const TeamEditDialog = ({ team, isOpen, onClose, onTeamUpdated }) => {
       onClose()
     } catch (error) {
       console.error("Error updating team:", error)
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update team",
-        variant: "destructive",
-      })
+      setError(error.message || "Failed to update team")
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
@@ -119,26 +96,31 @@ const TeamEditDialog = ({ team, isOpen, onClose, onTeamUpdated }) => {
             </DialogDescription>
           </DialogHeader>
           
+          {error && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Team Name</Label>
+              <Label htmlFor="teamName">Team Name</Label>
               <Input
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
+                id="teamName"
+                value={teamName}
+                onChange={(e) => setTeamName(e.target.value)}
                 placeholder="Enter team name"
                 required
               />
             </div>
             
             <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="teamDescription">Description</Label>
               <Textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
+                id="teamDescription"
+                value={teamDescription}
+                onChange={(e) => setTeamDescription(e.target.value)}
                 placeholder="Enter team description (optional)"
                 rows={4}
               />
