@@ -7,6 +7,7 @@ import { Users, Info, Pencil } from "lucide-react";
 import TeamDetailModal from "./TeamDetailModal";
 import TeamEditDialog from "./TeamEditDialog";
 import CohortCard from "./shared/CohortCard";
+import ProgramDetailModal from "./ProgramDetailModal";
 import { useToast } from "@/components/ui/use-toast";
 
 /**
@@ -210,44 +211,21 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
       
       {/* Program Detail Modal for cohorts */}
       {selectedCohort && (
-        <div 
-          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center"
-          onClick={() => setSelectedCohort(null)}
-        >
-          <div 
-            className="bg-white rounded-lg p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto"
-            onClick={e => e.stopPropagation()}
-          >
-            <h2 className="text-xl font-bold mb-4">{selectedCohort.initiativeDetails?.name || "Program Details"}</h2>
-            
-            {selectedCohort.topicNames && selectedCohort.topicNames.length > 0 && (
-              <div className="mb-4">
-                <h3 className="text-sm font-semibold mb-1">Topics:</h3>
-                <div className="flex flex-wrap gap-2">
-                  {selectedCohort.topicNames.map((topic, index) => (
-                    <Badge key={index} variant="secondary">{topic}</Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-            
-            {selectedCohort.className && (
-              <div className="mb-4">
-                <h3 className="text-sm font-semibold mb-1">Class:</h3>
-                <p className="text-sm">{selectedCohort.className}</p>
-              </div>
-            )}
-            
-            <div className="mb-4">
-              <h3 className="text-sm font-semibold mb-1">Description:</h3>
-              <p className="text-sm">{selectedCohort.description || selectedCohort.initiativeDetails?.description || "No description available."}</p>
-            </div>
-            
-            <div className="flex justify-end mt-6">
-              <Button onClick={() => setSelectedCohort(null)}>Close</Button>
-            </div>
-          </div>
-        </div>
+        <ProgramDetailModal
+          cohort={selectedCohort}
+          profile={profile}
+          isOpen={!!selectedCohort}
+          onClose={() => setSelectedCohort(null)}
+          onApply={(cohort) => {
+            // Handle successful application
+            toast({
+              title: "Application Submitted",
+              description: `Your application to ${cohort.initiativeDetails?.name || "the program"} has been submitted.`,
+            });
+            setSelectedCohort(null);
+          }}
+          applications={[]} // We don't have applications data in the team card context
+        />
       )}
     </>
   );
