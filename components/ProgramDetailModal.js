@@ -13,7 +13,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Calendar, MapPin, Clock, Users, BookOpen, ExternalLink } from "lucide-react"
 
-const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply }) => {
+const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply, applications = [] }) => {
   if (!cohort) return null
 
   const initiativeName = cohort.initiativeDetails?.name || "Unknown Initiative"
@@ -23,8 +23,24 @@ const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply }) => {
   const actionButtonText = cohort["Action Button"] || "Apply Now"
   const filloutFormId = cohort["Application Form ID (Fillout)"]
   const isOpen24 = status === "Applications Open"
+  
+  // Check if user has already applied to this cohort
+  const hasApplied = Array.isArray(applications) && applications.some(app => 
+    app.cohortId === cohort.id || 
+    (cohort.Connexions && app.cohortId === cohort.Connexions)
+  )
+  
+  // Get Connexions URL if available
+  const connexionsUrl = cohort.Connexions ? 
+    `https://connexion.xfoundry.org/programs/${cohort.Connexions}` : 
+    null
   const description = cohort.description || cohort.initiativeDetails?.description || 
     "Join this program to connect with mentors and develop valuable career skills. This opportunity will help you grow professionally and expand your network."
+    
+  // Extract participation type
+  const participationType = cohort.participationType || 
+                          cohort.initiativeDetails?.["Participation Type"] || 
+                          "Individual"
   
   // Format date if available
   const formatDate = (dateString) => {
@@ -183,16 +199,29 @@ const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply }) => {
             Close
           </Button>
           
-          <Button 
-            variant={isOpen24 ? "default" : "secondary"}
-            disabled={!isOpen24 || !filloutFormId}
-            onClick={() => {
-              onApply(cohort)
-              onClose()
-            }}
-          >
-            {actionButtonText}
-          </Button>
+          {hasApplied ? (
+            // Show Connexions button if user has already applied
+            <Button 
+              variant="secondary"
+              onClick={() => window.open(connexionsUrl || 'https://connexion.xfoundry.org', '_blank')}
+              disabled={!connexionsUrl}
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Go to Connexions
+            </Button>
+          ) : (
+            // Show apply button if user hasn't applied yet
+            <Button 
+              variant={isOpen24 ? "default" : "secondary"}
+              disabled={!isOpen24 || (!filloutFormId && !participationType?.toLowerCase().includes('team'))}
+              onClick={() => {
+                onApply(cohort)
+                onClose()
+              }}
+            >
+              {actionButtonText}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

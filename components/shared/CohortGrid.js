@@ -12,7 +12,9 @@ import { Card, CardContent } from '@/components/ui/card'
 const CohortGrid = ({ 
   cohorts = [], 
   profile, 
-  isLoading = false, 
+  isLoading = false,
+  isLoadingApplications = false,
+  applications = [],
   onApplySuccess,
   columns = {
     default: 1,
@@ -69,6 +71,7 @@ const CohortGrid = ({
             key={cohort.id} 
             cohort={cohort} 
             profile={profile}
+            applications={applications}
             onApplySuccess={onApplySuccess}
           />
         ))}
@@ -80,6 +83,7 @@ const CohortGrid = ({
         isOpen={!!selectedProgram}
         onClose={() => setSelectedProgram(null)}
         onApply={handleProgramApply}
+        applications={applications}
       />
     </>
   )

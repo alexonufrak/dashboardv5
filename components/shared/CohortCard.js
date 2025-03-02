@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Eye } from 'lucide-react'
+import { Eye, ExternalLink } from 'lucide-react'
 import { FilloutPopupEmbed } from "@fillout/react"
 import TeamSelectDialog from '../TeamSelectDialog'
 import TeamCreateDialog from '../TeamCreateDialog'
@@ -23,8 +23,9 @@ import TeamCreateDialog from '../TeamCreateDialog'
  * @param {Object} profile - The user profile
  * @param {Function} onApplySuccess - Callback when application is successful
  * @param {boolean} condensed - If true, displays a condensed version of the card
+ * @param {Array} applications - List of applications to check if user has already applied
  */
-const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false }) => {
+const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applications = [] }) => {
   const [activeFilloutForm, setActiveFilloutForm] = useState(null)
   const [activeTeamSelectDialog, setActiveTeamSelectDialog] = useState(null)
   const [activeTeamCreateDialog, setActiveTeamCreateDialog] = useState(false)
@@ -40,6 +41,17 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false }) => {
   const filloutFormId = cohort["Application Form ID (Fillout)"]
   // Check if cohort is open for applications
   const isOpen = status === "Applications Open"
+  
+  // Check if user has already applied to this cohort
+  const hasApplied = Array.isArray(applications) && applications.some(app => 
+    app.cohortId === cohort.id || 
+    (cohort.Connexions && app.cohortId === cohort.Connexions)
+  )
+  
+  // Get Connexions URL if available
+  const connexionsUrl = cohort.Connexions ? 
+    `https://connexion.xfoundry.org/programs/${cohort.Connexions}` : 
+    null
   
   // For condensed view in team card, we'll show all statuses
   const statusClass = condensed ? 
@@ -254,14 +266,28 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false }) => {
             View Details
           </Button>
           
-          <Button 
-            className="w-full sm:w-auto sm:flex-1" 
-            variant={isOpen ? "default" : "secondary"}
-            disabled={!isOpen || (!filloutFormId && !participationType.toLowerCase().includes('team'))}
-            onClick={handleApply}
-          >
-            {actionButtonText}
-          </Button>
+          {hasApplied ? (
+            // Show Connexions button if user has already applied
+            <Button 
+              className="w-full sm:w-auto sm:flex-1" 
+              variant="secondary"
+              onClick={() => window.open(connexionsUrl || 'https://connexion.xfoundry.org', '_blank')}
+              disabled={!connexionsUrl}
+            >
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Go to Connexions
+            </Button>
+          ) : (
+            // Show apply button if user hasn't applied yet
+            <Button 
+              className="w-full sm:w-auto sm:flex-1" 
+              variant={isOpen ? "default" : "secondary"}
+              disabled={!isOpen || (!filloutFormId && !participationType.toLowerCase().includes('team'))}
+              onClick={handleApply}
+            >
+              {actionButtonText}
+            </Button>
+          )}
         </CardFooter>
       </Card>
       

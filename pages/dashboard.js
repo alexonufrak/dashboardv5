@@ -48,6 +48,8 @@ const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [isTeamLoading, setIsTeamLoading] = useState(true)
   const [teamsData, setTeamsData] = useState([])
+  const [applications, setApplications] = useState([])
+  const [isLoadingApplications, setIsLoadingApplications] = useState(true)
   const [error, setError] = useState(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
@@ -174,10 +176,31 @@ const Dashboard = () => {
       }
     };
 
+    // Function to fetch user applications
+    const fetchApplications = async () => {
+      try {
+        const response = await fetch('/api/user/check-application');
+        if (response.ok) {
+          const data = await response.json();
+          console.log('User applications:', data);
+          if (data && Array.isArray(data.applications)) {
+            setApplications(data.applications);
+          }
+        } else {
+          console.error('Failed to fetch applications');
+        }
+      } catch (error) {
+        console.error('Error fetching applications:', error);
+      } finally {
+        setIsLoadingApplications(false);
+      }
+    };
+    
     if (user) {
       // Load user data
       fetchProfile();
       fetchTeamData();
+      fetchApplications();
       
       // Check onboarding status
       checkOnboardingStatus();
@@ -312,8 +335,20 @@ const Dashboard = () => {
               <CohortGrid 
                 cohorts={profile.cohorts || []}
                 profile={profile}
+                applications={applications}
+                isLoadingApplications={isLoadingApplications}
                 onApplySuccess={(cohort) => {
                   toast.success(`Applied to ${cohort.initiativeDetails?.name || 'program'} successfully!`);
+                  
+                  // Add the new application to our state
+                  setApplications(prevApps => [
+                    ...prevApps, 
+                    { 
+                      cohortId: cohort.id,
+                      createdAt: new Date().toISOString(),
+                      status: 'Submitted'
+                    }
+                  ]);
                   
                   // Check onboarding status again after application
                   fetch('/api/user/metadata').then(res => res.json()).then(metadata => {
