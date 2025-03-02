@@ -334,16 +334,35 @@
 
 @layer base {
   /* Global cursor styles */
-  button, 
-  .btn,
-  a,
-  [role="button"],
-  input[type="submit"],
-  input[type="button"],
-  input[type="reset"],
-  .cursor-pointer,
-  select {
+  button:not([disabled]), 
+  .btn:not(.disabled):not([disabled]),
+  a[href]:not([disabled]),
+  [role="button"]:not([disabled]),
+  input[type="submit"]:not([disabled]),
+  input[type="button"]:not([disabled]),
+  input[type="reset"]:not([disabled]),
+  .cursor-pointer:not([disabled]),
+  summary:not([disabled]),
+  details:not([disabled]) > summary,
+  select:not([disabled]) {
     cursor: pointer !important;
+  }
+  
+  /* Text input cursors */
+  input:not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([disabled]),
+  textarea:not([disabled]) {
+    cursor: text !important;
+  }
+  
+  /* Disabled elements */
+  button[disabled],
+  input[disabled],
+  select[disabled],
+  textarea[disabled],
+  a[disabled],
+  .disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed !important;
   }
   
   /* Simple, subtle animation transitions */
@@ -492,26 +511,39 @@
     transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
   }
   
-  /* Specific cursor fixes for Shadcn components */
-  .btn, 
-  [class*="button"],
-  [class*="Button"],
-  [class*="btn"],
-  [data-state],
-  [role="tab"],
-  [role="menuitem"],
-  [role="option"],
-  [type="checkbox"],
-  [type="radio"],
-  .accordion-trigger,
-  .dropdown-item,
-  .menu-item,
-  .tabs-trigger,
-  .card[onclick],
-  .clickable,
-  .card.cursor-pointer,
-  .hover\\:cursor-pointer:hover {
+  /* Specific cursor fixes for Shadcn/UI components */
+  .btn:not([disabled]), 
+  [class*="button"]:not([disabled]),
+  [class*="Button"]:not([disabled]),
+  [class*="btn"]:not([disabled]),
+  [role="tab"]:not([disabled]),
+  [role="menuitem"]:not([disabled]),
+  [role="option"]:not([disabled]),
+  [type="checkbox"]:not([disabled]),
+  [type="radio"]:not([disabled]),
+  .accordion-trigger:not([disabled]),
+  .dropdown-item:not([disabled]),
+  .menu-item:not([disabled]),
+  .tabs-trigger:not([disabled]),
+  .card[onclick]:not([disabled]),
+  .clickable:not([disabled]),
+  .card.cursor-pointer:not([disabled]),
+  [data-state]:not([data-disabled="true"]):not([disabled]) {
     cursor: pointer !important;
+  }
+  
+  /* Default cursor for non-interactive elements */
+  div:not([onclick]):not([role="button"]):not(.cursor-pointer):not(.clickable),
+  span:not([onclick]):not([role="button"]):not(.cursor-pointer):not(.clickable),
+  p:not([onclick]):not([role="button"]):not(.cursor-pointer):not(.clickable),
+  section:not([onclick]):not([role="button"]):not(.cursor-pointer):not(.clickable),
+  article:not([onclick]):not([role="button"]):not(.cursor-pointer):not(.clickable),
+  main:not([onclick]):not([role="button"]):not(.cursor-pointer):not(.clickable),
+  header:not([onclick]):not([role="button"]):not(.cursor-pointer):not(.clickable),
+  footer:not([onclick]):not([role="button"]):not(.cursor-pointer):not(.clickable),
+  nav:not([onclick]):not([role="button"]):not(.cursor-pointer):not(.clickable),
+  aside:not([onclick]):not([role="button"]):not(.cursor-pointer):not(.clickable) {
+    cursor: default !important;
   }
   
   :root {

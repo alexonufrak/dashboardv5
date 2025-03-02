@@ -107,7 +107,7 @@ export default function OnboardingDialog({ profile, applications, isLoadingAppli
             <div className="border rounded-lg overflow-hidden shadow-sm border-green-100">
               {/* Step Header */}
               <div 
-                className="flex items-center p-4 cursor-pointer transition-colors duration-200 bg-green-50 hover:bg-green-100/80"
+                className="flex items-center p-4 cursor-pointer transition-colors duration-200 bg-green-50 hover:bg-green-100"
                 onClick={() => setRegisterExpanded(!registerExpanded)}
               >
                 <div className="shrink-0 w-10 h-10 flex items-center justify-center rounded-full mr-4 transition-all duration-300 text-green-600 bg-green-100">
@@ -190,7 +190,7 @@ export default function OnboardingDialog({ profile, applications, isLoadingAppli
               <div 
                 className={`
                   flex items-center p-4 cursor-pointer transition-colors duration-200
-                  ${steps.selectCohort.completed ? 'bg-green-50 hover:bg-green-100/80' : 'bg-gray-50 hover:bg-gray-100/80'}
+                  ${steps.selectCohort.completed ? 'bg-green-50 hover:bg-green-100' : 'bg-gray-50 hover:bg-gray-100'}
                 `}
                 onClick={() => setCohortExpanded(!cohortExpanded)}
               >

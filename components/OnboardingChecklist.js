@@ -404,9 +404,8 @@ const OnboardingChecklist = ({
       `}>
         <CardHeader 
           className={`
-            cursor-pointer transition-all duration-200 py-5
+            transition-all duration-200 py-5
             bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950
-            hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900 dark:hover:to-cyan-900
             ${isCompleting ? 'bg-green-100 dark:bg-green-900' : ''}
           `}
         >

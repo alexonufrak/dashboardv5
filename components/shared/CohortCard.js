@@ -282,7 +282,7 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
       <>
         <div 
           key={cohort.id} 
-          className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-200 bg-white hover:bg-gray-50 shadow-sm transition-all mr-2 mb-2 cursor-pointer group"
+          className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-200 bg-white hover:bg-gray-50 shadow-sm transition-all mr-2 mb-2 cursor-default group"
           onClick={handleViewDetails}
         >
           <div className="flex items-center gap-2">
