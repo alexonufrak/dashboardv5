@@ -26,7 +26,8 @@ const OnboardingChecklist = ({
   profile, 
   onComplete, 
   applications = [], 
-  isLoadingApplications = false 
+  isLoadingApplications = false,
+  onApplySuccess = null
 }) => {
   const { user } = useUser()
   const router = useRouter()
@@ -334,15 +335,41 @@ const OnboardingChecklist = ({
   };
   
   // Handle completion of form submission
-  const handleFormCompleted = () => {
+  const handleFormCompleted = async () => {
     setActiveFilloutForm(null);
-    markStepComplete('selectCohort');
+    
+    // Mark the step as complete
+    await markStepComplete('selectCohort');
+    
+    // Refresh team data to ensure dashboard is up-to-date
+    await fetchUserTeams();
+    
+    // Call onApplySuccess callback if provided in props
+    if (onApplySuccess && selectedCohort) {
+      const cohort = profile.cohorts?.find(c => c.id === selectedCohort);
+      if (cohort) {
+        onApplySuccess(cohort);
+      }
+    }
   };
   
   // Handle team application submission
-  const handleTeamApplicationSubmitted = (application) => {
+  const handleTeamApplicationSubmitted = async (application) => {
     setActiveTeamSelectDialog(null);
-    markStepComplete('selectCohort');
+    
+    // Mark the step as complete
+    await markStepComplete('selectCohort');
+    
+    // Refresh team data to ensure dashboard is up-to-date
+    await fetchUserTeams();
+    
+    // Call onApplySuccess callback if provided in props
+    if (onApplySuccess && application?.cohortId) {
+      const cohort = profile.cohorts?.find(c => c.id === application.cohortId);
+      if (cohort) {
+        onApplySuccess(cohort);
+      }
+    }
   };
   
   // Complete onboarding

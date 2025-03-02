@@ -194,11 +194,8 @@ const Dashboard = () => {
           const apps = data.applications;
           console.log(`Found ${apps.length} applications for user`);
           
-          // Immediately hide checklist if applications exist
-          if (apps.length > 0) {
-            console.log('Applications found, hiding checklist immediately');
-            setShowOnboarding(false);
-          }
+          // DON'T hide checklist when applications exist - let user close it themselves
+          console.log('Applications found, but keeping checklist visible for user confirmation');
           
           setApplications(apps);
         } else {
@@ -234,36 +231,32 @@ const Dashboard = () => {
     }
   }, [user]);
   
-  // When applications data changes, check if we need to hide the checklist
+  // When applications data changes, check if we need to update the checklist state
   useEffect(() => {
     if (!isLoadingApplications && applications.length > 0) {
-      console.log('Applications found, hiding checklist:', applications);
+      console.log('Applications found, updating checklist state:', applications);
       
-      // User has applications, so they should not see the checklist
-      setShowOnboarding(false);
-      
-      // Also update metadata to mark onboarding as completed permanently
+      // Don't hide checklist automatically when applications are found
+      // Instead, just mark the step as completed in metadata
       fetch('/api/user/metadata')
         .then(res => res.json())
         .then(metadata => {
-          // Only update if not already marked as completed
-          if (!metadata.onboardingCompleted) {
+          const currentSteps = metadata.onboarding || ['register'];
+          
+          // Only update if application step not already marked as completed
+          if (!currentSteps.includes('selectCohort')) {
             fetch('/api/user/metadata', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({
-                onboardingCompleted: true,
-                onboardingSkipped: false,
-                completedAt: new Date().toISOString(),
+                // Don't set onboardingCompleted: true, to keep checklist visible
                 // Mark that both steps are complete
-                onboarding: ['register', 'selectCohort'],
-                // Add note that this was auto-completed due to existing application
-                autoCompleted: true
+                onboarding: [...currentSteps, 'selectCohort']
               })
             }).then(() => {
-              console.log('Metadata updated to hide checklist permanently');
+              console.log('Metadata updated to mark application step as complete');
             }).catch(err => {
               console.error('Error updating metadata:', err);
             });
@@ -350,6 +343,37 @@ const Dashboard = () => {
   // Handle onboarding completion/skip
   const handleCompletion = async (skipOnly = false, hasAppliedToProgram = false) => {
     console.log("Handling onboarding completion:", { skipOnly, hasAppliedToProgram });
+    
+    // Refresh data before hiding the checklist to ensure dashboard is up-to-date
+    try {
+      // Refresh applications data
+      const appResponse = await fetch('/api/user/check-application');
+      if (appResponse.ok) {
+        const appData = await appResponse.json();
+        if (appData && Array.isArray(appData.applications)) {
+          setApplications(appData.applications);
+        }
+      }
+      
+      // Refresh team data
+      const teamsResponse = await fetch("/api/teams");
+      if (teamsResponse.ok) {
+        const teamsData = await teamsResponse.json();
+        setTeamsData(teamsData.teams || []);
+        if (teamsData.teams && teamsData.teams.length > 0) {
+          setTeamData(teamsData.teams[0]);
+        }
+      }
+      
+      // Refresh profile data
+      const profileResponse = await fetch("/api/user/profile");
+      if (profileResponse.ok) {
+        const profileData = await profileResponse.json();
+        setProfile(profileData);
+      }
+    } catch (error) {
+      console.error("Error refreshing data before hiding checklist:", error);
+    }
     
     // Save the onboarding completed state to user metadata
     try {
