@@ -5,6 +5,7 @@ import { useUser } from "@auth0/nextjs-auth0/client"
 import { useEffect, useState } from "react"
 import dynamic from 'next/dynamic'
 import { toast } from "sonner"
+import { useOnboarding } from '@/contexts/OnboardingContext'
 
 // Import components
 import ProperDashboardLayout from "../components/ProperDashboardLayout"
@@ -15,6 +16,8 @@ import CohortGrid from "../components/shared/CohortGrid"
 import TeamCreateDialog from "../components/TeamCreateDialog"
 import TeamSelectDialog from "../components/TeamSelectDialog"
 import ProgramDetailModal from "../components/ProgramDetailModal"
+import OnboardingBanner from "../components/OnboardingBanner"
+import OnboardingDialog from "../components/OnboardingDialog"
 
 // Import UI components
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -34,15 +37,13 @@ import {
   Eye
 } from "lucide-react"
 
-// Import the OnboardingChecklist component dynamically to avoid hook issues
-const OnboardingChecklist = dynamic(
-  () => import('../components/OnboardingChecklist'),
-  { ssr: false }
-)
+// No longer need dynamic OnboardingChecklist import
 
 const Dashboard = () => {
   // All React hooks must be called at the top level
   const { user, isLoading: isUserLoading } = useUser()
+  const { checkOnboardingStatus } = useOnboarding()
+  
   const [profile, setProfile] = useState(null)
   const [teamData, setTeamData] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -53,10 +54,6 @@ const Dashboard = () => {
   const [error, setError] = useState(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
-  
-  // ALWAYS default to showing the checklist initially - we'll hide it if we confirm it's completed
-  // This is the most reliable approach - if we can't confirm it's completed, we show it
-  const [showOnboarding, setShowOnboarding] = useState(true)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -108,71 +105,8 @@ const Dashboard = () => {
       }
     }
 
-    // Simplified onboarding check - show by default, but uses applications as signal
-    const checkOnboardingStatus = async () => {
-      try {
-        console.log("Starting onboarding check with application awareness...");
-        
-        // First check: Is there a TRUE flag in the session?
-        if (user?.user_metadata?.onboardingCompleted === true) {
-          console.log("Session confirms onboardingCompleted = true, hiding checklist");
-          setShowOnboarding(false);
-          return;
-        }
-        
-        // Second check: Is there a TRUE flag in Auth0?
-        try {
-          const directResponse = await fetch("/api/user/onboarding-completed");
-          if (directResponse.ok) {
-            const result = await directResponse.json();
-            
-            if (result.completed === true) {
-              console.log("Auth0 confirms onboardingCompleted = true, hiding checklist");
-              setShowOnboarding(false);
-              return;
-            }
-          }
-        } catch (checkError) {
-          console.warn("Error checking Auth0 directly:", checkError);
-        }
-        
-        // Third check: Is there a TRUE flag in our metadata API?
-        let metadataOnboardingCompleted = false;
-        try {
-          const metadataResponse = await fetch("/api/user/metadata");
-          if (metadataResponse.ok) {
-            const metadata = await metadataResponse.json();
-            metadataOnboardingCompleted = metadata.onboardingCompleted === true;
-            
-            if (metadataOnboardingCompleted) {
-              console.log("Metadata API confirms onboardingCompleted = true, hiding checklist");
-              setShowOnboarding(false);
-              return;
-            }
-          }
-        } catch (metadataError) {
-          console.warn("Error checking metadata API:", metadataError);
-        }
-        
-        // If not explicitly marked as completed BUT user has applications, we show a transitional state
-        // The banner shows but doesn't auto-expand, allowing the user to continue onboarding if desired
-        const hasApplications = Array.isArray(applications) && applications.length > 0;
-        
-        if (hasApplications && !metadataOnboardingCompleted) {
-          console.log("User has applications but hasn't explicitly completed onboarding, showing banner");
-          setShowOnboarding(true);
-          return;
-        }
-        
-        // For new users or users with no applications, always show the checklist
-        console.log("New user or no applications detected, showing checklist");
-        setShowOnboarding(true);
-      } catch (err) {
-        console.error("Error in onboarding check:", err);
-        // Default to showing the checklist for safety
-        setShowOnboarding(true);
-      }
-    };
+      // Removed the checkOnboardingStatus implementation 
+    // Now using the context provider version instead
 
     // Function to fetch user applications
     const fetchApplications = async () => {
@@ -208,24 +142,22 @@ const Dashboard = () => {
     };
     
     if (user) {
-      // First load all data in parallel that we need for onboarding decisions
-      const dataPromises = [
+      // Load all data in parallel
+      Promise.all([
         fetchApplications(),
         fetchProfile(),
         fetchTeamData()
-      ];
-      
-      // Then check onboarding status with all context available
-      Promise.all(dataPromises)
-        .then(() => {
-          console.log("All data loaded, now checking onboarding status with full context");
-          checkOnboardingStatus();
-        })
-        .catch(err => {
-          console.error("Error loading data for onboarding check:", err);
-          // Still try to check onboarding status even if some data failed to load
-          checkOnboardingStatus();
-        });
+      ])
+      .then(() => {
+        console.log("All dashboard data loaded successfully");
+        // Now check onboarding status using the context provider
+        checkOnboardingStatus();
+      })
+      .catch(err => {
+        console.error("Error loading dashboard data:", err);
+        // Still check onboarding status even if data loading fails
+        checkOnboardingStatus();
+      });
     }
     
     // Add debugging to check when profile and teams are loaded
@@ -333,86 +265,7 @@ const Dashboard = () => {
     }
   };
 
-  // Robust onboarding completion handler with better error handling
-  const handleCompletion = async () => {
-    console.log("Handling onboarding completion - robust approach with retries");
-    
-    // Immediately hide the checklist for better UX
-    setShowOnboarding(false);
-    
-    try {
-      // Use the specialized onboarding completion endpoint with direct Auth0 API access
-      const completionResponse = await fetch('/api/user/onboarding-completed', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ completed: true })
-      });
-      
-      if (completionResponse.ok) {
-        const result = await completionResponse.json();
-        console.log("Onboarding marked as completed:", result);
-      } else {
-        console.error("Failed to mark onboarding as completed");
-      }
-      
-      // Update the metadata with redundancy - belt and suspenders approach
-      try {
-        // Also update through metadata API for double-confirmation
-        const metadataResponse = await fetch('/api/user/metadata', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            onboardingCompleted: true,
-            onboardingCompletedAt: new Date().toISOString()
-          })
-        });
-        
-        if (metadataResponse.ok) {
-          console.log("Additional metadata update successful");
-        }
-      } catch (metadataError) {
-        console.warn("Backup metadata update failed, but primary update should still be ok:", metadataError);
-      }
-      
-      // Force a page reload to get a fresh session with the updated metadata
-      // This ensures the client has the latest metadata from Auth0
-      window.location.reload();
-      
-    } catch (error) {
-      console.error("Error in onboarding completion process:", error);
-      
-      // If the primary approach fails, try a fallback to ensure we still update
-      try {
-        // Last-resort metadata update
-        await fetch('/api/user/metadata', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            onboardingCompleted: true,
-            onboardingCompletedAt: new Date().toISOString(),
-            // Add a flag to indicate this was set via fallback
-            onboardingCompletionMethod: 'fallback'
-          })
-        });
-        
-        console.log("Used fallback method to complete onboarding");
-        
-        // Force reload anyway to refresh session
-        window.location.reload();
-      } catch (fallbackError) {
-        console.error("Even fallback method failed:", fallbackError);
-        
-        // Keep the onboarding hidden anyway for current session
-        setShowOnboarding(false);
-      }
-    }
-  };
+  // Onboarding completion is now handled by the context provider
   
   
   // Main JSX content
@@ -423,39 +276,13 @@ const Dashboard = () => {
           {/* Email mismatch alert */}
           {user?.emailMismatch && <EmailMismatchAlert emailMismatch={user.emailMismatch} />}
           
-          {/* Simple onboarding checklist display - just based on showOnboarding state */}
-          {showOnboarding && (
-            <OnboardingChecklist 
-              profile={profile}
-              onComplete={handleCompletion}
-              applications={applications}
-              isLoadingApplications={isLoadingApplications}
-              onApplySuccess={(cohort) => {
-                // When application is successful, update data but don't hide checklist
-                toast.success(`Applied to ${cohort.initiativeDetails?.name || 'program'} successfully!`);
-                
-                // Refresh data to show updated state
-                Promise.all([
-                  // Refresh applications
-                  fetch('/api/user/check-application')
-                    .then(res => res.json())
-                    .then(data => {
-                      if (data?.applications) setApplications(data.applications);
-                    })
-                    .catch(err => console.error("Error refreshing apps:", err)),
-                    
-                  // Refresh teams  
-                  fetch("/api/teams")
-                    .then(res => res.json())
-                    .then(data => {
-                      setTeamsData(data.teams || []);
-                      if (data.teams?.length > 0) setTeamData(data.teams[0]);
-                    })
-                    .catch(err => console.error("Error refreshing teams:", err))
-                ]);
-              }}
-            />
-          )}
+          {/* New onboarding components */}
+          <OnboardingBanner />
+          <OnboardingDialog 
+            profile={profile}
+            applications={applications}
+            isLoadingApplications={isLoadingApplications}
+          />
           
           {/* Page Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
