@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Info } from "lucide-react";
+import { Users, Info, Pencil } from "lucide-react";
 import TeamDetailModal from "./TeamDetailModal";
 import CohortCard from "./shared/CohortCard";
 import { useToast } from "@/components/ui/use-toast";
@@ -19,6 +19,7 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
   const { toast } = useToast();
   const [currentTeam, setCurrentTeam] = useState(team);
   const [showDetails, setShowDetails] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedCohort, setSelectedCohort] = useState(null);
   const [teamCohorts, setTeamCohorts] = useState([]);
   const [isLoadingCohorts, setIsLoadingCohorts] = useState(false);
@@ -166,15 +167,31 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
           </div>
         </CardContent>
         
-        <CardFooter>
-          <Button 
-            variant="outline"
-            className="w-full"
-            onClick={() => setShowDetails(true)}
-          >
-            <Info className="mr-2 h-4 w-4" />
-            View Team Details
-          </Button>
+        <CardFooter className="flex flex-col gap-2">
+          <div className="flex gap-2 w-full">
+            <Button 
+              variant="outline"
+              className="flex-1"
+              onClick={() => setShowDetails(true)}
+            >
+              <Info className="mr-2 h-4 w-4" />
+              View Details
+            </Button>
+            
+            {activeMembers.some(m => m.isCurrentUser) && (
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowDetails(true);
+                  setTimeout(() => setShowEditDialog(true), 100);
+                }}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit Details
+              </Button>
+            )}
+          </div>
         </CardFooter>
       </Card>
       

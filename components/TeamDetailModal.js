@@ -55,17 +55,6 @@ const TeamDetailModal = ({ team, isOpen, onClose, onTeamUpdated }) => {
               <DialogTitle className="text-xl flex items-center">
                 {team.name}
               </DialogTitle>
-              {isUserTeamMember && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 w-8 p-0" 
-                  onClick={() => setShowEditDialog(true)}
-                >
-                  <Pencil className="h-4 w-4" />
-                  <span className="sr-only">Edit</span>
-                </Button>
-              )}
             </div>
             <DialogDescription>
               Team details and members
@@ -146,7 +135,17 @@ const TeamDetailModal = ({ team, isOpen, onClose, onTeamUpdated }) => {
             </div>
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="flex justify-between sm:justify-between gap-2">
+            <div className="flex-grow"></div>
+            {isUserTeamMember && (
+              <Button
+                variant="outline"
+                onClick={() => setShowEditDialog(true)}
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit Details
+              </Button>
+            )}
             <Button variant="outline" onClick={onClose}>
               Close
             </Button>
