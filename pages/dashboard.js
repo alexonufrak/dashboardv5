@@ -286,7 +286,7 @@ const Dashboard = () => {
     // Immediately hide the checklist for better UX
     setShowOnboarding(false);
     
-    // Use our dedicated endpoint with a simple POST
+    // Fire and forget to our dedicated completion endpoint
     fetch('/api/user/onboarding-completed', {
       method: 'POST',
       headers: {
@@ -295,7 +295,21 @@ const Dashboard = () => {
       body: JSON.stringify({ completed: true })
     })
     .then(response => {
-      if (!response.ok) {
+      if (response.ok) {
+        console.log("Onboarding marked as completed");
+        
+        // Also update Auth0 metadata for persistence
+        return fetch('/api/user/metadata', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            onboardingCompleted: true,
+            completedAt: new Date().toISOString()
+          })
+        });
+      } else {
         console.error("Failed to mark onboarding as completed");
       }
     })
