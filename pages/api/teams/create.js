@@ -66,8 +66,7 @@ export default withApiAuthRequired(async function createTeamHandler(req, res) {
     const memberRecord = await membersTable.create({
       'Contact': [userProfile.contactId],
       'Team': [teamRecord.id],
-      'Status': 'Active',
-      'Joined Date': new Date().toISOString().split('T')[0] // Today's date in YYYY-MM-DD format
+      'Status': 'Active'
     })
     
     // Return the newly created team
