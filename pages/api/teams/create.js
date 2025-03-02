@@ -67,7 +67,6 @@ export default withApiAuthRequired(async function createTeamHandler(req, res) {
       'Contact': [userProfile.contactId],
       'Team': [teamRecord.id],
       'Status': 'Active',
-      'Role': 'Team Lead',
       'Joined Date': new Date().toISOString().split('T')[0] // Today's date in YYYY-MM-DD format
     })
     
