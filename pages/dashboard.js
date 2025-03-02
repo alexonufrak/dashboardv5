@@ -155,15 +155,26 @@ const Dashboard = () => {
           // Continue to final check
         }
         
-        // Check user application status as one more signal
+        // Check user application status as one more signal - but don't auto-complete for new users
+        // Instead, we'll use this as another signal in our decision making
         if (Array.isArray(applications) && applications.length > 0) {
-          // User has applications, check if we already have an active session
-          // The timeframe check helps prevent showing/hiding flicker on first login
-          const thirtyMinutes = 30 * 60 * 1000;
-          if (user?.updated_at && (new Date() - new Date(user.updated_at) > thirtyMinutes)) {
-            console.log("User has applications and established session, assuming onboarding should be completed");
+          console.log("User has applications:", applications.length);
+          
+          // We'll check if user has explicitly set onboardingCompleted to false
+          // This indicates a newly created user who should see the checklist
+          const explicitlyFalse = metadata => 
+            metadata.hasOwnProperty('onboardingCompleted') && metadata.onboardingCompleted === false;
+          
+          // Check if this is a returning user who never completed onboarding
+          const isReturningUser = user?.updated_at && 
+            (new Date() - new Date(user.updated_at) > (24 * 60 * 60 * 1000)); // 1 day
+           
+          if (isReturningUser && 
+              !explicitlyFalse(user?.user_metadata || {}) && 
+              !explicitlyFalse(await metadataResponse.json() || {})) {
+            console.log("Returning user with applications but incomplete onboarding, auto-completing");
             
-            // Automatically mark onboarding as completed for existing users with applications
+            // Auto-complete for returning users only
             try {
               await fetch('/api/user/onboarding-completed', {
                 method: 'POST',

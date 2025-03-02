@@ -55,10 +55,11 @@ const afterCallback = async (req, res, session, state) => {
     if (referralSource) session.user.referralSource = referralSource;
     if (cohortId) session.user.cohortId = cohortId;
 
-    // Initialize onboarding steps - first step is always completed
+    // Initialize session metadata - ensure onboarding is properly set up
     session.user.user_metadata = {
       ...session.user.user_metadata,
       onboarding: ['register'],
+      onboardingCompleted: false, // Explicitly set to false to ensure checklist shows for new users
       ...(cohortId ? { selectedCohort: cohortId } : {})
     };
 
@@ -91,6 +92,10 @@ const afterCallback = async (req, res, session, state) => {
         onboarding: ['register'], // First step is always completed for new users
         ...(referralSource ? { referralSource } : {}),
         ...(cohortId ? { selectedCohort: cohortId } : {}),
+        
+        // Explicitly set onboardingCompleted to false for new users
+        // This ensures the checklist will show on first login
+        onboardingCompleted: false,
         
         // Store the verified email in metadata for future reference
         ...(verifiedEmail ? { verifiedEmail } : {}),
