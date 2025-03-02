@@ -38,9 +38,13 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
     const contactId = userProfile.contactId;
     console.log(`Getting applications for contact ID: ${contactId}`);
 
-    // Initialize Applications table
-    const applicationsTable = process.env.AIRTABLE_APPLICATIONS_TABLE_ID
-      ? base(process.env.AIRTABLE_APPLICATIONS_TABLE_ID)
+    // Initialize Applications table with proper logging
+    const applicationsTableId = process.env.AIRTABLE_APPLICATIONS_TABLE_ID;
+    console.log(`Applications table ID from env: ${applicationsTableId || 'Not set'}`);
+    
+    // Verify we have a table ID and initialize the table
+    const applicationsTable = applicationsTableId 
+      ? base(applicationsTableId)
       : null;
 
     if (!applicationsTable) {
@@ -53,7 +57,14 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
 
     // Debug applications table configuration
     console.log(`Applications table initialized: ${!!applicationsTable}`);
-    console.log('Applications table ID:', process.env.AIRTABLE_APPLICATIONS_TABLE_ID || 'Not set');
+    console.log('All environment variables related to Airtable:', 
+      Object.keys(process.env)
+        .filter(key => key.includes('AIRTABLE'))
+        .reduce((obj, key) => {
+          obj[key] = process.env[key] ? 'Set' : 'Not set';
+          return obj;
+        }, {})
+    );
     
     // List all available table IDs from env vars for debugging
     const envKeys = Object.keys(process.env).filter(key => 
@@ -106,27 +117,53 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
     // Look for applications with multiple possible field names for Contact
     console.log(`Attempting to find applications for contact ${contactId} with various field name options`);
     
-    // Try with simple formula first - use the correct field name from schema
+    // Try all possible approaches to find the user's applications
     let records = [];
+    
+    // 1. First try: Use Contact linked field (most reliable)
     try {
+      console.log(`Searching for applications with Contact field containing "${contactId}"`);
       records = await applicationsTable.select({
-        filterByFormula: `SEARCH("${contactId}", {Record ID (from Contact)})`,
+        filterByFormula: `OR(
+          SEARCH("${contactId}", ARRAYJOIN({Contact})),
+          SEARCH("${contactId}", {Record ID (from Contact)})
+        )`,
       }).firstPage();
       
-      console.log(`Found ${records.length} applications using {Record ID (from Contact)} field`);
+      console.log(`Found ${records.length} applications using Contact field approaches`);
     } catch (error) {
-      console.error('Error querying with Record ID (from Contact) field:', error);
-      
-      // Try the Contact field directly (this is the linked record field)
+      console.error('Error querying with Contact fields:', error);
+    }
+    
+    // 2. Second try: If no records found, try by user email
+    if (records.length === 0) {
       try {
-        // Proper syntax for checking linked record fields in Airtable
+        const userEmail = session.user.email.toLowerCase();
+        console.log(`Searching for applications with Email field matching "${userEmail}"`);
+        
         records = await applicationsTable.select({
-          filterByFormula: `SEARCH("${contactId}", ARRAYJOIN({Contact}))`,
+          filterByFormula: `LOWER({Email}) = "${userEmail}"`,
         }).firstPage();
         
-        console.log(`Found ${records.length} applications using {Contact} linked record field`);
-      } catch (contactError) {
-        console.error('Error querying with Contact linked record field:', contactError);
+        console.log(`Found ${records.length} applications using Email field match`);
+      } catch (emailError) {
+        console.error('Error querying with Email field:', emailError);
+      }
+    }
+    
+    // 3. Third try: If still no records, try using Email lookup from Contact
+    if (records.length === 0) {
+      try {
+        const userEmail = session.user.email.toLowerCase();
+        console.log(`Searching for applications with Email (from Contact) matching "${userEmail}"`);
+        
+        records = await applicationsTable.select({
+          filterByFormula: `LOWER({Email (from Contact)}) = "${userEmail}"`,
+        }).firstPage();
+        
+        console.log(`Found ${records.length} applications using Email (from Contact) field match`);
+      } catch (emailLookupError) {
+        console.error('Error querying with Email (from Contact) field:', emailLookupError);
       }
     }
     
@@ -160,6 +197,52 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
       });
     }
     
+    // Log contact ID to confirm correct user
+    console.log(`Using contact ID for signed-in user: ${contactId}`);
+    
+    // If records are still empty, try a direct approach with the app ID env var
+    if (records.length === 0) {
+      try {
+        console.log('Trying to find all applications in table');
+        
+        // Get all records to see if any applications exist
+        const sampleRecords = await applicationsTable.select({
+          maxRecords: 10
+        }).firstPage();
+        
+        console.log(`Found ${sampleRecords.length} total applications in table`);
+        
+        if (sampleRecords.length > 0) {
+          console.log('Sample application fields:', Object.keys(sampleRecords[0].fields));
+          
+          // Check if any of these records match our contact ID
+          const matchingRecords = sampleRecords.filter(record => {
+            // Check in Contact field if it's an array
+            if (record.fields.Contact && Array.isArray(record.fields.Contact)) {
+              return record.fields.Contact.includes(contactId);
+            }
+            // Check in Record ID from Contact if it's a string
+            if (record.fields['Record ID (from Contact)'] && 
+                record.fields['Record ID (from Contact)'].includes(contactId)) {
+              return true;
+            }
+            // Check in Email field
+            if (record.fields.Email && record.fields.Email.toLowerCase() === session.user.email.toLowerCase()) {
+              return true;
+            }
+            return false;
+          });
+          
+          if (matchingRecords.length > 0) {
+            console.log(`Found ${matchingRecords.length} matching records by manual filtering`);
+            records = matchingRecords;
+          }
+        }
+      } catch (error) {
+        console.error('Error in fallback application search:', error);
+      }
+    }
+    
     // Get possible field names for cohort and status
     const cohortFieldNames = ['Cohort', 'Program', 'Initiative', 'CohortId'];
     const statusFieldNames = ['Status', 'Application Status', 'State'];
@@ -186,6 +269,13 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
           break;
         }
       }
+      
+      // Log each found application for debugging
+      console.log(`Processing application record ${record.id}:`, {
+        cohortId,
+        status,
+        fields: Object.keys(record.fields)
+      });
       
       return {
         id: record.id,
