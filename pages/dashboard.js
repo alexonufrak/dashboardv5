@@ -108,12 +108,12 @@ const Dashboard = () => {
       }
     }
 
-    // Extremely simplified onboarding check: only hide the checklist if we're CERTAIN it should be hidden
+    // Simplified onboarding check - show by default, but uses applications as signal
     const checkOnboardingStatus = async () => {
       try {
-        console.log("Starting simplified onboarding check...");
+        console.log("Starting onboarding check with application awareness...");
         
-        // Most direct approach: Is there a TRUE flag in the session?
+        // First check: Is there a TRUE flag in the session?
         if (user?.user_metadata?.onboardingCompleted === true) {
           console.log("Session confirms onboardingCompleted = true, hiding checklist");
           setShowOnboarding(false);
@@ -122,11 +122,9 @@ const Dashboard = () => {
         
         // Second check: Is there a TRUE flag in Auth0?
         try {
-          // Make a direct request to the Auth0 Management API through our endpoint
           const directResponse = await fetch("/api/user/onboarding-completed");
           if (directResponse.ok) {
             const result = await directResponse.json();
-            console.log("Direct Auth0 check result:", result);
             
             if (result.completed === true) {
               console.log("Auth0 confirms onboardingCompleted = true, hiding checklist");
@@ -139,12 +137,14 @@ const Dashboard = () => {
         }
         
         // Third check: Is there a TRUE flag in our metadata API?
+        let metadataOnboardingCompleted = false;
         try {
           const metadataResponse = await fetch("/api/user/metadata");
           if (metadataResponse.ok) {
             const metadata = await metadataResponse.json();
+            metadataOnboardingCompleted = metadata.onboardingCompleted === true;
             
-            if (metadata.onboardingCompleted === true) {
+            if (metadataOnboardingCompleted) {
               console.log("Metadata API confirms onboardingCompleted = true, hiding checklist");
               setShowOnboarding(false);
               return;
@@ -154,14 +154,23 @@ const Dashboard = () => {
           console.warn("Error checking metadata API:", metadataError);
         }
         
-        // By default: Show the checklist if we couldn't CONFIRM it's completed
-        console.log("Could not positively confirm onboarding is completed, showing checklist");
+        // If not explicitly marked as completed BUT user has applications, we show a transitional state
+        // The banner shows but doesn't auto-expand, allowing the user to continue onboarding if desired
+        const hasApplications = Array.isArray(applications) && applications.length > 0;
         
-        // No change needed - we already default to showing the checklist
-        // This ensures new accounts always see it
+        if (hasApplications && !metadataOnboardingCompleted) {
+          console.log("User has applications but hasn't explicitly completed onboarding, showing banner");
+          setShowOnboarding(true);
+          return;
+        }
+        
+        // For new users or users with no applications, always show the checklist
+        console.log("New user or no applications detected, showing checklist");
+        setShowOnboarding(true);
       } catch (err) {
         console.error("Error in onboarding check:", err);
-        // Already defaulting to showing - no action needed
+        // Default to showing the checklist for safety
+        setShowOnboarding(true);
       }
     };
 

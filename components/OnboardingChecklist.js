@@ -396,65 +396,308 @@ const OnboardingChecklist = ({
   const allStepsCompleted = Object.values(stepStatus).every(step => step.completed);
   
   return (
-    <Card className={`
-      mb-6 shadow-md border-primary/10 overflow-hidden transition-all
-      ${isCompleting ? 'animate-complete-fade' : ''}
-    `}>
-      {/* Card Header */}
-      <CardHeader 
-        className={`
-          cursor-pointer transition-all duration-200 py-5
-          bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950
-          hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900 dark:hover:to-cyan-900
-          ${isCompleting ? 'bg-green-100 dark:bg-green-900' : ''}
-        `}
-        onClick={toggleExpanded}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-xl md:text-2xl text-primary">
-              Welcome to xFoundry!
-            </CardTitle>
-            <CardDescription className="mt-1">
-              Let's get you started in just a few steps
-            </CardDescription>
+    <>
+      {/* Welcome Banner - Always visible */}
+      <Card className={`
+        mb-6 shadow-md border-primary/10 overflow-hidden transition-all
+        ${isCompleting ? 'animate-complete-fade' : ''}
+      `}>
+        <CardHeader 
+          className={`
+            cursor-pointer transition-all duration-200 py-5
+            bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950
+            hover:from-blue-100 hover:to-cyan-100 dark:hover:from-blue-900 dark:hover:to-cyan-900
+            ${isCompleting ? 'bg-green-100 dark:bg-green-900' : ''}
+          `}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-xl md:text-2xl text-primary">
+                Welcome to xFoundry!
+              </CardTitle>
+              <CardDescription className="mt-1">
+                {allStepsCompleted ? 
+                  "You've completed all onboarding steps!" : 
+                  "Complete the onboarding to get started"}
+              </CardDescription>
+            </div>
+            
+            {/* Progress bar only shown when not all steps completed */}
+            {!allStepsCompleted && (
+              <div className="flex items-center gap-3">
+                <div className="hidden md:block w-48">
+                  <Progress value={completionPercentage} className="h-2" />
+                </div>
+                <Button 
+                  onClick={() => setIsExpanded(true)}
+                  size="sm"
+                >
+                  Continue Onboarding
+                </Button>
+              </div>
+            )}
+            
+            {/* Complete button shown only when all steps completed */}
+            {allStepsCompleted && (
+              <Button
+                className={`
+                  transition-all duration-200
+                  ${isCompleting ? 'bg-green-500 scale-110 shadow-lg animate-pulse' : 'bg-green-600 hover:bg-green-700'} 
+                  text-white
+                `}
+                onClick={completeOnboarding}
+                disabled={isCompleting}
+              >
+                {isCompleting ? (
+                  <span className="flex items-center">
+                    <CheckCircle className="mr-2 h-4 w-4 animate-bounce" />
+                    Completing...
+                  </span>
+                ) : (
+                  "Complete Onboarding"
+                )}
+              </Button>
+            )}
           </div>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={e => { 
-              e.stopPropagation();
-              toggleExpanded();
-            }}
-            className="h-9 w-9 p-0 rounded-full bg-white/50 hover:bg-white/80 transition-all duration-200"
-          >
-            {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-          </Button>
-        </div>
-        
-        {/* Show progress indicator in collapsed state - Animated */}
-        <div className={`
-          mt-3 transition-all duration-300 ease-in-out overflow-hidden
-          ${!isExpanded ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}
-        `}>
-          <div className="w-full">
-            <Progress 
-              value={completionPercentage} 
-              className="h-2 bg-white/50" 
-            />
-            <div className="flex items-center justify-between mt-1">
-              <span className="text-xs font-medium text-primary/80">
-                Progress: {completionPercentage}% complete
+        </CardHeader>
+      </Card>
+      
+      {/* Fullscreen Dialog for Onboarding Steps */}
+      {isExpanded && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Complete Your Onboarding</h2>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setIsExpanded(false)}
+              >
+                <ChevronDown className="h-5 w-5" />
+              </Button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              {/* Progress indicator */}
+              <div className="mb-6">
+                <div className="flex justify-between mb-1">
+                  <div className="text-sm font-medium text-primary">Your progress</div>
+                  <div className="text-sm text-muted-foreground">
+                    {Object.values(stepStatus).filter(s => s.completed).length}/{Object.keys(stepStatus).length} complete
+                  </div>
+                </div>
+                <Progress value={completionPercentage} className="h-2" />
+              </div>
+              
+              {/* Steps */}
+              <div className="space-y-6">
+                {/* Register Step */}
+                <div className="border rounded-lg overflow-hidden shadow-sm border-green-100">
+                  {/* Step Header */}
+                  <div 
+                    className="flex items-center p-4 cursor-pointer transition-colors duration-200 bg-green-50 hover:bg-green-100/80"
+                    onClick={() => setRegisterExpanded(!registerExpanded)}
+                  >
+                    <div className="shrink-0 w-10 h-10 flex items-center justify-center rounded-full mr-4 transition-all duration-300 text-green-600 bg-green-100">
+                      <CheckCircle className="h-5 w-5" />
+                    </div>
+                    
+                    <div className="grow">
+                      <h3 className="text-base font-medium transition-colors duration-200 text-green-800">
+                        {stepStatus.register.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">{stepStatus.register.description}</p>
+                    </div>
+                    
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="ml-2 h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setRegisterExpanded(!registerExpanded);
+                      }}
+                      type="button"
+                    >
+                      {registerExpanded ? 
+                        <ChevronUp className="h-4 w-4" /> : 
+                        <ChevronDown className="h-4 w-4" />
+                      }
+                    </Button>
+                  </div>
+                  
+                  {/* Step Content - Animated */}
+                  <div 
+                    className={`
+                      overflow-hidden transition-all duration-300 ease-in-out
+                      ${registerExpanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}
+                    `}
+                  >
+                    <div className="p-4 border-t border-gray-100">
+                      <div className="flex flex-col items-center text-center">
+                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                          <CheckCircle className="h-8 w-8 text-green-600" />
+                        </div>
+                        <h3 className="text-lg font-medium text-green-700 mb-3">
+                          Your account is set up!
+                        </h3>
+                        <p className="text-muted-foreground max-w-lg mb-6">
+                          Welcome to xFoundry! You now have access to ConneXions, our community hub where you 
+                          can connect with other students, mentors, and faculty in your program.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <Button 
+                            variant="outline"
+                            className="gap-2"
+                            onClick={() => window.open("https://connexions.xfoundry.org", "_blank")}
+                          >
+                            Visit ConneXions
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setRegisterExpanded(false);
+                              setCohortExpanded(true);
+                            }}
+                          >
+                            Continue to next step
+                            <ArrowRight className="ml-1 h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Get Involved Step */}
+                <div className={`
+                  border rounded-lg overflow-hidden shadow-sm 
+                  ${stepStatus.selectCohort.completed ? 'border-green-100' : 'border-gray-200'}
+                `}>
+                  {/* Step Header */}
+                  <div 
+                    className={`
+                      flex items-center p-4 cursor-pointer transition-colors duration-200
+                      ${stepStatus.selectCohort.completed ? 'bg-green-50 hover:bg-green-100/80' : 'bg-gray-50 hover:bg-gray-100/80'}
+                    `}
+                    onClick={() => setCohortExpanded(!cohortExpanded)}
+                  >
+                    <div className={`
+                      shrink-0 w-10 h-10 flex items-center justify-center rounded-full mr-4 transition-all duration-300
+                      ${stepStatus.selectCohort.completed ? 'text-green-600 bg-green-100' : 'text-primary bg-primary/10'}
+                    `}>
+                      {stepStatus.selectCohort.completed ? <CheckCircle className="h-5 w-5" /> : <Compass className="h-5 w-5" />}
+                    </div>
+                    
+                    <div className="grow">
+                      <h3 className={`
+                        text-base font-medium transition-colors duration-200
+                        ${stepStatus.selectCohort.completed ? 'text-green-800' : 'text-gray-800'}
+                      `}>
+                        {stepStatus.selectCohort.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">{stepStatus.selectCohort.description}</p>
+                    </div>
+                    
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="ml-2 h-8 w-8 p-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCohortExpanded(!cohortExpanded);
+                      }}
+                      type="button"
+                    >
+                      {cohortExpanded ? 
+                        <ChevronUp className="h-4 w-4" /> : 
+                        <ChevronDown className="h-4 w-4" />
+                      }
+                    </Button>
+                  </div>
+                  
+                  {/* Step Content - Animated */}
+                  <div 
+                    className={`
+                      overflow-hidden transition-all duration-300 ease-in-out
+                      ${cohortExpanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}
+                    `}
+                  >
+                    <div className="p-4 border-t border-gray-100">
+                      {!stepStatus.selectCohort.completed ? (
+                        <div>
+                          <h3 className="text-lg font-medium mb-2">
+                            Choose a program to join
+                          </h3>
+                          <p className="text-muted-foreground mb-6">
+                            Select from the available programs below to apply and get started with xFoundry
+                          </p>
+                          
+                          {/* Available Programs */}
+                          <CohortGrid 
+                            cohorts={profile.cohorts || []}
+                            profile={profile}
+                            isLoading={isLoading}
+                            isLoadingApplications={isLoadingApplications}
+                            applications={applications}
+                            onApply={handleCohortApply}
+                            onApplySuccess={(cohort) => markStepComplete('selectCohort')}
+                            columns={{ default: 1, md: 2, lg: 2 }}
+                            emptyMessage="No programs are currently available for your institution."
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center text-center">
+                          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                            <CheckCircle className="h-8 w-8 text-green-600" />
+                          </div>
+                          <h3 className="text-xl font-medium text-green-700 mb-2">
+                            You've applied to a program!
+                          </h3>
+                          <p className="text-muted-foreground max-w-md mb-4">
+                            Your application has been submitted. You'll receive updates about your application status soon.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6 border-t border-gray-200 dark:border-gray-800 flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">
+                {completionPercentage}% complete
               </span>
-              <span className="text-xs text-primary/80">
-                {Object.values(stepStatus).filter(s => s.completed).length}/{Object.keys(stepStatus).length} steps
-              </span>
+              
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsExpanded(false)}
+                >
+                  Close
+                </Button>
+                
+                {allStepsCompleted && (
+                  <Button
+                    className={`
+                      transition-all duration-200
+                      ${isCompleting ? 'bg-green-500 animate-pulse' : 'bg-green-600 hover:bg-green-700'} 
+                      text-white
+                    `}
+                    onClick={completeOnboarding}
+                    disabled={isCompleting}
+                  >
+                    {isCompleting ? "Completing..." : "Complete Onboarding"}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </CardHeader>
+      )}
       
-      {/* Fillout form popup */}
+      {/* Embed all popups and dialogs */}
       {activeFilloutForm && (
         <FilloutPopupEmbed
           filloutId={activeFilloutForm.formId}
@@ -493,238 +736,7 @@ const OnboardingChecklist = ({
         onClose={() => setActiveTeamCreateDialog(false)}
         onCreateTeam={handleTeamCreated}
       />
-      
-      {/* Expanded content with animation */}
-      <div className={`
-        transition-all duration-500 ease-in-out overflow-hidden
-        ${isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}
-      `}>
-        <CardContent className="p-6">
-          {/* Progress indicator */}
-          <div className="mb-6">
-            <div className="flex justify-between mb-1">
-              <div className="text-sm font-medium text-primary">Your progress</div>
-              <div className="text-sm text-muted-foreground">
-                {Object.values(stepStatus).filter(s => s.completed).length}/{Object.keys(stepStatus).length} complete
-              </div>
-            </div>
-            <Progress value={completionPercentage} className="h-2" />
-          </div>
-          
-          {/* Steps */}
-          <div className="space-y-1">
-            {/* Register Step */}
-            <div className="border rounded-lg overflow-hidden mb-4 shadow-sm border-green-100">
-              {/* Step Header */}
-              <div 
-                className="flex items-center p-4 cursor-pointer transition-colors duration-200 bg-green-50 hover:bg-green-100/80"
-                onClick={() => setRegisterExpanded(!registerExpanded)}
-              >
-                <div className="shrink-0 w-10 h-10 flex items-center justify-center rounded-full mr-4 transition-all duration-300 text-green-600 bg-green-100">
-                  <CheckCircle className="h-5 w-5" />
-                </div>
-                
-                <div className="grow">
-                  <h3 className="text-base font-medium transition-colors duration-200 text-green-800">
-                    {stepStatus.register.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">{stepStatus.register.description}</p>
-                </div>
-                
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="ml-2 h-8 w-8 p-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setRegisterExpanded(!registerExpanded);
-                  }}
-                  type="button"
-                >
-                  {registerExpanded ? 
-                    <ChevronUp className="h-4 w-4" /> : 
-                    <ChevronDown className="h-4 w-4" />
-                  }
-                </Button>
-              </div>
-              
-              {/* Step Content - Animated */}
-              <div 
-                className={`
-                  overflow-hidden transition-all duration-300 ease-in-out
-                  ${registerExpanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}
-                `}
-              >
-                <div className="p-4 border-t border-gray-100">
-                  <div className="flex flex-col items-center text-center">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                      <CheckCircle className="h-8 w-8 text-green-600" />
-                    </div>
-                    <h3 className="text-lg font-medium text-green-700 mb-3">
-                      Your account is set up!
-                    </h3>
-                    <p className="text-muted-foreground max-w-lg mb-6">
-                      Welcome to xFoundry! You now have access to ConneXions, our community hub where you 
-                      can connect with other students, mentors, and faculty in your program.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <Button 
-                        variant="outline"
-                        className="gap-2"
-                        onClick={() => window.open("https://connexions.xfoundry.org", "_blank")}
-                      >
-                        Visit ConneXions
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setRegisterExpanded(false);
-                          setCohortExpanded(true);
-                        }}
-                      >
-                        Continue to next step
-                        <ArrowRight className="ml-1 h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Get Involved Step */}
-            <div className={`
-              border rounded-lg overflow-hidden mb-4 shadow-sm 
-              ${stepStatus.selectCohort.completed ? 'border-green-100' : 'border-gray-200'}
-            `}>
-              {/* Step Header */}
-              <div 
-                className={`
-                  flex items-center p-4 cursor-pointer transition-colors duration-200
-                  ${stepStatus.selectCohort.completed ? 'bg-green-50 hover:bg-green-100/80' : 'bg-gray-50 hover:bg-gray-100/80'}
-                `}
-                onClick={() => setCohortExpanded(!cohortExpanded)}
-              >
-                <div className={`
-                  shrink-0 w-10 h-10 flex items-center justify-center rounded-full mr-4 transition-all duration-300
-                  ${stepStatus.selectCohort.completed ? 'text-green-600 bg-green-100' : 'text-primary bg-primary/10'}
-                `}>
-                  {stepStatus.selectCohort.completed ? <CheckCircle className="h-5 w-5" /> : <Compass className="h-5 w-5" />}
-                </div>
-                
-                <div className="grow">
-                  <h3 className={`
-                    text-base font-medium transition-colors duration-200
-                    ${stepStatus.selectCohort.completed ? 'text-green-800' : 'text-gray-800'}
-                  `}>
-                    {stepStatus.selectCohort.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">{stepStatus.selectCohort.description}</p>
-                </div>
-                
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="ml-2 h-8 w-8 p-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCohortExpanded(!cohortExpanded);
-                  }}
-                  type="button"
-                >
-                  {cohortExpanded ? 
-                    <ChevronUp className="h-4 w-4" /> : 
-                    <ChevronDown className="h-4 w-4" />
-                  }
-                </Button>
-              </div>
-              
-              {/* Step Content - Animated */}
-              <div 
-                className={`
-                  overflow-hidden transition-all duration-300 ease-in-out
-                  ${cohortExpanded ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'}
-                `}
-              >
-                <div className="p-4 border-t border-gray-100">
-                  {!stepStatus.selectCohort.completed ? (
-                    <div>
-                      <h3 className="text-lg font-medium mb-2">
-                        Choose a program to join
-                      </h3>
-                      <p className="text-muted-foreground mb-6">
-                        Select from the available programs below to apply and get started with xFoundry
-                      </p>
-                      
-                      {/* Available Programs */}
-                      <CohortGrid 
-                        cohorts={profile.cohorts || []}
-                        profile={profile}
-                        isLoading={isLoading}
-                        isLoadingApplications={isLoadingApplications}
-                        applications={applications}
-                        onApply={handleCohortApply}
-                        onApplySuccess={(cohort) => markStepComplete('selectCohort')}
-                        columns={{ default: 1, md: 2, lg: 2 }}
-                        emptyMessage="No programs are currently available for your institution."
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center text-center">
-                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                        <CheckCircle className="h-8 w-8 text-green-600" />
-                      </div>
-                      <h3 className="text-xl font-medium text-green-700 mb-2">
-                        You've applied to a program!
-                      </h3>
-                      <p className="text-muted-foreground max-w-md mb-4">
-                        Your application has been submitted. You'll receive updates about your application status soon.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-        
-        <CardFooter className="justify-between bg-gray-50 border-t border-gray-100 p-4">
-          <span className="text-sm text-muted-foreground">
-            {completionPercentage}% complete
-          </span>
-          
-          {allStepsCompleted ? (
-            <Button
-              className={`
-                transition-all duration-200
-                ${isCompleting 
-                  ? 'bg-green-500 scale-110 shadow-lg animate-pulse' 
-                  : 'bg-green-600 hover:bg-green-700'
-                } text-white
-              `}
-              onClick={completeOnboarding}
-              disabled={isCompleting}
-            >
-              {isCompleting ? (
-                <span className="flex items-center">
-                  <CheckCircle className="mr-2 h-4 w-4 animate-bounce" />
-                  Completing...
-                </span>
-              ) : (
-                "Complete Onboarding"
-              )}
-            </Button>
-          ) : (
-            <Button 
-              variant="outline"
-              className="transition-all duration-200"
-              onClick={toggleExpanded}
-            >
-              Collapse Checklist
-            </Button>
-          )}
-        </CardFooter>
-      </div>
-    </Card>
+    </>
   );
 };
 
