@@ -11,15 +11,8 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
   }
 
   try {
-    // Get cohort ID from query params
+    // Get cohort ID from query params (optional)
     const { cohortId } = req.query;
-    
-    if (!cohortId) {
-      return res.status(400).json({ 
-        error: 'Missing cohort ID',
-        applications: [] 
-      });
-    }
 
     // Get the user session
     const session = await getSession(req, res);
@@ -52,27 +45,40 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
       });
     }
 
-    // Query applications where Contact is the user's contact ID AND Cohort is the specified cohort
+    // Query applications for the current user
     let records = [];
     
     try {
+      // If cohortId is provided, filter by both contact and cohort
+      // Otherwise, just filter by contact
+      const filterFormula = cohortId 
+        ? `AND(
+            FIND("${contactId}", ARRAYJOIN(Contact))>0,
+            FIND("${cohortId}", ARRAYJOIN(Cohort))>0
+          )`
+        : `FIND("${contactId}", ARRAYJOIN(Contact))>0`;
+      
       records = await applicationsTable.select({
-        filterByFormula: `AND(
-          FIND("${contactId}", ARRAYJOIN(Contact))>0,
-          FIND("${cohortId}", ARRAYJOIN(Cohort))>0
-        )`
+        filterByFormula: filterFormula
       }).firstPage();
     } catch (error) {
       console.error('Error finding applications:', error);
     }
     
     // Transform to simpler format
-    const applications = records.map(record => ({
-      id: record.id,
-      cohortId: cohortId,
-      status: record.fields.Status || 'Submitted',
-      createdAt: record._rawJson.createdTime
-    }));
+    const applications = records.map(record => {
+      // Get cohort ID from the record
+      const recordCohortId = record.fields.Cohort && Array.isArray(record.fields.Cohort) 
+        ? record.fields.Cohort[0] 
+        : null;
+      
+      return {
+        id: record.id,
+        cohortId: recordCohortId,
+        status: record.fields.Status || 'Submitted',
+        createdAt: record._rawJson.createdTime
+      };
+    });
 
     // Return applications matching the criteria
     return res.status(200).json({
