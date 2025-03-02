@@ -191,8 +191,16 @@ const Dashboard = () => {
         console.log('Applications data from API:', data);
         
         if (data && Array.isArray(data.applications)) {
-          console.log(`Found ${data.applications.length} applications for user`);
-          setApplications(data.applications);
+          const apps = data.applications;
+          console.log(`Found ${apps.length} applications for user`);
+          
+          // Immediately hide checklist if applications exist
+          if (apps.length > 0) {
+            console.log('Applications found, hiding checklist immediately');
+            setShowOnboarding(false);
+          }
+          
+          setApplications(apps);
         } else {
           console.warn('No applications array in response');
           setApplications([]);
@@ -206,12 +214,14 @@ const Dashboard = () => {
     };
     
     if (user) {
-      // Load user data
-      fetchProfile();
-      fetchTeamData();
+      // Load applications FIRST to immediately hide checklist if needed
       fetchApplications();
       
-      // Check onboarding status
+      // Load other data after
+      fetchProfile();
+      fetchTeamData();
+      
+      // Check onboarding status as a fallback
       checkOnboardingStatus();
     }
     
@@ -224,10 +234,43 @@ const Dashboard = () => {
     }
   }, [user]);
   
-  // Log when applications data changes, but don't hide checklist
+  // When applications data changes, check if we need to hide the checklist
   useEffect(() => {
-    if (!isLoadingApplications) {
-      console.log('Applications data updated:', applications);
+    if (!isLoadingApplications && applications.length > 0) {
+      console.log('Applications found, hiding checklist:', applications);
+      
+      // User has applications, so they should not see the checklist
+      setShowOnboarding(false);
+      
+      // Also update metadata to mark onboarding as completed permanently
+      fetch('/api/user/metadata')
+        .then(res => res.json())
+        .then(metadata => {
+          // Only update if not already marked as completed
+          if (!metadata.onboardingCompleted) {
+            fetch('/api/user/metadata', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                onboardingCompleted: true,
+                onboardingSkipped: false,
+                completedAt: new Date().toISOString(),
+                // Mark that both steps are complete
+                onboarding: ['register', 'selectCohort'],
+                // Add note that this was auto-completed due to existing application
+                autoCompleted: true
+              })
+            }).then(() => {
+              console.log('Metadata updated to hide checklist permanently');
+            }).catch(err => {
+              console.error('Error updating metadata:', err);
+            });
+          }
+        });
+    } else if (!isLoadingApplications) {
+      console.log('No applications found:', applications);
     }
   }, [applications, isLoadingApplications]);
 
