@@ -35,6 +35,7 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   const [userTeams, setUserTeams] = useState([])
   const [isLoadingTeams, setIsLoadingTeams] = useState(false)
   const [selectedCohort, setSelectedCohort] = useState(null)
+  const [isApplying, setIsApplying] = useState(false)
   
   // Extract relevant data from cohort
   const initiativeName = cohort.initiativeDetails?.name || "Unknown Initiative"
@@ -94,6 +95,7 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   // Handle form completion for individual applications
   const handleFormCompleted = () => {
     setActiveFilloutForm(null)
+    setIsApplying(false)
     if (onApplySuccess) {
       onApplySuccess(cohort)
     }
@@ -102,6 +104,7 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   // Handle completion of Xtrapreneurs application
   const handleXtrapreneursFormSubmit = (data) => {
     setShowXtrapreneursForm(false)
+    setIsApplying(false)
     if (onApplySuccess) {
       onApplySuccess(cohort)
     }
@@ -176,88 +179,98 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
     console.log("Applying to cohort:", cohort)
     console.log("Participation type:", participationType)
     
-    // Check for initiative restrictions (async function now)
-    const restrictionCheck = await checkInitiativeRestrictions();
-    if (!restrictionCheck.allowed) {
-      console.log("Application restricted:", restrictionCheck);
-      setConflictDetails(restrictionCheck.details);
-      setShowInitiativeConflictDialog(true);
-      return;
-    }
+    // Set loading state for the button
+    setIsApplying(true)
     
-    // Check if this is Xtrapreneurs initiative
-    const isXtrapreneurs = cohort.initiativeDetails?.name?.toLowerCase().includes("xtrapreneurs");
-    
-    // Handle Xtrapreneurs application differently
-    if (isXtrapreneurs) {
-      console.log("Xtrapreneurs application detected - using custom form");
-      // Show custom Xtrapreneurs application form
-      setShowXtrapreneursForm(true);
-      return; // Exit early
-    }
-    
-    // For all other initiatives, use the original logic
-    const isTeamApplication = 
-      participationType.toLowerCase() === "team" || 
-      participationType.toLowerCase().includes("team") ||
-      participationType.toLowerCase() === "teams";
-    
-    if (isTeamApplication) {
-      console.log("Team participation detected")
+    try {
+      // Check for initiative restrictions
+      const restrictionCheck = await checkInitiativeRestrictions();
+      if (!restrictionCheck.allowed) {
+        console.log("Application restricted:", restrictionCheck);
+        setConflictDetails(restrictionCheck.details);
+        setShowInitiativeConflictDialog(true);
+        return;
+      }
       
-      // Check if we need to fetch teams
-      if (userTeams.length === 0 && !isLoadingTeams) {
-        try {
-          setIsLoadingTeams(true)
-          const response = await fetch('/api/teams')
-          if (response.ok) {
-            const data = await response.json()
-            const fetchedTeams = data.teams || []
-            console.log("Fetched teams:", fetchedTeams)
-            setUserTeams(fetchedTeams)
-            
-            if (fetchedTeams.length === 0) {
-              // User doesn't have any teams - show team creation dialog
-              setActiveTeamCreateDialog(true)
-              setSelectedCohort(cohort.id)
-            } else {
-              // User has teams - show team selection dialog
-              setActiveTeamSelectDialog({
-                cohort: cohort,
-                teams: fetchedTeams
-              })
-            }
-          }
-        } catch (error) {
-          console.error("Error fetching teams:", error)
-        } finally {
-          setIsLoadingTeams(false)
-        }
-      } else if (userTeams.length === 0) {
-        // User doesn't have any teams - show team creation dialog
-        setActiveTeamCreateDialog(true)
-        setSelectedCohort(cohort.id)
-      } else {
-        // User has teams - show team selection dialog
-        setActiveTeamSelectDialog({
-          cohort: cohort,
-          teams: userTeams
-        })
+      // Check if this is Xtrapreneurs initiative
+      const isXtrapreneurs = cohort.initiativeDetails?.name?.toLowerCase().includes("xtrapreneurs");
+      
+      // Handle Xtrapreneurs application differently
+      if (isXtrapreneurs) {
+        console.log("Xtrapreneurs application detected - using custom form");
+        // Show custom Xtrapreneurs application form
+        setShowXtrapreneursForm(true);
+        return; // Exit early
       }
-    } else {
-      // Individual participation - use Fillout form
-      console.log("Individual participation detected")
-      if (cohort && cohort["Application Form ID (Fillout)"]) {
-        console.log(`Using Fillout form ID: ${cohort["Application Form ID (Fillout)"]}`);
+      
+      // For all other initiatives, use the original logic
+      const isTeamApplication = 
+        participationType.toLowerCase() === "team" || 
+        participationType.toLowerCase().includes("team") ||
+        participationType.toLowerCase() === "teams";
+      
+      if (isTeamApplication) {
+        console.log("Team participation detected")
         
-        setActiveFilloutForm({
-          formId: cohort["Application Form ID (Fillout)"],
-          cohortId: cohort.id,
-          initiativeName: cohort.initiativeDetails?.name || "Program Application"
-        });
+        // Check if we need to fetch teams
+        if (userTeams.length === 0 && !isLoadingTeams) {
+          try {
+            setIsLoadingTeams(true)
+            const response = await fetch('/api/teams')
+            if (response.ok) {
+              const data = await response.json()
+              const fetchedTeams = data.teams || []
+              console.log("Fetched teams:", fetchedTeams)
+              setUserTeams(fetchedTeams)
+              
+              if (fetchedTeams.length === 0) {
+                // User doesn't have any teams - show team creation dialog
+                setActiveTeamCreateDialog(true)
+                setSelectedCohort(cohort.id)
+              } else {
+                // User has teams - show team selection dialog
+                setActiveTeamSelectDialog({
+                  cohort: cohort,
+                  teams: fetchedTeams
+                })
+              }
+            }
+          } catch (error) {
+            console.error("Error fetching teams:", error)
+          } finally {
+            setIsLoadingTeams(false)
+          }
+        } else if (userTeams.length === 0) {
+          // User doesn't have any teams - show team creation dialog
+          setActiveTeamCreateDialog(true)
+          setSelectedCohort(cohort.id)
+        } else {
+          // User has teams - show team selection dialog
+          setActiveTeamSelectDialog({
+            cohort: cohort,
+            teams: userTeams
+          })
+        }
       } else {
-        console.error("No Fillout form ID found for individual participation");
+        // Individual participation - use Fillout form
+        console.log("Individual participation detected")
+        if (cohort && cohort["Application Form ID (Fillout)"]) {
+          console.log(`Using Fillout form ID: ${cohort["Application Form ID (Fillout)"]}`);
+          
+          setActiveFilloutForm({
+            formId: cohort["Application Form ID (Fillout)"],
+            cohortId: cohort.id,
+            initiativeName: cohort.initiativeDetails?.name || "Program Application"
+          });
+        } else {
+          console.error("No Fillout form ID found for individual participation");
+        }
       }
+    } catch (error) {
+      console.error("Error in application process:", error);
+    } finally {
+      // Reset loading state after everything is done
+      setIsApplying(false);
     }
   }
   
@@ -378,10 +391,20 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
               size="sm"
               className="flex-1 h-9 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis" 
               variant={isOpen ? "default" : "secondary"}
-              disabled={!isOpen || (!filloutFormId && !participationType.toLowerCase().includes('team'))}
+              disabled={!isOpen || (!filloutFormId && !participationType.toLowerCase().includes('team')) || isApplying}
               onClick={handleApply}
             >
-              <span className="truncate">{actionButtonText}</span>
+              {isApplying ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Applying...
+                </span>
+              ) : (
+                <span className="truncate">{actionButtonText}</span>
+              )}
             </Button>
           )}
         </CardFooter>
