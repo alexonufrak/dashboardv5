@@ -54,8 +54,9 @@ const Dashboard = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   
-  // Onboarding state - much simpler approach with just one boolean flag
-  const [showOnboarding, setShowOnboarding] = useState(false)
+  // ALWAYS default to showing the checklist initially - we'll hide it if we confirm it's completed
+  // This is the most reliable approach - if we can't confirm it's completed, we show it
+  const [showOnboarding, setShowOnboarding] = useState(true)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -107,96 +108,60 @@ const Dashboard = () => {
       }
     }
 
-    // Reliable onboarding status check that always consults Auth0 directly
+    // Extremely simplified onboarding check: only hide the checklist if we're CERTAIN it should be hidden
     const checkOnboardingStatus = async () => {
       try {
-        console.log("Starting enhanced onboarding status check...");
+        console.log("Starting simplified onboarding check...");
         
-        // First try checking with the dedicated endpoint (which uses Auth0 Management API)
-        try {
-          const directResponse = await fetch("/api/user/onboarding-completed");
-          if (directResponse.ok) {
-            const result = await directResponse.json();
-            console.log("Direct Auth0 onboarding check result:", result);
-            
-            if (result.completed === true) {
-              console.log("Auth0 direct check confirms onboardingCompleted = true, hiding checklist");
-              setShowOnboarding(false);
-              return;
-            }
-          }
-        } catch (directCheckError) {
-          console.warn("Error in direct Auth0 check:", directCheckError);
-          // Continue to fallbacks
-        }
-        
-        // Second check: Try session metadata directly
+        // Most direct approach: Is there a TRUE flag in the session?
         if (user?.user_metadata?.onboardingCompleted === true) {
-          console.log("Session user_metadata has onboardingCompleted = true, hiding checklist");
+          console.log("Session confirms onboardingCompleted = true, hiding checklist");
           setShowOnboarding(false);
           return;
         }
         
-        // Third check: metadata API with fresh fetch
+        // Second check: Is there a TRUE flag in Auth0?
+        try {
+          // Make a direct request to the Auth0 Management API through our endpoint
+          const directResponse = await fetch("/api/user/onboarding-completed");
+          if (directResponse.ok) {
+            const result = await directResponse.json();
+            console.log("Direct Auth0 check result:", result);
+            
+            if (result.completed === true) {
+              console.log("Auth0 confirms onboardingCompleted = true, hiding checklist");
+              setShowOnboarding(false);
+              return;
+            }
+          }
+        } catch (checkError) {
+          console.warn("Error checking Auth0 directly:", checkError);
+        }
+        
+        // Third check: Is there a TRUE flag in our metadata API?
         try {
           const metadataResponse = await fetch("/api/user/metadata");
           if (metadataResponse.ok) {
             const metadata = await metadataResponse.json();
-            console.log("Fresh metadata API response:", metadata);
             
             if (metadata.onboardingCompleted === true) {
-              console.log("Fresh metadata shows onboardingCompleted = true, hiding checklist");
+              console.log("Metadata API confirms onboardingCompleted = true, hiding checklist");
               setShowOnboarding(false);
               return;
             }
           }
         } catch (metadataError) {
-          console.warn("Error fetching fresh metadata:", metadataError);
-          // Continue to final check
+          console.warn("Error checking metadata API:", metadataError);
         }
         
-        // Check user application status as one more signal - but don't auto-complete for new users
-        // Instead, we'll use this as another signal in our decision making
-        if (Array.isArray(applications) && applications.length > 0) {
-          console.log("User has applications:", applications.length);
-          
-          // We'll check if user has explicitly set onboardingCompleted to false
-          // This indicates a newly created user who should see the checklist
-          const explicitlyFalse = metadata => 
-            metadata.hasOwnProperty('onboardingCompleted') && metadata.onboardingCompleted === false;
-          
-          // Check if this is a returning user who never completed onboarding
-          const isReturningUser = user?.updated_at && 
-            (new Date() - new Date(user.updated_at) > (24 * 60 * 60 * 1000)); // 1 day
-           
-          if (isReturningUser && 
-              !explicitlyFalse(user?.user_metadata || {}) && 
-              !explicitlyFalse(await metadataResponse.json() || {})) {
-            console.log("Returning user with applications but incomplete onboarding, auto-completing");
-            
-            // Auto-complete for returning users only
-            try {
-              await fetch('/api/user/onboarding-completed', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ completed: true, auto: true })
-              });
-              setShowOnboarding(false);
-              return;
-            } catch (autoCompleteError) {
-              console.warn("Error auto-completing onboarding:", autoCompleteError);
-              // Continue to final decision
-            }
-          }
-        }
+        // By default: Show the checklist if we couldn't CONFIRM it's completed
+        console.log("Could not positively confirm onboarding is completed, showing checklist");
         
-        // If we couldn't confirm it's completed after all checks, show the checklist
-        console.log("Could not confirm onboarding completion after all checks, showing checklist");
-        setShowOnboarding(true);
+        // No change needed - we already default to showing the checklist
+        // This ensures new accounts always see it
       } catch (err) {
-        console.error("Error in onboarding status check:", err);
-        // Default to showing for new users
-        setShowOnboarding(true);
+        console.error("Error in onboarding check:", err);
+        // Already defaulting to showing - no action needed
       }
     };
 
