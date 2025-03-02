@@ -254,7 +254,7 @@ export default function OnboardingDialog({ profile, applications, isLoadingAppli
                         applications={applications}
                         onApply={handleCohortApply}
                         onApplySuccess={handleCohortApplySuccess}
-                        columns={{ default: 1, md: 2, lg: 2 }}
+                        columns={{ default: 1, md: 1, lg: 2 }} 
                         emptyMessage="No programs are currently available for your institution."
                       />
                     </div>

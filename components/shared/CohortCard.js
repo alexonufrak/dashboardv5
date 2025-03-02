@@ -350,35 +350,38 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
           </div>
         </CardContent>
         
-        <CardFooter className="pt-2 pb-4 flex flex-col sm:flex-row gap-2">
+        <CardFooter className="pt-2 pb-4 flex gap-2 min-h-[60px]">
           <Button 
             variant="outline"
-            className="w-full sm:w-auto sm:flex-1"
+            size="sm"
+            className="flex-1 h-9 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis"
             onClick={handleViewDetails}
           >
-            <Eye className="mr-2 h-4 w-4" />
-            View Details
+            <Eye className="mr-1 h-4 w-4 flex-shrink-0" />
+            <span className="truncate">View Details</span>
           </Button>
           
           {hasApplied ? (
             // Show Connexions button if user has already applied
             <Button 
-              className="w-full sm:w-auto sm:flex-1" 
+              size="sm"
+              className="flex-1 h-9 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis" 
               variant="secondary"
               onClick={() => window.open(connexionsUrl, '_blank')}
             >
-              <ExternalLink className="mr-2 h-4 w-4" />
-              Go to Connexions
+              <ExternalLink className="mr-1 h-4 w-4 flex-shrink-0" />
+              <span className="truncate">Connexions</span>
             </Button>
           ) : (
             // Show apply button if user hasn't applied yet
             <Button 
-              className="w-full sm:w-auto sm:flex-1" 
+              size="sm"
+              className="flex-1 h-9 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis" 
               variant={isOpen ? "default" : "secondary"}
               disabled={!isOpen || (!filloutFormId && !participationType.toLowerCase().includes('team'))}
               onClick={handleApply}
             >
-              {actionButtonText}
+              <span className="truncate">{actionButtonText}</span>
             </Button>
           )}
         </CardFooter>
