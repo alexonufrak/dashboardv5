@@ -313,6 +313,8 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
   }
   
   const handleOpenCreateTeam = () => {
+    // This will open the team creation dialog
+    // When creating a team through this flow, we want to associate it with the cohort
     setShowCreateTeamDialog(true)
   }
   
@@ -463,6 +465,7 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
         open={showCreateTeamDialog}
         onClose={() => setShowCreateTeamDialog(false)}
         onCreateTeam={handleTeamCreated}
+        cohortId={cohort?.id} // Pass cohort ID to associate the team with the cohort
       />
       
       {/* Team Initiative Conflict Dialog (using the shared component) */}

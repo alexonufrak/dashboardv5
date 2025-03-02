@@ -21,8 +21,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
  * @param {boolean} props.open Whether the dialog is open
  * @param {Function} props.onClose Callback when dialog is closed
  * @param {Function} props.onCreateTeam Callback when team is created with team data
+ * @param {string} props.cohortId Optional cohort ID to associate the team with
  */
-const TeamCreateDialog = ({ open, onClose, onCreateTeam }) => {
+const TeamCreateDialog = ({ open, onClose, onCreateTeam, cohortId }) => {
   const [teamName, setTeamName] = useState('')
   const [teamDescription, setTeamDescription] = useState('')
   const [error, setError] = useState('')
@@ -41,8 +42,15 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam }) => {
     setError('')
     
     try {
-      // Make API call to create team
-      const response = await fetch('/api/teams/create', {
+      // Make API call to create team - include cohortId if provided
+      let url = '/api/teams/create';
+      
+      // If cohortId is provided, add it as a query parameter
+      if (cohortId) {
+        url = `${url}?cohortId=${encodeURIComponent(cohortId)}`;
+      }
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -56,10 +56,23 @@ export default withApiAuthRequired(async function createTeamHandler(req, res) {
     
     // Create a new team
     console.log(`Creating new team: ${name}`)
-    const teamRecord = await teamsTable.create({
+    
+    // Get cohort ID from query params if available
+    const cohortId = req.query.cohortId
+    
+    // Prepare team data
+    const teamData = {
       'Team Name': name.trim(),
       'Description': description?.trim() || ''
-    })
+    }
+    
+    // Add cohort ID to team if provided
+    if (cohortId) {
+      console.log(`Associating team with cohort ${cohortId}`)
+      teamData['Cohorts'] = [cohortId]
+    }
+    
+    const teamRecord = await teamsTable.create(teamData)
     
     // Create a member record for the user
     console.log(`Creating member record for contact ${userProfile.contactId} in team ${teamRecord.id}`)
