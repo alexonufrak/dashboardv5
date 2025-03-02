@@ -61,15 +61,28 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
     );
     console.log('Available Airtable table env vars:', envKeys);
     
-    // For debugging - try listing all tables in the base
+    // For debugging - Airtable doesn't have a tables() method in this version
+    // We'll extract table info from the environment variables instead
     try {
-      const tables = await base.tables();
-      console.log('All tables in Airtable base:', tables.map(t => ({ 
-        id: t.id, 
-        name: t.name 
-      })));
+      console.log('Listing tables from environment variables');
+      const tableInfo = [];
+      
+      // Find all Airtable table IDs from env vars
+      const tableEnvVars = Object.keys(process.env).filter(key => 
+        key.startsWith('AIRTABLE_') && key.endsWith('_TABLE_ID')
+      );
+      
+      // Map each env var to a table entry with name and ID
+      tableEnvVars.forEach(envVar => {
+        const tableName = envVar.replace('AIRTABLE_', '').replace('_TABLE_ID', '');
+        const tableId = process.env[envVar];
+        tableInfo.push({ name: tableName, id: tableId });
+      });
+      
+      console.log('Tables configured in environment:', tableInfo);
     } catch (error) {
-      console.error('Error listing tables in base:', error);
+      console.error('Error listing tables from environment:', error);
+      console.log('Error details:', error.message);
     }
     
     // Check table fields (for debugging)
@@ -93,28 +106,27 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
     // Look for applications with multiple possible field names for Contact
     console.log(`Attempting to find applications for contact ${contactId} with various field name options`);
     
-    // Try with simple formula first
+    // Try with simple formula first - use the correct field name from schema
     let records = [];
     try {
       records = await applicationsTable.select({
-        filterByFormula: `{Contact} = "${contactId}"`,
+        filterByFormula: `SEARCH("${contactId}", {Record ID (from Contact)})`,
       }).firstPage();
       
-      console.log(`Found ${records.length} applications using {Contact} field`);
+      console.log(`Found ${records.length} applications using {Record ID (from Contact)} field`);
     } catch (error) {
-      console.error('Error querying with Contact field:', error);
-    }
-    
-    // If no results, try alternative field names
-    if (records.length === 0) {
+      console.error('Error querying with Record ID (from Contact) field:', error);
+      
+      // Try the Contact field directly (this is the linked record field)
       try {
+        // Proper syntax for checking linked record fields in Airtable
         records = await applicationsTable.select({
-          filterByFormula: `OR({Applicant} = "${contactId}", {User} = "${contactId}", {Student} = "${contactId}")`,
+          filterByFormula: `SEARCH("${contactId}", ARRAYJOIN({Contact}))`,
         }).firstPage();
         
-        console.log(`Found ${records.length} applications using alternative contact field names`);
-      } catch (error) {
-        console.error('Error querying with alternative contact fields:', error);
+        console.log(`Found ${records.length} applications using {Contact} linked record field`);
+      } catch (contactError) {
+        console.error('Error querying with Contact linked record field:', contactError);
       }
     }
     
