@@ -56,6 +56,7 @@ const Dashboard = () => {
   
   // Onboarding state
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [userMetadata, setUserMetadata] = useState(null)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -117,6 +118,9 @@ const Dashboard = () => {
           const metadata = await response.json();
           console.log("User metadata from API:", metadata);
           
+          // Save metadata to state for use throughout the component
+          setUserMetadata(metadata);
+          
           // Check onboarding steps
           const onboardingSteps = metadata.onboarding || [];
           const hasCompletedRegister = Array.isArray(onboardingSteps) && onboardingSteps.includes('register');
@@ -153,7 +157,7 @@ const Dashboard = () => {
             
             // Explicitly mark register step as completed for new users
             if (!hasCompletedRegister) {
-              await fetch('/api/user/metadata', {
+              const registerResponse = await fetch('/api/user/metadata', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json'
@@ -162,6 +166,11 @@ const Dashboard = () => {
                   onboarding: ['register']
                 })
               });
+              
+              if (registerResponse.ok) {
+                const updatedMetadata = await registerResponse.json();
+                setUserMetadata(updatedMetadata);
+              }
             }
           }
         } else {
@@ -195,7 +204,25 @@ const Dashboard = () => {
           console.log(`Found ${apps.length} applications for user`);
           
           // DON'T hide checklist when applications exist - let user close it themselves
-          console.log('Applications found, but keeping checklist visible for user confirmation');
+          // Check if onboarding is already completed in metadata before deciding to show
+          fetch('/api/user/metadata')
+            .then(res => res.json())
+            .then(metadata => {
+              setUserMetadata(metadata);
+              // Only show if not explicitly completed
+              if (!metadata.onboardingCompleted) {
+                console.log('Applications found, but keeping checklist visible for user confirmation');
+                setShowOnboarding(true);
+              } else {
+                console.log('Applications found, but onboarding already completed, hiding checklist');
+                setShowOnboarding(false);
+              }
+            })
+            .catch(err => {
+              console.error('Error fetching metadata:', err);
+              // Default to showing
+              setShowOnboarding(true);
+            });
           
           setApplications(apps);
         } else {
@@ -378,26 +405,44 @@ const Dashboard = () => {
     // Save the onboarding completed state to user metadata
     try {
       // This is the definitive flag to hide the checklist across sessions
-      const metadata = {
+      const metadataUpdate = {
         onboardingCompleted: true,
         onboardingSkipped: skipOnly,
         // Add timestamp to ensure we can track when the user completed onboarding
         completedAt: new Date().toISOString()
       };
       
-      console.log("Saving completion state to Auth0:", metadata);
+      // If we have existing metadata, preserve other fields
+      if (userMetadata) {
+        // Make sure to maintain onboarding steps
+        const currentSteps = userMetadata.onboarding || [];
+        if (!currentSteps.includes('register')) {
+          currentSteps.push('register');
+        }
+        if (hasAppliedToProgram && !currentSteps.includes('selectCohort')) {
+          currentSteps.push('selectCohort');
+        }
+        
+        metadataUpdate.onboarding = currentSteps;
+      }
+      
+      console.log("Saving completion state to Auth0:", metadataUpdate);
       
       const response = await fetch('/api/user/metadata', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(metadata)
+        body: JSON.stringify(metadataUpdate)
       });
       
       if (!response.ok) {
         throw new Error(`Failed to save metadata: ${response.status}`);
       }
+      
+      // Update local state
+      const updatedMetadata = await response.json();
+      setUserMetadata(updatedMetadata);
       
       // Only hide the onboarding checklist when explicitly completed by the user
       setShowOnboarding(false);
@@ -417,13 +462,36 @@ const Dashboard = () => {
           {/* Email mismatch alert */}
           {user?.emailMismatch && <EmailMismatchAlert emailMismatch={user.emailMismatch} />}
           
-          {/* Onboarding Checklist */}
-          {showOnboarding && (
+          {/* Onboarding Checklist - only show if not explicitly completed */}
+          {showOnboarding && (userMetadata && !userMetadata.onboardingCompleted) && (
             <OnboardingChecklist 
               profile={profile}
               onComplete={handleCompletion}
               applications={applications}
               isLoadingApplications={isLoadingApplications}
+              onApplySuccess={(cohort) => {
+                // When application is successful, update data but don't hide checklist
+                toast.success(`Applied to ${cohort.initiativeDetails?.name || 'program'} successfully!`);
+                
+                // Refresh application data
+                fetch('/api/user/check-application')
+                  .then(res => res.json())
+                  .then(data => {
+                    if (data && Array.isArray(data.applications)) {
+                      setApplications(data.applications);
+                    }
+                  });
+                
+                // Refresh teams data
+                fetch("/api/teams")
+                  .then(res => res.json())
+                  .then(data => {
+                    setTeamsData(data.teams || []);
+                    if (data.teams && data.teams.length > 0) {
+                      setTeamData(data.teams[0]);
+                    }
+                  });
+              }}
             />
           )}
           
