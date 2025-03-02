@@ -6,40 +6,64 @@ import { Badge } from "@/components/ui/badge";
 import { Users, Info } from "lucide-react";
 import TeamDetailModal from "./TeamDetailModal";
 import CohortCard from "./shared/CohortCard";
+import { useToast } from "@/components/ui/use-toast";
 
 /**
  * TeamCard component displays team information with associated cohorts.
  * @param {Object} props - Component props
  * @param {Object} props.team - Team data object
  * @param {Object} props.profile - User profile data
+ * @param {Function} props.onTeamUpdated - Callback function when team is updated
  */
-const TeamCard = ({ team, profile }) => {
+const TeamCard = ({ team, profile, onTeamUpdated }) => {
+  const { toast } = useToast();
+  const [currentTeam, setCurrentTeam] = useState(team);
   const [showDetails, setShowDetails] = useState(false);
   const [selectedCohort, setSelectedCohort] = useState(null);
   const [teamCohorts, setTeamCohorts] = useState([]);
   const [isLoadingCohorts, setIsLoadingCohorts] = useState(false);
+  
+  // Update current team when prop changes
+  useEffect(() => {
+    setCurrentTeam(team);
+  }, [team]);
   
   // Handle viewing cohort details
   const handleViewCohortDetails = (cohort) => {
     setSelectedCohort(cohort);
   };
   
+  // Handle team updates
+  const handleTeamUpdated = (updatedTeam) => {
+    setCurrentTeam(updatedTeam);
+    
+    // Call parent callback if provided
+    if (onTeamUpdated) {
+      onTeamUpdated(updatedTeam);
+    }
+    
+    toast({
+      title: "Team Updated",
+      description: "Team details have been updated successfully",
+    });
+  };
+  
   // Fetch cohorts for this team
   useEffect(() => {
     const fetchTeamCohorts = async () => {
-      if (!team || !team.id) return;
+      if (!currentTeam || !currentTeam.id) return;
       
       try {
         setIsLoadingCohorts(true);
-        console.log(`Fetching cohorts for team ${team.id}...`);
+        console.log(`Fetching cohorts for team ${currentTeam.id}...`);
         
-        const response = await fetch(`/api/teams/${team.id}/cohorts`);
+        const response = await fetch(`/api/teams/${currentTeam.id}/cohorts`);
         const responseText = await response.text();
         
         try {
           // Try to parse as JSON
           const data = JSON.parse(responseText);
-          console.log(`Fetched ${data.cohorts ? data.cohorts.length : 0} cohorts for team ${team.name}:`, data);
+          console.log(`Fetched ${data.cohorts ? data.cohorts.length : 0} cohorts for team ${currentTeam.name}:`, data);
           
           if (data.cohorts && Array.isArray(data.cohorts)) {
             // Log each cohort for debugging
@@ -73,10 +97,10 @@ const TeamCard = ({ team, profile }) => {
     };
     
     fetchTeamCohorts();
-  }, [team]);
+  }, [currentTeam]);
   
   // If no team data is provided, show a not found message
-  if (!team) {
+  if (!currentTeam) {
     return (
       <Card className="mb-5">
         <CardContent className="py-6 text-center text-muted-foreground italic">
@@ -87,14 +111,14 @@ const TeamCard = ({ team, profile }) => {
   }
   
   // Get active members only
-  const activeMembers = team.members ? team.members.filter(member => member.status === "Active") : [];
+  const activeMembers = currentTeam.members ? currentTeam.members.filter(member => member.status === "Active") : [];
   
   return (
     <>
       <Card className="mb-5">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">{team.name}</CardTitle>
+            <CardTitle className="text-xl">{currentTeam.name}</CardTitle>
             <Badge className="ml-2">
               {activeMembers.length} {activeMembers.length === 1 ? 'member' : 'members'}
             </Badge>
@@ -103,7 +127,7 @@ const TeamCard = ({ team, profile }) => {
         
         <CardContent>
           <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-            {team.description || "No description available."}
+            {currentTeam.description || "No description available."}
           </p>
           
           {activeMembers.length > 0 && (
@@ -155,9 +179,10 @@ const TeamCard = ({ team, profile }) => {
       </Card>
       
       <TeamDetailModal 
-        team={team} 
+        team={currentTeam} 
         isOpen={showDetails} 
         onClose={() => setShowDetails(false)} 
+        onTeamUpdated={handleTeamUpdated}
       />
       
       {/* Program Detail Modal for cohorts */}
