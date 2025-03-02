@@ -125,31 +125,20 @@ const Dashboard = () => {
           console.log("Onboarding status:", {
             steps: onboardingSteps,
             hasCompletedRegister,
-            hasAppliedToProgram
+            hasAppliedToProgram,
+            onboardingCompleted: metadata.onboardingCompleted
           });
           
-          // Determine whether to show onboarding
-          if (hasAppliedToProgram) {
-            // User has applied to a program - hide onboarding
+          // Only check if onboarding is explicitly completed
+          // This lets the user see confirmation screen even after application
+          if (metadata.onboardingCompleted === true) {
+            // User has explicitly completed the onboarding
+            console.log("Onboarding explicitly completed, hiding checklist");
             setShowOnboarding(false);
-            
-            // Update metadata if needed
-            if (!metadata.onboardingCompleted) {
-              await fetch('/api/user/metadata', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  onboardingCompleted: true,
-                  onboardingSkipped: false,
-                  keepOnboardingVisible: false
-                })
-              });
-            }
           } else {
-            // Show onboarding if user hasn't completed it
-            setShowOnboarding(!metadata.onboardingCompleted);
+            // Show onboarding if not explicitly completed
+            console.log("Onboarding not explicitly completed, showing checklist");
+            setShowOnboarding(true);
             
             // Explicitly mark register step as completed for new users
             if (!hasCompletedRegister) {
@@ -305,11 +294,29 @@ const Dashboard = () => {
   };
 
   // Handle onboarding completion/skip
-  const handleCompletion = (skipOnly = false, hasAppliedToProgram = false) => {
+  const handleCompletion = async (skipOnly = false, hasAppliedToProgram = false) => {
     console.log("Handling onboarding completion:", { skipOnly, hasAppliedToProgram });
     
-    // Hide onboarding when complete
-    setShowOnboarding(false);
+    // Save the onboarding completed state to user metadata
+    try {
+      await fetch('/api/user/metadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          onboardingCompleted: true,
+          onboardingSkipped: skipOnly,
+        })
+      });
+      
+      // Only hide the onboarding checklist when explicitly completed by the user
+      setShowOnboarding(false);
+    } catch (error) {
+      console.error("Error saving onboarding completion status:", error);
+      // Still hide the onboarding even if API call fails
+      setShowOnboarding(false);
+    }
   };
   
   
@@ -366,9 +373,9 @@ const Dashboard = () => {
                     }
                   ]);
                   
-                  // Check onboarding status again after application
+                  // Update onboarding steps to include selectCohort, but don't hide the checklist
+                  // This allows user to see the confirmation screen
                   fetch('/api/user/metadata').then(res => res.json()).then(metadata => {
-                    // Update onboarding steps to include selectCohort
                     const currentSteps = metadata.onboarding || ['register'];
                     if (!currentSteps.includes('selectCohort')) {
                       fetch('/api/user/metadata', {
@@ -379,9 +386,6 @@ const Dashboard = () => {
                         body: JSON.stringify({
                           onboarding: [...currentSteps, 'selectCohort']
                         })
-                      }).then(() => {
-                        // Hide onboarding after application
-                        setShowOnboarding(false);
                       });
                     }
                   });

@@ -297,16 +297,12 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     const hasAppliedToProgram = stepStatus.selectCohort.completed;
     
     try {
-      // Only fully complete if the user has applied to a program
-      const metadata = hasAppliedToProgram 
-        ? {
-            onboardingCompleted: true,
-            onboardingSkipped: false
-          }
-        : {
-            onboardingSkipped: true,
-            keepOnboardingVisible: true
-          };
+      // Set onboarding as completed
+      const metadata = {
+        onboardingCompleted: true,
+        onboardingSkipped: !hasAppliedToProgram,
+        keepOnboardingVisible: false
+      };
       
       // Save to API
       await fetch('/api/user/metadata', {
@@ -317,7 +313,7 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
         body: JSON.stringify(metadata)
       });
       
-      // Call parent callback
+      // Call parent callback - this will hide the checklist
       if (onComplete) {
         onComplete(false, hasAppliedToProgram);
       }
