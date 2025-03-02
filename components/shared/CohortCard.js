@@ -16,6 +16,7 @@ import { FilloutPopupEmbed } from "@fillout/react"
 import TeamSelectDialog from '../TeamSelectDialog'
 import TeamCreateDialog from '../TeamCreateDialog'
 import InitiativeConflictDialog from './InitiativeConflictDialog'
+import XtrapreneursApplicationForm from '../XtrapreneursApplicationForm'
 
 /**
  * A shared cohort card component to display cohort/initiative information
@@ -30,6 +31,7 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   const [activeFilloutForm, setActiveFilloutForm] = useState(null)
   const [activeTeamSelectDialog, setActiveTeamSelectDialog] = useState(null)
   const [activeTeamCreateDialog, setActiveTeamCreateDialog] = useState(false)
+  const [showXtrapreneursForm, setShowXtrapreneursForm] = useState(false)
   const [userTeams, setUserTeams] = useState([])
   const [isLoadingTeams, setIsLoadingTeams] = useState(false)
   const [selectedCohort, setSelectedCohort] = useState(null)
@@ -92,6 +94,14 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   // Handle form completion for individual applications
   const handleFormCompleted = () => {
     setActiveFilloutForm(null)
+    if (onApplySuccess) {
+      onApplySuccess(cohort)
+    }
+  }
+  
+  // Handle completion of Xtrapreneurs application
+  const handleXtrapreneursFormSubmit = (data) => {
+    setShowXtrapreneursForm(false)
     if (onApplySuccess) {
       onApplySuccess(cohort)
     }
@@ -187,10 +197,22 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
       return;
     }
     
+    // Check if this is Xtrapreneurs initiative
+    const isXtrapreneurs = cohort.initiativeDetails?.name?.toLowerCase().includes("xtrapreneurs");
+    
+    // Handle Xtrapreneurs application differently
+    if (isXtrapreneurs) {
+      console.log("Xtrapreneurs application detected - using custom form");
+      // Show custom Xtrapreneurs application form
+      setShowXtrapreneursForm(true);
+      return; // Exit early
+    }
+    
+    // For all other initiatives, use the original logic
     const isTeamApplication = 
       participationType.toLowerCase() === "team" || 
       participationType.toLowerCase().includes("team") ||
-      participationType.toLowerCase() === "teams"
+      participationType.toLowerCase() === "teams";
     
     if (isTeamApplication) {
       console.log("Team participation detected")
@@ -239,6 +261,7 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
       console.log("Individual participation detected")
       if (cohort && cohort["Application Form ID (Fillout)"]) {
         console.log(`Using Fillout form ID: ${cohort["Application Form ID (Fillout)"]}`);
+        
         setActiveFilloutForm({
           formId: cohort["Application Form ID (Fillout)"],
           cohortId: cohort.id,
@@ -417,6 +440,15 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
         onClose={() => setShowInitiativeConflictDialog(false)}
         details={conflictDetails}
         conflictType="initiative_conflict"
+      />
+      
+      {/* Xtrapreneurs Application Form */}
+      <XtrapreneursApplicationForm
+        open={showXtrapreneursForm}
+        onClose={() => setShowXtrapreneursForm(false)}
+        onSubmit={handleXtrapreneursFormSubmit}
+        cohort={cohort}
+        profile={profile}
       />
     </>
   )

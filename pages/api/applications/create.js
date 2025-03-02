@@ -21,7 +21,15 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     }
     
     // Get the request body containing application data
-    const { cohortId, teamId, participationType } = req.body
+    const { 
+      cohortId, 
+      teamId, 
+      participationType,
+      applicationType,
+      // Additional fields for Xtrapreneurs applications
+      reason,
+      commitment
+    } = req.body
     
     if (!cohortId) {
       return res.status(400).json({ error: 'Cohort ID is required' })
@@ -31,6 +39,16 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     // We get the participation type from the client to avoid having to re-fetch the cohort
     if (participationType === 'Team' && !teamId) {
       return res.status(400).json({ error: 'Team ID is required for team applications' })
+    }
+    
+    // Verify Xtrapreneurs application data if applicable
+    if (applicationType === 'xtrapreneurs') {
+      if (!reason) {
+        return res.status(400).json({ error: 'Reason for joining Xtrapreneurs is required' })
+      }
+      if (!commitment) {
+        return res.status(400).json({ error: 'Commitment level is required' })
+      }
     }
     
     // Get user profile from Airtable
@@ -66,6 +84,29 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     // If team ID is provided, add it to the application
     if (teamId) {
       applicationData['Team'] = [teamId]
+    }
+    
+    // Add Xtrapreneurs-specific data if applicable
+    if (applicationType === 'xtrapreneurs') {
+      applicationData['What are you looking to gain as a result of participating in Xperience?'] = reason;
+      
+      // Map the commitment level to a more descriptive value
+      let commitmentDescription;
+      switch (commitment) {
+        case 'weekly':
+          commitmentDescription = 'Weekly - I can commit to weekly engagement';
+          break;
+        case 'monthly':
+          commitmentDescription = 'Monthly - I can participate monthly';
+          break;
+        case 'occasionally':
+          commitmentDescription = 'Occasionally - I will participate when time permits';
+          break;
+        default:
+          commitmentDescription = commitment;
+      }
+      
+      applicationData['How much time do you want to commit to Xtrapreneurs this year?'] = commitmentDescription;
     }
     
     // Create the application record
