@@ -279,15 +279,37 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
     }
   }
   
-  const handleTeamCreated = (newTeam) => {
-    // Add the new team to the user's teams list
-    setUserTeams(prevTeams => [...prevTeams, newTeam])
-    
-    // Select the newly created team
-    setSelectedTeamId(newTeam.id)
+  const handleTeamCreated = async (newTeam) => {
+    // After team creation, fetch the complete team details directly
+    // This ensures we have the most up-to-date team record from Airtable
+    try {
+      const response = await fetch(`/api/teams/${newTeam.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        const refreshedTeam = data.team;
+        
+        console.log("Retrieved fresh team data after creation:", refreshedTeam);
+        
+        // Add the refreshed team to the user's teams list
+        setUserTeams(prevTeams => [...prevTeams, refreshedTeam]);
+        
+        // Select the newly created team
+        setSelectedTeamId(refreshedTeam.id);
+      } else {
+        // Fallback to using the team data returned from the create endpoint
+        console.log("Could not refresh team data, using original team data");
+        setUserTeams(prevTeams => [...prevTeams, newTeam]);
+        setSelectedTeamId(newTeam.id);
+      }
+    } catch (error) {
+      console.error("Error fetching fresh team data:", error);
+      // Fallback to using the team data returned from the create endpoint
+      setUserTeams(prevTeams => [...prevTeams, newTeam]);
+      setSelectedTeamId(newTeam.id);
+    }
     
     // Close the create team dialog
-    setShowCreateTeamDialog(false)
+    setShowCreateTeamDialog(false);
   }
   
   const handleOpenCreateTeam = () => {

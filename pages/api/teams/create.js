@@ -1,5 +1,5 @@
 import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0'
-import { getUserProfile, base } from '@/lib/airtable'
+import { getUserProfile, base, getTeamById } from '@/lib/airtable'
 
 /**
  * API handler to create a new team and add the user as a member
@@ -69,20 +69,30 @@ export default withApiAuthRequired(async function createTeamHandler(req, res) {
       'Status': 'Active'
     })
     
-    // Return the newly created team
-    return res.status(201).json({
-      id: teamRecord.id,
-      name: teamRecord.fields.Name,
-      description: teamRecord.fields.Description,
-      members: [{
-        id: userProfile.contactId,
-        name: `${userProfile['First Name'] || ''} ${userProfile['Last Name'] || ''}`.trim(),
-        email: userProfile.Email,
-        status: 'Active',
-        isCurrentUser: true
-      }],
-      points: 0
-    })
+    // Get the complete team record to ensure we have the correct data structure
+    // This is an extra API call, but ensures consistency and makes sure all team data is properly initialized
+    const completeTeam = await getTeamById(teamRecord.id, userProfile.contactId)
+    
+    if (!completeTeam) {
+      // If we can't get the complete team (unlikely), fall back to manual construction
+      console.log("Failed to get complete team record, using fallback approach")
+      return res.status(201).json({
+        id: teamRecord.id,
+        name: teamRecord.fields['Team Name'] || teamRecord.fields.Name || "",
+        description: teamRecord.fields.Description || "",
+        members: [{
+          id: userProfile.contactId,
+          name: `${userProfile['First Name'] || ''} ${userProfile['Last Name'] || ''}`.trim(),
+          email: userProfile.Email,
+          status: 'Active',
+          isCurrentUser: true
+        }],
+        points: 0
+      })
+    }
+    
+    // Return the complete team data with full member details
+    return res.status(201).json(completeTeam)
   } catch (error) {
     console.error('Error creating team:', error)
     console.error('Error details:', error.message, error.stack)
