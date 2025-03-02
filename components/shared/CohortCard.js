@@ -11,6 +11,13 @@ import {
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter 
+} from '@/components/ui/dialog'
 import { Eye, ExternalLink } from 'lucide-react'
 import { FilloutPopupEmbed } from "@fillout/react"
 import TeamSelectDialog from '../TeamSelectDialog'
@@ -96,10 +103,78 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
     }
   }
   
+  // State for application restriction dialog
+  const [showInitiativeConflictDialog, setShowInitiativeConflictDialog] = useState(false)
+  const [conflictDetails, setConflictDetails] = useState(null)
+  
+  // Check if a user is already part of an initiative or if their team is part of a cohort
+  const checkInitiativeRestrictions = () => {
+    // Get the current cohort's initiative
+    const currentInitiativeName = cohort.initiativeDetails?.name || "";
+    const currentInitiativeId = cohort.initiativeDetails?.id;
+    
+    // Skip check for Xperiment initiative (which has no restrictions)
+    if (currentInitiativeName.includes("Xperiment")) {
+      return { allowed: true };
+    }
+    
+    // Check if current initiative is Xperience or Xtrapreneurs
+    const isXperience = currentInitiativeName.includes("Xperience");
+    const isXtrapreneurs = currentInitiativeName.includes("Xtrapreneurs");
+    
+    if (!isXperience && !isXtrapreneurs) {
+      return { allowed: true }; // No restrictions for other initiatives
+    }
+    
+    // Look for applications in conflicting initiatives
+    let conflictingApplication = null;
+    let conflictingInitiative = null;
+    
+    for (const app of applications) {
+      // Find matching cohort in cohort details
+      const appCohort = app.cohortDetails || { initiativeDetails: {} };
+      const appInitiative = appCohort.initiativeDetails?.name || "";
+      
+      // Check if this is a conflicting initiative
+      if ((isXperience && appInitiative.includes("Xtrapreneurs")) || 
+          (isXtrapreneurs && appInitiative.includes("Xperience"))) {
+        conflictingApplication = app;
+        conflictingInitiative = appInitiative;
+        break;
+      }
+    }
+    
+    if (conflictingApplication) {
+      return {
+        allowed: false,
+        reason: "initiative_conflict",
+        details: {
+          currentInitiative: currentInitiativeName,
+          conflictingInitiative: conflictingInitiative
+        }
+      };
+    }
+    
+    // TODO: Add check for team restrictions if this is a team application
+    // This would require fetching team data and checking if the team is part
+    // of a cohort in a different initiative
+    
+    return { allowed: true };
+  };
+  
   // Handle apply button click
   const handleApply = async () => {
     console.log("Applying to cohort:", cohort)
     console.log("Participation type:", participationType)
+    
+    // Check for initiative restrictions
+    const restrictionCheck = checkInitiativeRestrictions();
+    if (!restrictionCheck.allowed) {
+      console.log("Application restricted:", restrictionCheck);
+      setConflictDetails(restrictionCheck.details);
+      setShowInitiativeConflictDialog(true);
+      return;
+    }
     
     const isTeamApplication = 
       participationType.toLowerCase() === "team" || 
@@ -324,6 +399,44 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
         onClose={() => setActiveTeamCreateDialog(false)}
         onCreateTeam={handleTeamCreated}
       />
+      
+      {/* Initiative Conflict Dialog */}
+      {conflictDetails && (
+        <Dialog open={showInitiativeConflictDialog} onOpenChange={() => setShowInitiativeConflictDialog(false)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Initiative Conflict</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p>
+                You already have an application for the <strong>{conflictDetails.conflictingInitiative}</strong> initiative.
+              </p>
+              <p>
+                Users can only participate in one of these initiatives at a time:
+              </p>
+              <ul className="list-disc pl-6 space-y-1">
+                <li>Xperience</li>
+                <li>Xtrapreneurs</li>
+              </ul>
+              <p>
+                If you want to apply for <strong>{conflictDetails.currentInitiative}</strong>, you'll
+                need to exit from <strong>{conflictDetails.conflictingInitiative}</strong> first, which means
+                you'll lose access to that initiative.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Note: Your existing application will remain in the system, but you won't be able to
+                access both initiatives simultaneously.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowInitiativeConflictDialog(false)}>
+                Cancel
+              </Button>
+              {/* You could add an option here to directly withdraw from the other initiative */}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   )
 }

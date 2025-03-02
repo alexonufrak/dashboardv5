@@ -92,6 +92,94 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
     }
   }, [userTeams, selectedTeamId]);
 
+  // State for team conflict dialog
+  const [showTeamConflictDialog, setShowTeamConflictDialog] = useState(false)
+  const [teamConflictDetails, setTeamConflictDetails] = useState(null)
+  
+  // Check if the selected team has any conflicts with the cohort's initiative
+  const checkTeamInitiativeConflicts = async (teamId) => {
+    try {
+      // Get the team's cohorts and check for initiative conflicts
+      const response = await fetch(`/api/teams/${teamId}/cohorts`)
+      
+      if (!response.ok) {
+        console.error('Error fetching team cohorts')
+        return { allowed: true } // If we can't check, we'll allow it
+      }
+      
+      const data = await response.json()
+      const teamCohorts = data.cohorts || []
+      
+      // If team has no cohorts, there's no conflict
+      if (teamCohorts.length === 0) {
+        return { allowed: true }
+      }
+      
+      // Get current cohort's initiative
+      const currentInitiative = cohort.initiativeDetails?.name || ""
+      
+      // Skip check for Xperiment initiative
+      if (currentInitiative.includes("Xperiment")) {
+        // For Xperiment, check if team's cohort topic matches this cohort's topic
+        const currentTopic = cohort.topicNames?.[0] || "";
+        
+        // Check each team cohort
+        for (const teamCohort of teamCohorts) {
+          const teamCohortTopic = teamCohort.topicNames?.[0] || "";
+          
+          // If team is already in an Xperiment cohort with a different topic
+          if (teamCohort.initiativeDetails?.name?.includes("Xperiment") && 
+              teamCohortTopic && 
+              currentTopic && 
+              teamCohortTopic !== currentTopic) {
+            return {
+              allowed: false,
+              reason: "topic_mismatch",
+              details: {
+                currentTopic: currentTopic,
+                teamTopic: teamCohortTopic
+              }
+            };
+          }
+        }
+        
+        return { allowed: true };
+      }
+      
+      // Check if current initiative is Xperience or Xtrapreneurs
+      const isXperienceOrXtrapreneurs = 
+        currentInitiative.includes("Xperience") || 
+        currentInitiative.includes("Xtrapreneurs");
+      
+      if (!isXperienceOrXtrapreneurs) {
+        return { allowed: true }; // No restrictions for other initiatives
+      }
+      
+      // Check each team cohort
+      for (const teamCohort of teamCohorts) {
+        const teamInitiative = teamCohort.initiativeDetails?.name || "";
+        
+        // If team is already in a different initiative (Xperience or Xtrapreneurs)
+        if ((currentInitiative.includes("Xperience") && teamInitiative.includes("Xtrapreneurs")) ||
+            (currentInitiative.includes("Xtrapreneurs") && teamInitiative.includes("Xperience"))) {
+          return {
+            allowed: false,
+            reason: "initiative_conflict",
+            details: {
+              currentInitiative: currentInitiative,
+              teamInitiative: teamInitiative
+            }
+          };
+        }
+      }
+      
+      return { allowed: true };
+    } catch (error) {
+      console.error('Error checking team initiative conflicts:', error);
+      return { allowed: true }; // If check fails, allow it
+    }
+  };
+  
   const handleSubmit = async (e) => {
     e.preventDefault()
     
@@ -112,6 +200,15 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
     if (selectedTeamId === 'create_new') {
       handleOpenCreateTeam()
       return
+    }
+    
+    // Check for team conflicts
+    const conflictCheck = await checkTeamInitiativeConflicts(selectedTeamId);
+    if (!conflictCheck.allowed) {
+      console.log("Team application restricted:", conflictCheck);
+      setTeamConflictDetails(conflictCheck.details);
+      setShowTeamConflictDialog(true);
+      return;
     }
     
     setIsSubmitting(true)
@@ -324,6 +421,73 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
         onClose={() => setShowCreateTeamDialog(false)}
         onCreateTeam={handleTeamCreated}
       />
+      
+      {/* Team Initiative Conflict Dialog */}
+      {teamConflictDetails && (
+        <Dialog open={showTeamConflictDialog} onOpenChange={() => setShowTeamConflictDialog(false)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Team Initiative Conflict</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {teamConflictDetails.reason === "initiative_conflict" ? (
+                <>
+                  <p>
+                    This team is already part of the <strong>{teamConflictDetails.teamInitiative}</strong> initiative.
+                  </p>
+                  <p>
+                    Teams can only participate in one of these initiatives at a time:
+                  </p>
+                  <ul className="list-disc pl-6 space-y-1">
+                    <li>Xperience</li>
+                    <li>Xtrapreneurs</li>
+                  </ul>
+                  <p>
+                    To apply for <strong>{teamConflictDetails.currentInitiative}</strong>, your team
+                    would need to exit from <strong>{teamConflictDetails.teamInitiative}</strong> first.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    If you want to participate in this initiative, you may need to create a new team
+                    or join a different team.
+                  </p>
+                </>
+              ) : teamConflictDetails.reason === "topic_mismatch" ? (
+                <>
+                  <p>
+                    This team is already participating in an Xperiment cohort with a different topic.
+                  </p>
+                  <p>
+                    Current team topic: <strong>{teamConflictDetails.teamTopic}</strong><br />
+                    New cohort topic: <strong>{teamConflictDetails.currentTopic}</strong>
+                  </p>
+                  <p>
+                    For Xperiment initiative, teams must work on the same topic across all cohorts.
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    If you want to work on a different topic, you may need to create a new team.
+                  </p>
+                </>
+              ) : (
+                <p>
+                  There's a conflict with this team's existing applications. Please contact support for assistance.
+                </p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowTeamConflictDialog(false)}>
+                Back
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleOpenCreateTeam}
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Create a New Team
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   )
 }
