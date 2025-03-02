@@ -99,39 +99,51 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
   // Check if the selected team has any conflicts with the cohort's initiative
   const checkTeamInitiativeConflicts = async (teamId) => {
     try {
+      console.log(`Checking initiative conflicts for team ${teamId} with cohort ${cohort.id}`);
+      
       // Get the team's cohorts and check for initiative conflicts
       const response = await fetch(`/api/teams/${teamId}/cohorts`)
       
       if (!response.ok) {
-        console.error('Error fetching team cohorts')
+        console.error(`Error fetching team cohorts: ${response.status} ${response.statusText}`);
         return { allowed: true } // If we can't check, we'll allow it
       }
       
       const data = await response.json()
       const teamCohorts = data.cohorts || []
       
+      console.log(`Team has ${teamCohorts.length} cohorts:`, teamCohorts);
+      
       // If team has no cohorts, there's no conflict
       if (teamCohorts.length === 0) {
+        console.log("Team has no cohorts, allowing application");
         return { allowed: true }
       }
       
       // Get current cohort's initiative
       const currentInitiative = cohort.initiativeDetails?.name || ""
+      console.log(`Current cohort initiative: "${currentInitiative}"`);
       
       // Skip check for Xperiment initiative
-      if (currentInitiative.includes("Xperiment")) {
+      if (currentInitiative.toLowerCase().includes("xperiment")) {
+        console.log("Checking Xperiment topic restrictions");
         // For Xperiment, check if team's cohort topic matches this cohort's topic
         const currentTopic = cohort.topicNames?.[0] || "";
+        console.log(`Current cohort topic: "${currentTopic}"`);
         
         // Check each team cohort
         for (const teamCohort of teamCohorts) {
           const teamCohortTopic = teamCohort.topicNames?.[0] || "";
+          const teamInitiativeName = teamCohort.initiativeDetails?.name || "";
+          
+          console.log(`Team cohort "${teamCohort.name}" topic: "${teamCohortTopic}", initiative: "${teamInitiativeName}"`);
           
           // If team is already in an Xperiment cohort with a different topic
-          if (teamCohort.initiativeDetails?.name?.includes("Xperiment") && 
+          if (teamInitiativeName.toLowerCase().includes("xperiment") && 
               teamCohortTopic && 
               currentTopic && 
               teamCohortTopic !== currentTopic) {
+            console.log(`Topic mismatch: current "${currentTopic}" vs. team "${teamCohortTopic}"`);
             return {
               allowed: false,
               reason: "topic_mismatch",
@@ -143,25 +155,32 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
           }
         }
         
+        console.log("No topic conflicts for Xperiment, allowing application");
         return { allowed: true };
       }
       
       // Check if current initiative is Xperience or Xtrapreneurs
-      const isXperienceOrXtrapreneurs = 
-        currentInitiative.includes("Xperience") || 
-        currentInitiative.includes("Xtrapreneurs");
+      const isXperience = currentInitiative.toLowerCase().includes("xperience");
+      const isXtrapreneurs = currentInitiative.toLowerCase().includes("xtrapreneurs");
+      
+      const isXperienceOrXtrapreneurs = isXperience || isXtrapreneurs;
       
       if (!isXperienceOrXtrapreneurs) {
+        console.log(`Initiative "${currentInitiative}" has no restrictions, allowing application`);
         return { allowed: true }; // No restrictions for other initiatives
       }
+      
+      console.log(`Checking ${isXperience ? "Xperience" : "Xtrapreneurs"} restrictions`);
       
       // Check each team cohort
       for (const teamCohort of teamCohorts) {
         const teamInitiative = teamCohort.initiativeDetails?.name || "";
+        console.log(`Team cohort "${teamCohort.name}" initiative: "${teamInitiative}"`);
         
         // If team is already in a different initiative (Xperience or Xtrapreneurs)
-        if ((currentInitiative.includes("Xperience") && teamInitiative.includes("Xtrapreneurs")) ||
-            (currentInitiative.includes("Xtrapreneurs") && teamInitiative.includes("Xperience"))) {
+        if ((isXperience && teamInitiative.toLowerCase().includes("xtrapreneurs")) ||
+            (isXtrapreneurs && teamInitiative.toLowerCase().includes("xperience"))) {
+          console.log(`Initiative conflict: current "${currentInitiative}" vs. team "${teamInitiative}"`);
           return {
             allowed: false,
             reason: "initiative_conflict",
@@ -173,6 +192,7 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
         }
       }
       
+      console.log("No initiative conflicts found, allowing application");
       return { allowed: true };
     } catch (error) {
       console.error('Error checking team initiative conflicts:', error);

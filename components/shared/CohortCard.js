@@ -113,38 +113,58 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
     const currentInitiativeName = cohort.initiativeDetails?.name || "";
     const currentInitiativeId = cohort.initiativeDetails?.id;
     
+    console.log("Checking initiative restrictions for:", currentInitiativeName);
+    console.log("User has applications:", applications);
+    
     // Skip check for Xperiment initiative (which has no restrictions)
     if (currentInitiativeName.includes("Xperiment")) {
+      console.log("Skipping restrictions for Xperiment initiative");
       return { allowed: true };
     }
     
     // Check if current initiative is Xperience or Xtrapreneurs
-    const isXperience = currentInitiativeName.includes("Xperience");
-    const isXtrapreneurs = currentInitiativeName.includes("Xtrapreneurs");
+    const isXperience = currentInitiativeName.toLowerCase().includes("xperience");
+    const isXtrapreneurs = currentInitiativeName.toLowerCase().includes("xtrapreneurs");
     
     if (!isXperience && !isXtrapreneurs) {
+      console.log("No restrictions for initiative:", currentInitiativeName);
       return { allowed: true }; // No restrictions for other initiatives
     }
+    
+    console.log(`Checking conflicts for ${isXperience ? "Xperience" : "Xtrapreneurs"} initiative`);
     
     // Look for applications in conflicting initiatives
     let conflictingApplication = null;
     let conflictingInitiative = null;
     
-    for (const app of applications) {
-      // Find matching cohort in cohort details
-      const appCohort = app.cohortDetails || { initiativeDetails: {} };
-      const appInitiative = appCohort.initiativeDetails?.name || "";
-      
-      // Check if this is a conflicting initiative
-      if ((isXperience && appInitiative.includes("Xtrapreneurs")) || 
-          (isXtrapreneurs && appInitiative.includes("Xperience"))) {
-        conflictingApplication = app;
-        conflictingInitiative = appInitiative;
-        break;
+    if (Array.isArray(applications)) {
+      for (const app of applications) {
+        console.log("Checking application:", app);
+        // Find matching cohort in cohort details
+        const appCohort = app.cohortDetails || { initiativeDetails: {} };
+        const appInitiative = appCohort.initiativeDetails?.name || "";
+        
+        console.log(`Application initiative: "${appInitiative}"`);
+        
+        // Check if this is a conflicting initiative
+        if ((isXperience && appInitiative.toLowerCase().includes("xtrapreneurs")) || 
+            (isXtrapreneurs && appInitiative.toLowerCase().includes("xperience"))) {
+          console.log("Found conflicting initiative:", appInitiative);
+          conflictingApplication = app;
+          conflictingInitiative = appInitiative;
+          break;
+        }
       }
+    } else {
+      console.warn("Applications is not an array:", applications);
     }
     
     if (conflictingApplication) {
+      console.log("Returning conflict details:", {
+        currentInitiative: currentInitiativeName,
+        conflictingInitiative: conflictingInitiative
+      });
+      
       return {
         allowed: false,
         reason: "initiative_conflict",
@@ -155,10 +175,7 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
       };
     }
     
-    // TODO: Add check for team restrictions if this is a team application
-    // This would require fetching team data and checking if the team is part
-    // of a cohort in a different initiative
-    
+    console.log("No conflicts found, allowing application");
     return { allowed: true };
   };
   

@@ -103,8 +103,10 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
         filterByFormula: filterFormula
       }).firstPage();
       
-      // Process application records
-      applications = records.map(record => {
+      // Process application records but also include cohort details
+      const processedApps = [];
+      
+      for (const record of records) {
         // Extract cohort ID from the record
         const recordCohortId = record.fields.Cohort && 
           Array.isArray(record.fields.Cohort) && 
@@ -112,13 +114,67 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
             ? record.fields.Cohort[0] 
             : null;
         
-        return {
+        // Create base application object
+        const application = {
           id: record.id,
           cohortId: recordCohortId,
           status: record.fields.Status || 'Submitted',
           createdAt: record.fields.Created || record._rawJson.createdTime
         };
-      });
+        
+        // If we have a cohort ID, fetch cohort details too
+        if (recordCohortId) {
+          try {
+            const cohortsTable = process.env.AIRTABLE_COHORTS_TABLE_ID
+              ? base(process.env.AIRTABLE_COHORTS_TABLE_ID)
+              : null;
+              
+            if (cohortsTable) {
+              const cohortRecord = await cohortsTable.find(recordCohortId);
+              if (cohortRecord) {
+                // Extract initiative details if available
+                let initiativeDetails = null;
+                
+                if (cohortRecord.fields.Initiative && 
+                    Array.isArray(cohortRecord.fields.Initiative) && 
+                    cohortRecord.fields.Initiative.length > 0) {
+                  const initiativesTable = process.env.AIRTABLE_INITIATIVES_TABLE_ID
+                    ? base(process.env.AIRTABLE_INITIATIVES_TABLE_ID)
+                    : null;
+                    
+                  if (initiativesTable) {
+                    try {
+                      const initiativeRecord = await initiativesTable.find(cohortRecord.fields.Initiative[0]);
+                      if (initiativeRecord) {
+                        initiativeDetails = {
+                          id: initiativeRecord.id,
+                          name: initiativeRecord.fields.Name || "Unknown Initiative",
+                          description: initiativeRecord.fields.Description || ""
+                        };
+                      }
+                    } catch (initError) {
+                      console.error(`Error fetching initiative for cohort ${recordCohortId}:`, initError);
+                    }
+                  }
+                }
+                
+                // Add cohort details to the application object
+                application.cohortDetails = {
+                  id: cohortRecord.id,
+                  name: cohortRecord.fields['Short Name'] || "Unknown Cohort",
+                  initiativeDetails
+                };
+              }
+            }
+          } catch (cohortError) {
+            console.error(`Error fetching cohort ${recordCohortId}:`, cohortError);
+          }
+        }
+        
+        processedApps.push(application);
+      }
+      
+      applications = processedApps;
     } catch (error) {
       console.error('Error finding applications through Applications table:', error);
     }
@@ -150,12 +206,64 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
                   : null;
               
               if (!cohortId || cohortId === appCohortId) {
-                applications.push({
+                // Create application object
+                const application = {
                   id: appRecord.id,
                   cohortId: appCohortId,
                   status: appRecord.fields.Status || 'Submitted',
                   createdAt: appRecord.fields.Created || appRecord._rawJson.createdTime
-                });
+                };
+                
+                // If we have a cohort ID, fetch cohort details too
+                if (appCohortId) {
+                  try {
+                    const cohortsTable = process.env.AIRTABLE_COHORTS_TABLE_ID
+                      ? base(process.env.AIRTABLE_COHORTS_TABLE_ID)
+                      : null;
+                      
+                    if (cohortsTable) {
+                      const cohortRecord = await cohortsTable.find(appCohortId);
+                      if (cohortRecord) {
+                        // Extract initiative details if available
+                        let initiativeDetails = null;
+                        
+                        if (cohortRecord.fields.Initiative && 
+                            Array.isArray(cohortRecord.fields.Initiative) && 
+                            cohortRecord.fields.Initiative.length > 0) {
+                          const initiativesTable = process.env.AIRTABLE_INITIATIVES_TABLE_ID
+                            ? base(process.env.AIRTABLE_INITIATIVES_TABLE_ID)
+                            : null;
+                            
+                          if (initiativesTable) {
+                            try {
+                              const initiativeRecord = await initiativesTable.find(cohortRecord.fields.Initiative[0]);
+                              if (initiativeRecord) {
+                                initiativeDetails = {
+                                  id: initiativeRecord.id,
+                                  name: initiativeRecord.fields.Name || "Unknown Initiative",
+                                  description: initiativeRecord.fields.Description || ""
+                                };
+                              }
+                            } catch (initError) {
+                              console.error(`Error fetching initiative for cohort ${appCohortId}:`, initError);
+                            }
+                          }
+                        }
+                        
+                        // Add cohort details to the application object
+                        application.cohortDetails = {
+                          id: cohortRecord.id,
+                          name: cohortRecord.fields['Short Name'] || "Unknown Cohort",
+                          initiativeDetails
+                        };
+                      }
+                    }
+                  } catch (cohortError) {
+                    console.error(`Error fetching cohort ${appCohortId}:`, cohortError);
+                  }
+                }
+                
+                applications.push(application);
               }
             } catch (appError) {
               console.error(`Error fetching application ${appId}:`, appError);
