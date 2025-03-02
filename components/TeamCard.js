@@ -31,14 +31,38 @@ const TeamCard = ({ team, profile }) => {
       
       try {
         setIsLoadingCohorts(true);
-        const response = await fetch(`/api/teams/${team.id}/cohorts`);
+        console.log(`Fetching cohorts for team ${team.id}...`);
         
-        if (response.ok) {
-          const data = await response.json();
-          console.log(`Fetched ${data.cohorts.length} cohorts for team ${team.name}:`, data.cohorts);
-          setTeamCohorts(data.cohorts.filter(cohort => cohort.Status === "Applications Open"));
-        } else {
-          console.error("Failed to fetch team cohorts:", response.statusText);
+        const response = await fetch(`/api/teams/${team.id}/cohorts`);
+        const responseText = await response.text();
+        
+        try {
+          // Try to parse as JSON
+          const data = JSON.parse(responseText);
+          console.log(`Fetched ${data.cohorts ? data.cohorts.length : 0} cohorts for team ${team.name}:`, data);
+          
+          if (data.cohorts && Array.isArray(data.cohorts)) {
+            // Log each cohort for debugging
+            data.cohorts.forEach((cohort, index) => {
+              console.log(`Cohort ${index + 1}:`, {
+                id: cohort.id,
+                name: cohort.initiativeDetails?.name || 'No initiative name',
+                status: cohort.Status,
+                topics: cohort.topicNames || []
+              });
+            });
+            
+            // Filter and set cohorts
+            const openCohorts = data.cohorts.filter(cohort => cohort.Status === "Applications Open");
+            console.log(`After filtering for "Applications Open": ${openCohorts.length} cohorts`);
+            setTeamCohorts(openCohorts);
+          } else {
+            console.error("Invalid cohorts data:", data);
+            setTeamCohorts([]);
+          }
+        } catch (parseError) {
+          console.error("Error parsing response:", parseError);
+          console.error("Response text:", responseText);
           setTeamCohorts([]);
         }
       } catch (error) {

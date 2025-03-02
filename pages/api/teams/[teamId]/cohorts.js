@@ -49,11 +49,30 @@ export default withApiAuthRequired(async function teamCohortsHandler(req, res) {
     // Get the associated cohort IDs from the team record
     const cohortIds = team.fields.Cohorts || []
     
+    // Log the entire team fields for debugging
+    console.log(`Team ${teamId} fields:`, team.fields);
+    console.log(`Looking for Cohorts field in team ${teamId}`);
+    
+    // Check alternative field names if needed
+    let finalCohortIds = cohortIds;
     if (cohortIds.length === 0) {
+      // Try alternative field names
+      const possibleFieldNames = ['Cohort', 'Active Cohorts', 'Team Cohorts'];
+      for (const fieldName of possibleFieldNames) {
+        if (team.fields[fieldName] && Array.isArray(team.fields[fieldName]) && team.fields[fieldName].length > 0) {
+          finalCohortIds = team.fields[fieldName];
+          console.log(`Found cohorts in alternative field "${fieldName}": ${finalCohortIds}`);
+          break;
+        }
+      }
+    }
+    
+    if (finalCohortIds.length === 0) {
+      console.log(`No cohort IDs found for team ${teamId} in any field`);
       return res.status(200).json({ cohorts: [] })
     }
     
-    console.log(`Found ${cohortIds.length} cohort IDs for team ${teamId}:`, cohortIds)
+    console.log(`Found ${finalCohortIds.length} cohort IDs for team ${teamId}:`, finalCohortIds)
     
     // Get the Cohorts table ID from environment variables
     const cohortsTableId = process.env.AIRTABLE_COHORTS_TABLE_ID
@@ -94,7 +113,7 @@ export default withApiAuthRequired(async function teamCohortsHandler(req, res) {
     // Fetch all cohorts associated with this team
     const cohorts = []
     
-    for (const cohortId of cohortIds) {
+    for (const cohortId of finalCohortIds) {
       try {
         // Fetch the cohort record
         const cohort = await cohortsTable.find(cohortId)
