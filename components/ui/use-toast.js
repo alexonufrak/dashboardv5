@@ -66,7 +66,7 @@ export const reducer = (state, action) => {
     case actionTypes.DISMISS_TOAST: {
       const { toastId } = action
 
-      // \! Side effects \! - This could be extracted into a dismissToast() action,
+      // ! Side effects ! - This could be extracted into a dismissToast() action,
       // but I'll keep it here for simplicity
       if (toastId) {
         addToRemoveQueue(toastId)
@@ -97,7 +97,7 @@ export const reducer = (state, action) => {
       }
       return {
         ...state,
-        toasts: state.toasts.filter((t) => t.id \!== action.toastId),
+        toasts: state.toasts.filter((t) => t.id !== action.toastId),
       }
   }
 }
@@ -132,7 +132,7 @@ function toast({
       id,
       open: true,
       onOpenChange: (open) => {
-        if (\!open) dismiss()
+        if (!open) dismiss()
       },
     },
   })

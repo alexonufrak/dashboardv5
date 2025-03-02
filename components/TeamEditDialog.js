@@ -32,7 +32,7 @@ const TeamEditDialog = ({ team, isOpen, onClose, onTeamUpdated }) => {
   })
 
   // Reset form data when team changes
-  useState(() => {
+  useEffect(() => {
     if (team) {
       setFormData({
         name: team.name || "",
@@ -67,7 +67,7 @@ const TeamEditDialog = ({ team, isOpen, onClose, onTeamUpdated }) => {
     try {
       setIsSubmitting(true)
       
-      const response = await fetch(`/api/teams/${team.id}`, {
+      const response = await fetch(`/api/teams/${team.id}/`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

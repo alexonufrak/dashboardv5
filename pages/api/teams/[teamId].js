@@ -7,7 +7,7 @@ import { getUserProfile, getTeamById, updateTeam } from '@/lib/airtable'
  * @param {Object} res - Next.js API Response
  */
 export default withApiAuthRequired(async function teamHandler(req, res) {
-  const { id } = req.query
+  const { teamId } = req.query
 
   // Handle GET and PATCH requests
   if (req.method !== 'GET' && req.method !== 'PATCH') {
@@ -31,7 +31,7 @@ export default withApiAuthRequired(async function teamHandler(req, res) {
 
     // GET request - fetch team details
     if (req.method === 'GET') {
-      const team = await getTeamById(id, userProfile.contactId)
+      const team = await getTeamById(teamId, userProfile.contactId)
       
       if (!team) {
         return res.status(404).json({ error: 'Team not found' })
@@ -50,7 +50,7 @@ export default withApiAuthRequired(async function teamHandler(req, res) {
       }
       
       // First verify user is a member of this team
-      const team = await getTeamById(id, userProfile.contactId)
+      const team = await getTeamById(teamId, userProfile.contactId)
       
       if (!team) {
         return res.status(404).json({ error: 'Team not found' })
@@ -66,15 +66,15 @@ export default withApiAuthRequired(async function teamHandler(req, res) {
       }
       
       // Update the team
-      const updatedTeam = await updateTeam(id, { name, description })
+      const updatedTeam = await updateTeam(teamId, { name, description })
       
       // Get the complete updated team with members
-      const completeTeam = await getTeamById(id, userProfile.contactId)
+      const completeTeam = await getTeamById(teamId, userProfile.contactId)
       
       return res.status(200).json(completeTeam)
     }
   } catch (error) {
-    console.error(`Error handling team ${id}:`, error)
+    console.error(`Error handling team ${teamId}:`, error)
     return res.status(500).json({ error: 'Failed to process team request' })
   }
 })
