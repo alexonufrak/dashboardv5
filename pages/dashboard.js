@@ -143,7 +143,9 @@ const Dashboard = () => {
             setShowOnboarding(false);
             return; // Exit early
           } else {
-            // Otherwise, show the checklist
+            // For first-time users or those who haven't completed onboarding,
+            // we should always show the checklist
+            console.log("Onboarding not completed, showing checklist");
             setShowOnboarding(true);
             
             // Only make an API call if register step is missing
@@ -442,8 +444,8 @@ const Dashboard = () => {
           {/* Email mismatch alert */}
           {user?.emailMismatch && <EmailMismatchAlert emailMismatch={user.emailMismatch} />}
           
-          {/* Onboarding Checklist - only show if explicitly set and not completed */}
-          {showOnboarding && !(userMetadata?.onboardingCompleted === true) && (
+          {/* Onboarding Checklist - show if onboardingCompleted is not explicitly set to true */}
+          {showOnboarding && !(userMetadata && userMetadata.onboardingCompleted === true) && (
             <OnboardingChecklist 
               profile={profile}
               onComplete={handleCompletion}
