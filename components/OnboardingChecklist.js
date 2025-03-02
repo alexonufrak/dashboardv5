@@ -367,24 +367,29 @@ const OnboardingChecklist = ({
     }
   };
   
-  // Complete onboarding with animation
+  // Complete onboarding with animation and ensure API is updated
   const completeOnboarding = () => {
     // Check if the user has completed the program application step
     const hasAppliedToProgram = stepStatus.selectCohort.completed;
+    
+    // Log completion attempt with details
+    console.log("User clicked 'Complete Onboarding' button:", {
+      hasAppliedToProgram,
+      stepStatus: JSON.stringify(stepStatus),
+      completionPercentage
+    });
     
     // Start the completion animation
     setIsCompleting(true);
     
     // Delay the actual callback slightly to allow animation to play
     setTimeout(() => {
-      // Then call parent callback to hide checklist
+      // Then call parent callback to hide checklist and update API
       if (onComplete) {
-        console.log("Calling parent onComplete to hide checklist after animation");
+        console.log("Calling parent onComplete to hide checklist and update API");
         onComplete(false, hasAppliedToProgram);
       }
     }, 800); // Slight delay for animation to be visible
-    
-    // API call is handled by the parent component to avoid duplicating code
   };
   
   // Check if all steps are completed

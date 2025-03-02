@@ -40,16 +40,40 @@ export default withApiAuthRequired(async function userMetadata(req, res) {
     // GET request - return user metadata
     if (req.method === 'GET') {
       try {
-        // First try to get metadata from session
+        // Always request a fresh copy from the Management API if possible
+        if (shouldAttemptAuth0ManagementAPI()) {
+          try {
+            // Get the latest user data from Auth0 Management API
+            console.log(`Fetching fresh user data from Auth0 for user ${userId}`);
+            const userData = await auth0Client.getUser({ id: userId });
+            
+            if (userData && userData.user_metadata) {
+              // Return the fresh metadata directly
+              console.log("Got fresh user_metadata from Auth0 Management API:", {
+                userId,
+                keys: Object.keys(userData.user_metadata),
+                onboardingCompleted: userData.user_metadata.onboardingCompleted,
+                onboardingCompletedType: typeof userData.user_metadata.onboardingCompleted
+              });
+              
+              return res.status(200).json(userData.user_metadata);
+            }
+          } catch (managementError) {
+            console.warn("Failed to get fresh data from Management API:", managementError.message);
+            // Continue to fallbacks below
+          }
+        }
+        
+        // Fallback 1: Use session metadata
         const sessionMetadata = session.user.user_metadata || {};
         
-        // Try to get from our in-memory store
+        // Fallback 2: Use in-memory store
         const storedMetadata = metadataStore.get(userId) || {};
         
         // Combine metadata from both sources
         const combinedMetadata = { ...sessionMetadata, ...storedMetadata };
         
-        console.log("METADATA GET REQUEST:", {
+        console.log("METADATA GET REQUEST (from fallbacks):", {
           userId,
           sessionMetadataKeys: Object.keys(sessionMetadata),
           storedMetadataKeys: Object.keys(storedMetadata),
@@ -83,7 +107,7 @@ export default withApiAuthRequired(async function userMetadata(req, res) {
       }
 
       try {
-        // Get current metadata state
+        // Get current metadata state from session and memory
         const sessionMetadata = session.user.user_metadata || {};
         const storedMetadata = metadataStore.get(userId) || {};
         const currentMetadata = { ...sessionMetadata, ...storedMetadata };
@@ -96,33 +120,47 @@ export default withApiAuthRequired(async function userMetadata(req, res) {
           // Convert to true boolean (not string, number, etc)
           newMetadata.onboardingCompleted = newMetadata.onboardingCompleted === true;
           console.log("Ensuring onboardingCompleted is boolean:", newMetadata.onboardingCompleted);
+          
+          // Add timestamp when onboarding was completed
+          if (newMetadata.onboardingCompleted === true && !newMetadata.onboardingCompletedAt) {
+            newMetadata.onboardingCompletedAt = new Date().toISOString();
+          }
         }
         
-        // First, store in memory as a fallback (always do this)
-        metadataStore.set(userId, newMetadata);
+        // First attempt to update directly in Auth0
+        let auth0UpdateSuccessful = false;
         
-        // Attempt to use Auth0 Management API if configured properly
         if (shouldAttemptAuth0ManagementAPI()) {
           try {
-            console.log(`Attempting to use Auth0 Management API for user ${userId}...`);
+            console.log(`Updating metadata in Auth0 Management API for user ${userId}...`);
             
-            // Update the metadata in Auth0 using the update method
-            await auth0Client.updateUserMetadata({ id: userId }, newMetadata);
+            // Make 3 attempts to update in Auth0 with exponential backoff
+            const updateWithRetry = async (retries = 3, delay = 500) => {
+              try {
+                await auth0Client.updateUserMetadata({ id: userId }, newMetadata);
+                return true;
+              } catch (updateError) {
+                if (retries > 1) {
+                  console.log(`Auth0 update failed, retrying in ${delay}ms...`);
+                  await new Promise(resolve => setTimeout(resolve, delay));
+                  return updateWithRetry(retries - 1, delay * 2);
+                }
+                throw updateError;
+              }
+            };
             
-            console.log('Auth0 metadata update successful');
-          } catch (auth0Error) {
-            // Log API errors but don't fail the request since we have in-memory backup
-            console.warn('Auth0 Management API access failed:', auth0Error.message);
-            console.log('Continuing to use in-memory metadata storage');
-            
-            // Log more details for debugging in development
-            if (process.env.NODE_ENV === 'development') {
-              console.error('Auth0 API error details:', auth0Error);
+            auth0UpdateSuccessful = await updateWithRetry();
+            if (auth0UpdateSuccessful) {
+              console.log('Auth0 metadata update successful');
             }
+          } catch (auth0Error) {
+            console.warn('Auth0 Management API update failed after retries:', auth0Error.message);
+            console.log('Falling back to in-memory metadata storage');
           }
-        } else {
-          console.log('Auth0 Management API not configured, using in-memory storage only');
         }
+        
+        // Always store in memory for this session as a fallback
+        metadataStore.set(userId, newMetadata);
         
         // Log the final metadata
         console.log("METADATA SAVED:", {
@@ -130,10 +168,11 @@ export default withApiAuthRequired(async function userMetadata(req, res) {
           metadataKeys: Object.keys(newMetadata),
           onboardingCompleted: newMetadata.onboardingCompleted,
           onboardingCompletedType: typeof newMetadata.onboardingCompleted,
-          metadata: JSON.stringify(newMetadata)
+          auth0UpdateSuccessful: auth0UpdateSuccessful,
+          inMemoryBackupUsed: true
         });
         
-        // Return the updated metadata, whether it was updated in Auth0 or only in memory
+        // Return the updated metadata
         return res.status(200).json(newMetadata);
       } catch (error) {
         console.error('Error updating user metadata:', error);

@@ -107,34 +107,83 @@ const Dashboard = () => {
       }
     }
 
-    // Direct approach to check onboarding status from metadata
+    // Reliable onboarding status check that always consults Auth0 directly
     const checkOnboardingStatus = async () => {
       try {
-        // First check session metadata directly - fastest approach
+        console.log("Starting enhanced onboarding status check...");
+        
+        // First try checking with the dedicated endpoint (which uses Auth0 Management API)
+        try {
+          const directResponse = await fetch("/api/user/onboarding-completed");
+          if (directResponse.ok) {
+            const result = await directResponse.json();
+            console.log("Direct Auth0 onboarding check result:", result);
+            
+            if (result.completed === true) {
+              console.log("Auth0 direct check confirms onboardingCompleted = true, hiding checklist");
+              setShowOnboarding(false);
+              return;
+            }
+          }
+        } catch (directCheckError) {
+          console.warn("Error in direct Auth0 check:", directCheckError);
+          // Continue to fallbacks
+        }
+        
+        // Second check: Try session metadata directly
         if (user?.user_metadata?.onboardingCompleted === true) {
-          console.log("User metadata has onboardingCompleted = true, hiding checklist");
+          console.log("Session user_metadata has onboardingCompleted = true, hiding checklist");
           setShowOnboarding(false);
           return;
         }
         
-        // Fallback: check metadata API
-        const metadataResponse = await fetch("/api/user/metadata");
-        if (metadataResponse.ok) {
-          const metadata = await metadataResponse.json();
-          console.log("Metadata API response:", metadata);
-          
-          if (metadata.onboardingCompleted === true) {
-            console.log("Metadata API shows onboardingCompleted = true, hiding checklist");
-            setShowOnboarding(false);
-            return;
+        // Third check: metadata API with fresh fetch
+        try {
+          const metadataResponse = await fetch("/api/user/metadata");
+          if (metadataResponse.ok) {
+            const metadata = await metadataResponse.json();
+            console.log("Fresh metadata API response:", metadata);
+            
+            if (metadata.onboardingCompleted === true) {
+              console.log("Fresh metadata shows onboardingCompleted = true, hiding checklist");
+              setShowOnboarding(false);
+              return;
+            }
+          }
+        } catch (metadataError) {
+          console.warn("Error fetching fresh metadata:", metadataError);
+          // Continue to final check
+        }
+        
+        // Check user application status as one more signal
+        if (Array.isArray(applications) && applications.length > 0) {
+          // User has applications, check if we already have an active session
+          // The timeframe check helps prevent showing/hiding flicker on first login
+          const thirtyMinutes = 30 * 60 * 1000;
+          if (user?.updated_at && (new Date() - new Date(user.updated_at) > thirtyMinutes)) {
+            console.log("User has applications and established session, assuming onboarding should be completed");
+            
+            // Automatically mark onboarding as completed for existing users with applications
+            try {
+              await fetch('/api/user/onboarding-completed', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ completed: true, auto: true })
+              });
+              setShowOnboarding(false);
+              return;
+            } catch (autoCompleteError) {
+              console.warn("Error auto-completing onboarding:", autoCompleteError);
+              // Continue to final decision
+            }
           }
         }
         
-        // If we couldn't confirm it's completed, show the checklist
-        console.log("Could not confirm onboarding completion, showing checklist");
+        // If we couldn't confirm it's completed after all checks, show the checklist
+        console.log("Could not confirm onboarding completion after all checks, showing checklist");
         setShowOnboarding(true);
       } catch (err) {
-        console.error("Error checking onboarding status:", err);
+        console.error("Error in onboarding status check:", err);
         // Default to showing for new users
         setShowOnboarding(true);
       }
@@ -174,13 +223,24 @@ const Dashboard = () => {
     };
     
     if (user) {
-      // Direct, reliable initialization sequence - first check if onboarding is completed
-      checkOnboardingStatus();
+      // First load all data in parallel that we need for onboarding decisions
+      const dataPromises = [
+        fetchApplications(),
+        fetchProfile(),
+        fetchTeamData()
+      ];
       
-      // Load all other data in parallel for faster loading
-      fetchApplications();
-      fetchProfile();
-      fetchTeamData();
+      // Then check onboarding status with all context available
+      Promise.all(dataPromises)
+        .then(() => {
+          console.log("All data loaded, now checking onboarding status with full context");
+          checkOnboardingStatus();
+        })
+        .catch(err => {
+          console.error("Error loading data for onboarding check:", err);
+          // Still try to check onboarding status even if some data failed to load
+          checkOnboardingStatus();
+        });
     }
     
     // Add debugging to check when profile and teams are loaded
@@ -288,73 +348,85 @@ const Dashboard = () => {
     }
   };
 
-  // Simple, focused onboarding completion handler
-  const handleCompletion = () => {
-    console.log("Handling onboarding completion - simple approach");
+  // Robust onboarding completion handler with better error handling
+  const handleCompletion = async () => {
+    console.log("Handling onboarding completion - robust approach with retries");
     
     // Immediately hide the checklist for better UX
     setShowOnboarding(false);
     
-    // Fire and forget to our dedicated completion endpoint
-    fetch('/api/user/onboarding-completed', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ completed: true })
-    })
-    .then(response => {
-      if (response.ok) {
-        console.log("Onboarding marked as completed");
-        
-        // Also update Auth0 metadata for persistence
-        return fetch('/api/user/metadata', {
+    try {
+      // Use the specialized onboarding completion endpoint with direct Auth0 API access
+      const completionResponse = await fetch('/api/user/onboarding-completed', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ completed: true })
+      });
+      
+      if (completionResponse.ok) {
+        const result = await completionResponse.json();
+        console.log("Onboarding marked as completed:", result);
+      } else {
+        console.error("Failed to mark onboarding as completed");
+      }
+      
+      // Update the metadata with redundancy - belt and suspenders approach
+      try {
+        // Also update through metadata API for double-confirmation
+        const metadataResponse = await fetch('/api/user/metadata', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             onboardingCompleted: true,
-            completedAt: new Date().toISOString()
+            onboardingCompletedAt: new Date().toISOString()
           })
         });
-      } else {
-        console.error("Failed to mark onboarding as completed");
+        
+        if (metadataResponse.ok) {
+          console.log("Additional metadata update successful");
+        }
+      } catch (metadataError) {
+        console.warn("Backup metadata update failed, but primary update should still be ok:", metadataError);
       }
-    })
-    .catch(error => {
-      console.error("Error marking onboarding as completed:", error);
-    });
-    
-    // Refresh the data in the background for a fresh view
-    Promise.all([
-      // Refresh applications data
-      fetch('/api/user/check-application')
-        .then(res => res.ok ? res.json() : null)
-        .then(data => {
-          if (data?.applications) setApplications(data.applications);
-        })
-        .catch(err => console.error("Error refreshing applications:", err)),
       
-      // Refresh teams data  
-      fetch("/api/teams")
-        .then(res => res.ok ? res.json() : null)
-        .then(data => {
-          if (data?.teams) {
-            setTeamsData(data.teams);
-            if (data.teams.length > 0) setTeamData(data.teams[0]);
-          }
-        })
-        .catch(err => console.error("Error refreshing teams:", err)),
+      // Force a page reload to get a fresh session with the updated metadata
+      // This ensures the client has the latest metadata from Auth0
+      window.location.reload();
       
-      // Refresh profile data
-      fetch("/api/user/profile")
-        .then(res => res.ok ? res.json() : null)
-        .then(data => { if (data) setProfile(data); })
-        .catch(err => console.error("Error refreshing profile:", err))
-    ])
-    .then(() => console.log("Background data refresh complete"))
-    .catch(err => console.error("Error in background refresh:", err));
+    } catch (error) {
+      console.error("Error in onboarding completion process:", error);
+      
+      // If the primary approach fails, try a fallback to ensure we still update
+      try {
+        // Last-resort metadata update
+        await fetch('/api/user/metadata', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            onboardingCompleted: true,
+            onboardingCompletedAt: new Date().toISOString(),
+            // Add a flag to indicate this was set via fallback
+            onboardingCompletionMethod: 'fallback'
+          })
+        });
+        
+        console.log("Used fallback method to complete onboarding");
+        
+        // Force reload anyway to refresh session
+        window.location.reload();
+      } catch (fallbackError) {
+        console.error("Even fallback method failed:", fallbackError);
+        
+        // Keep the onboarding hidden anyway for current session
+        setShowOnboarding(false);
+      }
+    }
   };
   
   
