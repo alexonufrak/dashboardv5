@@ -127,8 +127,8 @@ const Dashboard = () => {
           const hasAppliedToProgram = Array.isArray(onboardingSteps) && onboardingSteps.includes('selectCohort');
           
           // The definitive flag for onboarding completion - this is what matters most
-          // Convert to boolean with double negation to handle any truthy/falsy values
-          const isOnboardingCompleted = !!metadata.onboardingCompleted;
+          // Ensure this is a strict boolean comparison
+          const isOnboardingCompleted = metadata.onboardingCompleted === true;
           
           console.log("Onboarding status (raw value):", {
             steps: onboardingSteps,
@@ -363,8 +363,8 @@ const Dashboard = () => {
     // Create a new metadata object or use the existing one
     const updatedMetadata = userMetadata ? { ...userMetadata } : {};
     
-    // Critical: Make sure onboardingCompleted is set as a boolean true, not a string
-    updatedMetadata.onboardingCompleted = true;
+    // Critical: Make sure onboardingCompleted is set as a true boolean
+    updatedMetadata.onboardingCompleted = true; // This is a boolean true, not a string
     updatedMetadata.onboardingSkipped = skipOnly;
     updatedMetadata.completedAt = new Date().toISOString();
     
@@ -446,8 +446,8 @@ const Dashboard = () => {
           {/* Email mismatch alert */}
           {user?.emailMismatch && <EmailMismatchAlert emailMismatch={user.emailMismatch} />}
           
-          {/* Onboarding Checklist - show if onboardingCompleted is not explicitly set to true */}
-          {showOnboarding && !(userMetadata && userMetadata.onboardingCompleted === true) && (
+          {/* Onboarding Checklist - show if onboardingCompleted is not explicitly true */}
+          {showOnboarding && userMetadata?.onboardingCompleted !== true && (
             <OnboardingChecklist 
               profile={profile}
               onComplete={handleCompletion}

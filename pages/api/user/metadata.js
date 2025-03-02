@@ -49,6 +49,15 @@ export default withApiAuthRequired(async function userMetadata(req, res) {
         // Combine metadata from both sources
         const combinedMetadata = { ...sessionMetadata, ...storedMetadata };
         
+        console.log("METADATA GET REQUEST:", {
+          userId,
+          sessionMetadataKeys: Object.keys(sessionMetadata),
+          storedMetadataKeys: Object.keys(storedMetadata),
+          onboardingCompleted: combinedMetadata.onboardingCompleted,
+          onboardingCompletedType: typeof combinedMetadata.onboardingCompleted,
+          combinedMetadata: JSON.stringify(combinedMetadata)
+        });
+        
         return res.status(200).json(combinedMetadata);
       } catch (error) {
         console.error('Error fetching metadata:', error);
@@ -60,6 +69,13 @@ export default withApiAuthRequired(async function userMetadata(req, res) {
     // POST request - update user metadata
     if (req.method === 'POST') {
       const updates = req.body;
+      
+      console.log("METADATA UPDATE REQUEST:", {
+        userId,
+        updateType: typeof updates,
+        updateKeys: updates ? Object.keys(updates) : [],
+        updateValues: updates ? JSON.stringify(updates) : "none"
+      });
       
       // Validate updates
       if (!updates || typeof updates !== 'object') {
@@ -74,6 +90,13 @@ export default withApiAuthRequired(async function userMetadata(req, res) {
         
         // Merge with new updates
         const newMetadata = { ...currentMetadata, ...updates };
+        
+        // Special handling for onboardingCompleted to ensure it's a boolean
+        if ('onboardingCompleted' in newMetadata) {
+          // Convert to true boolean (not string, number, etc)
+          newMetadata.onboardingCompleted = newMetadata.onboardingCompleted === true;
+          console.log("Ensuring onboardingCompleted is boolean:", newMetadata.onboardingCompleted);
+        }
         
         // First, store in memory as a fallback (always do this)
         metadataStore.set(userId, newMetadata);
@@ -100,6 +123,15 @@ export default withApiAuthRequired(async function userMetadata(req, res) {
         } else {
           console.log('Auth0 Management API not configured, using in-memory storage only');
         }
+        
+        // Log the final metadata
+        console.log("METADATA SAVED:", {
+          userId,
+          metadataKeys: Object.keys(newMetadata),
+          onboardingCompleted: newMetadata.onboardingCompleted,
+          onboardingCompletedType: typeof newMetadata.onboardingCompleted,
+          metadata: JSON.stringify(newMetadata)
+        });
         
         // Return the updated metadata, whether it was updated in Auth0 or only in memory
         return res.status(200).json(newMetadata);
