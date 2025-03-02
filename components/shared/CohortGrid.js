@@ -80,6 +80,7 @@ const CohortGrid = ({
       {/* Program Detail Modal */}
       <ProgramDetailModal 
         cohort={selectedProgram}
+        profile={profile}
         isOpen={!!selectedProgram}
         onClose={() => setSelectedProgram(null)}
         onApply={handleProgramApply}

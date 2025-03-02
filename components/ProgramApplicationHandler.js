@@ -38,10 +38,12 @@ const ProgramApplicationHandler = ({
   const [showInitiativeConflictDialog, setShowInitiativeConflictDialog] = useState(false)
   const [conflictDetails, setConflictDetails] = useState(null)
   
-  // Extract participation type
-  const participationType = cohort?.participationType || 
-                         cohort?.initiativeDetails?.["Participation Type"] || 
-                         "Individual"
+  // Extract participation type (with null check for cohort)
+  const participationType = cohort ? (
+    cohort.participationType || 
+    cohort.initiativeDetails?.["Participation Type"] || 
+    "Individual"
+  ) : "Individual"
   
   // Start the application process when isActive changes to true
   useEffect(() => {
@@ -115,8 +117,8 @@ const ProgramApplicationHandler = ({
   const checkInitiativeRestrictions = async () => {
     try {
       // Get the current cohort's initiative
-      const currentInitiativeName = cohort.initiativeDetails?.name || "";
-      const currentInitiativeId = cohort.initiativeDetails?.id;
+      const currentInitiativeName = cohort?.initiativeDetails?.name || "";
+      const currentInitiativeId = cohort?.initiativeDetails?.id;
       
       console.log("Checking initiative restrictions for:", currentInitiativeName);
       
@@ -135,10 +137,16 @@ const ProgramApplicationHandler = ({
         return { allowed: true }; // No restrictions for other initiatives
       }
       
+      // Check if we have profile data with a contactId
+      if (!profile) {
+        console.warn("Profile data not available for initiative conflict check");
+        return { allowed: true }; // Allow if profile is not available
+      }
+      
       // We need to make an API call to check if the user has participation records with conflicting initiatives
-      if (!profile?.contactId) {
-        console.error("No contact ID available for initiative conflict check");
-        return { allowed: true };
+      if (!profile.contactId) {
+        console.warn("No contact ID available for initiative conflict check - profile may not be fully loaded");
+        return { allowed: true }; // Allow if contactId is missing
       }
       
       console.log(`Calling API to check participation records for contact ${profile.contactId}`);
@@ -248,7 +256,7 @@ const ProgramApplicationHandler = ({
       } else {
         // Individual participation - use Fillout form
         console.log("Individual participation detected")
-        if (cohort && cohort["Application Form ID (Fillout)"]) {
+        if (cohort?.["Application Form ID (Fillout)"]) {
           console.log(`Using Fillout form ID: ${cohort["Application Form ID (Fillout)"]}`);
           
           setActiveFilloutForm({
