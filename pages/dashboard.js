@@ -213,7 +213,7 @@ const Dashboard = () => {
     }
   }, [user]);
   
-  // Log when applications data changes
+  // Log when applications data changes, but don't hide checklist
   useEffect(() => {
     if (!isLoadingApplications) {
       console.log('Applications data updated:', applications);
@@ -333,6 +333,8 @@ const Dashboard = () => {
             <OnboardingChecklist 
               profile={profile}
               onComplete={handleCompletion}
+              applications={applications}
+              isLoadingApplications={isLoadingApplications}
             />
           )}
           

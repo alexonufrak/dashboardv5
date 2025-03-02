@@ -22,7 +22,12 @@ import TeamCreateDialog from './TeamCreateDialog'
 import TeamSelectDialog from './TeamSelectDialog'
 import FilloutPopupEmbed from './FilloutPopupEmbed'
 
-const OnboardingChecklist = ({ profile, onComplete }) => {
+const OnboardingChecklist = ({ 
+  profile, 
+  onComplete, 
+  applications = [], 
+  isLoadingApplications = false 
+}) => {
   const { user } = useUser()
   const router = useRouter()
   
@@ -30,22 +35,31 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
   const [registerExpanded, setRegisterExpanded] = useState(true)
   const [cohortExpanded, setCohortExpanded] = useState(false)
   
+  // Check if user has any applications (used for step completion state)
+  const hasApplications = Array.isArray(applications) && applications.length > 0
+  
   const [stepStatus, setStepStatus] = useState({
     register: { completed: true, title: 'Create an account', description: 'Sign up with your institutional email' },
-    selectCohort: { completed: false, title: 'Get involved', description: 'Select a program to join' }
+    selectCohort: { 
+      completed: hasApplications, // Initialize based on applications prop
+      title: 'Get involved', 
+      description: 'Select a program to join' 
+    }
   })
   
   // UI state
   const [isExpanded, setIsExpanded] = useState(true)
-  const [completionPercentage, setCompletionPercentage] = useState(50)
+  const [completionPercentage, setCompletionPercentage] = useState(hasApplications ? 100 : 50)
   
   // Functional state
   const [activeFilloutForm, setActiveFilloutForm] = useState(null)
   const [activeTeamSelectDialog, setActiveTeamSelectDialog] = useState(null)
   const [activeTeamCreateDialog, setActiveTeamCreateDialog] = useState(false)
-  const [checkedCohortSubmission, setCheckedCohortSubmission] = useState(false)
+  const [checkedCohortSubmission, setCheckedCohortSubmission] = useState(hasApplications)
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedCohort, setSelectedCohort] = useState(null)
+  const [selectedCohort, setSelectedCohort] = useState(
+    hasApplications && applications[0].cohortId ? applications[0].cohortId : null
+  )
   const [userTeams, setUserTeams] = useState([])
   const [isLoadingTeams, setIsLoadingTeams] = useState(false)
   
@@ -70,13 +84,40 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     setCohortExpanded(false);
   }, []);
   
-  // When profile changes, fetch team data
+  // When profile or applications change, update state
   useEffect(() => {
     if (profile?.contactId) {
       fetchUserTeams();
-      checkCohortSubmission();
+      
+      // Only check cohort submission if we don't have applications from props
+      if (!hasApplications && !isLoadingApplications) {
+        checkCohortSubmission();
+      }
     }
   }, [profile]);
+  
+  // Update step status when applications prop changes
+  useEffect(() => {
+    if (!isLoadingApplications) {
+      // If we receive applications from props, mark step as completed
+      if (hasApplications && !stepStatus.selectCohort.completed) {
+        console.log('Setting selectCohort to completed from applications prop');
+        setStepStatus(prev => ({
+          ...prev,
+          selectCohort: {
+            ...prev.selectCohort,
+            completed: true
+          }
+        }));
+        
+        // If we have a cohort ID, save it
+        if (applications[0].cohortId) {
+          setSelectedCohort(applications[0].cohortId);
+          saveCohortToMetadata(applications[0].cohortId);
+        }
+      }
+    }
+  }, [applications, isLoadingApplications]);
   
   // Update completion percentage when steps change
   useEffect(() => {
@@ -136,21 +177,34 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
     }
   };
   
-  // Check if user has already applied to the selected cohort
+  // Check if user has already applied to any cohort
   const checkCohortSubmission = async () => {
-    if (selectedCohort && !checkedCohortSubmission && profile?.contactId) {
+    if (profile?.contactId && !checkedCohortSubmission) {
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/user/check-application?cohortId=${selectedCohort}&contactId=${profile.contactId}`);
+        // Get all applications without filtering by cohort
+        const response = await fetch('/api/user/check-application');
         if (response.ok) {
           const data = await response.json();
-          if (data.hasApplied) {
-            // Mark the selectCohort step as completed
+          console.log('Applications in OnboardingChecklist:', data);
+          
+          // If user has any applications, mark the selectCohort step as completed
+          if (data.applications && data.applications.length > 0) {
+            console.log('User has applications, marking selectCohort as completed');
             markStepComplete('selectCohort');
+            
+            // If a specific cohort was selected, save it in metadata
+            if (selectedCohort) {
+              saveCohortToMetadata(selectedCohort);
+            } else if (data.applications[0].cohortId) {
+              // Otherwise, use the first application's cohort ID
+              saveCohortToMetadata(data.applications[0].cohortId);
+              setSelectedCohort(data.applications[0].cohortId);
+            }
           }
         }
       } catch (error) {
-        console.error('Error checking cohort submission:', error);
+        console.error('Error checking cohort submissions:', error);
       } finally {
         setCheckedCohortSubmission(true);
         setIsLoading(false);
@@ -590,6 +644,8 @@ const OnboardingChecklist = ({ profile, onComplete }) => {
                         cohorts={profile.cohorts || []}
                         profile={profile}
                         isLoading={isLoading}
+                        isLoadingApplications={isLoadingApplications}
+                        applications={applications}
                         onApply={handleCohortApply}
                         onApplySuccess={(cohort) => markStepComplete('selectCohort')}
                         columns={{ default: 1, md: 2, lg: 2 }}
