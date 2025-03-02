@@ -183,41 +183,29 @@ const Dashboard = () => {
     }
   }, [user]);
   
-  // Update onboarding steps when applications are found, but don't make redundant API calls
+  // Update application tracking when new applications are found
   useEffect(() => {
-    // Only run this effect when applications load and we have metadata
-    if (!isLoadingApplications && userMetadata && applications.length > 0) {
-      console.log('Applications found, checking if we need to update metadata:', applications);
+    // Only run this effect when applications load and we have any
+    if (!isLoadingApplications && applications.length > 0) {
+      console.log('Applications found, updating application tracking:', applications.length);
       
-      const currentSteps = userMetadata.onboarding || ['register'];
-      
-      // Only update if application step not already marked as completed 
-      // AND onboarding is not already marked as completed
-      if (!currentSteps.includes('selectCohort') && !userMetadata.onboardingCompleted) {
-        console.log('Application found but not in metadata, updating steps');
-        
-        // Set the updated steps in metadata
-        fetch('/api/user/metadata', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            // Just update the steps array, don't change other metadata
-            onboarding: [...currentSteps, 'selectCohort']
-          })
-        }).then(res => {
-          if (res.ok) return res.json();
-          throw new Error('Failed to update metadata');
-        }).then(updatedMetadata => {
-          console.log('Metadata updated with selectCohort step:', updatedMetadata);
-          setUserMetadata(updatedMetadata);
-        }).catch(err => {
-          console.error('Error updating metadata:', err);
-        });
-      }
+      // Simple approach - just POST to the metadata API to track the step
+      // We don't need to depend on current metadata state anymore
+      fetch('/api/user/metadata', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          // Just mark that the user has submitted an application
+          onboarding: ['register', 'selectCohort']
+        })
+      })
+      .catch(err => {
+        console.error('Error updating application tracking:', err);
+      });
     }
-  }, [applications, isLoadingApplications, userMetadata]);
+  }, [applications, isLoadingApplications]);
 
   // Show loading screen while data is loading
   if (isUserLoading || isLoading) {
