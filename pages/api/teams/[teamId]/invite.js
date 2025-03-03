@@ -1,5 +1,5 @@
 import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0'
-import { getUserProfile, base, getTeamById } from '@/lib/airtable'
+import { getUserProfile, base, getTeamById, lookupInstitutionByEmail } from '@/lib/airtable'
 
 /**
  * API handler to invite a new member to an existing team
@@ -23,11 +23,14 @@ export default withApiAuthRequired(async function inviteTeamMemberHandler(req, r
     }
     
     // Get the request body containing invitation data
-    const { email, name, role = 'Member' } = req.body
+    const { email, name, role = 'Member', overrideInstitutionCheck = false } = req.body
     
     if (!email || !email.trim()) {
       return res.status(400).json({ error: 'Email is required' })
     }
+    
+    // Normalize email
+    const normalizedEmail = email.trim().toLowerCase()
     
     // Get user profile from Airtable to confirm they're on the team
     const userProfile = await getUserProfile(session.user.sub, session.user.email)
@@ -50,6 +53,28 @@ export default withApiAuthRequired(async function inviteTeamMemberHandler(req, r
     
     if (!isTeamMember) {
       return res.status(403).json({ error: 'You must be a team member to invite others' })
+    }
+    
+    // Check if the invitee's institution matches the team members' institution if not overridden
+    if (!overrideInstitutionCheck) {
+      // Get the user's institution
+      const userInstitution = userProfile.institutionId
+      
+      // Check invitee's email domain
+      const inviteeInstitution = await lookupInstitutionByEmail(normalizedEmail)
+      
+      // If both have institutions and they don't match, return a warning but allow with override
+      if (userInstitution && inviteeInstitution && userInstitution !== inviteeInstitution.id) {
+        return res.status(400).json({ 
+          error: 'Institution mismatch', 
+          warning: true,
+          details: {
+            userInstitution: userProfile.institution?.name || 'Unknown',
+            inviteeInstitution: inviteeInstitution.name,
+            message: 'The email domain appears to be from a different institution than yours. If this is intentional, please confirm.'
+          }
+        })
+      }
     }
     
     // Get the required tables from Airtable

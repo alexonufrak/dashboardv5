@@ -1,16 +1,19 @@
 import { getUserByEmail } from '../../../lib/userProfile';
 import auth0Client from '../../../lib/auth0';
+import { lookupInstitutionByEmail } from '../../../lib/airtable';
 
 /**
- * API handler to check if a user exists by email
+ * API handler to check if a user exists by email and verify institution
  */
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
+  // Allow both POST and GET methods
+  if (req.method !== 'POST' && req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { email } = req.body;
+    // Get email from either query params (GET) or body (POST)
+    const email = req.method === 'GET' ? req.query.email : req.body.email;
     console.log(`API received check-email request for: ${email}`);
 
     if (!email) {
@@ -19,6 +22,37 @@ export default async function handler(req, res) {
         error: 'Email is required',
         exists: false
       });
+    }
+    
+    // For GET requests, do a quick institution check only
+    if (req.method === 'GET') {
+      // Normalize the email to lowercase for consistency
+      const normalizedEmail = email.toLowerCase().trim();
+      
+      try {
+        // Check if email domain matches an institution
+        const institution = await lookupInstitutionByEmail(normalizedEmail);
+        
+        // Get user's institution from session or query params if available
+        const userInstitution = req.query.userInstitution || null;
+        
+        // Check for domain mismatch
+        const mismatch = institution && userInstitution && institution.id !== userInstitution;
+        
+        return res.status(200).json({
+          email: normalizedEmail,
+          institution: institution ? institution.name : null,
+          institutionId: institution ? institution.id : null,
+          mismatch: mismatch
+        });
+      } catch (error) {
+        console.error('Error checking institution for email:', error);
+        return res.status(200).json({
+          email: normalizedEmail,
+          institution: null,
+          mismatch: false
+        });
+      }
     }
 
     // Check user existence in both Airtable and Auth0

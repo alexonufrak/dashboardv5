@@ -27,7 +27,9 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
   const [email, setEmail] = useState("")
   const [name, setName] = useState("")
   const [error, setError] = useState("")
+  const [warning, setWarning] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isCheckingDomain, setIsCheckingDomain] = useState(false)
 
   // Reset form data when dialog opens/closes
   const handleOpenChange = (open) => {
@@ -42,7 +44,37 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
     setEmail("")
     setName("")
     setError("")
+    setWarning("")
     setIsSubmitting(false)
+    setIsCheckingDomain(false)
+  }
+  
+  // Check if the email domain matches the team institution
+  const checkEmailDomain = async (email) => {
+    if (!email || !email.includes('@')) return
+    
+    try {
+      setIsCheckingDomain(true)
+      setWarning("")
+      
+      const response = await fetch(`/api/user/check-email?email=${encodeURIComponent(email)}`)
+      
+      if (!response.ok) {
+        console.error("Error checking email domain")
+        return
+      }
+      
+      const data = await response.json()
+      
+      // If there's a domain mismatch, show a warning
+      if (data.mismatch) {
+        setWarning(`This email appears to be from ${data.institution || 'a different institution'}, which may not be the same as your team members. Please confirm this is correct.`)
+      }
+    } catch (error) {
+      console.error("Error checking email domain:", error)
+    } finally {
+      setIsCheckingDomain(false)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -70,6 +102,7 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
     setError("")
     
     try {
+      // First attempt - don't override institution check
       const response = await fetch(`/api/teams/${team.id}/invite`, {
         method: 'POST',
         headers: {
@@ -78,8 +111,67 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
         body: JSON.stringify({
           email: email.trim(),
           name: name.trim(),
+          overrideInstitutionCheck: false,
         }),
       })
+      
+      // Institution mismatch warning
+      if (response.status === 400) {
+        const errorData = await response.json()
+        
+        // Handle institution mismatch warnings specially
+        if (errorData.warning && errorData.details) {
+          setIsSubmitting(false)
+          setWarning(`${errorData.details.message} The email appears to be from ${errorData.details.inviteeInstitution} while your account is associated with ${errorData.details.userInstitution}. Click Send Again to confirm.`)
+          
+          // Change the submit handler to use override on next click
+          const originalSubmitHandler = handleSubmit
+          handleSubmit = async (e) => {
+            e.preventDefault()
+            setIsSubmitting(true)
+            
+            try {
+              // Try again with override flag
+              const overrideResponse = await fetch(`/api/teams/${team.id}/invite`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  email: email.trim(),
+                  name: name.trim(),
+                  overrideInstitutionCheck: true,
+                }),
+              })
+              
+              if (!overrideResponse.ok) {
+                const overrideErrorData = await overrideResponse.json()
+                throw new Error(overrideErrorData.error || "Failed to invite team member")
+              }
+              
+              const data = await overrideResponse.json()
+              
+              // Call the callback with the updated team
+              if (onTeamUpdated && data.team) {
+                onTeamUpdated(data.team)
+              }
+              
+              // Close the dialog and reset the form
+              resetForm()
+              onClose()
+            } catch (error) {
+              console.error("Error inviting team member with override:", error)
+              setError(error.message || "Failed to invite team member")
+            } finally {
+              setIsSubmitting(false)
+            }
+          }
+          
+          return
+        }
+        
+        throw new Error(errorData.error || "Failed to invite team member")
+      }
       
       if (!response.ok) {
         const errorData = await response.json()
@@ -99,7 +191,6 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
     } catch (error) {
       console.error("Error inviting team member:", error)
       setError(error.message || "Failed to invite team member")
-    } finally {
       setIsSubmitting(false)
     }
   }
@@ -122,6 +213,13 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
             </Alert>
           )}
           
+          {warning && (
+            <Alert variant="warning" className="mt-4 bg-amber-50 border-amber-200 text-amber-800">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription>{warning}</AlertDescription>
+            </Alert>
+          )}
+          
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
@@ -129,11 +227,22 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  // Check domain when email has a valid format and contains @
+                  if (e.target.value.includes('@') && e.target.value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+                    checkEmailDomain(e.target.value)
+                  } else {
+                    setWarning("")
+                  }
+                }}
                 placeholder="Enter email address"
                 required
                 autoComplete="email"
               />
+              {isCheckingDomain && (
+                <p className="text-xs text-muted-foreground mt-1">Checking institution...</p>
+              )}
             </div>
             
             <div className="grid gap-2">
