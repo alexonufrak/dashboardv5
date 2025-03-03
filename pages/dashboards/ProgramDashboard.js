@@ -308,23 +308,8 @@ function ProgramDashboardInner({ onNavigate }) {
               {/* Current Milestone - Condensed Table */}
               <Card>
                 <CardHeader className="pb-2">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <CardTitle className="text-lg">Milestone Progress</CardTitle>
-                      <CardDescription>Track your progress on program milestones</CardDescription>
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        // Get the milestones tab element and click it
-                        const milestonesTab = document.querySelector('button[value="milestones"]');
-                        if (milestonesTab) milestonesTab.click();
-                      }}
-                    >
-                      View All <ChevronRight className="ml-1 h-4 w-4" />
-                    </Button>
-                  </div>
+                  <CardTitle className="text-lg">Milestone Progress</CardTitle>
+                  <CardDescription>Track your progress on program milestones</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {/* Condensed Milestone Table */}
