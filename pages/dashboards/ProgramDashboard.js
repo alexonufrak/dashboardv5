@@ -169,16 +169,32 @@ function ProgramDashboardInner({ onNavigate }) {
           <CardContent className="p-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
               <div>
-                <Badge variant="outline" className="mb-2 bg-blue-100 text-blue-800 border-blue-200">
-                  {cohort?.initiativeDetails?.name || initiativeName}
-                </Badge>
+                <div className="flex gap-2 mb-2">
+                  <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                    {cohort?.initiativeDetails?.name || initiativeName}
+                  </Badge>
+                  
+                  {cohort?.['Current Cohort'] === true && (
+                    <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">
+                      Active Cohort
+                    </Badge>
+                  )}
+                </div>
                 <h2 className="text-xl font-semibold mb-1">
                   {cohort?.topicNames?.[0] || "Active Program"} 
                   {cohort?.Short_Name && ` - ${cohort.Short_Name}`}
                 </h2>
                 <div className="text-sm text-muted-foreground flex items-center">
                   <CalendarIcon className="h-3.5 w-3.5 mr-1" />
-                  <span>Active Program • {new Date().toLocaleDateString('en-US', {year: 'numeric', month: 'long'})}</span>
+                  {cohort?.['Start Date'] && cohort?.['End Date'] ? (
+                    <span>
+                      {new Date(cohort['Start Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
+                      {' - '}
+                      {new Date(cohort['End Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
+                    </span>
+                  ) : (
+                    <span>Active Program • {new Date().toLocaleDateString('en-US', {year: 'numeric', month: 'long'})}</span>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2 mt-3 md:mt-0">

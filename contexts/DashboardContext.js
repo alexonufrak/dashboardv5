@@ -176,28 +176,56 @@ export function DashboardProvider({ children }) {
           console.log('Participation array is empty')
           // Not throwing - will try team fallback
         } else {
-          // Get the active participation (the first one for now)
-          const activeParticipation = participationData.participation[0]
-          setCohort(activeParticipation.cohort)
+          console.log(`Found ${participationData.participation.length} participation records`);
           
-          // Set initiative name and participation type
-          if (activeParticipation.cohort?.initiativeDetails) {
-            setInitiativeName(activeParticipation.cohort.initiativeDetails.name || "Program")
-            setParticipationType(activeParticipation.cohort.initiativeDetails["Participation Type"] || "Individual")
-          }
+          // Filter for current participation records using the "Current Cohort" field
+          const currentParticipations = participationData.participation.filter(p => 
+            p.cohort?.['Current Cohort'] === true
+          );
           
-          // Get milestones for this cohort
-          if (activeParticipation.cohort?.id) {
-            const milestonesResponse = await fetch(`/api/cohorts/${activeParticipation.cohort.id}/milestones`)
-            if (milestonesResponse.ok) {
-              const milestonesData = await milestonesResponse.json()
-              setMilestones(milestonesData.milestones || [])
+          console.log(`Found ${currentParticipations.length} CURRENT participation records`);
+          
+          if (currentParticipations.length > 0) {
+            // Use the first current participation record
+            const activeParticipation = currentParticipations[0];
+            console.log('Active participation:', activeParticipation);
+            
+            setCohort(activeParticipation.cohort);
+            
+            // Set initiative name and participation type
+            if (activeParticipation.cohort?.initiativeDetails) {
+              setInitiativeName(activeParticipation.cohort.initiativeDetails.name || "Program")
+              setParticipationType(activeParticipation.cohort.initiativeDetails["Participation Type"] || "Individual")
             }
+            
+            // Get start and end dates if available
+            const startDate = activeParticipation.cohort?.['Start Date'] 
+              ? new Date(activeParticipation.cohort['Start Date']) 
+              : null;
+              
+            const endDate = activeParticipation.cohort?.['End Date'] 
+              ? new Date(activeParticipation.cohort['End Date']) 
+              : null;
+              
+            console.log(`Cohort dates: ${startDate?.toLocaleDateString()} - ${endDate?.toLocaleDateString()}`);
+            
+            // Get milestones for this cohort
+            if (activeParticipation.cohort?.id) {
+              const milestonesResponse = await fetch(`/api/cohorts/${activeParticipation.cohort.id}/milestones`)
+              if (milestonesResponse.ok) {
+                const milestonesData = await milestonesResponse.json()
+                setMilestones(milestonesData.milestones || [])
+              }
+            }
+            
+            // Clear any previous errors - participation approach succeeded
+            setProgramError(null)
+            participationSuccess = true
+          } else {
+            // No current participation records found, try fallback approach
+            console.log('No CURRENT participation records found');
+            // We'll move to team fallback approach
           }
-          
-          // Clear any previous errors - participation approach succeeded
-          setProgramError(null)
-          participationSuccess = true
         }
       } catch (participationErr) {
         console.error('Participation approach failed:', participationErr)
@@ -236,10 +264,27 @@ export function DashboardProvider({ children }) {
                 console.log(`Fetched cohorts for team ${team.name}:`, cohortData)
                 
                 if (cohortData.cohorts && cohortData.cohorts.length > 0) {
-                  // Store first cohort
-                  const firstCohort = cohortData.cohorts[0]
-                  setCohort(firstCohort)
-                  console.log('Set cohort:', firstCohort)
+                  console.log(`Found ${cohortData.cohorts.length} cohorts for team`);
+                  
+                  // Filter for current cohorts using the "Current Cohort" field
+                  const currentCohorts = cohortData.cohorts.filter(cohort => 
+                    cohort['Current Cohort'] === true
+                  );
+                  
+                  console.log(`Found ${currentCohorts.length} CURRENT cohorts for team`);
+                  
+                  // Use a current cohort if available, otherwise fall back to first cohort
+                  const activeCohort = currentCohorts.length > 0 ? currentCohorts[0] : cohortData.cohorts[0];
+                  
+                  // Log whether using current or fallback cohort
+                  if (currentCohorts.length > 0) {
+                    console.log('Using current active cohort:', activeCohort.name);
+                  } else {
+                    console.log('No current cohorts found, using first cohort as fallback:', activeCohort.name);
+                  }
+                  
+                  setCohort(activeCohort)
+                  console.log('Set cohort:', activeCohort)
                   
                   // Set team data for rendering
                   if (team && !teamData) {
@@ -247,29 +292,29 @@ export function DashboardProvider({ children }) {
                   }
                   
                   // Set initiative details if available
-                  const initiativeName = firstCohort.initiativeDetails?.name || 
-                                        firstCohort.details?.initiativeName || 
-                                        firstCohort.name || 
+                  const initiativeName = activeCohort.initiativeDetails?.name || 
+                                        activeCohort.details?.initiativeName || 
+                                        activeCohort.name || 
                                         "Program"
                   setInitiativeName(initiativeName)
                   
                   // Get participation type
-                  const partType = firstCohort.initiativeDetails?.["Participation Type"] || 
-                                   firstCohort.details?.participationType || 
+                  const partType = activeCohort.initiativeDetails?.["Participation Type"] || 
+                                   activeCohort.details?.participationType || 
                                    (team ? "Team" : "Individual")
                   setParticipationType(partType)
                   
                   // Get milestones if possible
-                  if (firstCohort.id) {
-                    console.log(`Fetching milestones for cohort ${firstCohort.id}...`)
+                  if (activeCohort.id) {
+                    console.log(`Fetching milestones for cohort ${activeCohort.id}...`)
                     try {
-                      const milestonesResponse = await fetch(`/api/cohorts/${firstCohort.id}/milestones`)
+                      const milestonesResponse = await fetch(`/api/cohorts/${activeCohort.id}/milestones`)
                       if (milestonesResponse.ok) {
                         const milestonesData = await milestonesResponse.json()
                         setMilestones(milestonesData.milestones || [])
                         console.log('Set milestones:', milestonesData.milestones)
                       } else {
-                        console.log(`No milestones response for cohort ${firstCohort.id}`)
+                        console.log(`No milestones response for cohort ${activeCohort.id}`)
                         // Use empty milestones but don't consider this a failure
                         setMilestones([])
                       }
