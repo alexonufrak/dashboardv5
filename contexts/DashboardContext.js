@@ -31,10 +31,13 @@ export function DashboardProvider({ children }) {
   const [programLoading, setProgramLoading] = useState(true)
   const [programError, setProgramError] = useState(null)
 
-  // Fetch all dashboard data
+  // Track if data has been loaded once
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+
+  // Fetch all dashboard data - only once per session
   useEffect(() => {
     async function fetchAllDashboardData() {
-      if (!user || isUserLoading) return
+      if (!user || isUserLoading || initialDataLoaded) return
       
       try {
         // Load all data in parallel
@@ -46,6 +49,7 @@ export function DashboardProvider({ children }) {
         ])
         
         console.log("All dashboard data loaded successfully")
+        setInitialDataLoaded(true)
       } catch (err) {
         console.error("Error loading dashboard data:", err)
         setError("Failed to load all dashboard data")
@@ -53,7 +57,7 @@ export function DashboardProvider({ children }) {
     }
     
     fetchAllDashboardData()
-  }, [user, isUserLoading])
+  }, [user, isUserLoading, initialDataLoaded])
 
   // Fetch user profile
   async function fetchProfile() {
@@ -232,26 +236,54 @@ export function DashboardProvider({ children }) {
                 console.log(`Fetched cohorts for team ${team.name}:`, cohortData)
                 
                 if (cohortData.cohorts && cohortData.cohorts.length > 0) {
-                  setCohort(cohortData.cohorts[0])
-                  console.log('Set cohort:', cohortData.cohorts[0])
+                  // Store first cohort
+                  const firstCohort = cohortData.cohorts[0]
+                  setCohort(firstCohort)
+                  console.log('Set cohort:', firstCohort)
                   
-                  if (cohortData.cohorts[0].initiativeDetails?.name) {
-                    setInitiativeName(cohortData.cohorts[0].initiativeDetails.name)
+                  // Set team data for rendering
+                  if (team && !teamData) {
+                    setTeamData(team)
                   }
                   
-                  if (cohortData.cohorts[0].id) {
-                    console.log(`Fetching milestones for cohort ${cohortData.cohorts[0].id}...`)
-                    const milestonesResponse = await fetch(`/api/cohorts/${cohortData.cohorts[0].id}/milestones`)
-                    if (milestonesResponse.ok) {
-                      const milestonesData = await milestonesResponse.json()
-                      setMilestones(milestonesData.milestones || [])
-                      console.log('Set milestones:', milestonesData.milestones)
+                  // Set initiative details if available
+                  const initiativeName = firstCohort.initiativeDetails?.name || 
+                                        firstCohort.details?.initiativeName || 
+                                        firstCohort.name || 
+                                        "Program"
+                  setInitiativeName(initiativeName)
+                  
+                  // Get participation type
+                  const partType = firstCohort.initiativeDetails?.["Participation Type"] || 
+                                   firstCohort.details?.participationType || 
+                                   (team ? "Team" : "Individual")
+                  setParticipationType(partType)
+                  
+                  // Get milestones if possible
+                  if (firstCohort.id) {
+                    console.log(`Fetching milestones for cohort ${firstCohort.id}...`)
+                    try {
+                      const milestonesResponse = await fetch(`/api/cohorts/${firstCohort.id}/milestones`)
+                      if (milestonesResponse.ok) {
+                        const milestonesData = await milestonesResponse.json()
+                        setMilestones(milestonesData.milestones || [])
+                        console.log('Set milestones:', milestonesData.milestones)
+                      } else {
+                        console.log(`No milestones response for cohort ${firstCohort.id}`)
+                        // Use empty milestones but don't consider this a failure
+                        setMilestones([])
+                      }
+                    } catch (milestonesError) {
+                      console.error('Error fetching milestones:', milestonesError)
+                      // Use empty milestones but don't consider this a failure
+                      setMilestones([])
                     }
                   }
                   
                   // Team approach succeeded
                   setProgramError(null)
                   participationSuccess = true
+                  console.log('Successfully configured program dashboard from team data')
                 } else {
                   console.log('No cohorts found for team')
                 }

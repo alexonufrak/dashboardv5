@@ -92,6 +92,12 @@ export default function DashboardShell() {
   const handleNavigation = (page) => {
     console.log(`Navigation requested to page: ${page}`);
     
+    // If we're already on this page, don't do anything
+    if (page === activePage) {
+      console.log('Already on this page, skipping navigation');
+      return;
+    }
+    
     // Update active page immediately without waiting for router change
     setActivePage(page)
     
@@ -111,22 +117,27 @@ export default function DashboardShell() {
     }
     
     // Update the URL using shallow routing to avoid full page reload
-    // Delay this slightly to ensure the UI updates first
+    // Use shallow routing to prevent getServerSideProps execution
     setTimeout(() => {
+      const options = { 
+        shallow: true,
+        scroll: false 
+      };
+      
       switch (page) {
         case "dashboard":
-          router.push("/dashboard", undefined, { shallow: true })
+          router.push("/dashboard", undefined, options)
           break
         case "program":
-          router.push("/program-dashboard", undefined, { shallow: true })
+          router.push("/program-dashboard", undefined, options)
           break
         case "profile":
-          router.push("/profile", undefined, { shallow: true })
+          router.push("/profile", undefined, options)
           break
         default:
-          router.push("/dashboard", undefined, { shallow: true })
+          router.push("/dashboard", undefined, options)
       }
-    }, 0)
+    }, 10) // Slight delay to ensure UI updates first
   }
   
   // Return appropriate page component based on active page
@@ -143,10 +154,18 @@ export default function DashboardShell() {
     }
   }
   
-  // Skip full-screen loading to avoid flash between pages
-  // We'll let each individual page component handle its own loading state
-  // Only show full-screen loader on initial dashboard load
-  const showFullLoader = isLoading && !profile;
+  // Track initial load state to only show loader on first load
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  
+  // Set initialLoadComplete to true once profile is loaded
+  useEffect(() => {
+    if (profile && !initialLoadComplete) {
+      setInitialLoadComplete(true);
+    }
+  }, [profile]);
+  
+  // Only show full loader on initial app load, never between page navigations
+  const showFullLoader = isLoading && !initialLoadComplete;
   
   // Show error message if there's an error
   if (error) {

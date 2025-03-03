@@ -34,8 +34,8 @@ function ProgramDashboardInner({ onNavigate }) {
     refreshData 
   } = useDashboard()
   
-  // Check if still loading
-  if (programLoading) {
+  // Only show loading indicator if this is first load, not navigation
+  if (programLoading && !cohort && !teamData) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="text-center">
