@@ -21,6 +21,14 @@ export default withApiAuthRequired(async function handler(req, res) {
       return res.status(404).json({ error: "User profile not found" })
     }
     
+    // Add this right after getting the profile
+    console.log(`Looking up participation for contact ID: "${profile.contactId}"`)
+    console.log(`Contact profile details:`, {
+      email: session.user.email,
+      contactId: profile.contactId,
+      name: profile.name || 'Not available'
+    })
+    
     // Get the Participation table ID from environment variables
     const participationTableId = process.env.AIRTABLE_PARTICIPATION_TABLE_ID
     if (!participationTableId) {
@@ -60,8 +68,11 @@ export default withApiAuthRequired(async function handler(req, res) {
     // Get the user's active participation records
     let participationRecords = []
 
-    // Use a direct find with proper matching for the record ID
-    const formula = `FIND("${profile.contactId}", {Contacts})`
+    // Alternative approach using SEARCH
+    const formula = `OR(
+      SEARCH("${profile.contactId}", ARRAYJOIN({Contacts})) > 0,
+      SEARCH('${profile.contactId}', ARRAYJOIN({Contacts})) > 0
+    )`
 
     console.log(`Looking for participation records with formula: ${formula}`)
 
