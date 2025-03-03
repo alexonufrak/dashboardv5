@@ -39,7 +39,13 @@ function PageSkeleton() {
 
 export default function DashboardShell() {
   const router = useRouter()
-  const { profile, isLoading, error, refreshData } = useDashboard()
+  const { 
+    profile, 
+    isLoading, 
+    error, 
+    refreshData,
+    programError // Track program errors specifically
+  } = useDashboard()
   
   // Track current page
   const [activePage, setActivePage] = useState("dashboard")
@@ -76,6 +82,8 @@ export default function DashboardShell() {
   
   // Handle client-side navigation
   const handleNavigation = (page) => {
+    console.log(`Navigation requested to page: ${page}`);
+    
     // Update active page immediately to avoid flicker
     setActivePage(page)
     

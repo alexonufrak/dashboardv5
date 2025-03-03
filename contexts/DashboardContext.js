@@ -323,7 +323,10 @@ export function DashboardProvider({ children }) {
     
     // Actions
     refreshData,
-    handleProfileUpdate
+    handleProfileUpdate,
+    
+    // Helper methods for navigation
+    hasProgramData: Boolean(cohort) || Boolean(teamData?.cohortIds?.length)
   }
 
   return (

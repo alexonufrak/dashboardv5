@@ -88,12 +88,30 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
       return
     }
     
-    // Client-side navigation
+    // Always use client-side navigation when possible
     if (link.id && onNavigate) {
+      console.log(`Navigating to ${link.id} using client-side navigation`);
       onNavigate(link.id)
+    } else if (link.href === "/dashboard" || link.href === "/program-dashboard" || link.href === "/profile") {
+      // Map standard URLs to navigable pages
+      const pageMap = {
+        "/dashboard": "dashboard",
+        "/program-dashboard": "program",
+        "/profile": "profile"
+      };
+      
+      if (onNavigate && pageMap[link.href]) {
+        console.log(`Mapped ${link.href} to ${pageMap[link.href]} for client-side navigation`);
+        onNavigate(pageMap[link.href]);
+      } else {
+        // Last resort fallback
+        console.log(`Falling back to router push for ${link.href}`);
+        router.push(link.href);
+      }
     } else {
-      // Fallback to normal navigation
-      router.push(link.href)
+      // External or other links use normal navigation
+      console.log(`Using normal navigation for ${link.href}`);
+      router.push(link.href);
     }
   }
 

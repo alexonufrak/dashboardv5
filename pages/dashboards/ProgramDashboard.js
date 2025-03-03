@@ -94,25 +94,24 @@ function ProgramDashboardInner({ onNavigate }) {
   
   // Handle case where we don't have cohort or team data
   if (!cohort && !teamData) {
+    console.log("No cohort or team data available, showing placeholder screen");
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="text-center">
-          <div className="bg-amber-100 text-amber-800 p-4 rounded-md mb-4">
-            <h3 className="text-lg font-medium">No Active Program</h3>
-            <p>You are not currently participating in any program.</p>
+      <div className="program-dashboard space-y-6">
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="text-center max-w-xl mx-auto">
+            <div className="bg-amber-100 text-amber-800 p-4 rounded-md mb-4">
+              <h3 className="text-lg font-medium">No Active Program</h3>
+              <p>You are not currently participating in any program.</p>
+            </div>
+            
+            <div className="bg-blue-50 text-blue-800 p-4 rounded-md mb-4">
+              <h4 className="font-medium mb-2">Looking for Programs?</h4>
+              <p className="mb-3">Check out available programs on the dashboard page.</p>
+              <Button onClick={() => onNavigate('dashboard')}>
+                Browse Programs
+              </Button>
+            </div>
           </div>
-          
-          <div className="bg-blue-50 text-blue-800 p-4 rounded-md mb-4">
-            <h4 className="font-medium mb-2">Looking for Programs?</h4>
-            <p className="mb-3">Check out available programs on the dashboard page.</p>
-            <Button onClick={() => onNavigate('dashboard')}>
-              Browse Programs
-            </Button>
-          </div>
-          
-          <Button variant="outline" onClick={() => onNavigate('dashboard')}>
-            Return to Dashboard
-          </Button>
         </div>
       </div>
     )
