@@ -29,6 +29,9 @@ function ProgramDashboardInner({ onNavigate }) {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
+  // Local state for team data to allow immediate UI updates
+  const [localTeamData, setLocalTeamData] = useState(null);
+  
   // Get data from dashboard context
   const { 
     profile, 
@@ -41,6 +44,13 @@ function ProgramDashboardInner({ onNavigate }) {
     programError,
     refreshData 
   } = useDashboard()
+  
+  // Update local team data when context teamData changes
+  useEffect(() => {
+    if (teamData) {
+      setLocalTeamData(teamData);
+    }
+  }, [teamData]);
   
   // Only show loading indicator if this is first load, not navigation
   if (programLoading && !cohort && !teamData) {
@@ -130,14 +140,18 @@ function ProgramDashboardInner({ onNavigate }) {
   
   // Add debugging to inspect team data structure
   console.log("Original Team Data:", teamData);
+  console.log("Local Team Data:", localTeamData);
+  
+  // Use local team data if available, otherwise fall back to context team data
+  const baseTeamData = localTeamData || teamData;
   
   // Clean team data to ensure proper structure
-  const team = teamData ? {
-    ...teamData,
+  const team = baseTeamData ? {
+    ...baseTeamData,
     // Ensure members is an array
-    members: Array.isArray(teamData.members) ? teamData.members : [],
+    members: Array.isArray(baseTeamData.members) ? baseTeamData.members : [],
     // Clean points - convert to number and remove any trailing characters
-    points: teamData.points ? parseInt(String(teamData.points).replace(/[^0-9]/g, ''), 10) || 0 : 0
+    points: baseTeamData.points ? parseInt(String(baseTeamData.points).replace(/[^0-9]/g, ''), 10) || 0 : 0
   } : null
   
   console.log("Cleaned Team Data:", team);
@@ -572,6 +586,9 @@ function ProgramDashboardInner({ onNavigate }) {
               // This makes the UI respond instantly without waiting for a full refresh
               console.log("Team updated from invite dialog:", updatedTeam);
               
+              // Update local state to reflect changes immediately
+              setLocalTeamData(updatedTeam);
+              
               // Refresh team data from server (happens in background)
               refreshData('teams');
             }}
@@ -583,9 +600,11 @@ function ProgramDashboardInner({ onNavigate }) {
             onClose={() => setIsEditDialogOpen(false)}
             team={team}
             onTeamUpdated={(updatedTeam) => {
-              // Since the component can't directly modify the team data in the context,
-              // we'll take the updated team data and use it locally while the refresh happens
+              // Immediately update local team data for instant UI feedback
               console.log("Team updated from edit dialog:", updatedTeam);
+              
+              // Update local state to reflect changes immediately
+              setLocalTeamData(updatedTeam);
               
               // Refresh team data from server (happens in background) 
               refreshData('teams');
