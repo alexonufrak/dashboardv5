@@ -56,29 +56,32 @@ export default function DashboardShell() {
     const path = router.pathname
     const query = router.query
     
+    console.log(`Setting active page based on URL path: ${path}`)
+    
+    // Handle redirect for dashboard-shell legacy path
+    if (path === "/dashboard-shell") {
+      router.replace("/dashboard", undefined, { shallow: true })
+      return
+    }
+    
     if (path === "/program-dashboard") {
       setActivePage("program")
       setTitle("Program Dashboard")
     } else if (path === "/profile") {
       setActivePage("profile")
       setTitle("Your Profile")
-    } else {
+    } else if (path === "/dashboard") {
       setActivePage("dashboard")
       setTitle("xFoundry Hub")
     }
     
-    // Handle redirect for dashboard-shell legacy path
-    if (path === "/dashboard-shell") {
-      router.replace("/dashboard", undefined, { shallow: true })
-    }
-    
-    // Simulate client-side redirect
+    // Simulate client-side redirect for nested dashboard paths
     if (path !== "/dashboard" && path !== "/program-dashboard" && path !== "/profile") {
       if (path.startsWith("/dashboard")) {
         setActivePage("dashboard")
       }
     }
-  }, [router.pathname, router.query])
+  }, [router.pathname])
   
   // Handle profile edit
   const handleEditProfileClick = () => {
@@ -89,27 +92,41 @@ export default function DashboardShell() {
   const handleNavigation = (page) => {
     console.log(`Navigation requested to page: ${page}`);
     
-    // Update active page immediately to avoid flicker
+    // Update active page immediately without waiting for router change
     setActivePage(page)
     
-    // Update the URL without full page reload
+    // Set the title based on the page
     switch (page) {
       case "dashboard":
-        router.push("/dashboard", undefined, { shallow: true })
         setTitle("xFoundry Hub")
         break
-      case "program":
-        router.push("/program-dashboard", undefined, { shallow: true })
+      case "program": 
         setTitle("Program Dashboard")
         break
       case "profile":
-        router.push("/profile", undefined, { shallow: true })
         setTitle("Your Profile")
         break
       default:
-        router.push("/dashboard", undefined, { shallow: true })
         setTitle("xFoundry Hub")
     }
+    
+    // Update the URL using shallow routing to avoid full page reload
+    // Delay this slightly to ensure the UI updates first
+    setTimeout(() => {
+      switch (page) {
+        case "dashboard":
+          router.push("/dashboard", undefined, { shallow: true })
+          break
+        case "program":
+          router.push("/program-dashboard", undefined, { shallow: true })
+          break
+        case "profile":
+          router.push("/profile", undefined, { shallow: true })
+          break
+        default:
+          router.push("/dashboard", undefined, { shallow: true })
+      }
+    }, 0)
   }
   
   // Return appropriate page component based on active page
@@ -126,14 +143,10 @@ export default function DashboardShell() {
     }
   }
   
-  // Show loading screen while data is loading
-  if (isLoading) {
-    return (
-      <ProperDashboardLayout title={title}>
-        <LoadingScreen message="Loading dashboard data..." />
-      </ProperDashboardLayout>
-    )
-  }
+  // Skip full-screen loading to avoid flash between pages
+  // We'll let each individual page component handle its own loading state
+  // Only show full-screen loader on initial dashboard load
+  const showFullLoader = isLoading && !profile;
   
   // Show error message if there's an error
   if (error) {
@@ -166,7 +179,12 @@ export default function DashboardShell() {
       <Head>
         <title>{title}</title>
       </Head>
-      {getPageComponent()}
+      
+      {showFullLoader ? (
+        <LoadingScreen message="Loading dashboard data..." />
+      ) : (
+        getPageComponent()
+      )}
     </ProperDashboardLayout>
   )
 }

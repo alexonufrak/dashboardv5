@@ -10,11 +10,11 @@ import { useRouter } from "next/router"
 function ProgramDashboard() {
   const router = useRouter()
   
-  // Set program dashboard as the initial page
+  // Set program dashboard as the initial view
   useEffect(() => {
-    // Using shallow routing to avoid full page reload
-    router.push("/program-dashboard", undefined, { shallow: true })
-  }, [router])
+    // Just ensure the activePage is set to program in the DashboardShell
+    // We don't need to change the URL as we're already on /program-dashboard
+  }, [])
   
   return (
     <DashboardProvider>

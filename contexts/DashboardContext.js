@@ -134,99 +134,146 @@ export function DashboardProvider({ children }) {
   // Fetch program dashboard data
   async function fetchProgramData() {
     setProgramLoading(true)
+    let participationSuccess = false
+    
     try {
-      // First check if the user has any participation records
-      console.log('Fetching participation data from API...')
-      const participationResponse = await fetch('/api/user/participation')
-      
-      if (!participationResponse.ok) {
-        console.error(`API returned error status: ${participationResponse.status}`)
-        throw new Error('Failed to fetch participation data')
-      }
-      
-      console.log('Received successful response from participation API')
-      const responseText = await participationResponse.text()
-      
-      let participationData
+      // First try the participation API
       try {
-        // Safely parse the JSON
-        participationData = JSON.parse(responseText)
-        console.log('Parsed participation data:', participationData)
-      } catch (e) {
-        console.error('Failed to parse participation response as JSON:', e)
-        console.error('Raw response:', responseText)
-        throw new Error('Invalid response format from participation API')
-      }
-      
-      if (!participationData.participation) {
-        console.error('Missing participation field in response:', participationData)
-        throw new Error('Invalid response structure from participation API')
-      }
-      
-      if (participationData.participation.length === 0) {
-        console.log('Participation array is empty')
-        // This is now handled as a normal case, not an error situation
-        setProgramError('You are not currently participating in any program')
-        return // Exit early but don't throw an error
-      }
-      
-      // Get the active participation (the first one for now)
-      const activeParticipation = participationData.participation[0]
-      setCohort(activeParticipation.cohort)
-      
-      // Set initiative name and participation type
-      if (activeParticipation.cohort?.initiativeDetails) {
-        setInitiativeName(activeParticipation.cohort.initiativeDetails.name || "Program")
-        setParticipationType(activeParticipation.cohort.initiativeDetails["Participation Type"] || "Individual")
-      }
-      
-      // Get milestones for this cohort
-      if (activeParticipation.cohort?.id) {
-        const milestonesResponse = await fetch(`/api/cohorts/${activeParticipation.cohort.id}/milestones`)
-        if (milestonesResponse.ok) {
-          const milestonesData = await milestonesResponse.json()
-          setMilestones(milestonesData.milestones || [])
+        // Check if the user has any participation records
+        console.log('Fetching participation data from API...')
+        const participationResponse = await fetch('/api/user/participation')
+        
+        if (!participationResponse.ok) {
+          console.error(`API returned error status: ${participationResponse.status}`)
+          throw new Error('Failed to fetch participation data')
         }
-      }
-
-      // Clear any previous errors
-      setProgramError(null)
-    } catch (err) {
-      console.error('Error fetching active participation:', err)
-      setProgramError(err.message || 'Failed to load program information')
-      
-      // Try fallback approach with team data if available
-      if (teamsData.length > 0) {
+        
+        console.log('Received successful response from participation API')
+        const responseText = await participationResponse.text()
+        
+        let participationData
         try {
-          const team = teamsData[0]
-          if (team.cohortIds && team.cohortIds.length > 0) {
-            const cohortResponse = await fetch(`/api/teams/${team.id}/cohorts`)
-            if (cohortResponse.ok) {
-              const cohortData = await cohortResponse.json()
-              if (cohortData.cohorts && cohortData.cohorts.length > 0) {
-                setCohort(cohortData.cohorts[0])
-                
-                if (cohortData.cohorts[0].initiativeDetails?.name) {
-                  setInitiativeName(cohortData.cohorts[0].initiativeDetails.name)
-                }
-                
-                if (cohortData.cohorts[0].id) {
-                  const milestonesResponse = await fetch(`/api/cohorts/${cohortData.cohorts[0].id}/milestones`)
-                  if (milestonesResponse.ok) {
-                    const milestonesData = await milestonesResponse.json()
-                    setMilestones(milestonesData.milestones || [])
-                  }
-                }
-                
-                // If fallback worked, clear error
-                setProgramError(null)
-              }
+          // Safely parse the JSON
+          participationData = JSON.parse(responseText)
+          console.log('Parsed participation data:', participationData)
+        } catch (e) {
+          console.error('Failed to parse participation response as JSON:', e)
+          console.error('Raw response:', responseText)
+          throw new Error('Invalid response format from participation API')
+        }
+        
+        if (!participationData.participation) {
+          console.error('Missing participation field in response:', participationData)
+          throw new Error('Invalid response structure from participation API')
+        }
+        
+        // Only consider this a failure if no fallback available
+        if (participationData.participation.length === 0) {
+          console.log('Participation array is empty')
+          // Not throwing - will try team fallback
+        } else {
+          // Get the active participation (the first one for now)
+          const activeParticipation = participationData.participation[0]
+          setCohort(activeParticipation.cohort)
+          
+          // Set initiative name and participation type
+          if (activeParticipation.cohort?.initiativeDetails) {
+            setInitiativeName(activeParticipation.cohort.initiativeDetails.name || "Program")
+            setParticipationType(activeParticipation.cohort.initiativeDetails["Participation Type"] || "Individual")
+          }
+          
+          // Get milestones for this cohort
+          if (activeParticipation.cohort?.id) {
+            const milestonesResponse = await fetch(`/api/cohorts/${activeParticipation.cohort.id}/milestones`)
+            if (milestonesResponse.ok) {
+              const milestonesData = await milestonesResponse.json()
+              setMilestones(milestonesData.milestones || [])
             }
           }
-        } catch (fallbackErr) {
-          console.error('Fallback approach failed:', fallbackErr)
+          
+          // Clear any previous errors - participation approach succeeded
+          setProgramError(null)
+          participationSuccess = true
+        }
+      } catch (participationErr) {
+        console.error('Participation approach failed:', participationErr)
+        // Will try team fallback
+      }
+      
+      // If participation approach didn't succeed, try team approach
+      if (!participationSuccess) {
+        console.log('Trying team-based fallback approach...')
+        
+        // Wait for team data to be available if not already
+        if (isTeamLoading) {
+          console.log('Waiting for team data to be loaded...')
+          await new Promise(resolve => {
+            const checkInterval = setInterval(() => {
+              if (!isTeamLoading) {
+                clearInterval(checkInterval)
+                resolve()
+              }
+            }, 100)
+          })
+        }
+        
+        if (teamsData.length > 0) {
+          console.log('Team data available, using for fallback')
+          const team = teamsData[0]
+          console.log('Team:', team)
+          
+          if (team && team.id) {
+            try {
+              console.log(`Fetching cohorts for team ${team.id}...`)
+              const cohortResponse = await fetch(`/api/teams/${team.id}/cohorts`)
+              
+              if (cohortResponse.ok) {
+                const cohortData = await cohortResponse.json()
+                console.log(`Fetched cohorts for team ${team.name}:`, cohortData)
+                
+                if (cohortData.cohorts && cohortData.cohorts.length > 0) {
+                  setCohort(cohortData.cohorts[0])
+                  console.log('Set cohort:', cohortData.cohorts[0])
+                  
+                  if (cohortData.cohorts[0].initiativeDetails?.name) {
+                    setInitiativeName(cohortData.cohorts[0].initiativeDetails.name)
+                  }
+                  
+                  if (cohortData.cohorts[0].id) {
+                    console.log(`Fetching milestones for cohort ${cohortData.cohorts[0].id}...`)
+                    const milestonesResponse = await fetch(`/api/cohorts/${cohortData.cohorts[0].id}/milestones`)
+                    if (milestonesResponse.ok) {
+                      const milestonesData = await milestonesResponse.json()
+                      setMilestones(milestonesData.milestones || [])
+                      console.log('Set milestones:', milestonesData.milestones)
+                    }
+                  }
+                  
+                  // Team approach succeeded
+                  setProgramError(null)
+                  participationSuccess = true
+                } else {
+                  console.log('No cohorts found for team')
+                }
+              } else {
+                console.error(`Failed to fetch cohorts for team: ${cohortResponse.status}`)
+              }
+            } catch (teamFallbackErr) {
+              console.error('Team fallback approach failed:', teamFallbackErr)
+            }
+          }
+        } else {
+          console.log('No teams available for fallback approach')
         }
       }
+      
+      // If neither approach succeeded, set the error
+      if (!participationSuccess) {
+        setProgramError('You are not currently participating in any program')
+      }
+    } catch (err) {
+      console.error('Error in program data fetching:', err)
+      setProgramError(err.message || 'Failed to load program information')
     } finally {
       setProgramLoading(false)
     }
