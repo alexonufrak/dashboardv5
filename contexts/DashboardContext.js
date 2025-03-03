@@ -145,21 +145,41 @@ export function DashboardProvider({ children }) {
       try {
         // Check if the user has any participation records
         console.log('Fetching participation data from API...')
-        const participationResponse = await fetch('/api/user/participation')
+        
+        // Check if the user object is available
+        if (!user) {
+          console.warn('User object not available when fetching participation')
+        } else {
+          console.log('User email:', user.email)
+          console.log('User ID:', user.sub)
+        }
+        
+        // Add a timestamp to avoid caching issues
+        const timestamp = new Date().getTime()
+        const participationResponse = await fetch(`/api/user/participation?_t=${timestamp}`)
+        
+        // Log response status and headers
+        console.log(`Participation API response status: ${participationResponse.status}`)
         
         if (!participationResponse.ok) {
           console.error(`API returned error status: ${participationResponse.status}`)
-          throw new Error('Failed to fetch participation data')
+          throw new Error(`Failed to fetch participation data: ${participationResponse.statusText}`)
         }
         
         console.log('Received successful response from participation API')
         const responseText = await participationResponse.text()
+        console.log('Raw participation response (truncated):', 
+                    responseText.length > 100 ? 
+                    responseText.substring(0, 100) + '...' : 
+                    responseText)
         
         let participationData
         try {
           // Safely parse the JSON
           participationData = JSON.parse(responseText)
-          console.log('Parsed participation data:', participationData)
+          console.log('Participation data structure:', 
+                      Object.keys(participationData).join(', '),
+                      'items:', participationData.participation?.length || 0)
         } catch (e) {
           console.error('Failed to parse participation response as JSON:', e)
           console.error('Raw response:', responseText)
@@ -178,10 +198,32 @@ export function DashboardProvider({ children }) {
         } else {
           console.log(`Found ${participationData.participation.length} participation records`);
           
+          // Log each participation record for debugging
+          participationData.participation.forEach((record, index) => {
+            console.log(`Participation record #${index + 1}:`, 
+                        'cohort:', record.cohort?.id || 'none', 
+                        'name:', record.cohort?.name || 'none',
+                        'current:', record.cohort?.['Current Cohort'] || false);
+          });
+          
           // Filter for current participation records using the "Current Cohort" field
-          const currentParticipations = participationData.participation.filter(p => 
-            p.cohort?.['Current Cohort'] === true
-          );
+          // Be more flexible - accept true string or boolean true
+          const currentParticipations = participationData.participation.filter(p => {
+            const isCurrent = p.cohort?.['Current Cohort'] === true || 
+                             p.cohort?.['Current Cohort'] === 'true' ||
+                             p.cohort?.['Is Current'] === true ||
+                             p.cohort?.['Is Current'] === 'true';
+                             
+            // Log the decision for this record
+            if (p.cohort) {
+              console.log(`Evaluation for ${p.cohort.name || 'unknown cohort'}:`, 
+                         `Current Cohort value: ${p.cohort['Current Cohort']}`,
+                         `type: ${typeof p.cohort['Current Cohort']}`,
+                         `included: ${isCurrent}`);
+            }
+            
+            return isCurrent;
+          });
           
           console.log(`Found ${currentParticipations.length} CURRENT participation records`);
           
@@ -266,10 +308,30 @@ export function DashboardProvider({ children }) {
                 if (cohortData.cohorts && cohortData.cohorts.length > 0) {
                   console.log(`Found ${cohortData.cohorts.length} cohorts for team`);
                   
+                  // Log each cohort for debugging
+                  cohortData.cohorts.forEach((cohort, index) => {
+                    console.log(`Cohort #${index + 1}:`, 
+                                'id:', cohort.id || 'none', 
+                                'name:', cohort.name || 'none',
+                                'current:', cohort['Current Cohort'] || false,
+                                'type:', typeof cohort['Current Cohort']);
+                  });
+                  
                   // Filter for current cohorts using the "Current Cohort" field
-                  const currentCohorts = cohortData.cohorts.filter(cohort => 
-                    cohort['Current Cohort'] === true
-                  );
+                  // Be more flexible - accept true string or boolean true
+                  const currentCohorts = cohortData.cohorts.filter(cohort => {
+                    const isCurrent = cohort['Current Cohort'] === true || 
+                                    cohort['Current Cohort'] === 'true' ||
+                                    cohort['Is Current'] === true ||
+                                    cohort['Is Current'] === 'true';
+                                    
+                    console.log(`Evaluation for ${cohort.name || 'unknown cohort'}:`, 
+                               `Current Cohort value: ${cohort['Current Cohort']}`,
+                               `type: ${typeof cohort['Current Cohort']}`,
+                               `included: ${isCurrent}`);
+                                    
+                    return isCurrent;
+                  });
                   
                   console.log(`Found ${currentCohorts.length} CURRENT cohorts for team`);
                   

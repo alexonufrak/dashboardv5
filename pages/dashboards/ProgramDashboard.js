@@ -174,7 +174,10 @@ function ProgramDashboardInner({ onNavigate }) {
                     {cohort?.initiativeDetails?.name || initiativeName}
                   </Badge>
                   
-                  {cohort?.['Current Cohort'] === true && (
+                  {(cohort?.['Current Cohort'] === true || 
+                   cohort?.['Current Cohort'] === 'true' || 
+                   cohort?.['Is Current'] === true ||
+                   cohort?.['Is Current'] === 'true') && (
                     <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">
                       Active Cohort
                     </Badge>
@@ -191,6 +194,12 @@ function ProgramDashboardInner({ onNavigate }) {
                       {new Date(cohort['Start Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
                       {' - '}
                       {new Date(cohort['End Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
+                    </span>
+                  ) : cohort?.['Start_Date'] && cohort?.['End_Date'] ? (
+                    <span>
+                      {new Date(cohort['Start_Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
+                      {' - '}
+                      {new Date(cohort['End_Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
                     </span>
                   ) : (
                     <span>Active Program • {new Date().toLocaleDateString('en-US', {year: 'numeric', month: 'long'})}</span>

@@ -206,14 +206,51 @@ export default withApiAuthRequired(async function handler(req, res) {
           }
         }
         
+        // Extract start and end dates if available
+        const startDate = cohort.fields["Start Date"] || null;
+        const endDate = cohort.fields["End Date"] || null;
+        
+        // Calculate if the cohort is current based on dates
+        const now = new Date();
+        let isCurrentByDates = false;
+        
+        if (startDate && endDate) {
+          const startDateObj = new Date(startDate);
+          const endDateObj = new Date(endDate);
+          isCurrentByDates = now >= startDateObj && now <= endDateObj;
+        }
+        
+        // Check if the "Current Cohort" field is set to true
+        const isCurrentByField = cohort.fields["Current Cohort"] === true || 
+                               cohort.fields["Current Cohort"] === "true" ||
+                               cohort.fields["Is Current"] === true ||
+                               cohort.fields["Is Current"] === "true";
+                               
+        // Use either method to determine if cohort is current
+        const isCurrent = isCurrentByField || isCurrentByDates;
+        
+        console.log(`Cohort ${cohort.id} current status:`, {
+          name: cohort.fields.Name || "Unknown cohort",
+          currentField: cohort.fields["Current Cohort"],
+          startDate,
+          endDate,
+          isCurrentByDates,
+          isCurrentByField,
+          finalCurrentStatus: isCurrent
+        });
+        
         // Add to processed participation
         processedParticipation.push({
           id: participationRecord.id,
           capacity: participationRecord.fields.Capacity || "Participant",
           cohort: {
             id: cohort.id,
+            name: cohort.fields.Name || "Unnamed Cohort",
             Short_Name: cohort.fields["Short Name"] || "",
             Status: cohort.fields.Status || "Unknown",
+            "Start Date": startDate,
+            "End Date": endDate,
+            "Current Cohort": isCurrent,
             initiativeDetails,
             topicNames,
             participationType: initiativeDetails ? initiativeDetails["Participation Type"] : "Individual"
