@@ -17,7 +17,7 @@ const ProperDashboardLayout = ({
   const [currentYear, setCurrentYear] = useState("")
   const router = useRouter()
   const { user } = useUser()
-  const isDashboard = router.pathname === "/dashboard" || router.pathname === "/profile"
+  const isDashboard = router.pathname === "/dashboard" || router.pathname === "/profile" || router.pathname === "/program-dashboard"
   const showSidebar = isDashboard && user
   const showBreadcrumbs = router.pathname !== "/dashboard" && showSidebar
 
