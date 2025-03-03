@@ -64,6 +64,16 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
       return;
     }
     
+    // For major field, explicitly log the value being set
+    if (name === "major") {
+      console.log(`Setting major value: "${value}" (${typeof value})`);
+      
+      // Check if this is a valid Airtable ID format
+      if (!value.startsWith('rec') && value) {
+        console.warn(`Warning: Major value doesn't appear to be a valid Airtable record ID: ${value}`);
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -285,12 +295,18 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
                           </option>
                         ))}
                       </select>
-                      <div className="flex flex-col text-xs text-muted-foreground mt-1">
+                      <div className="flex flex-col text-xs bg-gray-50 p-2 mt-1 rounded border">
+                        <p className="font-medium">Debug Information:</p>
                         <p>
-                          Major ID: {formData.major || '(none selected)'}
+                          Major ID: <code className="bg-gray-100 px-1">{formData.major || '(none selected)'}</code>
                         </p>
                         <p>
-                          Selected: {majors.find(m => m.id === formData.major)?.name || 'None'}
+                          Selected: <code className="bg-gray-100 px-1">{majors.find(m => m.id === formData.major)?.name || 'None'}</code>
+                        </p>
+                        <p className="text-xs text-red-600">
+                          {!formData.major?.startsWith('rec') && formData.major 
+                            ? '⚠️ Warning: Major ID does not appear to be a valid Airtable record ID!' 
+                            : ''}
                         </p>
                       </div>
                     </div>
