@@ -1,5 +1,6 @@
 // components/TeamCard.js
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +11,7 @@ import TeamInviteDialog from "./TeamInviteDialog";
 import CohortCard from "./shared/CohortCard";
 import ProgramDetailModal from "./ProgramDetailModal";
 import { useToast } from "@/components/ui/use-toast";
+import { useTeamCohorts } from "@/lib/useDataFetching";
 
 /**
  * TeamCard component displays team information with associated cohorts.
@@ -19,15 +21,20 @@ import { useToast } from "@/components/ui/use-toast";
  * @param {Function} props.onTeamUpdated - Callback function when team is updated
  */
 const TeamCard = ({ team, profile, onTeamUpdated }) => {
+  const router = useRouter();
   const { toast } = useToast();
   const [currentTeam, setCurrentTeam] = useState(team);
   const [showDetails, setShowDetails] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
   const [showTeamEditDialog, setShowTeamEditDialog] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [selectedCohort, setSelectedCohort] = useState(null);
-  const [teamCohorts, setTeamCohorts] = useState([]);
-  const [isLoadingCohorts, setIsLoadingCohorts] = useState(false);
+  
+  // Use our custom hook to fetch and cache team cohorts
+  const { 
+    data: teamCohorts = [], 
+    isLoading: isLoadingCohorts, 
+    error: cohortsError 
+  } = useTeamCohorts(currentTeam?.id);
   
   // Update current team when prop changes
   useEffect(() => {
@@ -47,63 +54,12 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
     if (onTeamUpdated) {
       onTeamUpdated(updatedTeam);
     }
-    
-    toast({
-      title: "Team Updated",
-      description: "Team details have been updated successfully",
-    });
   };
   
-  // Fetch cohorts for this team
-  useEffect(() => {
-    const fetchTeamCohorts = async () => {
-      if (!currentTeam || !currentTeam.id) return;
-      
-      try {
-        setIsLoadingCohorts(true);
-        console.log(`Fetching cohorts for team ${currentTeam.id}...`);
-        
-        const response = await fetch(`/api/teams/${currentTeam.id}/cohorts`);
-        const responseText = await response.text();
-        
-        try {
-          // Try to parse as JSON
-          const data = JSON.parse(responseText);
-          console.log(`Fetched ${data.cohorts ? data.cohorts.length : 0} cohorts for team ${currentTeam.name}:`, data);
-          
-          if (data.cohorts && Array.isArray(data.cohorts)) {
-            // Log each cohort for debugging
-            data.cohorts.forEach((cohort, index) => {
-              console.log(`Cohort ${index + 1}:`, {
-                id: cohort.id,
-                name: cohort.initiativeDetails?.name || 'No initiative name',
-                status: cohort.Status,
-                topics: cohort.topicNames || []
-              });
-            });
-            
-            // Don't filter by status - show all cohorts associated with this team
-            console.log(`Setting all ${data.cohorts.length} cohorts for team`);
-            setTeamCohorts(data.cohorts);
-          } else {
-            console.error("Invalid cohorts data:", data);
-            setTeamCohorts([]);
-          }
-        } catch (parseError) {
-          console.error("Error parsing response:", parseError);
-          console.error("Response text:", responseText);
-          setTeamCohorts([]);
-        }
-      } catch (error) {
-        console.error("Error fetching team cohorts:", error);
-        setTeamCohorts([]);
-      } finally {
-        setIsLoadingCohorts(false);
-      }
-    };
-    
-    fetchTeamCohorts();
-  }, [currentTeam]);
+  // Handle program dashboard navigation
+  const handleProgramDashboardClick = () => {
+    router.push("/program-dashboard", undefined, { shallow: true });
+  };
   
   // If no team data is provided, show a not found message
   if (!currentTeam) {
@@ -153,6 +109,8 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
             <div className="flex flex-wrap">
               {isLoadingCohorts ? (
                 <p className="text-sm text-muted-foreground">Loading programs...</p>
+              ) : cohortsError ? (
+                <p className="text-sm text-red-500">Failed to load programs</p>
               ) : teamCohorts && teamCohorts.length > 0 ? (
                 teamCohorts.map(cohort => (
                   <CohortCard 
@@ -187,7 +145,7 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
             variant="default"
             className="flex-1"
             size="default"
-            onClick={() => window.location.href = `/program-dashboard`}
+            onClick={handleProgramDashboardClick}
           >
             <Compass className="h-4 w-4 mr-1" />
             Program Dashboard

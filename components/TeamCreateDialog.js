@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { 
   Dialog, 
   DialogContent, 
@@ -14,6 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { AlertCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useCreateTeam } from '@/lib/useDataFetching'
 
 /**
  * Dialog for creating a new team
@@ -24,10 +26,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
  * @param {string} props.cohortId Optional cohort ID to associate the team with
  */
 const TeamCreateDialog = ({ open, onClose, onCreateTeam, cohortId }) => {
+  const queryClient = useQueryClient()
   const [teamName, setTeamName] = useState('')
   const [teamDescription, setTeamDescription] = useState('')
   const [error, setError] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  
+  // Use our createTeam mutation hook
+  const createTeamMutation = useCreateTeam()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -38,35 +43,20 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, cohortId }) => {
       return
     }
     
-    setIsSubmitting(true)
     setError('')
     
     try {
-      // Make API call to create team - include cohortId if provided
-      let url = '/api/teams/create';
-      
-      // If cohortId is provided, add it as a query parameter
-      if (cohortId) {
-        url = `${url}?cohortId=${encodeURIComponent(cohortId)}`;
+      // Prepare team data
+      const teamData = {
+        name: teamName.trim(),
+        description: teamDescription.trim()
       }
       
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name: teamName.trim(),
-          description: teamDescription.trim()
-        })
+      // Call our mutation function
+      const team = await createTeamMutation.mutateAsync({ 
+        teamData, 
+        cohortId 
       })
-      
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to create team')
-      }
-      
-      const team = await response.json()
       
       // Call the success callback with the new team data
       if (onCreateTeam) {
@@ -83,8 +73,6 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, cohortId }) => {
       }
     } catch (error) {
       setError(error.message || 'An error occurred while creating the team')
-    } finally {
-      setIsSubmitting(false)
     }
   }
   
@@ -153,15 +141,15 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, cohortId }) => {
               type="button" 
               variant="outline" 
               onClick={handleClose}
-              disabled={isSubmitting}
+              disabled={createTeamMutation.isPending}
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
-              disabled={isSubmitting || !teamName.trim()}
+              disabled={createTeamMutation.isPending || !teamName.trim()}
             >
-              {isSubmitting ? 'Creating...' : 'Create Team'}
+              {createTeamMutation.isPending ? 'Creating...' : 'Create Team'}
             </Button>
           </DialogFooter>
         </form>

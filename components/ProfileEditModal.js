@@ -1,14 +1,16 @@
 "use client"
 
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useMajors, updateProfileData } from "@/lib/useDataFetching";
 
 const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     firstName: profile?.firstName || "",
     lastName: profile?.lastName || "",
@@ -21,32 +23,28 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [majors, setMajors] = useState([]);
-  const [isLoadingMajors, setIsLoadingMajors] = useState(false);
-
-  // Fetch majors if this is for a UMD student (showMajor is true)
+  
+  // Use our custom hook to fetch and cache majors
+  const { 
+    data: majors = [], 
+    isLoading: isLoadingMajors, 
+    error: majorsError 
+  } = useMajors();
+  
+  // Reset form when profile changes
   useEffect(() => {
-    if (isOpen && profile?.showMajor) {
-      const fetchMajors = async () => {
-        setIsLoadingMajors(true);
-        try {
-          const response = await fetch('/api/user/majors');
-          if (!response.ok) {
-            throw new Error('Failed to fetch majors');
-          }
-          const data = await response.json();
-          setMajors(data.majors || []);
-        } catch (err) {
-          console.error('Error fetching majors:', err);
-          setError('Failed to load majors. Please try again.');
-        } finally {
-          setIsLoadingMajors(false);
-        }
-      };
-      
-      fetchMajors();
+    if (profile) {
+      setFormData({
+        firstName: profile.firstName || "",
+        lastName: profile.lastName || "",
+        degreeType: profile.degreeType || "",
+        major: profile.programId || "",
+        graduationYear: profile.graduationYear || "",
+        educationId: profile.educationId || null,
+        institutionId: profile.institution?.id || null,
+      });
     }
-  }, [isOpen, profile?.showMajor]);
+  }, [profile]);
 
   if (!isOpen) return null;
 
@@ -112,8 +110,14 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
         institutionId: formData.institutionId || profile.institution?.id
       };
       
-      // Call the callback with the updated data
-      await onSave(updateData);
+      // Use our centralized update function with cache invalidation
+      const updatedProfile = await updateProfileData(updateData, queryClient);
+      
+      // Call the component's onSave callback with the updated profile
+      if (onSave) {
+        onSave(updatedProfile);
+      }
+      
       onClose();
     } catch (err) {
       setError(err.message || "Failed to update profile");
@@ -132,6 +136,12 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
         {error && (
           <Alert variant="destructive" className="my-2">
             <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        {majorsError && profile.showMajor && (
+          <Alert variant="destructive" className="my-2">
+            <AlertDescription>Failed to load majors: {majorsError.message}</AlertDescription>
           </Alert>
         )}
         
