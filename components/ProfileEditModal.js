@@ -31,8 +31,6 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     error: majorsError 
   } = useMajors();
   
-  console.log("Available majors:", majors);
-  
   // Reset form when profile changes
   useEffect(() => {
     if (profile) {
@@ -110,7 +108,7 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
         institutionId: formData.institutionId || profile.institution?.id
       };
       
-      console.log("Form data being submitted:", updateData);
+      // Form is ready to be submitted
       
       // Use our centralized update function with cache invalidation
       const updatedProfile = await updateProfileData(updateData, queryClient);
@@ -129,20 +127,18 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     }
   };
 
-  console.log("ProfileEditModal render with isOpen =", isOpen);
+  // Log modal state for debugging
+  if (isOpen) {
+    console.log("ProfileEditModal opened");
+  }
   
-  // Debug profile data
-  console.log("Current profile data:", {
-    profileData: profile,
-    programId: profile?.programId,
-    major: profile?.major
-  });
+  // Debug only key profile fields related to the major/programId
+  console.log("Profile programId:", profile?.programId);
   
   return (
     <Dialog 
       open={isOpen} 
       onOpenChange={(open) => {
-        console.log("Dialog onOpenChange called with", open);
         if (!open) onClose();
       }}
     >
