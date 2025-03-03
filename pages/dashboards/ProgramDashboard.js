@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { CalendarIcon, Users, Award, BarChart3, Flag, ChevronRight, Loader2 } from "lucide-react"
+import { CalendarIcon, Users, Award, BarChart3, Flag, ChevronRight, Loader2, CheckCircle, Clock, Circle, AlertCircle } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import TeamMilestoneProgress from "@/components/TeamMilestoneProgress"
 import TeamPointsSummary from "@/components/TeamPointsSummary"
@@ -284,14 +284,92 @@ function ProgramDashboardInner({ onNavigate }) {
           <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
             {/* Main Overview Content */}
             <div className="md:col-span-5 space-y-4">
-              {/* Current Milestone */}
+              {/* Current Milestone - Condensed Table */}
               <Card>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Current Milestone Progress</CardTitle>
-                  <CardDescription>Track your progress on active milestones</CardDescription>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle className="text-lg">Milestone Progress</CardTitle>
+                      <CardDescription>Track your progress on program milestones</CardDescription>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        // Get the milestones tab element and click it
+                        const milestonesTab = document.querySelector('button[value="milestones"]');
+                        if (milestonesTab) milestonesTab.click();
+                      }}
+                    >
+                      View All <ChevronRight className="ml-1 h-4 w-4" />
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <TeamMilestoneProgress milestones={milestones.length > 0 ? milestones : placeholderMilestones} />
+                  {/* Condensed Milestone Table */}
+                  <div className="overflow-hidden rounded-md border">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50">
+                        <tr className="border-b">
+                          <th className="h-10 px-4 text-left font-medium text-muted-foreground">Name</th>
+                          <th className="h-10 px-2 text-left font-medium text-muted-foreground">Status</th>
+                          <th className="h-10 px-2 text-left font-medium text-muted-foreground">Due Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(milestones.length > 0 ? milestones : placeholderMilestones).slice(0, 4).map((milestone, i) => (
+                          <tr key={milestone.id || i} className={i % 2 === 0 ? "bg-white" : "bg-muted/20"}>
+                            <td className="p-2 pl-4">{milestone.name}</td>
+                            <td className="p-2">
+                              <Badge variant={
+                                milestone.status === "completed" ? "success" : 
+                                milestone.status === "in_progress" ? "default" :
+                                milestone.status === "late" ? "destructive" : 
+                                milestone.status === "at_risk" ? "warning" : "outline"
+                              } className="whitespace-nowrap">
+                                {milestone.status === "completed" ? "Completed" : 
+                                 milestone.status === "in_progress" ? "In Progress" :
+                                 milestone.status === "late" ? "Late" :
+                                 milestone.status === "at_risk" ? "At Risk" : "Not Started"}
+                              </Badge>
+                            </td>
+                            <td className="p-2 whitespace-nowrap">
+                              {milestone.dueDate ? new Date(milestone.dueDate).toLocaleDateString('en-US', {
+                                month: 'short', day: 'numeric'
+                              }) : "No date"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {(milestones.length > 0 ? milestones : placeholderMilestones).length > 4 && (
+                      <div className="flex justify-center items-center p-2 border-t bg-muted/20 text-sm text-muted-foreground">
+                        <span>{(milestones.length > 0 ? milestones : placeholderMilestones).length - 4} more milestone{(milestones.length > 0 ? milestones : placeholderMilestones).length - 4 !== 1 ? 's' : ''} not shown</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Progress indicator */}
+                  <div className="mt-4">
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="font-medium">Overall Progress</span>
+                      <span>
+                        {(() => {
+                          const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
+                          const completedCount = milestonesData.filter(m => m.status === "completed").length;
+                          return `${completedCount} of ${milestonesData.length} completed`;
+                        })()}
+                      </span>
+                    </div>
+                    <Progress value={(() => {
+                      const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
+                      const completedCount = milestonesData.filter(m => m.status === "completed").length;
+                      const inProgressCount = milestonesData.filter(m => m.status === "in_progress").length;
+                      return milestonesData.length > 0 
+                        ? Math.round((completedCount + (inProgressCount * 0.5)) / milestonesData.length * 100) 
+                        : 0;
+                    })()} className="h-2" />
+                  </div>
                 </CardContent>
               </Card>
 
@@ -350,15 +428,88 @@ function ProgramDashboardInner({ onNavigate }) {
         </TabsContent>
         
         <TabsContent value="milestones">
-          <Card>
-            <CardHeader>
-              <CardTitle>Program Milestones</CardTitle>
-              <CardDescription>Track your progress through program milestones</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TeamMilestoneProgress milestones={milestones.length > 0 ? milestones : placeholderMilestones} detailed={true} />
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            {/* Summary Card */}
+            <Card className="bg-gradient-to-r from-indigo-50 to-blue-50 border-blue-100">
+              <CardContent className="p-4">
+                <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold mb-2">Program Milestones</h2>
+                    <div className="text-sm text-muted-foreground">
+                      {(() => {
+                        const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
+                        const completedCount = milestonesData.filter(m => m.status === "completed").length;
+                        const inProgressCount = milestonesData.filter(m => m.status === "in_progress").length;
+                        const notStartedCount = milestonesData.filter(m => m.status === "not_started" || !m.status).length;
+                        const atRiskCount = milestonesData.filter(m => m.status === "at_risk" || m.status === "late").length;
+                        
+                        return (
+                          <>
+                            <div className="flex items-center gap-4">
+                              <span className="flex items-center gap-1">
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                                <span><strong>{completedCount}</strong> Completed</span>
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-4 w-4 text-blue-600" />
+                                <span><strong>{inProgressCount}</strong> In Progress</span>
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Circle className="h-4 w-4 text-gray-400" />
+                                <span><strong>{notStartedCount}</strong> Not Started</span>
+                              </span>
+                              {atRiskCount > 0 && (
+                                <span className="flex items-center gap-1">
+                                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                                  <span><strong>{atRiskCount}</strong> At Risk</span>
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-medium">Overall Progress:</span>
+                      <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+                        {(() => {
+                          const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
+                          const completedCount = milestonesData.filter(m => m.status === "completed").length;
+                          const inProgressCount = milestonesData.filter(m => m.status === "in_progress").length;
+                          return `${Math.round((completedCount + (inProgressCount * 0.5)) / milestonesData.length * 100)}%`;
+                        })()}
+                      </Badge>
+                    </div>
+                    <Progress value={(() => {
+                      const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
+                      const completedCount = milestonesData.filter(m => m.status === "completed").length;
+                      const inProgressCount = milestonesData.filter(m => m.status === "in_progress").length;
+                      return milestonesData.length > 0 
+                        ? Math.round((completedCount + (inProgressCount * 0.5)) / milestonesData.length * 100) 
+                        : 0;
+                    })()} className="h-2 w-[200px]" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Detailed Milestones */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Milestone Details</CardTitle>
+                <CardDescription>Complete timeline of program milestones</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <TeamMilestoneProgress 
+                  milestones={milestones.length > 0 ? milestones : placeholderMilestones} 
+                  detailed={true}
+                  programName="Program Milestones"
+                />
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
         
         {isTeamProgram && (
