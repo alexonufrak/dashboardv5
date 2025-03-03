@@ -99,13 +99,10 @@ export default withApiAuthRequired(async function handler(req, res) {
     // and it's a multipleRecordLinks field, so we need to check if it contains
     // the contact ID as a record reference
     
-    // Use the RECORD_ID() approach with the IS_SAME function
-    // This approach works with multipleRecordLinks fields when checking for exact record IDs
+    // Simple formula that checks if the contact ID is in the Contacts field
+    // Using standard Airtable FIND function which is more reliable
     const formula = `AND(
-      OR(
-        IS_SAME({Contacts}, ARRAYJOIN(ARRAYWRAP("${profile.contactId}"))),
-        IS_SAME(ARRAYJOIN({Contacts}), "${profile.contactId}")
-      ),
+      FIND("${profile.contactId}", ARRAYJOIN({Contacts}, ",")),
       NOT({Contacts} = "")
     )`
     
@@ -126,21 +123,21 @@ export default withApiAuthRequired(async function handler(req, res) {
       console.error("Error using primary formula:", err)
     }
     
-    // If no records found, try the direct FIND_RECORD approach
+    // If no records found, try an alternative approach with SEARCH
     if (participationRecords.length === 0) {
       try {
-        console.log("Trying direct FIND_RECORD approach...")
-        const directFormula = `FIND_RECORD({Contacts}, "${profile.contactId}")`
+        console.log("Trying alternative SEARCH approach...")
+        const directFormula = `SEARCH("${profile.contactId}", ARRAYJOIN({Contacts}))`
         
         let records = await participationTable.select({
           filterByFormula: directFormula,
           sort: [{ field: "Last Modified", direction: "desc" }]
         }).firstPage()
         
-        console.log(`FIND_RECORD formula found ${records.length} records`)
+        console.log(`Alternative formula found ${records.length} records`)
         participationRecords = [...records]
       } catch (err) {
-        console.error("Error using FIND_RECORD formula:", err)
+        console.error("Error using alternative formula:", err)
       }
     }
     
