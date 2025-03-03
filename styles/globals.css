@@ -361,6 +361,11 @@
     animation: fadeInUp 0.3s ease-in-out;
   }
   
+  /* Animation for all elements that need to fade in with dashboard */
+  .animate-fadeInUp {
+    animation: fadeInUp 0.3s ease-in-out;
+  }
+  
   @keyframes fadeInUp {
     from { 
       opacity: 0.2;
