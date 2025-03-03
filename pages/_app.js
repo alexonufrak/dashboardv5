@@ -3,15 +3,30 @@ import "../styles/globals.css"
 import "@fillout/react/style.css" // Import Fillout styles
 import { Toaster } from 'sonner';
 import { OnboardingProvider } from '@/contexts/OnboardingContext'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useState } from 'react'
 
 function MyApp({ Component, pageProps }) {
+  // Create a client for React Query with persistent cache
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 5 * 60 * 1000, // 5 minutes by default
+        retry: 1,
+        refetchOnWindowFocus: false, // Disable refetching on window focus to prevent unnecessary API calls
+      },
+    },
+  }))
+
   return (
-    <UserProvider>
-      <OnboardingProvider>
-        <Component {...pageProps} />
-        <Toaster position="top-right" richColors closeButton />
-      </OnboardingProvider>
-    </UserProvider>
+    <QueryClientProvider client={queryClient}>
+      <UserProvider>
+        <OnboardingProvider>
+          <Component {...pageProps} />
+          <Toaster position="top-right" richColors closeButton />
+        </OnboardingProvider>
+      </UserProvider>
+    </QueryClientProvider>
   )
 }
 

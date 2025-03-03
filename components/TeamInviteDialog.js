@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useQueryClient } from '@tanstack/react-query'
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -15,6 +16,7 @@ import { Label } from "@/components/ui/label"
 import { AlertCircle, CheckCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { toast } from "sonner"
+import { inviteTeamMember } from "@/lib/useDataFetching"
 
 /**
  * Dialog component for inviting users to a team
@@ -25,6 +27,7 @@ import { toast } from "sonner"
  * @param {Function} props.onTeamUpdated - Callback function when team is updated
  */
 const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
+  const queryClient = useQueryClient()
   const [email, setEmail] = useState("")
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -155,28 +158,17 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
     setError("")
     
     try {
-      // Make the request with institution info
-      const response = await fetch(`/api/teams/${team.id}/invite`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email.trim(),
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          institutionId: institutionInfo?.institutionId || null,
-          institutionName: institutionInfo?.institution || null,
-          createInviteToken: true, // Generate an invitation token
-        }),
-      })
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || `Failed to invite team member (${response.status})`)
+      const inviteData = {
+        email: email.trim(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        institutionId: institutionInfo?.institutionId || null,
+        institutionName: institutionInfo?.institution || null,
+        createInviteToken: true,
       }
       
-      const data = await response.json()
+      // Use our centralized invitation method with automatic cache invalidation
+      const data = await inviteTeamMember(team.id, inviteData, queryClient)
       
       // Call the callback with the updated team
       if (typeof onTeamUpdated === 'function' && data.team) {

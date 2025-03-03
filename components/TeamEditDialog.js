@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -15,6 +16,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { updateTeamData } from "@/lib/useDataFetching"
 
 /**
  * Dialog component for editing team details
@@ -25,6 +27,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
  * @param {Function} props.onTeamUpdated - Callback function when team is updated
  */
 const TeamEditDialog = ({ team, open, onClose, onTeamUpdated }) => {
+  const queryClient = useQueryClient()
   const [teamName, setTeamName] = useState("")
   const [teamDescription, setTeamDescription] = useState("")
   const [error, setError] = useState("")
@@ -42,8 +45,8 @@ const TeamEditDialog = ({ team, open, onClose, onTeamUpdated }) => {
     e.preventDefault()
     
     if (!team?.id) {
-      setError("Missing team ID");
-      return;
+      setError("Missing team ID")
+      return
     }
     
     // Validate form data
@@ -56,67 +59,44 @@ const TeamEditDialog = ({ team, open, onClose, onTeamUpdated }) => {
     setError("")
     
     try {
-      // Make API call without trailing slash (which could cause routing issues)
-      const response = await fetch(`/api/teams/${team.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: teamName,
-          description: teamDescription,
-        }),
-      })
-      
-      // Get the text first to properly handle the response
-      const responseText = await response.text();
-      
-      // Parse the JSON only if there's actually content
-      let updatedTeam;
-      try {
-        updatedTeam = responseText ? JSON.parse(responseText) : {};
-      } catch (jsonError) {
-        console.error("Error parsing response JSON:", jsonError);
-        updatedTeam = {};
-      }
-      
-      // Check if the response is OK
-      if (!response.ok) {
-        throw new Error(updatedTeam.error || `Failed to update team (${response.status})`);
-      }
-      
-      // Success - create local copy of updated team data to use immediately
+      // Create local copy of updated team data to use immediately
       // This makes UI updates immediate without waiting for refresh
       const updatedTeamLocal = {
         ...team,
         name: teamName,
         description: teamDescription
-      };
+      }
+      
+      // Call the update function from our data fetching layer
+      await updateTeamData(
+        team.id, 
+        { name: teamName, description: teamDescription },
+        queryClient
+      )
       
       // Call the onTeamUpdated callback if provided, with local data for immediate UI update
       if (typeof onTeamUpdated === 'function') {
-        // Passing the local team data for immediate UI update
-        onTeamUpdated(updatedTeamLocal);
+        onTeamUpdated(updatedTeamLocal)
       }
       
       // Close the dialog
       if (typeof onClose === 'function') {
-        onClose();
+        onClose()
       }
     } catch (error) {
-      console.error("Error updating team:", error);
-      setError(error.message || "Failed to update team");
+      console.error("Error updating team:", error)
+      setError(error.message || "Failed to update team")
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
   }
 
   // Handle dialog open state changes
   const handleOpenChange = (isOpen) => {
     if (!isOpen && !isSubmitting) {
-      onClose();
+      onClose()
     }
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
