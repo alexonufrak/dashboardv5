@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 // Import V2 components
-import { DashboardLayout } from "../components/v2/dashboard-layout";
+import { DashboardLayout } from "../components/v2/dashboard-layout-prototype";
 import { MainDashboard } from "../components/v2/main-dashboard";
 import { ProgramShowcase } from "../components/v2/ProgramShowcase";
 import { PointsDashboard } from "../components/v2/PointsDashboard";

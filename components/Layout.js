@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0/client"
 
-import DashboardSidebar from "./NewDashboardSidebar"
+import DashboardSidebar from "./ProperDashboardSidebar"
 import Breadcrumbs from "./Breadcrumbs"
 
 const Layout = ({ children, title = "xFoundry Hub", profile, onEditClick }) => {

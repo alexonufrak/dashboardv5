@@ -1,5 +1,5 @@
 import { withPageAuthRequired } from "@auth0/nextjs-auth0";
-import { DashboardLayout } from "../../../components/v2/dashboard-layout";
+import { DashboardLayout } from "../../../components/v2/dashboard-layout-prototype";
 import { ActiveProgramsDashboard } from "../../../components/v2/ActiveProgramsDashboard";
 
 export default function ProgramsPage({ user, profile }) {

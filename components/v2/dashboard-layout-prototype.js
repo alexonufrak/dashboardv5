@@ -3,8 +3,8 @@
 import Head from "next/head";
 import Link from "next/link";
 import { useUser } from "@auth0/nextjs-auth0/client";
-import { DashboardHeader } from "./dashboard-header";
-import { DashboardSidebar } from "./dashboard-sidebar";
+import { DashboardHeader } from "./site-header-prototype";
+import { DashboardSidebarPrototype } from "./dashboard-sidebar-prototype";
 import Breadcrumbs from "../Breadcrumbs";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
@@ -65,7 +65,7 @@ export function DashboardLayout({
         <DashboardHeader userProfile={profile} />
         
         <div className="flex flex-1">
-          <DashboardSidebar userProfile={profile} />
+          <DashboardSidebarPrototype userProfile={profile} />
           
           <main className="flex-1 overflow-auto">
             <div className="container max-w-7xl mx-auto p-4 md:p-6 space-y-6">
