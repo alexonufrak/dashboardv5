@@ -12,6 +12,7 @@ import ProperDashboardLayout from "../components/ProperDashboardLayout"
 import ProfileEditModal from "../components/ProfileEditModal"
 import TeamCard from "../components/TeamCard"
 import EmailMismatchAlert from "../components/EmailMismatchAlert"
+import TeamInviteSuccessAlert from "../components/TeamInviteSuccessAlert"
 import CohortGrid from "../components/shared/CohortGrid"
 import TeamCreateDialog from "../components/TeamCreateDialog"
 import TeamSelectDialog from "../components/TeamSelectDialog"
@@ -273,10 +274,11 @@ const Dashboard = () => {
     <ProperDashboardLayout title="xFoundry Hub" profile={profile} onEditClick={handleEditClick}>
       {profile && (
         <div className="dashboard-content space-y-6">
-          {/* Email mismatch alert */}
+          {/* Alerts and notifications */}
           {user?.emailMismatch && <EmailMismatchAlert emailMismatch={user.emailMismatch} />}
+          <TeamInviteSuccessAlert />
           
-          {/* New onboarding components */}
+          {/* Onboarding components */}
           <OnboardingBanner />
           <OnboardingDialog 
             profile={profile}

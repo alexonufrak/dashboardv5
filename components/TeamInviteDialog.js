@@ -159,6 +159,7 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
           lastName: lastName.trim(),
           institutionId: institutionInfo?.institutionId || null,
           institutionName: institutionInfo?.institution || null,
+          createInviteToken: true, // Generate an invitation token
         }),
       })
       

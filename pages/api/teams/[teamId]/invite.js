@@ -1,5 +1,11 @@
 import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0'
-import { getUserProfile, base, getTeamById, lookupInstitutionByEmail } from '@/lib/airtable'
+import { 
+  getUserProfile, 
+  base, 
+  getTeamById, 
+  lookupInstitutionByEmail,
+  createTeamInvitation
+} from '@/lib/airtable'
 
 /**
  * API handler to invite a new member to an existing team
@@ -29,7 +35,8 @@ export default withApiAuthRequired(async function inviteTeamMemberHandler(req, r
       lastName, 
       institutionId, 
       institutionName,
-      role = 'Member'
+      role = 'Member',
+      createInviteToken = false
     } = req.body
     
     if (!email || !email.trim()) {
@@ -184,6 +191,35 @@ export default withApiAuthRequired(async function inviteTeamMemberHandler(req, r
     // Get the updated team to include the new member
     const updatedTeam = await getTeamById(teamId, userProfile.contactId)
     
+    // Create an invitation token if requested
+    let inviteToken = null;
+    let inviteUrl = null;
+    
+    if (createInviteToken) {
+      try {
+        console.log("Creating invitation token for team member");
+        
+        const invitation = await createTeamInvitation({
+          email: normalizedEmail,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          teamId: teamId,
+          memberId: memberRecord.id,
+          createdById: userProfile.contactId,
+          expiresInDays: 14 // Two weeks by default
+        });
+        
+        if (invitation && invitation.token) {
+          inviteToken = invitation.token;
+          inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || ''}/signup/invited?token=${inviteToken}`;
+          console.log(`Generated invitation URL: ${inviteUrl}`);
+        }
+      } catch (inviteError) {
+        console.error("Error creating invitation token:", inviteError);
+        // Continue even if token creation fails
+      }
+    }
+    
     return res.status(200).json({
       success: true,
       team: updatedTeam,
@@ -194,7 +230,9 @@ export default withApiAuthRequired(async function inviteTeamMemberHandler(req, r
         memberId: memberRecord.id,
         status: 'Invited',
         institutionId: inviteeInstitutionId,
-        institutionName: inviteeInstitutionName
+        institutionName: inviteeInstitutionName,
+        inviteToken,
+        inviteUrl
       }
     })
   } catch (error) {
