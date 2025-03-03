@@ -5,6 +5,7 @@ import { Toaster } from 'sonner';
 import { OnboardingProvider } from '@/contexts/OnboardingContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { Analytics } from "@vercel/analytics/react"
 import { useState } from 'react'
 
 function MyApp({ Component, pageProps }) {
@@ -25,6 +26,7 @@ function MyApp({ Component, pageProps }) {
         <OnboardingProvider>
           <Component {...pageProps} />
           <Toaster position="top-right" richColors closeButton />
+          <Analytics />
         </OnboardingProvider>
       </UserProvider>
       {/* Add React Query DevTools - only in development mode */}
