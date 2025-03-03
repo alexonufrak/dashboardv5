@@ -299,7 +299,13 @@ export function DashboardProvider({ children }) {
           if (team && team.id) {
             try {
               console.log(`Fetching cohorts for team ${team.id}...`)
-              const cohortResponse = await fetch(`/api/teams/${team.id}/cohorts`)
+              
+              // Add timestamp to prevent caching
+              const timestamp = new Date().getTime()
+              const cohortResponse = await fetch(`/api/teams/${team.id}/cohorts?_t=${timestamp}`)
+              
+              // Log full response details
+              console.log(`Cohort API response status: ${cohortResponse.status}`)
               
               if (cohortResponse.ok) {
                 const cohortData = await cohortResponse.json()

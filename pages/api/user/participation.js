@@ -68,22 +68,142 @@ export default withApiAuthRequired(async function handler(req, res) {
     // Get the user's active participation records
     let participationRecords = []
 
-    // Alternative approach using SEARCH
-    const formula = `OR(
-      SEARCH("${profile.contactId}", ARRAYJOIN({Contacts})) > 0,
-      SEARCH('${profile.contactId}', ARRAYJOIN({Contacts})) > 0
+    // Try multiple approaches for finding the participation records
+
+    // First, dump all participation records to inspect the structure
+    console.log("Retrieving participation records to inspect structure...")
+    const allRecords = await participationTable.select({
+      maxRecords: 5, // Just get a few to inspect
+    }).firstPage()
+
+    // Check how contacts are stored in the records
+    if (allRecords.length > 0) {
+      const firstRecord = allRecords[0]
+      console.log("Sample participation record fields:", firstRecord.fields)
+      console.log("Contacts field type:", typeof firstRecord.fields.Contacts)
+      
+      if (firstRecord.fields.Contacts) {
+        if (Array.isArray(firstRecord.fields.Contacts)) {
+          console.log("Contacts stored as array:", firstRecord.fields.Contacts)
+        } else {
+          console.log("Contacts stored as string:", firstRecord.fields.Contacts)
+        }
+      } else {
+        console.log("No Contacts field found in record")
+        // Check for other possible field names
+        console.log("Available fields:", Object.keys(firstRecord.fields))
+      }
+    }
+
+    // Try using different matching methods
+    // Method 1: Direct match using filterByFormula with Contact field
+    const formula1 = `FIND("${profile.contactId}", ARRAYJOIN({Contacts}))`
+    
+    // Method 2: Alternative field name approach - try 'Contact' singular
+    const formula2 = `FIND("${profile.contactId}", {Contact})`
+    
+    // Method 3: ID equals approach (if it's stored as an ID reference)
+    const formula3 = `{Contact} = "${profile.contactId}"`
+    
+    // Method 4: Record ID equals approach (if it's stored as a record ID)
+    const formula4 = `RECORD_ID() = "${profile.contactId}"`
+    
+    // Method 5: Contains approach
+    const formula5 = `OR(
+      FIND("${profile.contactId}", ARRAYJOIN({Contacts})) > 0,
+      FIND("${profile.contactId}", {Contact}) > 0,
+      FIND("${profile.contactId}", {ContactID}) > 0
     )`
 
-    console.log(`Looking for participation records with formula: ${formula}`)
-
-    // Get ALL pages of records using eachPage instead of firstPage
-    await participationTable.select({
-      filterByFormula: formula,
+    // Try each formula in sequence
+    console.log("Trying multiple search formulas to find participation records...")
+    
+    // Try method 1
+    console.log(`Trying formula 1: ${formula1}`)
+    let recordsMethod1 = await participationTable.select({
+      filterByFormula: formula1,
       sort: [{ field: "Last Modified", direction: "desc" }]
-    }).eachPage((records, fetchNextPage) => {
-      participationRecords = participationRecords.concat(records)
-      fetchNextPage()
-    })
+    }).firstPage()
+    
+    console.log(`Formula 1 found ${recordsMethod1.length} records`)
+    participationRecords = [...recordsMethod1]
+    
+    // If no records found, try method 2
+    if (participationRecords.length === 0) {
+      console.log(`Trying formula 2: ${formula2}`)
+      let recordsMethod2 = await participationTable.select({
+        filterByFormula: formula2,
+        sort: [{ field: "Last Modified", direction: "desc" }]
+      }).firstPage()
+      
+      console.log(`Formula 2 found ${recordsMethod2.length} records`)
+      participationRecords = [...recordsMethod2]
+    }
+    
+    // If still no records, try method 3
+    if (participationRecords.length === 0) {
+      console.log(`Trying formula 3: ${formula3}`)
+      let recordsMethod3 = await participationTable.select({
+        filterByFormula: formula3,
+        sort: [{ field: "Last Modified", direction: "desc" }]
+      }).firstPage()
+      
+      console.log(`Formula 3 found ${recordsMethod3.length} records`)
+      participationRecords = [...recordsMethod3]
+    }
+    
+    // If still no records, try method 5 (complex OR)
+    if (participationRecords.length === 0) {
+      console.log(`Trying complex formula: ${formula5}`)
+      let recordsMethod5 = await participationTable.select({
+        filterByFormula: formula5,
+        sort: [{ field: "Last Modified", direction: "desc" }]
+      }).firstPage()
+      
+      console.log(`Complex formula found ${recordsMethod5.length} records`)
+      participationRecords = [...recordsMethod5]
+    }
+    
+    // Try one more approach - direct API call to get all records and filter client-side
+    if (participationRecords.length === 0) {
+      console.log("Trying client-side filtering approach...")
+      
+      // Get all records (limited to 100 for performance)
+      const allParticipationRecords = await participationTable.select({
+        maxRecords: 100,
+        sort: [{ field: "Last Modified", direction: "desc" }]
+      }).firstPage()
+      
+      console.log(`Retrieved ${allParticipationRecords.length} total participation records`)
+      
+      // Client-side filtering logic
+      participationRecords = allParticipationRecords.filter(record => {
+        // Try with Contacts as array
+        if (Array.isArray(record.fields.Contacts) && record.fields.Contacts.includes(profile.contactId)) {
+          return true
+        }
+        
+        // Try with Contact as string
+        if (record.fields.Contact === profile.contactId) {
+          return true
+        }
+        
+        // Try with Contact as array
+        if (Array.isArray(record.fields.Contact) && record.fields.Contact.includes(profile.contactId)) {
+          return true
+        }
+        
+        // Try string contains approach
+        if (record.fields.Contacts && typeof record.fields.Contacts === 'string' && 
+            record.fields.Contacts.includes(profile.contactId)) {
+          return true
+        }
+        
+        return false
+      })
+      
+      console.log(`Client-side filtering found ${participationRecords.length} matching records`)
+    }
 
     // Log the results
     console.log(`Found ${participationRecords.length} participation records for contact ${profile.contactId}`)

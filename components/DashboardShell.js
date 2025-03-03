@@ -161,8 +161,15 @@ export default function DashboardShell() {
   useEffect(() => {
     if (profile && !initialLoadComplete) {
       setInitialLoadComplete(true);
+      
+      // When initial profile loads, but we don't see cohort/program data yet,
+      // trigger a manual refresh of program data
+      if (!cohort && activePage === "program") {
+        console.log("No program data found but on program page - triggering refresh")
+        refreshData('program');
+      }
     }
-  }, [profile]);
+  }, [profile, cohort, activePage, initialLoadComplete]);
   
   // Only show full loader on initial app load, never between page navigations
   const showFullLoader = isLoading && !initialLoadComplete;
