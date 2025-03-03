@@ -56,11 +56,35 @@ export default function ProgramDashboard() {
       setLoading(true)
       try {
         // First check if the user has any participation records
+        console.log('Fetching participation data from API...')
         const participationResponse = await fetch('/api/user/participation')
-        if (!participationResponse.ok) throw new Error('Failed to fetch participation data')
         
-        const participationData = await participationResponse.json()
-        if (!participationData.participation || participationData.participation.length === 0) {
+        if (!participationResponse.ok) {
+          console.error(`API returned error status: ${participationResponse.status}`)
+          throw new Error('Failed to fetch participation data')
+        }
+        
+        console.log('Received successful response from participation API')
+        const responseText = await participationResponse.text()
+        
+        let participationData
+        try {
+          // Safely parse the JSON
+          participationData = JSON.parse(responseText)
+          console.log('Parsed participation data:', participationData)
+        } catch (e) {
+          console.error('Failed to parse participation response as JSON:', e)
+          console.error('Raw response:', responseText)
+          throw new Error('Invalid response format from participation API')
+        }
+        
+        if (!participationData.participation) {
+          console.error('Missing participation field in response:', participationData)
+          throw new Error('Invalid response structure from participation API')
+        }
+        
+        if (participationData.participation.length === 0) {
+          console.log('Participation array is empty')
           throw new Error('You are not currently participating in any program')
         }
         
@@ -94,7 +118,66 @@ export default function ProgramDashboard() {
         }
       } catch (err) {
         console.error('Error fetching active participation:', err)
-        setError(err.message || 'Failed to load program information')
+        
+        // Fallback approach: If participation API fails, try to get team data directly
+        // This can help users who already have teams but no explicit participation records
+        try {
+          console.log('Trying fallback approach to get team data directly...')
+          const teamsResponse = await fetch('/api/teams')
+          if (teamsResponse.ok) {
+            const teamsData = await teamsResponse.json()
+            
+            if (teamsData.teams && teamsData.teams.length > 0) {
+              console.log('Found team data through fallback:', teamsData.teams[0])
+              
+              // Use the first team
+              setTeam(teamsData.teams[0])
+              
+              // Try to get cohort for this team
+              if (teamsData.teams[0].cohortIds && teamsData.teams[0].cohortIds.length > 0) {
+                const cohortResponse = await fetch(`/api/teams/${teamsData.teams[0].id}/cohorts`)
+                if (cohortResponse.ok) {
+                  const cohortData = await cohortResponse.json()
+                  if (cohortData.cohorts && cohortData.cohorts.length > 0) {
+                    console.log('Retrieved cohort data through fallback:', cohortData.cohorts[0])
+                    setCohort(cohortData.cohorts[0])
+                    
+                    // Set initiative name if available
+                    if (cohortData.cohorts[0].initiativeDetails?.name) {
+                      setInitiativeName(cohortData.cohorts[0].initiativeDetails.name)
+                    }
+                    
+                    // Set participation type if available
+                    if (cohortData.cohorts[0].participationType) {
+                      setParticipationType(cohortData.cohorts[0].participationType)
+                    }
+                    
+                    // Try to get milestones for this cohort
+                    if (cohortData.cohorts[0].id) {
+                      const milestonesResponse = await fetch(`/api/cohorts/${cohortData.cohorts[0].id}/milestones`)
+                      if (milestonesResponse.ok) {
+                        const milestonesData = await milestonesResponse.json()
+                        setMilestones(milestonesData.milestones || [])
+                      }
+                    }
+                    
+                    // We've recovered from the error, so don't show error state
+                    setError(null)
+                  }
+                }
+              }
+            } else {
+              // No teams found in fallback, show original error
+              setError(err.message || 'Failed to load program information')
+            }
+          } else {
+            // Teams API failed, show original error
+            setError(err.message || 'Failed to load program information')
+          }
+        } catch (fallbackErr) {
+          console.error('Fallback approach also failed:', fallbackErr)
+          setError(err.message || 'Failed to load program information')
+        }
       } finally {
         setLoading(false)
       }
@@ -177,7 +260,9 @@ export default function ProgramDashboard() {
     )
   }
   
+  // Handle case where we don't have cohort or team data
   if (!cohort && !team) {
+    // Still use the profile if available to display user information in the layout
     return (
       <ProperDashboardLayout title={`${initiativeName} Dashboard`} profile={profile} onEditClick={handleEditProfileClick}>
         <div className="flex items-center justify-center min-h-[50vh]">
@@ -186,7 +271,18 @@ export default function ProgramDashboard() {
               <h3 className="text-lg font-medium">No Active Program</h3>
               <p>You are not currently participating in any program.</p>
             </div>
-            <Button onClick={() => router.push('/dashboard')}>Return to Dashboard</Button>
+            
+            <div className="bg-blue-50 text-blue-800 p-4 rounded-md mb-4">
+              <h4 className="font-medium mb-2">Looking for Programs?</h4>
+              <p className="mb-3">Check out available programs on the dashboard page.</p>
+              <Button onClick={() => router.push('/dashboard#programs')}>
+                Browse Programs
+              </Button>
+            </div>
+            
+            <Button variant="outline" onClick={() => router.push('/dashboard')}>
+              Return to Dashboard
+            </Button>
           </div>
         </div>
       </ProperDashboardLayout>

@@ -69,7 +69,15 @@ export default withApiAuthRequired(async function handler(req, res) {
     
     // Check if we found any participation records
     if (!participationRecords || participationRecords.length === 0) {
+      console.log(`No participation records found for contact ${profile.contactId}`)
       return res.status(200).json({ participation: [] })
+    }
+    
+    console.log(`Found ${participationRecords.length} participation records for contact ${profile.contactId}`)
+    // Log details of the first record for debugging
+    if (participationRecords.length > 0) {
+      const firstRecord = participationRecords[0]
+      console.log(`First participation record: ID=${firstRecord.id}, Cohorts=${JSON.stringify(firstRecord.fields.Cohorts)}`)
     }
     
     // Process each participation record to get associated cohort and team info
@@ -195,6 +203,16 @@ export default withApiAuthRequired(async function handler(req, res) {
       } catch (err) {
         console.error(`Error processing participation record ${participationRecord.id}:`, err)
       }
+    }
+    
+    // Log the processed results for debugging
+    console.log(`Successfully processed ${processedParticipation.length} participation records`)
+    if (processedParticipation.length === 0) {
+      console.log("No processed participation records available to return")
+    } else {
+      // Log details of first processed record
+      const firstProcessed = processedParticipation[0]
+      console.log(`First processed participation: cohort=${firstProcessed.cohort?.id}, initiative=${firstProcessed.cohort?.initiativeDetails?.name}, teamId=${firstProcessed.teamId}`)
     }
     
     // Return the processed participation records
