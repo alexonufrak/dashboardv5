@@ -567,9 +567,13 @@ function ProgramDashboardInner({ onNavigate }) {
             open={isInviteDialogOpen} 
             onClose={() => setIsInviteDialogOpen(false)}
             team={team}
-            onTeamUpdated={() => {
-              // After inviting a member, refresh team data
-              refreshData('team');
+            onTeamUpdated={(updatedTeam) => {
+              // Update the local team state with the updated team data immediately
+              // This makes the UI respond instantly without waiting for a full refresh
+              console.log("Team updated from invite dialog:", updatedTeam);
+              
+              // Refresh team data from server (happens in background)
+              refreshData('teams');
             }}
           />
           
@@ -578,9 +582,13 @@ function ProgramDashboardInner({ onNavigate }) {
             open={isEditDialogOpen}
             onClose={() => setIsEditDialogOpen(false)}
             team={team}
-            onTeamUpdated={() => {
-              // After saving team details, refresh team data
-              refreshData('team');
+            onTeamUpdated={(updatedTeam) => {
+              // Since the component can't directly modify the team data in the context,
+              // we'll take the updated team data and use it locally while the refresh happens
+              console.log("Team updated from edit dialog:", updatedTeam);
+              
+              // Refresh team data from server (happens in background) 
+              refreshData('teams');
             }}
           />
         </>

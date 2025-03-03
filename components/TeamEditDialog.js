@@ -68,18 +68,35 @@ const TeamEditDialog = ({ team, open, onClose, onTeamUpdated }) => {
         }),
       })
       
-      // Check if the response is OK
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Failed to update team (${response.status})`);
+      // Get the text first to properly handle the response
+      const responseText = await response.text();
+      
+      // Parse the JSON only if there's actually content
+      let updatedTeam;
+      try {
+        updatedTeam = responseText ? JSON.parse(responseText) : {};
+      } catch (jsonError) {
+        console.error("Error parsing response JSON:", jsonError);
+        updatedTeam = {};
       }
       
-      // Parse the response data
-      const updatedTeam = await response.json();
+      // Check if the response is OK
+      if (!response.ok) {
+        throw new Error(updatedTeam.error || `Failed to update team (${response.status})`);
+      }
       
-      // Call the onTeamUpdated callback if provided
+      // Success - create local copy of updated team data to use immediately
+      // This makes UI updates immediate without waiting for refresh
+      const updatedTeamLocal = {
+        ...team,
+        name: teamName,
+        description: teamDescription
+      };
+      
+      // Call the onTeamUpdated callback if provided, with local data for immediate UI update
       if (typeof onTeamUpdated === 'function') {
-        onTeamUpdated(updatedTeam);
+        // Passing the local team data for immediate UI update
+        onTeamUpdated(updatedTeamLocal);
       }
       
       // Close the dialog
