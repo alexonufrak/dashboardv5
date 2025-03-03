@@ -117,9 +117,13 @@ const DashboardV2 = () => {
           <Alert className="bg-blue-50 border-blue-200">
             <AlertTitle className="text-blue-800">New Dashboard Design (v2)</AlertTitle>
             <AlertDescription className="text-blue-700">
-              You're viewing the new dashboard design. 
-              <a href="/dashboard" className="ml-2 underline font-medium">
-                Switch back to the original dashboard
+              You're viewing the new dashboard design. Check out our new
+              <a href="/dashboard-v2/programs" className="mx-1 underline font-medium">
+                Active Programs Dashboard
+              </a>
+              or
+              <a href="/dashboard" className="ml-1 underline font-medium">
+                switch back to the original dashboard
               </a>
             </AlertDescription>
           </Alert>

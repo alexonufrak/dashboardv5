@@ -375,8 +375,8 @@ export function MainDashboard({ userProfile }) {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold tracking-tight">Active Programs</h2>
               <Button variant="outline" size="sm" asChild>
-                <Link href="/dashboard/programs">
-                  View All <ArrowRight className="ml-1 h-4 w-4" />
+                <Link href="/dashboard-v2/programs">
+                  View All Programs <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>
             </div>

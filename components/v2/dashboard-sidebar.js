@@ -42,12 +42,12 @@ export function DashboardSidebar({ userProfile }) {
   const mainNavLinks = [
     {
       name: "Dashboard",
-      href: "/dashboard",
+      href: "/dashboard-v2",
       icon: <Home className="h-5 w-5" />,
     },
     {
-      name: "My Programs",
-      href: "/dashboard/programs",
+      name: "Active Programs",
+      href: "/dashboard-v2/programs",
       icon: <LayoutDashboard className="h-5 w-5" />,
       badge: {
         text: "3",
@@ -56,7 +56,7 @@ export function DashboardSidebar({ userProfile }) {
     },
     {
       name: "My Teams",
-      href: "/dashboard/teams",
+      href: "/dashboard-v2/teams",
       icon: <Users className="h-5 w-5" />,
       badge: {
         text: "2",
@@ -65,12 +65,21 @@ export function DashboardSidebar({ userProfile }) {
     },
     {
       name: "Points & Progress",
-      href: "/dashboard/points",
+      href: "/dashboard-v2/points",
       icon: <Award className="h-5 w-5" />,
     },
     {
+      name: "Deliverables",
+      href: "/dashboard-v2/deliverables",
+      icon: <FileText className="h-5 w-5" />,
+      badge: {
+        text: "3",
+        variant: "outline"
+      }
+    },
+    {
       name: "Opportunities",
-      href: "/dashboard/opportunities",
+      href: "/dashboard-v2/opportunities",
       icon: <Rocket className="h-5 w-5" />,
       badge: {
         text: "New",
@@ -79,7 +88,7 @@ export function DashboardSidebar({ userProfile }) {
     },
     {
       name: "Calendar",
-      href: "/dashboard/calendar",
+      href: "/dashboard-v2/calendar",
       icon: <Calendar className="h-5 w-5" />,
     },
   ];
@@ -88,25 +97,25 @@ export function DashboardSidebar({ userProfile }) {
   const programLinks = [
     {
       name: "Xperience",
-      href: "/dashboard/programs/xperience",
+      href: "/dashboard-v2/programs?type=xperience",
       icon: <Briefcase className="h-5 w-5" />,
       color: "text-blue-500"
     },
     {
       name: "Xperiment",
-      href: "/dashboard/programs/xperiment",
+      href: "/dashboard-v2/programs?type=xperiment",
       icon: <BookOpen className="h-5 w-5" />,
       color: "text-green-500"
     },
     {
       name: "Xtrapreneurs",
-      href: "/dashboard/programs/xtrapreneurs",
+      href: "/dashboard-v2/programs?type=xtrapreneurs",
       icon: <Lightbulb className="h-5 w-5" />,
       color: "text-amber-500"
     },
     {
       name: "Horizons",
-      href: "/dashboard/programs/horizons",
+      href: "/dashboard-v2/programs?type=horizons",
       icon: <Rocket className="h-5 w-5" />,
       color: "text-purple-500"
     },
