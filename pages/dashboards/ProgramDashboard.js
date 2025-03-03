@@ -207,13 +207,27 @@ function ProgramDashboardInner({ onNavigate }) {
                 </div>
               </div>
               <div className="flex gap-2 mt-3 md:mt-0">
+                {/* Dynamic completion percentage based on actual milestones */}
                 <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
                   <BarChart3 className="h-3.5 w-3.5 mr-1" />
-                  60% Complete
+                  {(() => {
+                    // Calculate progress using the same function as TeamMilestoneProgress
+                    const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
+                    const completedCount = milestonesData.filter(m => m.status === "completed").length;
+                    const inProgressCount = milestonesData.filter(m => m.status === "in_progress").length;
+                    const progressPercentage = milestonesData.length > 0 
+                      ? Math.round((completedCount + (inProgressCount * 0.5)) / milestonesData.length * 100) 
+                      : 0;
+                    return `${progressPercentage}% Complete`;
+                  })()}
                 </Badge>
                 <Badge variant="outline" className="bg-purple-50 text-purple-800 border-purple-200">
                   <Flag className="h-3.5 w-3.5 mr-1" />
-                  3 of 5 Milestones
+                  {(() => {
+                    const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
+                    const completedCount = milestonesData.filter(m => m.status === "completed").length;
+                    return `${completedCount} of ${milestonesData.length} Milestones`;
+                  })()}
                 </Badge>
               </div>
             </div>
