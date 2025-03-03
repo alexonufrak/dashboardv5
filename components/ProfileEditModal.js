@@ -31,6 +31,20 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     error: majorsError 
   } = useMajors();
   
+  // Log majors when they load to debug
+  useEffect(() => {
+    if (majors && majors.length > 0) {
+      console.log(`Loaded ${majors.length} majors, first 3:`, majors.slice(0, 3));
+      
+      // Check if any majors have invalid IDs (not starting with 'rec')
+      const invalidMajors = majors.filter(m => !m.id.startsWith('rec'));
+      if (invalidMajors.length > 0) {
+        console.warn(`Found ${invalidMajors.length} majors with invalid ID format:`, 
+          invalidMajors.slice(0, 3));
+      }
+    }
+  }, [majors]);
+  
   // Reset form when profile changes
   useEffect(() => {
     if (profile) {
@@ -111,6 +125,23 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
         }
       }
       
+      // Validate major field format - must be a valid Airtable record ID
+      if (formData.major && typeof formData.major === 'string' && !formData.major.startsWith('rec')) {
+        console.error(`Invalid major ID format: "${formData.major}"`);
+        
+        // Try to find the correct record ID based on the name
+        const majorName = formData.major;
+        const matchingMajor = majors.find(m => m.name === majorName);
+        
+        if (matchingMajor) {
+          console.log(`Found matching major record ID for "${majorName}": ${matchingMajor.id}`);
+          // Replace the text value with the record ID
+          formData.major = matchingMajor.id;
+        } else {
+          throw new Error(`Invalid major format. Please select a major from the dropdown.`);
+        }
+      }
+      
       // Add contact ID and institution ID to the data
       const updateData = {
         ...formData,
@@ -118,7 +149,13 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
         institutionId: formData.institutionId || profile.institution?.id
       };
       
-      // Form is ready to be submitted
+      // Log what we're about to submit
+      console.log("Submitting profile update:", {
+        firstName: updateData.firstName,
+        lastName: updateData.lastName,
+        major: updateData.major,
+        majorType: typeof updateData.major
+      });
       
       // Use our centralized update function with cache invalidation
       const updatedProfile = await updateProfileData(updateData, queryClient);
