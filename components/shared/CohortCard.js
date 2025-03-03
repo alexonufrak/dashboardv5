@@ -299,23 +299,15 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
           className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-200 bg-white hover:bg-gray-50 shadow-sm transition-all mr-2 mb-2 cursor-pointer group"
           onClick={handleViewDetails}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 pointer-events-none">
             <span className="font-medium text-sm">{initiativeName}</span>
             
             {(Array.isArray(topics) && topics.length > 0) && (
-              <span className="text-xs text-muted-foreground">
+              <Badge variant="secondary" className="text-xs bg-cyan-50 text-cyan-800 border-0">
                 {topics[0].length > 15 ? topics[0].substring(0, 15) + '...' : topics[0]}
                 {cohort.className && ` - ${cohort.className}`}
-              </span>
+              </Badge>
             )}
-            
-            <Badge 
-              variant="outline" 
-              className={`text-xs ${statusClass} border-0 scale-0 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-200 ease-in-out origin-left`} 
-              size="sm"
-            >
-              {status}
-            </Badge>
             
             <Eye className="h-3 w-3 text-muted-foreground ml-1" />
           </div>
