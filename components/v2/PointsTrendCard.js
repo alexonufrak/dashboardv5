@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useState } from "react";
 import { 
   TrendingUp, 
   Calendar,
@@ -10,264 +10,254 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "../ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { ChartContainer, ChartTooltipContent, ChartTooltip } from "../ui/chart";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  AreaChart,
+  Area
+} from "recharts";
 
 /**
  * PointsTrendCard Component
- * Displays historical points earning trends
- * Uses a simple canvas-based chart for visualization
+ * Displays historical points earning trends using Recharts
  */
 export function PointsTrendCard({
   pointsHistory = [],
   className = "",
 }) {
-  // References to chart canvases
-  const weeklyChartRef = useRef(null);
-  const monthlyChartRef = useRef(null);
-  const allTimeChartRef = useRef(null);
+  const [activeTab, setActiveTab] = useState("weekly");
+  const [chartView, setChartView] = useState("total");
   
-  // Colors for different program types
-  const programColors = {
-    xperience: '#3b82f6', // blue-500
-    xperiment: '#22c55e', // green-500
-    xtrapreneurs: '#f59e0b', // amber-500
-    horizons: '#8b5cf6', // purple-500
-    default: '#6b7280', // gray-500
-  };
-
   // Sample points history data if none provided
-  const samplePointsHistory = [
+  const samplePointsHistory = {
     // Weekly data - last 7 days
-    {
-      interval: 'weekly',
+    weekly: {
       labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      datasets: [
-        {
-          label: 'Total',
-          data: [10, 15, 5, 20, 8, 15, 10],
-          color: '#6b7280'
-        },
-        {
-          label: 'Xperience',
-          data: [5, 10, 0, 15, 5, 10, 5],
-          color: programColors.xperience
-        },
-        {
-          label: 'Xperiment',
-          data: [5, 5, 5, 5, 3, 5, 5],
-          color: programColors.xperiment
-        }
+      data: [
+        { day: 'Mon', total: 10, xperience: 5, xperiment: 5, xtrapreneurs: 0, horizons: 0 },
+        { day: 'Tue', total: 15, xperience: 10, xperiment: 5, xtrapreneurs: 0, horizons: 0 },
+        { day: 'Wed', total: 5, xperience: 0, xperiment: 5, xtrapreneurs: 0, horizons: 0 },
+        { day: 'Thu', total: 20, xperience: 15, xperiment: 5, xtrapreneurs: 0, horizons: 0 },
+        { day: 'Fri', total: 8, xperience: 5, xperiment: 3, xtrapreneurs: 0, horizons: 0 },
+        { day: 'Sat', total: 15, xperience: 10, xperiment: 5, xtrapreneurs: 0, horizons: 0 },
+        { day: 'Sun', total: 10, xperience: 5, xperiment: 5, xtrapreneurs: 0, horizons: 0 }
       ]
     },
     // Monthly data - last 4 weeks
-    {
-      interval: 'monthly',
+    monthly: {
       labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-      datasets: [
-        {
-          label: 'Total',
-          data: [45, 60, 75, 83],
-          color: '#6b7280'
-        },
-        {
-          label: 'Xperience',
-          data: [25, 35, 45, 50],
-          color: programColors.xperience
-        },
-        {
-          label: 'Xperiment',
-          data: [20, 25, 25, 28],
-          color: programColors.xperiment
-        },
-        {
-          label: 'Xtrapreneurs',
-          data: [0, 0, 5, 5],
-          color: programColors.xtrapreneurs
-        }
+      data: [
+        { week: 'Week 1', total: 45, xperience: 25, xperiment: 20, xtrapreneurs: 0, horizons: 0 },
+        { week: 'Week 2', total: 60, xperience: 35, xperiment: 25, xtrapreneurs: 0, horizons: 0 },
+        { week: 'Week 3', total: 75, xperience: 45, xperiment: 25, xtrapreneurs: 5, horizons: 0 },
+        { week: 'Week 4', total: 83, xperience: 50, xperiment: 28, xtrapreneurs: 5, horizons: 0 }
       ]
     },
     // All time data - by month
-    {
-      interval: 'allTime',
+    allTime: {
       labels: ['Sep', 'Oct', 'Nov', 'Dec'],
-      datasets: [
-        {
-          label: 'Total',
-          data: [50, 120, 210, 330],
-          color: '#6b7280'
-        },
-        {
-          label: 'Xperience',
-          data: [30, 60, 105, 155],
-          color: programColors.xperience
-        },
-        {
-          label: 'Xperiment',
-          data: [20, 50, 95, 145],
-          color: programColors.xperiment
-        },
-        {
-          label: 'Xtrapreneurs',
-          data: [0, 10, 10, 30],
-          color: programColors.xtrapreneurs
-        }
+      data: [
+        { month: 'Sep', total: 50, xperience: 30, xperiment: 20, xtrapreneurs: 0, horizons: 0 },
+        { month: 'Oct', total: 120, xperience: 60, xperiment: 50, xtrapreneurs: 10, horizons: 0 },
+        { month: 'Nov', total: 210, xperience: 105, xperiment: 95, xtrapreneurs: 10, horizons: 0 },
+        { month: 'Dec', total: 330, xperience: 155, xperiment: 145, xtrapreneurs: 30, horizons: 0 }
       ]
     }
-  ];
+  };
+
+  // Chart configuration
+  const chartConfig = {
+    total: {
+      label: "Total Points",
+      color: "hsl(var(--chart-1))"
+    },
+    xperience: {
+      label: "Xperience",
+      color: "hsl(var(--chart-2))"
+    },
+    xperiment: {
+      label: "Xperiment",
+      color: "hsl(var(--chart-3))"
+    },
+    xtrapreneurs: {
+      label: "Xtrapreneurs",
+      color: "hsl(var(--chart-4))"
+    },
+    horizons: {
+      label: "Horizons",
+      color: "hsl(var(--chart-5))"
+    }
+  };
 
   // Use sample data if none provided
   const historyData = pointsHistory.length > 0 ? pointsHistory : samplePointsHistory;
 
-  // Draw chart on canvas
-  const drawChart = (canvas, data) => {
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    const width = canvas.width;
-    const height = canvas.height;
-    
-    // Clear canvas
-    ctx.clearRect(0, 0, width, height);
-    
-    // Find the max value for scaling
-    let maxValue = 0;
-    data.datasets.forEach(dataset => {
-      const datasetMax = Math.max(...dataset.data);
-      if (datasetMax > maxValue) maxValue = datasetMax;
-    });
-    
-    // Add 10% padding to max value
-    maxValue = maxValue * 1.1;
-    
-    // Chart dimensions
-    const chartWidth = width - 60; // Left padding for y-axis labels
-    const chartHeight = height - 40; // Bottom padding for x-axis labels
-    const chartTop = 20;
-    const chartLeft = 50;
-    
-    // Draw y-axis
-    ctx.beginPath();
-    ctx.moveTo(chartLeft, chartTop);
-    ctx.lineTo(chartLeft, chartTop + chartHeight);
-    ctx.strokeStyle = '#e5e7eb'; // gray-200
-    ctx.stroke();
-    
-    // Draw y-axis grid lines and labels
-    const yAxisSteps = 5;
-    ctx.textAlign = 'right';
-    ctx.font = '10px sans-serif';
-    ctx.fillStyle = '#6b7280'; // gray-500
-    
-    for (let i = 0; i <= yAxisSteps; i++) {
-      const y = chartTop + chartHeight - (chartHeight * i / yAxisSteps);
-      const value = Math.round(maxValue * i / yAxisSteps);
-      
-      // Grid line
-      ctx.beginPath();
-      ctx.moveTo(chartLeft, y);
-      ctx.lineTo(chartLeft + chartWidth, y);
-      ctx.strokeStyle = '#f3f4f6'; // gray-100
-      ctx.stroke();
-      
-      // Label
-      ctx.fillText(value.toString(), chartLeft - 10, y + 4);
-    }
-    
-    // Draw x-axis
-    ctx.beginPath();
-    ctx.moveTo(chartLeft, chartTop + chartHeight);
-    ctx.lineTo(chartLeft + chartWidth, chartTop + chartHeight);
-    ctx.strokeStyle = '#e5e7eb'; // gray-200
-    ctx.stroke();
-    
-    // Draw x-axis labels
-    const labels = data.labels;
-    const labelStep = chartWidth / (labels.length - 1);
-    
-    ctx.textAlign = 'center';
-    ctx.font = '10px sans-serif';
-    ctx.fillStyle = '#6b7280'; // gray-500
-    
-    labels.forEach((label, i) => {
-      const x = chartLeft + i * labelStep;
-      ctx.fillText(label, x, chartTop + chartHeight + 20);
-    });
-    
-    // Draw datasets
-    data.datasets.forEach((dataset, datasetIndex) => {
-      const values = dataset.data;
-      
-      // Draw line
-      ctx.beginPath();
-      
-      values.forEach((value, i) => {
-        const x = chartLeft + i * labelStep;
-        const y = chartTop + chartHeight - (chartHeight * value / maxValue);
-        
-        if (i === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
-      });
-      
-      ctx.strokeStyle = dataset.color || programColors.default;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      
-      // Draw points
-      values.forEach((value, i) => {
-        const x = chartLeft + i * labelStep;
-        const y = chartTop + chartHeight - (chartHeight * value / maxValue);
-        
-        ctx.beginPath();
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = dataset.color || programColors.default;
-        ctx.fill();
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      });
-    });
-    
-    // Draw legend
-    const legendTop = height - 10;
-    const legendStepSize = width / (data.datasets.length + 1);
-    let legendLeft = legendStepSize / 2;
-    
-    ctx.textAlign = 'center';
-    ctx.font = '10px sans-serif';
-    
-    data.datasets.forEach((dataset) => {
-      // Draw legend color box
-      ctx.fillStyle = dataset.color || programColors.default;
-      ctx.fillRect(legendLeft - 20, legendTop - 8, 10, 10);
-      
-      // Draw legend text
-      ctx.fillStyle = '#6b7280'; // gray-500
-      ctx.fillText(dataset.label, legendLeft + 10, legendTop);
-      
-      legendLeft += legendStepSize;
-    });
-  };
+  // Get current data based on active tab
+  const currentData = historyData[activeTab]?.data || [];
+  const xAxisDataKey = activeTab === 'weekly' ? 'day' : (activeTab === 'monthly' ? 'week' : 'month');
 
-  // Draw charts when component mounts or data changes
-  useEffect(() => {
-    const weeklyData = historyData.find(d => d.interval === 'weekly') || historyData[0];
-    const monthlyData = historyData.find(d => d.interval === 'monthly') || historyData[1];
-    const allTimeData = historyData.find(d => d.interval === 'allTime') || historyData[2];
-    
-    if (weeklyChartRef.current) {
-      drawChart(weeklyChartRef.current, weeklyData);
+  // Determine which chart type to render
+  const renderChart = () => {
+    if (chartView === 'stacked') {
+      return (
+        <ResponsiveContainer width="100%" height={300}>
+          <AreaChart data={currentData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="colorXperience" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-xperience)" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="var(--color-xperience)" stopOpacity={0.1}/>
+              </linearGradient>
+              <linearGradient id="colorXperiment" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-xperiment)" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="var(--color-xperiment)" stopOpacity={0.1}/>
+              </linearGradient>
+              <linearGradient id="colorXtrapreneurs" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-xtrapreneurs)" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="var(--color-xtrapreneurs)" stopOpacity={0.1}/>
+              </linearGradient>
+              <linearGradient id="colorHorizons" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-horizons)" stopOpacity={0.8}/>
+                <stop offset="95%" stopColor="var(--color-horizons)" stopOpacity={0.1}/>
+              </linearGradient>
+            </defs>
+            <XAxis dataKey={xAxisDataKey} />
+            <YAxis />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <Tooltip content={<ChartTooltipContent config={chartConfig} />} />
+            <Area 
+              type="monotone" 
+              dataKey="xperience" 
+              stackId="1" 
+              stroke="var(--color-xperience)" 
+              fillOpacity={1} 
+              fill="url(#colorXperience)" 
+            />
+            <Area 
+              type="monotone" 
+              dataKey="xperiment" 
+              stackId="1" 
+              stroke="var(--color-xperiment)" 
+              fillOpacity={1} 
+              fill="url(#colorXperiment)" 
+            />
+            <Area 
+              type="monotone" 
+              dataKey="xtrapreneurs" 
+              stackId="1" 
+              stroke="var(--color-xtrapreneurs)" 
+              fillOpacity={1} 
+              fill="url(#colorXtrapreneurs)" 
+            />
+            <Area 
+              type="monotone" 
+              dataKey="horizons" 
+              stackId="1" 
+              stroke="var(--color-horizons)" 
+              fillOpacity={1} 
+              fill="url(#colorHorizons)" 
+            />
+            <Legend />
+          </AreaChart>
+        </ResponsiveContainer>
+      );
+    } else if (chartView === 'bar') {
+      return (
+        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+          <BarChart data={currentData}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis 
+              dataKey={xAxisDataKey} 
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+            />
+            <YAxis 
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+            />
+            <Tooltip content={<ChartTooltipContent config={chartConfig} />} />
+            <Legend />
+            <Bar dataKey="xperience" fill="var(--color-xperience)" radius={4} />
+            <Bar dataKey="xperiment" fill="var(--color-xperiment)" radius={4} />
+            <Bar dataKey="xtrapreneurs" fill="var(--color-xtrapreneurs)" radius={4} />
+            <Bar dataKey="horizons" fill="var(--color-horizons)" radius={4} />
+          </BarChart>
+        </ChartContainer>
+      );
+    } else {
+      // Line chart (default)
+      return (
+        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+          <LineChart data={currentData}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis 
+              dataKey={xAxisDataKey} 
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+            />
+            <YAxis 
+              tickLine={false}
+              axisLine={false}
+              tickMargin={10}
+            />
+            <Tooltip content={<ChartTooltipContent config={chartConfig} />} />
+            <Legend />
+            <Line 
+              type="monotone" 
+              dataKey="total" 
+              stroke="var(--color-total)" 
+              strokeWidth={2}
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="xperience" 
+              stroke="var(--color-xperience)" 
+              strokeWidth={2} 
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="xperiment" 
+              stroke="var(--color-xperiment)" 
+              strokeWidth={2} 
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="xtrapreneurs" 
+              stroke="var(--color-xtrapreneurs)" 
+              strokeWidth={2} 
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="horizons" 
+              stroke="var(--color-horizons)" 
+              strokeWidth={2} 
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+          </LineChart>
+        </ChartContainer>
+      );
     }
-    
-    if (monthlyChartRef.current) {
-      drawChart(monthlyChartRef.current, monthlyData);
-    }
-    
-    if (allTimeChartRef.current) {
-      drawChart(allTimeChartRef.current, allTimeData);
-    }
-  }, [historyData]);
+  };
 
   return (
     <Card className={className}>
@@ -283,22 +273,21 @@ export function PointsTrendCard({
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <Select defaultValue="total">
+            <Select defaultValue="total" onValueChange={setChartView}>
               <SelectTrigger className="w-[130px]">
                 <SelectValue placeholder="View" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="total">All Programs</SelectItem>
-                <SelectItem value="xperience">Xperience</SelectItem>
-                <SelectItem value="xperiment">Xperiment</SelectItem>
-                <SelectItem value="xtrapreneurs">Xtrapreneurs</SelectItem>
+                <SelectItem value="total">Line Chart</SelectItem>
+                <SelectItem value="bar">Bar Chart</SelectItem>
+                <SelectItem value="stacked">Stacked Area</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="weekly" className="space-y-4">
+        <Tabs defaultValue="weekly" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="weekly">This Week</TabsTrigger>
             <TabsTrigger value="monthly">This Month</TabsTrigger>
@@ -306,36 +295,15 @@ export function PointsTrendCard({
           </TabsList>
           
           <TabsContent value="weekly" className="space-y-4">
-            <div className="h-[300px] w-full relative">
-              <canvas 
-                ref={weeklyChartRef} 
-                width={500} 
-                height={300}
-                className="w-full h-full"
-              />
-            </div>
+            {renderChart()}
           </TabsContent>
           
           <TabsContent value="monthly" className="space-y-4">
-            <div className="h-[300px] w-full relative">
-              <canvas 
-                ref={monthlyChartRef} 
-                width={500} 
-                height={300}
-                className="w-full h-full"
-              />
-            </div>
+            {renderChart()}
           </TabsContent>
           
           <TabsContent value="allTime" className="space-y-4">
-            <div className="h-[300px] w-full relative">
-              <canvas 
-                ref={allTimeChartRef} 
-                width={500} 
-                height={300}
-                className="w-full h-full"
-              />
-            </div>
+            {renderChart()}
           </TabsContent>
         </Tabs>
       </CardContent>
