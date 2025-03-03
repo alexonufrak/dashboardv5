@@ -13,6 +13,8 @@ import {
   Users,
   Lightbulb
 } from "lucide-react";
+import { ProgramCard } from "./ProgramCard";
+import { ProgramShowcase } from "./ProgramShowcase";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -381,57 +383,11 @@ export function MainDashboard({ userProfile }) {
             
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {mockData.programs.map((program) => (
-                <Card key={program.id} className="overflow-hidden">
-                  <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
-                    <div className="space-y-1">
-                      <CardTitle className="text-base">
-                        {program.name}
-                      </CardTitle>
-                      <CardDescription>
-                        {program.term}
-                      </CardDescription>
-                    </div>
-                    {getProgramBadge(program.type)}
-                  </CardHeader>
-                  <CardContent className="p-4 pt-2 pb-0">
-                    {renderProgramStatus(program)}
-                    
-                    <div className="mt-3 text-sm">
-                      <div className="flex items-center gap-1">
-                        <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span>Team: {program.team.name}</span>
-                        {program.team.ranking && (
-                          <Badge variant="outline" className="ml-1 text-xs">
-                            #{program.team.ranking} of {program.team.totalTeams}
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      {program.nextDeadline && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span>
-                            {program.nextDeadline.name} due in {program.nextDeadline.daysRemaining} days
-                          </span>
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center gap-1 mt-1">
-                        <Award className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span>
-                          {program.points.personal} points earned
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="p-4">
-                    <Button variant="default" size="sm" className="w-full" asChild>
-                      <Link href={`/dashboard/programs/${program.type}/${program.id}`}>
-                        View Program
-                      </Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
+                <ProgramCard 
+                  key={program.id}
+                  {...program}
+                  actions={["viewDetails"]}
+                />
               ))}
             </div>
           </div>
@@ -494,48 +450,11 @@ export function MainDashboard({ userProfile }) {
             
             <div className="grid gap-4 md:grid-cols-2">
               {mockData.opportunities.map((opportunity) => (
-                <Card key={opportunity.id}>
-                  <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
-                    <div className="space-y-1">
-                      <CardTitle className="text-base">
-                        {opportunity.name}
-                      </CardTitle>
-                      <CardDescription>
-                        {opportunity.term}
-                      </CardDescription>
-                    </div>
-                    {getProgramBadge(opportunity.type)}
-                  </CardHeader>
-                  <CardContent className="p-4 pt-2 pb-0">
-                    <div className="text-sm space-y-2">
-                      <div>
-                        <span className="text-muted-foreground">Applications Open: </span>
-                        <span>{opportunity.applicationOpen}</span>
-                      </div>
-                      
-                      {opportunity.compatible && (
-                        <div className="flex items-center gap-1 text-green-600">
-                          <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
-                            Compatible
-                          </Badge>
-                          <span className="text-xs">with your current programs</span>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="p-4 flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1" asChild>
-                      <Link href={`/dashboard/opportunities/${opportunity.id}`}>
-                        Learn More
-                      </Link>
-                    </Button>
-                    <Button variant="default" size="sm" className="flex-1" asChild>
-                      <Link href={`/dashboard/opportunities/${opportunity.id}/apply`}>
-                        Apply Now
-                      </Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
+                <ProgramCard 
+                  key={opportunity.id}
+                  {...opportunity}
+                  actions={["viewDetails", "apply"]}
+                />
               ))}
             </div>
           </div>
@@ -545,62 +464,11 @@ export function MainDashboard({ userProfile }) {
         <TabsContent value="programs" className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {mockData.programs.map((program) => (
-              <Card key={program.id} className="overflow-hidden">
-                <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between space-y-0">
-                  <div className="space-y-1">
-                    <CardTitle className="text-base">
-                      {program.name}
-                    </CardTitle>
-                    <CardDescription>
-                      {program.term}
-                    </CardDescription>
-                  </div>
-                  {getProgramBadge(program.type)}
-                </CardHeader>
-                <CardContent className="p-4 pt-2 pb-0">
-                  {renderProgramStatus(program)}
-                  
-                  <div className="mt-3 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span>Team: {program.team.name}</span>
-                      {program.team.ranking && (
-                        <Badge variant="outline" className="ml-1 text-xs">
-                          #{program.team.ranking} of {program.team.totalTeams}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {program.nextDeadline && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                        <span>
-                          {program.nextDeadline.name} due in {program.nextDeadline.daysRemaining} days
-                        </span>
-                      </div>
-                    )}
-                    
-                    <div className="flex items-center gap-1 mt-1">
-                      <Award className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span>
-                        {program.points.personal} points earned
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="p-4 flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1" asChild>
-                    <Link href={`/dashboard/teams/${program.team.id}`}>
-                      Team Info
-                    </Link>
-                  </Button>
-                  <Button variant="default" size="sm" className="flex-1" asChild>
-                    <Link href={`/dashboard/programs/${program.type}/${program.id}`}>
-                      View Program
-                    </Link>
-                  </Button>
-                </CardFooter>
-              </Card>
+              <ProgramCard 
+                key={program.id}
+                {...program}
+                actions={["viewTeam", "viewDetails"]}
+              />
             ))}
             
             {/* Add More Programs Card */}

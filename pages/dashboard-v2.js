@@ -6,6 +6,7 @@ import { toast } from "sonner";
 // Import V2 components
 import { DashboardLayout } from "../components/v2/dashboard-layout";
 import { MainDashboard } from "../components/v2/main-dashboard";
+import { ProgramShowcase } from "../components/v2/ProgramShowcase";
 import ProfileEditModal from "../components/ProfileEditModal";
 import LoadingScreen from "../components/LoadingScreen";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -119,7 +120,19 @@ const DashboardV2 = () => {
             </AlertDescription>
           </Alert>
         </div>
-        <MainDashboard userProfile={userProfile} />
+        <div className="space-y-8">
+          <MainDashboard userProfile={userProfile} />
+          
+          {/* Show Program Card showcase */}
+          <div className="my-8">
+            <h2 className="text-2xl font-bold mb-4">Program Card Component Showcase</h2>
+            <p className="text-muted-foreground mb-6">
+              Below is a showcase of the ProgramCard component in various states and configurations.
+              This showcase demonstrates the implementation of Prompt 2 from the dashboard outline.
+            </p>
+            <ProgramShowcase />
+          </div>
+        </div>
       </DashboardLayout>
       
       {isEditModalOpen && (
