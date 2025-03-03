@@ -3,9 +3,10 @@ import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Info, Pencil } from "lucide-react";
+import { Users, Info, Pencil, UserPlus } from "lucide-react";
 import TeamDetailModal from "./TeamDetailModal";
 import TeamEditDialog from "./TeamEditDialog";
+import TeamInviteDialog from "./TeamInviteDialog";
 import CohortCard from "./shared/CohortCard";
 import ProgramDetailModal from "./ProgramDetailModal";
 import { useToast } from "@/components/ui/use-toast";
@@ -23,6 +24,7 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showTeamEditDialog, setShowTeamEditDialog] = useState(false);
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [selectedCohort, setSelectedCohort] = useState(null);
   const [teamCohorts, setTeamCohorts] = useState([]);
   const [isLoadingCohorts, setIsLoadingCohorts] = useState(false);
@@ -170,27 +172,39 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
           </div>
         </CardContent>
         
-        <CardFooter className="flex gap-2 pt-2">
+        <CardFooter className="flex gap-2 pt-2 flex-wrap">
           <Button 
             variant="secondary"
             className="flex-1"
             size="default"
             onClick={() => setShowDetails(true)}
           >
-            <Info className="h-4 w-4" />
+            <Info className="h-4 w-4 mr-1" />
             View Details
           </Button>
           
           {activeMembers.some(m => m.isCurrentUser) && (
-            <Button
-              variant="outline"
-              className="flex-1"
-              size="default"
-              onClick={() => setShowTeamEditDialog(true)}
-            >
-              <Pencil className="h-4 w-4" />
-              Edit Details
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                className="flex-1"
+                size="default"
+                onClick={() => setShowTeamEditDialog(true)}
+              >
+                <Pencil className="h-4 w-4 mr-1" />
+                Edit Details
+              </Button>
+              
+              <Button
+                variant="default"
+                className="flex-1"
+                size="default"
+                onClick={() => setShowInviteDialog(true)}
+              >
+                <UserPlus className="h-4 w-4 mr-1" />
+                Invite Member
+              </Button>
+            </>
           )}
         </CardFooter>
       </Card>
@@ -206,6 +220,13 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
         team={currentTeam}
         open={showTeamEditDialog}
         onClose={() => setShowTeamEditDialog(false)}
+        onTeamUpdated={handleTeamUpdated}
+      />
+      
+      <TeamInviteDialog
+        team={currentTeam}
+        open={showInviteDialog}
+        onClose={() => setShowInviteDialog(false)}
         onTeamUpdated={handleTeamUpdated}
       />
       

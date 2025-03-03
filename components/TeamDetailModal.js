@@ -14,11 +14,13 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Pencil } from "lucide-react"
+import { Pencil, UserPlus } from "lucide-react"
 import TeamEditDialog from "./TeamEditDialog"
+import TeamInviteDialog from "./TeamInviteDialog"
 
 const TeamDetailModal = ({ team, isOpen, onClose, onTeamUpdated }) => {
   const [showEditDialog, setShowEditDialog] = useState(false)
+  const [showInviteDialog, setShowInviteDialog] = useState(false)
   
   if (!team) return null
 
@@ -137,14 +139,24 @@ const TeamDetailModal = ({ team, isOpen, onClose, onTeamUpdated }) => {
           
           <DialogFooter className="flex justify-end sm:justify-end gap-2">
             {isUserTeamMember && (
-              <Button
-                variant="outline"
-                size="default"
-                onClick={() => setShowEditDialog(true)}
-              >
-                <Pencil className="h-4 w-4" />
-                Edit Details
-              </Button>
+              <>
+                <Button
+                  variant="default"
+                  size="default"
+                  onClick={() => setShowInviteDialog(true)}
+                >
+                  <UserPlus className="h-4 w-4 mr-1" />
+                  Invite Member
+                </Button>
+                <Button
+                  variant="outline"
+                  size="default"
+                  onClick={() => setShowEditDialog(true)}
+                >
+                  <Pencil className="h-4 w-4 mr-1" />
+                  Edit Details
+                </Button>
+              </>
             )}
             <Button variant="secondary" onClick={onClose}>
               Close
@@ -157,6 +169,13 @@ const TeamDetailModal = ({ team, isOpen, onClose, onTeamUpdated }) => {
         team={team}
         open={showEditDialog}
         onClose={() => setShowEditDialog(false)}
+        onTeamUpdated={handleTeamUpdated}
+      />
+      
+      <TeamInviteDialog
+        team={team}
+        open={showInviteDialog}
+        onClose={() => setShowInviteDialog(false)}
         onTeamUpdated={handleTeamUpdated}
       />
     </>
