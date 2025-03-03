@@ -183,6 +183,16 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
             View Details
           </Button>
           
+          <Button 
+            variant="default"
+            className="flex-1"
+            size="default"
+            onClick={() => window.location.href = `/team-dashboard?teamId=${currentTeam.id}`}
+          >
+            <Users className="h-4 w-4 mr-1" />
+            Team Dashboard
+          </Button>
+          
           {activeMembers.some(m => m.isCurrentUser) && (
             <>
               <Button

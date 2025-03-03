@@ -33,8 +33,24 @@ const ProperDashboardSidebar = ({ profile, onEditClick }) => {
   const router = useRouter()
   const { user } = useUser()
   
-  // Navigation links (currently empty as specified)
-  const links = []
+  // Navigation links
+  const links = [
+    {
+      href: "/dashboard",
+      label: "Dashboard",
+      icon: <Home className="h-4 w-4" />
+    },
+    {
+      href: "/team-dashboard",
+      label: "My Team",
+      icon: <Users className="h-4 w-4" />
+    },
+    {
+      href: "#programs",
+      label: "Programs",
+      icon: <Compass className="h-4 w-4" />
+    }
+  ]
   
   // External links
   const externalLinks = [
