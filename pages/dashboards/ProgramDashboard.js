@@ -279,7 +279,15 @@ function ProgramDashboardInner({ onNavigate }) {
               </Avatar>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">{team.name || "Your Team"}</h1>
-                {/* Replace with simple hardcoded text for testing */}
+                
+                {/* Team Description */}
+                {team.description && (
+                  <p className="text-sm text-muted-foreground mt-1 mb-2 line-clamp-2">
+                    {team.description}
+                  </p>
+                )}
+                
+                {/* Team stats */}
                 <div className="flex items-center text-muted-foreground">
                   {/* Member count with very basic output - zero JS operations */}
                   <Users className="h-4 w-4 mr-1" />
