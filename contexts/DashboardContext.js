@@ -207,20 +207,41 @@ export function DashboardProvider({ children }) {
           });
           
           // Filter for current participation records using the "Current Cohort" field
-          // Be more flexible - accept true string or boolean true
+          // Handle many possible values for the "current cohort" field
           const currentParticipations = participationData.participation.filter(p => {
-            const isCurrent = p.cohort?.['Current Cohort'] === true || 
-                             p.cohort?.['Current Cohort'] === 'true' ||
-                             p.cohort?.['Is Current'] === true ||
-                             p.cohort?.['Is Current'] === 'true';
-                             
-            // Log the decision for this record
-            if (p.cohort) {
-              console.log(`Evaluation for ${p.cohort.name || 'unknown cohort'}:`, 
-                         `Current Cohort value: ${p.cohort['Current Cohort']}`,
-                         `type: ${typeof p.cohort['Current Cohort']}`,
-                         `included: ${isCurrent}`);
+            if (!p.cohort) return false;
+            
+            let isCurrent = false;
+            
+            // Check for "Current Cohort" field, handling different value types
+            if (p.cohort['Current Cohort'] !== undefined) {
+              const fieldValue = p.cohort['Current Cohort'];
+              if (fieldValue === true || fieldValue === "true" || fieldValue === "yes" || fieldValue === 1) {
+                isCurrent = true;
+              }
+              // Also handle checkbox fields which might come back as strings
+              if (typeof fieldValue === "string" && fieldValue.toLowerCase() === "true") {
+                isCurrent = true;
+              }
             }
+            
+            // Check for "Is Current" field, handling different value types
+            if (!isCurrent && p.cohort['Is Current'] !== undefined) {
+              const fieldValue = p.cohort['Is Current'];
+              if (fieldValue === true || fieldValue === "true" || fieldValue === "yes" || fieldValue === 1) {
+                isCurrent = true;
+              }
+              // Also handle checkbox fields which might come back as strings
+              if (typeof fieldValue === "string" && fieldValue.toLowerCase() === "true") {
+                isCurrent = true;
+              }
+            }
+            
+            // Log the decision for this record
+            console.log(`Evaluation for ${p.cohort.name || 'unknown cohort'}:`, 
+                       `Current Cohort value: ${p.cohort['Current Cohort']}`,
+                       `type: ${typeof p.cohort['Current Cohort']}`,
+                       `included: ${isCurrent}`);
             
             return isCurrent;
           });
@@ -324,13 +345,34 @@ export function DashboardProvider({ children }) {
                   });
                   
                   // Filter for current cohorts using the "Current Cohort" field
-                  // Be more flexible - accept true string or boolean true
+                  // Handle many possible values for the "current cohort" field
                   const currentCohorts = cohortData.cohorts.filter(cohort => {
-                    const isCurrent = cohort['Current Cohort'] === true || 
-                                    cohort['Current Cohort'] === 'true' ||
-                                    cohort['Is Current'] === true ||
-                                    cohort['Is Current'] === 'true';
-                                    
+                    let isCurrent = false;
+                    
+                    // Check for "Current Cohort" field, handling different value types
+                    if (cohort['Current Cohort'] !== undefined) {
+                      const fieldValue = cohort['Current Cohort'];
+                      if (fieldValue === true || fieldValue === "true" || fieldValue === "yes" || fieldValue === 1) {
+                        isCurrent = true;
+                      }
+                      // Also handle checkbox fields which might come back as strings
+                      if (typeof fieldValue === "string" && fieldValue.toLowerCase() === "true") {
+                        isCurrent = true;
+                      }
+                    }
+                    
+                    // Check for "Is Current" field, handling different value types
+                    if (!isCurrent && cohort['Is Current'] !== undefined) {
+                      const fieldValue = cohort['Is Current'];
+                      if (fieldValue === true || fieldValue === "true" || fieldValue === "yes" || fieldValue === 1) {
+                        isCurrent = true;
+                      }
+                      // Also handle checkbox fields which might come back as strings
+                      if (typeof fieldValue === "string" && fieldValue.toLowerCase() === "true") {
+                        isCurrent = true;
+                      }
+                    }
+                    
                     console.log(`Evaluation for ${cohort.name || 'unknown cohort'}:`, 
                                `Current Cohort value: ${cohort['Current Cohort']}`,
                                `type: ${typeof cohort['Current Cohort']}`,

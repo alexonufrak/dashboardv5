@@ -95,73 +95,58 @@ export default withApiAuthRequired(async function handler(req, res) {
       }
     }
 
-    // Try using different matching methods
-    // Method 1: Direct match using filterByFormula with Contact field
-    const formula1 = `FIND("${profile.contactId}", ARRAYJOIN({Contacts}))`
+    // Based on the Airtable schema, the field is called "Contacts" (plural)
+    // and it's a multipleRecordLinks field, so we need to check if it contains
+    // the contact ID as a record reference
     
-    // Method 2: Alternative field name approach - try 'Contact' singular
-    const formula2 = `FIND("${profile.contactId}", {Contact})`
-    
-    // Method 3: ID equals approach (if it's stored as an ID reference)
-    const formula3 = `{Contact} = "${profile.contactId}"`
-    
-    // Method 4: Record ID equals approach (if it's stored as a record ID)
-    const formula4 = `RECORD_ID() = "${profile.contactId}"`
-    
-    // Method 5: Contains approach
-    const formula5 = `OR(
-      FIND("${profile.contactId}", ARRAYJOIN({Contacts})) > 0,
-      FIND("${profile.contactId}", {Contact}) > 0,
-      FIND("${profile.contactId}", {ContactID}) > 0
+    // Use the RECORD_ID() approach with the IS_SAME function
+    // This approach works with multipleRecordLinks fields when checking for exact record IDs
+    const formula = `AND(
+      OR(
+        IS_SAME({Contacts}, ARRAYJOIN(ARRAYWRAP("${profile.contactId}"))),
+        IS_SAME(ARRAYJOIN({Contacts}), "${profile.contactId}")
+      ),
+      NOT({Contacts} = "")
     )`
+    
+    console.log(`Using formula: ${formula}`)
 
-    // Try each formula in sequence
-    console.log("Trying multiple search formulas to find participation records...")
+    // Try using our primary formula that should work with multipleRecordLinks fields
+    console.log("Querying participation records with Contacts linking to contact ID...")
     
-    // Try method 1
-    console.log(`Trying formula 1: ${formula1}`)
-    let recordsMethod1 = await participationTable.select({
-      filterByFormula: formula1,
-      sort: [{ field: "Last Modified", direction: "desc" }]
-    }).firstPage()
-    
-    console.log(`Formula 1 found ${recordsMethod1.length} records`)
-    participationRecords = [...recordsMethod1]
-    
-    // If no records found, try method 2
-    if (participationRecords.length === 0) {
-      console.log(`Trying formula 2: ${formula2}`)
-      let recordsMethod2 = await participationTable.select({
-        filterByFormula: formula2,
+    try {
+      let records = await participationTable.select({
+        filterByFormula: formula,
         sort: [{ field: "Last Modified", direction: "desc" }]
       }).firstPage()
       
-      console.log(`Formula 2 found ${recordsMethod2.length} records`)
-      participationRecords = [...recordsMethod2]
+      console.log(`Formula found ${records.length} records`)
+      participationRecords = [...records]
+    } catch (err) {
+      console.error("Error using primary formula:", err)
     }
     
-    // If still no records, try method 3
+    // If no records found, try the direct FIND_RECORD approach
     if (participationRecords.length === 0) {
-      console.log(`Trying formula 3: ${formula3}`)
-      let recordsMethod3 = await participationTable.select({
-        filterByFormula: formula3,
-        sort: [{ field: "Last Modified", direction: "desc" }]
-      }).firstPage()
-      
-      console.log(`Formula 3 found ${recordsMethod3.length} records`)
-      participationRecords = [...recordsMethod3]
+      try {
+        console.log("Trying direct FIND_RECORD approach...")
+        const directFormula = `FIND_RECORD({Contacts}, "${profile.contactId}")`
+        
+        let records = await participationTable.select({
+          filterByFormula: directFormula,
+          sort: [{ field: "Last Modified", direction: "desc" }]
+        }).firstPage()
+        
+        console.log(`FIND_RECORD formula found ${records.length} records`)
+        participationRecords = [...records]
+      } catch (err) {
+        console.error("Error using FIND_RECORD formula:", err)
+      }
     }
     
-    // If still no records, try method 5 (complex OR)
+    // Fall back to getting all records and filtering on the client side
     if (participationRecords.length === 0) {
-      console.log(`Trying complex formula: ${formula5}`)
-      let recordsMethod5 = await participationTable.select({
-        filterByFormula: formula5,
-        sort: [{ field: "Last Modified", direction: "desc" }]
-      }).firstPage()
-      
-      console.log(`Complex formula found ${recordsMethod5.length} records`)
-      participationRecords = [...recordsMethod5]
+      console.log("No records found with formulas. Fetching and filtering records manually...")
     }
     
     // Try one more approach - direct API call to get all records and filter client-side
@@ -176,30 +161,31 @@ export default withApiAuthRequired(async function handler(req, res) {
       
       console.log(`Retrieved ${allParticipationRecords.length} total participation records`)
       
-      // Client-side filtering logic
+      // Client-side filtering logic - focusing on the "Contacts" field that we know exists
       participationRecords = allParticipationRecords.filter(record => {
-        // Try with Contacts as array
-        if (Array.isArray(record.fields.Contacts) && record.fields.Contacts.includes(profile.contactId)) {
-          return true
+        // Log the fields for debugging
+        console.log(`Checking record ${record.id}, fields:`, Object.keys(record.fields));
+        
+        // Check if the record has Contacts field
+        if (!record.fields.Contacts) {
+          console.log(`Record ${record.id} has no Contacts field`);
+          return false;
         }
         
-        // Try with Contact as string
-        if (record.fields.Contact === profile.contactId) {
-          return true
+        // Log the Contacts field value and type
+        console.log(`Record ${record.id} Contacts:`, record.fields.Contacts, 
+                    `(type: ${typeof record.fields.Contacts}, isArray: ${Array.isArray(record.fields.Contacts)})`);
+        
+        // If Contacts is an array (which it should be for a multipleRecordLinks field)
+        if (Array.isArray(record.fields.Contacts)) {
+          const isMatch = record.fields.Contacts.includes(profile.contactId);
+          if (isMatch) {
+            console.log(`✅ Found match in record ${record.id} - contactId ${profile.contactId} is in Contacts array`);
+            return true;
+          }
         }
         
-        // Try with Contact as array
-        if (Array.isArray(record.fields.Contact) && record.fields.Contact.includes(profile.contactId)) {
-          return true
-        }
-        
-        // Try string contains approach
-        if (record.fields.Contacts && typeof record.fields.Contacts === 'string' && 
-            record.fields.Contacts.includes(profile.contactId)) {
-          return true
-        }
-        
-        return false
+        return false;
       })
       
       console.log(`Client-side filtering found ${participationRecords.length} matching records`)
@@ -340,12 +326,34 @@ export default withApiAuthRequired(async function handler(req, res) {
           isCurrentByDates = now >= startDateObj && now <= endDateObj;
         }
         
-        // Check if the "Current Cohort" field is set to true
-        const isCurrentByField = cohort.fields["Current Cohort"] === true || 
-                               cohort.fields["Current Cohort"] === "true" ||
-                               cohort.fields["Is Current"] === true ||
-                               cohort.fields["Is Current"] === "true";
-                               
+        // Check if the "Current Cohort" or "Is Current" field is set to true
+        // Handle different possible field names and value types
+        let isCurrentByField = false;
+        
+        // Check for "Current Cohort" field, handling different value types
+        if (cohort.fields["Current Cohort"] !== undefined) {
+          const fieldValue = cohort.fields["Current Cohort"];
+          if (fieldValue === true || fieldValue === "true" || fieldValue === "yes" || fieldValue === 1) {
+            isCurrentByField = true;
+          }
+          // Also handle checkbox fields which might come back as strings
+          if (typeof fieldValue === "string" && fieldValue.toLowerCase() === "true") {
+            isCurrentByField = true;
+          }
+        }
+        
+        // Check for "Is Current" field, handling different value types
+        if (!isCurrentByField && cohort.fields["Is Current"] !== undefined) {
+          const fieldValue = cohort.fields["Is Current"];
+          if (fieldValue === true || fieldValue === "true" || fieldValue === "yes" || fieldValue === 1) {
+            isCurrentByField = true;
+          }
+          // Also handle checkbox fields which might come back as strings
+          if (typeof fieldValue === "string" && fieldValue.toLowerCase() === "true") {
+            isCurrentByField = true;
+          }
+        }
+        
         // Use either method to determine if cohort is current
         const isCurrent = isCurrentByField || isCurrentByDates;
         
