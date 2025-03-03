@@ -60,8 +60,8 @@ export default withApiAuthRequired(async function handler(req, res) {
     // Get the user's active participation records
     let participationRecords = []
 
-    // Use SEARCH with ARRAYJOIN for more precise ID matching
-    const formula = `SEARCH("${profile.contactId}", ARRAYJOIN({Contacts})) > 0`
+    // Use a direct find with proper matching for the record ID
+    const formula = `FIND("${profile.contactId}", {Contacts})`
 
     console.log(`Looking for participation records with formula: ${formula}`)
 
