@@ -3,6 +3,12 @@
 import { useState } from "react"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import dynamic from "next/dynamic"
+
+// Use dynamic import with SSR disabled to prevent context errors during build
+const ProfilePageContent = dynamic(() => Promise.resolve(ProfilePageInner), { 
+  ssr: false 
+})
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -10,7 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2, Mail, School, MapPin, Smartphone } from "lucide-react"
 import ProfileEditModal from "@/components/ProfileEditModal"
 
-export default function ProfilePage({ onNavigate }) {
+// Inner component that uses dashboard context
+function ProfilePageInner({ onNavigate }) {
   const { profile, user, isLoading, error, handleProfileUpdate, refreshData } = useDashboard()
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   
@@ -312,4 +319,9 @@ export default function ProfilePage({ onNavigate }) {
       )}
     </div>
   )
+}
+
+// Export the dynamic component that doesn't require context during build
+export default function ProfilePage(props) {
+  return <ProfilePageContent {...props} />
 }

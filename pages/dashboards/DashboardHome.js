@@ -4,6 +4,12 @@ import { useState } from "react"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { toast } from "sonner"
 import Link from "next/link"
+import dynamic from "next/dynamic"
+
+// Use dynamic import with SSR disabled to prevent context errors during build
+const DashboardHomeContent = dynamic(() => Promise.resolve(DashboardHomeInner), { 
+  ssr: false 
+})
 
 // Import components
 import TeamCard from "@/components/TeamCard"
@@ -28,7 +34,8 @@ import {
   AlertTriangle
 } from "lucide-react"
 
-export default function DashboardHome({ onNavigate }) {
+// Inner component that uses dashboard context
+function DashboardHomeInner({ onNavigate }) {
   // Get data from dashboard context
   const { 
     user, 
@@ -187,4 +194,9 @@ export default function DashboardHome({ onNavigate }) {
       )}
     </div>
   )
+}
+
+// Export the dynamic component that doesn't require context during build
+export default function DashboardHome(props) {
+  return <DashboardHomeContent {...props} />
 }
