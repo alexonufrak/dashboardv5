@@ -160,12 +160,23 @@ export default function MilestoneTimeline({
     }
   }
 
+  // Use a ref to prevent re-initialization on every render
+  const milestoneInitializedRef = useRef(false);
+  
   // Initialize enhanced milestones with submission checks when milestones change
   useEffect(() => {
     if (!milestones || milestones.length === 0) {
       setEnhancedMilestones([])
       setIsLoading(false)
+      milestoneInitializedRef.current = false;
       return
+    }
+    
+    // If we've already initialized milestones, don't reinitialize
+    // This prevents re-renders with stale data during navigation
+    if (milestoneInitializedRef.current && enhancedMilestones.length > 0) {
+      setIsLoading(false);
+      return;
     }
     
     // Copy the milestones and set up for enhancement
@@ -182,7 +193,31 @@ export default function MilestoneTimeline({
     
     setEnhancedMilestones(initialEnhanced)
     setIsLoading(false)
-  }, [milestones])
+    milestoneInitializedRef.current = true;
+  }, [milestones, enhancedMilestones.length])
+  
+  // If still loading, show skeleton loader
+  if (isLoading) {
+    return (
+      <div className={`space-y-4 ${className}`}>
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+          <div className="h-3 bg-gray-100 rounded w-1/3 mb-6"></div>
+          
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="relative pl-10 pb-8">
+              <div className="absolute left-[10px] top-1 w-7 h-7 rounded-full bg-gray-200 -translate-x-1/2"></div>
+              {i < 3 && <div className="absolute left-4 top-5 bottom-0 w-0.5 bg-gray-200"></div>}
+              <div className="space-y-1.5">
+                <div className="h-4 bg-gray-200 rounded w-1/3 mb-1"></div>
+                <div className="h-3 bg-gray-100 rounded w-2/3"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   // Calculate completeness metrics
   const completedCount = enhancedMilestones.filter(m => m.status === "completed").length
@@ -210,8 +245,9 @@ export default function MilestoneTimeline({
           
           return (
             <div key={index} className="relative pl-10 pb-8">
-              {/* Submission checker component to update milestone status */}
+              {/* Submission checker component - key is a combination of milestoneId and timeline instance to ensure uniqueness */}
               <MilestoneSubmissionChecker
+                key={`submission-checker-${milestone.id}`}
                 milestoneId={milestone.id}
                 onSubmissionCheck={(hasSubmission, submissions) => 
                   handleSubmissionCheck(index, hasSubmission, submissions)
@@ -288,13 +324,7 @@ export default function MilestoneTimeline({
                     </div>
                   )}
                   
-                  {/* Score if available */}
-                  {milestone.score !== undefined && (
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <Star className="h-3.5 w-3.5" />
-                      <span>Score: {milestone.score}/100</span>
-                    </div>
-                  )}
+                  {/* Removed score display as requested */}
                   
                   {/* Attachments indicator */}
                   {milestone.hasAttachments && (

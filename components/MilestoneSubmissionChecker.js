@@ -1,7 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useDashboard } from "@/contexts/DashboardContext"
+
+// Create a global cache to store submission check results
+// This prevents duplicate API calls across components and page navigations
+const submissionCache = new Map();
 
 /**
  * Component that checks if a team has submitted for a milestone
@@ -18,24 +22,58 @@ export default function MilestoneSubmissionChecker({
   onSubmissionCheck,
   children 
 }) {
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [hasSubmission, setHasSubmission] = useState(false)
   const [submissionData, setSubmissionData] = useState(null)
   const { teamData } = useDashboard()
+  
+  // Create a cache key for this specific milestone/team combination
+  const cacheKey = `${teamData?.id || 'unknown'}-${milestoneId}-${deliverableId || 'none'}`;
+  
+  // Track if the API call is in progress to prevent duplicate calls
+  const isLoadingRef = useRef(false);
 
   useEffect(() => {
-    async function checkSubmission() {
-      if (!milestoneId || !teamData?.id) {
-        setIsLoading(false)
-        return
+    // Don't do anything if we don't have milestone ID or team data
+    if (!milestoneId || !teamData?.id) {
+      return;
+    }
+    
+    // Check if we already have cached results
+    if (submissionCache.has(cacheKey)) {
+      const cachedData = submissionCache.get(cacheKey);
+      
+      // Use cached data and call the callback
+      setHasSubmission(cachedData.hasSubmission);
+      setSubmissionData(cachedData.submissionData);
+      
+      if (onSubmissionCheck) {
+        onSubmissionCheck(
+          cachedData.hasSubmission,
+          cachedData.submissions
+        );
       }
-
+      return;
+    }
+    
+    // If loading is already in progress, don't start another request
+    if (isLoadingRef.current) {
+      return;
+    }
+    
+    async function checkSubmission() {
+      isLoadingRef.current = true;
+      setIsLoading(true);
+      
       try {
         // Build the query URL with or without deliverable ID
         let url = `/api/teams/${teamData.id}/submissions?milestoneId=${milestoneId}`
         if (deliverableId) {
           url += `&deliverableId=${deliverableId}`
         }
+        
+        // Add timestamp to prevent caching
+        url += `&_t=${new Date().getTime()}`
 
         const response = await fetch(url)
         
@@ -55,14 +93,17 @@ export default function MilestoneSubmissionChecker({
         const hasAnySubmission = data.submissions && data.submissions.length > 0
         setHasSubmission(hasAnySubmission)
         
-        // If there are submissions, store the most recent one
+        let mostRecentSubmission = null;
+        
+        // If there are submissions, get the most recent one
         if (hasAnySubmission) {
           // Sort submissions by creation date (most recent first)
           const sortedSubmissions = [...data.submissions].sort((a, b) => {
             return new Date(b.createdTime) - new Date(a.createdTime)
           })
           
-          setSubmissionData(sortedSubmissions[0])
+          mostRecentSubmission = sortedSubmissions[0];
+          setSubmissionData(mostRecentSubmission)
         } else {
           setSubmissionData(null)
         }
@@ -74,6 +115,15 @@ export default function MilestoneSubmissionChecker({
             hasAnySubmission ? data.submissions : null
           )
         }
+        
+        // Cache the results
+        submissionCache.set(cacheKey, {
+          hasSubmission: hasAnySubmission,
+          submissionData: mostRecentSubmission,
+          submissions: hasAnySubmission ? data.submissions : null,
+          timestamp: Date.now()
+        });
+        
       } catch (error) {
         console.error("Error checking submission status:", error)
         setHasSubmission(false)
@@ -83,12 +133,15 @@ export default function MilestoneSubmissionChecker({
         }
       } finally {
         setIsLoading(false)
+        isLoadingRef.current = false;
       }
     }
 
-    setIsLoading(true)
-    checkSubmission()
-  }, [milestoneId, deliverableId, teamData?.id, onSubmissionCheck])
+    // Only execute if not in cache and not currently loading
+    if (!submissionCache.has(cacheKey) && !isLoadingRef.current) {
+      checkSubmission();
+    }
+  }, [cacheKey, milestoneId, deliverableId, teamData?.id, onSubmissionCheck])
 
   // This component doesn't render anything itself
   return children || null

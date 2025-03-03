@@ -139,11 +139,10 @@ export default withApiAuthRequired(async function handler(req, res) {
     
     // Process each milestone to get the required data
     const formattedMilestones = milestones.map(milestone => {
-      // Determine initial status based on milestone data and due date
+      // Initial status is always "not_started" unless we have data indicating otherwise
       let status = "not_started"
       let progress = 0
       let completedDate = null
-      let score = null
       
       // Get due date and calculate whether it's past due
       const dueDate = milestone.fields["Due Datetime"]
@@ -151,45 +150,16 @@ export default withApiAuthRequired(async function handler(req, res) {
       const milestoneDate = dueDate ? new Date(dueDate) : null
       const isPastDue = milestoneDate && milestoneDate < now
       
-      // In a real implementation, we would check for actual submissions in the Submissions table
-      // Note: The client-side MilestoneSubmissionChecker component will handle the actual 
-      // submission checking, but we're providing reasonable initial values here
-      
-      // Simple logic based on due date and milestone number for initial state
-      if (milestoneDate) {
-        // Past due date milestones
-        if (isPastDue) {
-          // Earlier milestones (likely completed)
-          if (milestone.fields.Number <= 2) {
-            status = "completed"
-            completedDate = new Date(milestoneDate.getTime() - Math.random() * 1000 * 60 * 60 * 24 * 3) // Random date within 3 days before due date
-            score = Math.floor(Math.random() * 15) + 85 // Random score between 85-100
-          } 
-          // Middle milestones (likely in progress)
-          else if (milestone.fields.Number === 3) {
-            status = "in_progress"
-            progress = Math.floor(Math.random() * 40) + 40 // Random progress between 40-80%
-          } 
-          // Later milestones past due (at risk)
-          else {
-            status = "at_risk"
-            progress = Math.floor(Math.random() * 30) + 10 // Random progress between 10-40%
-          }
-        } 
-        // Future milestones
-        else {
-          // Earlier milestones with future dates (probably started working on them)
-          if (milestone.fields.Number <= 2) {
-            status = "in_progress"
-            progress = Math.floor(Math.random() * 40) + 40
-          }
-          // Later future milestones (not started)
-          else {
-            status = "not_started"
-            progress = 0
-          }
-        }
+      // If the milestone is past due, mark it as at_risk
+      // The client component will determine the actual status based on submissions
+      if (isPastDue) {
+        status = "at_risk"
       }
+      
+      // Only set status to in_progress or completed if we have actual data
+      // from Airtable indicating this (which we don't in this API yet)
+      // The client-side MilestoneSubmissionChecker component will handle
+      // checking for actual submissions and updating status accordingly
       
       return {
         id: milestone.id,
