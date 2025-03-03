@@ -2,7 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { formatDistanceToNow } from "date-fns"
+import { formatDistanceToNow, isValid, parseISO } from "date-fns"
 import { Trophy, Flag, CheckCircle, Edit3, FileText, MessageSquare } from "lucide-react"
 
 const getInitials = (name) => {
@@ -133,7 +133,17 @@ const ActivityItem = ({ activity, detailed = false }) => {
             </Badge>
           </div>
           <div className="text-xs text-muted-foreground">
-            {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+            {activity.timestamp ? (() => {
+              try {
+                const date = new Date(activity.timestamp);
+                if (isValid(date)) {
+                  return formatDistanceToNow(date, { addSuffix: true });
+                }
+                return "Date unknown";
+              } catch (e) {
+                return "Date unknown";
+              }
+            })() : "Date unknown"}
           </div>
         </div>
         

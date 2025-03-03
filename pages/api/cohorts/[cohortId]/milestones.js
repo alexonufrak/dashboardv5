@@ -143,6 +143,7 @@ export default withApiAuthRequired(async function handler(req, res) {
       let status = "not_started"
       let progress = 0
       let completedDate = null
+      let score = null // Initialize score variable
       
       // Get due date and calculate whether it's past due
       const dueDate = milestone.fields["Due Datetime"]

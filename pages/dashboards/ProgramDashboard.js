@@ -3,11 +3,6 @@
 import { useDashboard } from "@/contexts/DashboardContext"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import dynamic from "next/dynamic"
-
-// Use dynamic import with SSR disabled to prevent context errors during build
-const ProgramDashboardContent = dynamic(() => Promise.resolve(ProgramDashboardInner), { 
-  ssr: false 
-})
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
@@ -18,6 +13,11 @@ import TeamMilestoneProgress from "@/components/TeamMilestoneProgress"
 import TeamPointsSummary from "@/components/TeamPointsSummary"
 import TeamMemberList from "@/components/TeamMemberList"
 import TeamActivityFeed from "@/components/TeamActivityFeed"
+
+// Use dynamic import with SSR disabled to prevent context errors during build
+const ProgramDashboardContent = dynamic(() => Promise.resolve(ProgramDashboardInner), { 
+  ssr: false 
+})
 
 // Inner component that uses dashboard context
 function ProgramDashboardInner({ onNavigate }) {
