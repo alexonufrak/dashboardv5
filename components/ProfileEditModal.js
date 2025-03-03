@@ -46,6 +46,7 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     }
   }, [profile]);
 
+  // The modal won't render if not open
   if (!isOpen) return null;
 
   const handleInputChange = (e) => {
@@ -127,7 +128,7 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose} className="transition-all duration-300 ease-in-out">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()} className="transition-all duration-300 ease-in-out">
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
