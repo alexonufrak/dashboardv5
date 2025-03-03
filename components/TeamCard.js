@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Users, Info, Pencil, UserPlus } from "lucide-react";
+import { Users, Info, Pencil, UserPlus, Compass } from "lucide-react";
 import TeamDetailModal from "./TeamDetailModal";
 import TeamEditDialog from "./TeamEditDialog";
 import TeamInviteDialog from "./TeamInviteDialog";
@@ -187,10 +187,10 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
             variant="default"
             className="flex-1"
             size="default"
-            onClick={() => window.location.href = `/team-dashboard?teamId=${currentTeam.id}`}
+            onClick={() => window.location.href = `/program-dashboard`}
           >
-            <Users className="h-4 w-4 mr-1" />
-            Team Dashboard
+            <Compass className="h-4 w-4 mr-1" />
+            Program Dashboard
           </Button>
           
           {activeMembers.some(m => m.isCurrentUser) && (

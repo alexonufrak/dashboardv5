@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0/client"
+import { useState, useEffect } from "react"
 import ProfileMenuButton from "./ProfileMenuButton"
 
 import { 
@@ -33,7 +34,31 @@ const ProperDashboardSidebar = ({ profile, onEditClick }) => {
   const router = useRouter()
   const { user } = useUser()
   
-  // Navigation links
+  // Navigation links with dynamic program link
+  const [initiativeName, setInitiativeName] = useState("Program")
+  
+  // Fetch user's active participation to get initiative name
+  useEffect(() => {
+    async function fetchActiveParticipation() {
+      if (!user) return
+      
+      try {
+        const response = await fetch('/api/user/participation')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.participation && data.participation.length > 0 && 
+              data.participation[0].cohort?.initiativeDetails?.name) {
+            setInitiativeName(data.participation[0].cohort.initiativeDetails.name)
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching participation for sidebar:", error)
+      }
+    }
+    
+    fetchActiveParticipation()
+  }, [user])
+  
   const links = [
     {
       href: "/dashboard",
@@ -41,14 +66,14 @@ const ProperDashboardSidebar = ({ profile, onEditClick }) => {
       icon: <Home className="h-4 w-4" />
     },
     {
-      href: "/team-dashboard",
-      label: "My Team",
-      icon: <Users className="h-4 w-4" />
+      href: "/program-dashboard",
+      label: `${initiativeName}`,
+      icon: <Compass className="h-4 w-4" />
     },
     {
       href: "#programs",
       label: "Programs",
-      icon: <Compass className="h-4 w-4" />
+      icon: <Users className="h-4 w-4" />
     }
   ]
   
