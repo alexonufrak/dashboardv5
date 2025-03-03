@@ -1,15 +1,33 @@
 "use client"
 
 import { withPageAuthRequired } from "@auth0/nextjs-auth0"
-import { DashboardProvider } from "@/contexts/DashboardContext"
+import { DashboardProvider, useDashboard } from "@/contexts/DashboardContext"
 import DashboardShell from "@/components/DashboardShell"
+import ProfileEditModal from "@/components/ProfileEditModal"
 import { Toaster } from "sonner"
 
 function Dashboard() {
   return (
     <DashboardProvider>
       <DashboardContent />
+      <ProfileModalWrapper />
     </DashboardProvider>
+  )
+}
+
+// Helper component to render ProfileEditModal with the right context
+function ProfileModalWrapper() {
+  const { profile, isEditModalOpen, setIsEditModalOpen, handleProfileUpdate } = useDashboard()
+  
+  return (
+    profile && (
+      <ProfileEditModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        profile={profile}
+        onSave={handleProfileUpdate}
+      />
+    )
   )
 }
 
