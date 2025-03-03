@@ -120,7 +120,20 @@ function ProgramDashboardInner({ onNavigate }) {
   
   // Handle if this is a team-based or individual program
   const isTeamProgram = participationType === "Team" || teamData !== null
-  const team = teamData
+  
+  // Add debugging to inspect team data structure
+  console.log("Original Team Data:", teamData);
+  
+  // Clean team data to ensure proper structure
+  const team = teamData ? {
+    ...teamData,
+    // Ensure members is an array
+    members: Array.isArray(teamData.members) ? teamData.members : [],
+    // Clean points - convert to number and remove any trailing characters
+    points: teamData.points ? parseInt(String(teamData.points).replace(/[^0-9]/g, ''), 10) || 0 : 0
+  } : null
+  
+  console.log("Cleaned Team Data:", team);
   
   // Placeholder milestones data if we don't have real data
   const placeholderMilestones = [
@@ -248,16 +261,16 @@ function ProgramDashboardInner({ onNavigate }) {
                 <div className="flex items-center text-muted-foreground">
                   <Users className="h-4 w-4 mr-1" />
                   <span>
-                    {(() => {
-                      const memberCount = team.members?.length || 0;
-                      return `${memberCount} ${memberCount === 1 ? 'member' : 'members'}`;
-                    })()}
+                    {/* Directly render the count without using an IIFE */}
+                    {team.members.length} {team.members.length === 1 ? 'member' : 'members'}
                   </span>
                   {team.points && (
                     <>
                       <span className="mx-2">•</span>
                       <Award className="h-4 w-4 mr-1" />
-                      <span>{team.points} points</span>
+                      <span>
+                        {team.points} {team.points === 1 ? 'point' : 'points'}
+                      </span>
                     </>
                   )}
                 </div>
