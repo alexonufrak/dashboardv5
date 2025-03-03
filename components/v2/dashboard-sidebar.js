@@ -3,7 +3,7 @@
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { cn } from "../../lib/utils";
-import { useMobile } from "../hooks/use-mobile";
+import { useIsMobile } from "../hooks/use-mobile";
 import {
   Home,
   Users,
@@ -17,7 +17,7 @@ import {
   FileText,
   Rocket,
   BookMarked,
-  LightbulbIcon
+  Lightbulb
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Badge } from "../ui/badge";
@@ -31,7 +31,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/
  */
 export function DashboardSidebar({ userProfile }) {
   const router = useRouter();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   
   // Skip rendering on mobile as we use a sheet in the header
   if (isMobile) {
@@ -101,7 +101,7 @@ export function DashboardSidebar({ userProfile }) {
     {
       name: "Xtrapreneurs",
       href: "/dashboard/programs/xtrapreneurs",
-      icon: <LightbulbIcon className="h-5 w-5" />,
+      icon: <Lightbulb className="h-5 w-5" />,
       color: "text-amber-500"
     },
     {

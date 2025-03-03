@@ -17,7 +17,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import { Input } from "../ui/input";
 import { useEffect, useState } from "react";
-import { useMobile } from "../hooks/use-mobile";
+import { useIsMobile } from "../hooks/use-mobile";
 
 /**
  * Dashboard Header Component
@@ -26,7 +26,7 @@ import { useMobile } from "../hooks/use-mobile";
 export function DashboardHeader({ userProfile }) {
   const { user } = useUser();
   const router = useRouter();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [isScrolled, setIsScrolled] = useState(false);
   
   // Track scroll position to add shadow when scrolled

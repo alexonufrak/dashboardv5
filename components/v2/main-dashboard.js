@@ -11,7 +11,7 @@ import {
   Rocket,
   Award,
   Users,
-  LightbulbIcon
+  Lightbulb
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
@@ -104,7 +104,7 @@ export function MainDashboard({ userProfile }) {
         points: {
           personal: 85
         },
-        icon: <LightbulbIcon className="h-4 w-4" />,
+        icon: <Lightbulb className="h-4 w-4" />,
         color: "text-amber-500",
         nextDeadline: {
           name: "Entrepreneurship Workshop",

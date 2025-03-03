@@ -6,8 +6,8 @@ import { toast } from "sonner";
 // Import V2 components
 import { DashboardLayout } from "../components/v2/dashboard-layout";
 import { MainDashboard } from "../components/v2/main-dashboard";
-import { ProfileEditModal } from "../components/ProfileEditModal";
-import { LoadingScreen } from "../components/LoadingScreen";
+import ProfileEditModal from "../components/ProfileEditModal";
+import LoadingScreen from "../components/LoadingScreen";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
