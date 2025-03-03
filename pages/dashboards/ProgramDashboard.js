@@ -565,17 +565,20 @@ function ProgramDashboardInner({ onNavigate }) {
           {/* Invite Dialog */}
           <TeamInviteDialog 
             open={isInviteDialogOpen} 
-            onOpenChange={setIsInviteDialogOpen}
-            teamId={team.id}
-            teamName={team.name}
+            onClose={() => setIsInviteDialogOpen(false)}
+            team={team}
+            onTeamUpdated={() => {
+              // After inviting a member, refresh team data
+              refreshData('team');
+            }}
           />
           
           {/* Edit Team Dialog */}
           <TeamEditDialog
             open={isEditDialogOpen}
-            onOpenChange={setIsEditDialogOpen}
+            onClose={() => setIsEditDialogOpen(false)}
             team={team}
-            onSave={() => {
+            onTeamUpdated={() => {
               // After saving team details, refresh team data
               refreshData('team');
             }}

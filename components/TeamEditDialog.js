@@ -41,7 +41,10 @@ const TeamEditDialog = ({ team, open, onClose, onTeamUpdated }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    if (!team?.id) return
+    if (!team?.id) {
+      setError("Missing team ID");
+      return;
+    }
     
     // Validate form data
     if (!teamName.trim()) {
@@ -53,7 +56,8 @@ const TeamEditDialog = ({ team, open, onClose, onTeamUpdated }) => {
     setError("")
     
     try {
-      const response = await fetch(`/api/teams/${team.id}/`, {
+      // Make API call without trailing slash (which could cause routing issues)
+      const response = await fetch(`/api/teams/${team.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -64,29 +68,41 @@ const TeamEditDialog = ({ team, open, onClose, onTeamUpdated }) => {
         }),
       })
       
+      // Check if the response is OK
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to update team")
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to update team (${response.status})`);
       }
       
-      const updatedTeam = await response.json()
+      // Parse the response data
+      const updatedTeam = await response.json();
       
-      // Call the callback with the updated team
-      if (onTeamUpdated) {
-        onTeamUpdated(updatedTeam)
+      // Call the onTeamUpdated callback if provided
+      if (typeof onTeamUpdated === 'function') {
+        onTeamUpdated(updatedTeam);
       }
       
-      onClose()
+      // Close the dialog
+      if (typeof onClose === 'function') {
+        onClose();
+      }
     } catch (error) {
-      console.error("Error updating team:", error)
-      setError(error.message || "Failed to update team")
+      console.error("Error updating team:", error);
+      setError(error.message || "Failed to update team");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
 
+  // Handle dialog open state changes
+  const handleOpenChange = (isOpen) => {
+    if (!isOpen && !isSubmitting) {
+      onClose();
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>

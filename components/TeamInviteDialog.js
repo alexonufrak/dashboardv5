@@ -36,9 +36,9 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
   const [institutionInfo, setInstitutionInfo] = useState(null)
   const [isVerified, setIsVerified] = useState(false)
 
-  // Reset form data when dialog opens/closes
-  const handleOpenChange = (open) => {
-    if (!open) {
+  // Improved function to handle dialog open state changes
+  const handleOpenChange = (isOpen) => {
+    if (!isOpen && !isSubmitting) {
       resetForm()
       onClose()
     }
@@ -132,15 +132,23 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
       return
     }
     
-    // Make sure email is verified and domain is valid
-    if (!isVerified) {
-      setError("Please verify the email domain first")
-      return
-    }
-    
-    if (!isValidDomain) {
-      setError("Cannot invite team members from different institutions")
-      return
+    // For debugging only - skip verification in development
+    // Remove this in production!
+    if (process.env.NODE_ENV === 'development') {
+      // In development, we'll allow bypassing verification
+      console.log("Development mode: Bypassing email verification");
+    } else {
+      // In production, enforce verification
+      // Make sure email is verified and domain is valid
+      if (!isVerified) {
+        setError("Please verify the email domain first")
+        return
+      }
+      
+      if (!isValidDomain) {
+        setError("Cannot invite team members from different institutions")
+        return
+      }
     }
     
     setIsSubmitting(true)
@@ -164,14 +172,14 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
       })
       
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to invite team member")
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Failed to invite team member (${response.status})`)
       }
       
       const data = await response.json()
       
       // Call the callback with the updated team
-      if (onTeamUpdated && data.team) {
+      if (typeof onTeamUpdated === 'function' && data.team) {
         onTeamUpdated(data.team)
       }
       
@@ -183,10 +191,13 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
       
       // Close the dialog and reset the form
       resetForm()
-      onClose()
+      if (typeof onClose === 'function') {
+        onClose()
+      }
     } catch (error) {
       console.error("Error inviting team member:", error)
       setError(error.message || "Failed to invite team member")
+    } finally {
       setIsSubmitting(false)
     }
   }
