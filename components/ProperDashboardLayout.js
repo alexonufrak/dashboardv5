@@ -12,14 +12,16 @@ const ProperDashboardLayout = ({
   children, 
   title = "xFoundry Hub", 
   profile, 
-  onEditClick 
+  onEditClick,
+  currentPage,
+  onNavigate
 }) => {
   const [currentYear, setCurrentYear] = useState("")
   const router = useRouter()
   const { user } = useUser()
-  const isDashboard = router.pathname === "/dashboard" || router.pathname === "/profile" || router.pathname === "/program-dashboard"
+  const isDashboard = router.pathname === "/dashboard" || router.pathname === "/profile" || router.pathname === "/program-dashboard" || router.pathname === "/dashboard-shell"
   const showSidebar = isDashboard && user
-  const showBreadcrumbs = router.pathname !== "/dashboard" && showSidebar
+  const showBreadcrumbs = router.pathname !== "/dashboard" && router.pathname !== "/dashboard-shell" && showSidebar
 
   useEffect(() => {
     setCurrentYear(new Date().getFullYear())
@@ -50,14 +52,20 @@ const ProperDashboardLayout = ({
           </div>
           
           {/* Dashboard Sidebar */}
-          <ProperDashboardSidebar profile={profile} onEditClick={onEditClick} />
+          <ProperDashboardSidebar 
+            profile={profile} 
+            onEditClick={onEditClick} 
+            currentPage={currentPage}
+            onNavigate={onNavigate}
+          />
           
           {/* Main Content */}
           <SidebarInset className="bg-background">
             <div className="pt-[60px] md:pt-4 overflow-x-hidden">
               <div className="mx-auto max-w-6xl px-4 md:px-6">
                 {showBreadcrumbs && <Breadcrumbs />}
-                {/* Added proper-dashboard-layout-content class for better transitions */}
+                
+                {/* Content wrapper with page transitions */}
                 <div className="proper-dashboard-layout-content">
                   {children}
                 </div>

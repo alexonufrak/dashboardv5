@@ -1,10 +1,10 @@
 "use client"
 
-import Link from "next/link"
 import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { useState, useEffect } from "react"
 import ProfileMenuButton from "./ProfileMenuButton"
+import { useDashboard } from "@/contexts/DashboardContext"
 
 import { 
   Home,
@@ -26,51 +26,30 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarProvider,
   SidebarTrigger
 } from "./ui/sidebar"
 
-const ProperDashboardSidebar = ({ profile, onEditClick }) => {
+const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate }) => {
   const router = useRouter()
   const { user } = useUser()
+  const { initiativeName } = useDashboard()
   
   // Navigation links with dynamic program link
-  const [initiativeName, setInitiativeName] = useState("Program")
-  
-  // Fetch user's active participation to get initiative name
-  useEffect(() => {
-    async function fetchActiveParticipation() {
-      if (!user) return
-      
-      try {
-        const response = await fetch('/api/user/participation')
-        if (response.ok) {
-          const data = await response.json()
-          if (data.participation && data.participation.length > 0 && 
-              data.participation[0].cohort?.initiativeDetails?.name) {
-            setInitiativeName(data.participation[0].cohort.initiativeDetails.name)
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching participation for sidebar:", error)
-      }
-    }
-    
-    fetchActiveParticipation()
-  }, [user])
-  
   const links = [
     {
+      id: "dashboard",
       href: "/dashboard",
       label: "Dashboard",
       icon: <Home className="h-4 w-4" />
     },
     {
+      id: "program",
       href: "/program-dashboard",
-      label: `${initiativeName}`,
+      label: initiativeName || "Program",
       icon: <Compass className="h-4 w-4" />
     },
     {
+      id: "programs",
       href: "#programs",
       label: "Programs",
       icon: <Users className="h-4 w-4" />
@@ -96,6 +75,28 @@ const ProperDashboardSidebar = ({ profile, onEditClick }) => {
     }
   ]
 
+  // Handle navigation click
+  const handleNavClick = (e, link) => {
+    e.preventDefault()
+    
+    if (link.href.startsWith('#')) {
+      // Handle anchor links
+      const element = document.getElementById(link.href.substring(1))
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' })
+      }
+      return
+    }
+    
+    // Client-side navigation
+    if (link.id && onNavigate) {
+      onNavigate(link.id)
+    } else {
+      // Fallback to normal navigation
+      router.push(link.href)
+    }
+  }
+
   return (
     <>
       {/* Mobile trigger button - fixed position */}
@@ -107,7 +108,7 @@ const ProperDashboardSidebar = ({ profile, onEditClick }) => {
         </SidebarTrigger>
       </div>
       
-      {/* SidebarProvider wraps the entire layout */}
+      {/* Sidebar component */}
       <Sidebar>
         <SidebarHeader>
           <div className="flex flex-col gap-2 px-3 pt-2">
@@ -129,21 +130,15 @@ const ProperDashboardSidebar = ({ profile, onEditClick }) => {
                 {links.map((link) => (
                   <SidebarMenuItem key={link.label}>
                     <SidebarMenuButton
-                      asChild
-                      isActive={router.pathname === link.href || 
+                      isActive={currentPage === link.id || 
+                                router.pathname === link.href || 
                                (link.href.startsWith('#') && router.asPath.includes(link.href))}
+                      onClick={(e) => handleNavClick(e, link)}
                     >
-                      <Link href={link.href} onClick={() => {
-                        if (link.href.startsWith('#')) {
-                          const element = document.getElementById(link.href.substring(1))
-                          if (element) {
-                            element.scrollIntoView({ behavior: 'smooth' })
-                          }
-                        }
-                      }}>
+                      <a href={link.href} className="flex items-center gap-3">
                         {link.icon}
                         <span>{link.label}</span>
-                      </Link>
+                      </a>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -163,10 +158,10 @@ const ProperDashboardSidebar = ({ profile, onEditClick }) => {
                       asChild
                     >
                       {link.label === "Sign Out" ? (
-                        <Link href={link.href} className="flex justify-between w-full">
+                        <a href={link.href} className="flex justify-between w-full">
                           <span>{link.label}</span>
                           {link.icon}
-                        </Link>
+                        </a>
                       ) : (
                         <a 
                           href={link.href} 

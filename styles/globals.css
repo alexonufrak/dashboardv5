@@ -349,6 +349,18 @@
     --chart-5: 340 75% 55%;
   }
   
+  /* Added styles for dashboard shell page transitions */
+  .proper-dashboard-layout-content {
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  }
+  
+  /* Dashboard pages transition when switching tabs */
+  .dashboard-content,
+  .program-dashboard,
+  .profile-page {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
   /* Global cursor styles */
   button:not([disabled]), 
   .btn:not(.disabled):not([disabled]),
