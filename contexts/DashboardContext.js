@@ -165,7 +165,9 @@ export function DashboardProvider({ children }) {
       
       if (participationData.participation.length === 0) {
         console.log('Participation array is empty')
-        throw new Error('You are not currently participating in any program')
+        // This is now handled as a normal case, not an error situation
+        setProgramError('You are not currently participating in any program')
+        return // Exit early but don't throw an error
       }
       
       // Get the active participation (the first one for now)

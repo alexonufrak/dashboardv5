@@ -34,6 +34,7 @@ function ProgramDashboardInner({ onNavigate }) {
     refreshData 
   } = useDashboard()
   
+  // Check if still loading
   if (programLoading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -46,7 +47,35 @@ function ProgramDashboardInner({ onNavigate }) {
     )
   }
   
+  // Handle error case, but specifically handle "not participating" errors differently
   if (programError) {
+    // Check if this is a "not participating" error
+    const isNotParticipatingError = programError.includes("not currently participating") ||
+                                   programError.includes("No active program");
+    
+    if (isNotParticipatingError) {
+      // Just show the "no active program" UI instead of an error
+      return (
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <div className="bg-amber-100 text-amber-800 p-4 rounded-md mb-4">
+              <h3 className="text-lg font-medium">No Active Program</h3>
+              <p>You are not currently participating in any program.</p>
+            </div>
+            
+            <div className="bg-blue-50 text-blue-800 p-4 rounded-md mb-4">
+              <h4 className="font-medium mb-2">Looking for Programs?</h4>
+              <p className="mb-3">Check out available programs on the dashboard page.</p>
+              <Button onClick={() => onNavigate('dashboard')}>
+                Browse Programs
+              </Button>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    
+    // For other errors, show the regular error UI
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="text-center">
