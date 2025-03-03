@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useDashboard } from "@/contexts/DashboardContext"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { Badge } from "./ui/badge"
 import { Button } from "./ui/button"
@@ -24,6 +25,9 @@ import {
 } from "lucide-react"
 
 const ProfileMenuButton = ({ user, profile, onEditClick }) => {
+  // Import dashboard context to access modal state
+  const { setIsEditModalOpen } = useDashboard()
+  
   const getInitials = () => {
     if (!user?.name) return "U"
     return user.name
@@ -32,6 +36,18 @@ const ProfileMenuButton = ({ user, profile, onEditClick }) => {
       .join("")
       .slice(0, 2)
       .toUpperCase()
+  }
+  
+  // Handle edit profile click - use context if available, otherwise use prop function
+  const handleEditClick = (e) => {
+    e.preventDefault();
+    
+    // Try context first, then fallback to prop
+    if (typeof setIsEditModalOpen === 'function') {
+      setIsEditModalOpen(true);
+    } else if (typeof onEditClick === 'function') {
+      onEditClick();
+    }
   }
 
   const isProfileComplete = profile?.isProfileComplete || false
@@ -91,7 +107,7 @@ const ProfileMenuButton = ({ user, profile, onEditClick }) => {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onEditClick}>
+            <DropdownMenuItem onClick={handleEditClick}>
               <Edit className="mr-2 h-4 w-4" />
               <span>Edit Profile</span>
             </DropdownMenuItem>
@@ -114,7 +130,7 @@ const ProfileMenuButton = ({ user, profile, onEditClick }) => {
           )}
           
           <Button 
-            onClick={onEditClick}
+            onClick={handleEditClick}
             className="w-full"
             size="sm"
           >

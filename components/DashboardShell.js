@@ -90,13 +90,8 @@ export default function DashboardShell() {
   const handleEditProfileClick = () => {
     console.log("Opening profile edit modal from DashboardShell");
     
-    // Instead of navigating, directly toggle the edit modal in context
-    if (typeof setIsEditModalOpen === 'function') {
-      setIsEditModalOpen(true);
-    } else {
-      console.error("setIsEditModalOpen is not a function - falling back to navigation");
-      router.push("/profile", undefined, { shallow: true });
-    }
+    // Always set the modal state to open in the context
+    setIsEditModalOpen(true);
   }
   
   // Handle client-side navigation

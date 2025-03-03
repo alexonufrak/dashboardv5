@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { cn } from "../../lib/utils";
 import { useIsMobile } from "../hooks/use-mobile";
+import { useDashboard } from "../../contexts/DashboardContext";
 import {
   Home,
   Users,
@@ -33,6 +34,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/
 export function DashboardSidebarPrototype({ userProfile }) {
   const router = useRouter();
   const isMobile = useIsMobile();
+  const { setIsEditModalOpen } = useDashboard();
   
   // Skip rendering on mobile as we use a sheet in the header
   if (isMobile) {
@@ -225,12 +227,16 @@ export function DashboardSidebarPrototype({ userProfile }) {
                   <span className="text-muted-foreground">Teams</span>
                 </div>
               </div>
-              <Link
-                href="/profile"
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsEditModalOpen(true);
+                }}
                 className="text-xs text-primary hover:underline"
               >
                 View Profile
-              </Link>
+              </a>
             </div>
           )}
 

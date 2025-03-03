@@ -32,7 +32,7 @@ import {
 const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate }) => {
   const router = useRouter()
   const { user } = useUser()
-  const { initiativeName } = useDashboard()
+  const { initiativeName, setIsEditModalOpen } = useDashboard()
   
   // Navigation links with dynamic program link
   const links = [
@@ -75,6 +75,8 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
     }
   ]
 
+  // Modal state is now imported at the top of the component
+  
   // Handle navigation click
   const handleNavClick = (e, link) => {
     e.preventDefault()
@@ -88,16 +90,22 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
       return
     }
     
+    // Special handling for profile page - open modal instead of navigating
+    if (link.href === "/profile") {
+      console.log("Profile link clicked - opening modal directly");
+      setIsEditModalOpen(true);
+      return;
+    }
+    
     // Always use client-side navigation when possible
     if (link.id && onNavigate) {
       console.log(`Navigating to ${link.id} using client-side navigation`);
       onNavigate(link.id)
-    } else if (link.href === "/dashboard" || link.href === "/program-dashboard" || link.href === "/profile") {
+    } else if (link.href === "/dashboard" || link.href === "/program-dashboard") {
       // Map standard URLs to navigable pages
       const pageMap = {
         "/dashboard": "dashboard",
         "/program-dashboard": "program",
-        "/profile": "profile"
       };
       
       if (onNavigate && pageMap[link.href]) {
