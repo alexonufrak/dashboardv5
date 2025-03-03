@@ -7,6 +7,10 @@ import { toast } from "sonner";
 import { DashboardLayout } from "../components/v2/dashboard-layout";
 import { MainDashboard } from "../components/v2/main-dashboard";
 import { ProgramShowcase } from "../components/v2/ProgramShowcase";
+import { PointsDashboard } from "../components/v2/PointsDashboard";
+import { PointsOverviewCard } from "../components/v2/PointsOverviewCard";
+import { MilestoneProgressCard } from "../components/v2/MilestoneProgressCard";
+import { PointsTrendCard } from "../components/v2/PointsTrendCard";
 import ProfileEditModal from "../components/ProfileEditModal";
 import LoadingScreen from "../components/LoadingScreen";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -131,6 +135,94 @@ const DashboardV2 = () => {
               This showcase demonstrates the implementation of Prompt 2 from the dashboard outline.
             </p>
             <ProgramShowcase />
+          </div>
+          
+          {/* Show Points & Progress components */}
+          <div className="my-8">
+            <h2 className="text-2xl font-bold mb-4">Points & Progress Components</h2>
+            <p className="text-muted-foreground mb-6">
+              The following components demonstrate the implementation of Prompt 3 from the dashboard outline,
+              which focuses on building points and progress tracking visualizations.
+            </p>
+            
+            <div className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <PointsOverviewCard 
+                  totalPoints={330}
+                  programPoints={[
+                    {
+                      program: "Xperience: Design Thinking",
+                      type: "xperience",
+                      points: 120,
+                      teamContribution: { team: "Innovation Squad", totalTeamPoints: 770 }
+                    },
+                    {
+                      program: "Xperiment: Design Thinking 101",
+                      type: "xperiment",
+                      points: 125,
+                      teamContribution: { team: "Innovation Squad", totalTeamPoints: 770 }
+                    },
+                    {
+                      program: "Xtrapreneurs: Club Membership",
+                      type: "xtrapreneurs",
+                      points: 85
+                    }
+                  ]}
+                />
+                
+                <MilestoneProgressCard 
+                  programName="Design Thinking"
+                  programType="xperience"
+                  programId="xp-dt"
+                  milestones={[
+                    {
+                      name: "Problem Definition",
+                      status: "completed",
+                      dueDate: "2023-10-05",
+                      completedDate: "2023-10-05",
+                      score: 92
+                    },
+                    {
+                      name: "Ideation Process",
+                      status: "completed",
+                      dueDate: "2023-10-19",
+                      completedDate: "2023-10-19",
+                      score: 88
+                    },
+                    {
+                      name: "Prototype Development",
+                      status: "completed",
+                      dueDate: "2023-11-02",
+                      completedDate: "2023-11-02",
+                      score: 95
+                    },
+                    {
+                      name: "User Testing",
+                      status: "in_progress",
+                      dueDate: "2023-11-16",
+                      progress: 40
+                    },
+                    {
+                      name: "Final Presentation",
+                      status: "not_started",
+                      dueDate: "2023-12-07"
+                    }
+                  ]}
+                />
+              </div>
+              
+              <PointsTrendCard />
+            </div>
+            
+            <div className="mt-6 p-4 border rounded-lg bg-muted/50">
+              <h3 className="text-lg font-semibold mb-2">Full Points Dashboard</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                To see a full implementation of the Points Dashboard with all components integrated, 
+                view the PointsDashboard component which provides a comprehensive interface for tracking
+                points and progress across all programs.
+              </p>
+              <PointsDashboard userProfile={userProfile} />
+            </div>
           </div>
         </div>
       </DashboardLayout>
