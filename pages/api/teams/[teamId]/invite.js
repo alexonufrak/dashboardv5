@@ -99,16 +99,14 @@ export default withApiAuthRequired(async function inviteTeamMemberHandler(req, r
     // Get the required tables from Airtable
     const contactsTableId = process.env.AIRTABLE_CONTACTS_TABLE_ID
     const membersTableId = process.env.AIRTABLE_MEMBERS_TABLE_ID
-    const formsTableId = process.env.AIRTABLE_FORMS_TABLE_ID
     const educationTableId = process.env.AIRTABLE_EDUCATION_TABLE_ID
     
-    if (!contactsTableId || !membersTableId || !formsTableId || !educationTableId) {
+    if (!contactsTableId || !membersTableId || !educationTableId) {
       return res.status(500).json({ error: 'Required table IDs not configured' })
     }
     
     const contactsTable = base(contactsTableId)
     const membersTable = base(membersTableId)
-    const formsTable = base(formsTableId)
     const educationTable = base(educationTableId)
     
     // Check if the contact already exists
@@ -175,21 +173,12 @@ export default withApiAuthRequired(async function inviteTeamMemberHandler(req, r
       }
     }
     
-    // Create a form record for the invitation
-    console.log(`Creating form record for contact ${contactId}`)
-    const formRecord = await formsTable.create({
-      'Type': 'Team Invitation',
-      'Status': 'Sent',
-      'Contacts': [contactId],
-    })
-    
     // Create a member record for the invitation
     console.log(`Creating member record for contact ${contactId} in team ${teamId}`)
     const memberRecord = await membersTable.create({
       'Contact': [contactId],
       'Team': [teamId],
-      'Status': 'Invited',
-      'Form': [formRecord.id]
+      'Status': 'Invited'
     })
     
     // Get the updated team to include the new member
@@ -203,7 +192,6 @@ export default withApiAuthRequired(async function inviteTeamMemberHandler(req, r
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         memberId: memberRecord.id,
-        formId: formRecord.id,
         status: 'Invited',
         institutionId: inviteeInstitutionId,
         institutionName: inviteeInstitutionName
