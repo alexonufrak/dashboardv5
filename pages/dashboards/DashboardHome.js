@@ -183,15 +183,13 @@ function DashboardHomeInner({ onNavigate }) {
         </section>
       </div>
       
-      {/* Modals */}
-      {isEditModalOpen && (
-        <ProfileEditModal
-          isOpen={isEditModalOpen}
-          onClose={handleEditClose}
-          profile={profile}
-          onSave={handleProfileUpdate}
-        />
-      )}
+      {/* Modals - always render but control with isOpen prop */}
+      <ProfileEditModal
+        isOpen={isEditModalOpen}
+        onClose={handleEditClose}
+        profile={profile}
+        onSave={handleProfileUpdate}
+      />
     </div>
   )
 }

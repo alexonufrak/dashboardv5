@@ -132,14 +132,13 @@ const Navbar = () => {
         </div>
       </nav>
       
-      {isProfileModalOpen && (
-        <ProfileEditModal 
-          isOpen={isProfileModalOpen} 
-          onClose={handleCloseProfileModal} 
-          profile={profile}
-          onSave={handleProfileUpdate}
-        />
-      )}
+      {/* Always render the modal but control visibility with isOpen prop */}
+      <ProfileEditModal 
+        isOpen={isProfileModalOpen} 
+        onClose={handleCloseProfileModal} 
+        profile={profile}
+        onSave={handleProfileUpdate}
+      />
     </>
   )
 }

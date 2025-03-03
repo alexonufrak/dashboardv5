@@ -200,15 +200,14 @@ const DashboardV2 = () => {
         </div>
       </DashboardLayout>
       
-      {isEditModalOpen && (
-        <ProfileEditModal
-          isOpen={isEditModalOpen}
-          onClose={handleEditClose}
-          profile={userProfile}
-          onSave={handleProfileUpdate}
-          isLoading={isUpdating}
-        />
-      )}
+      {/* Always render the modal but control visibility with isOpen prop */}
+      <ProfileEditModal
+        isOpen={isEditModalOpen}
+        onClose={handleEditClose}
+        profile={userProfile}
+        onSave={handleProfileUpdate}
+        isLoading={isUpdating}
+      />
     </>
   );
 };

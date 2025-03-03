@@ -51,12 +51,23 @@ function ProfilePageInner({ onNavigate }) {
   }
   
   const handleEditClick = () => {
-    console.log("Opening edit modal");
-    setIsEditModalOpen(true);
+    console.log("Opening edit modal in ProfilePage");
+    console.log("Current state before:", isEditModalOpen);
+    
+    // Use the function version of setState to guarantee we're operating on the latest state
+    setIsEditModalOpen(prev => {
+      console.log("Setting to true, previous was:", prev);
+      return true;
+    });
+    
+    // Add a delay and check if the state was properly updated
+    setTimeout(() => {
+      console.log("State after timeout:", isEditModalOpen);
+    }, 100);
   }
   
   const handleEditClose = () => {
-    console.log("Closing edit modal");
+    console.log("Closing edit modal in ProfilePage");
     setIsEditModalOpen(false);
   }
   
@@ -311,14 +322,13 @@ function ProfilePageInner({ onNavigate }) {
         </div>
       </div>
       
-      {isEditModalOpen && (
-        <ProfileEditModal
-          isOpen={isEditModalOpen}
-          onClose={handleEditClose}
-          profile={profile}
-          onSave={handleProfileUpdate}
-        />
-      )}
+      {/* Always render the modal but control visibility with isOpen prop */}
+      <ProfileEditModal
+        isOpen={isEditModalOpen}
+        onClose={handleEditClose}
+        profile={profile}
+        onSave={handleProfileUpdate}
+      />
     </div>
   )
 }

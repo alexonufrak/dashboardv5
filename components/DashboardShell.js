@@ -45,7 +45,9 @@ export default function DashboardShell() {
     error, 
     refreshData,
     programError, // Track program errors specifically
-    cohort // Add cohort from context
+    cohort, // Add cohort from context
+    isEditModalOpen,
+    setIsEditModalOpen
   } = useDashboard()
   
   // Track current page
@@ -84,9 +86,17 @@ export default function DashboardShell() {
     }
   }, [router.pathname])
   
-  // Handle profile edit
+  // Handle profile edit - set modal state directly
   const handleEditProfileClick = () => {
-    router.push("/profile", undefined, { shallow: true })
+    console.log("Opening profile edit modal from DashboardShell");
+    
+    // Instead of navigating, directly toggle the edit modal in context
+    if (typeof setIsEditModalOpen === 'function') {
+      setIsEditModalOpen(true);
+    } else {
+      console.error("setIsEditModalOpen is not a function - falling back to navigation");
+      router.push("/profile", undefined, { shallow: true });
+    }
   }
   
   // Handle client-side navigation
