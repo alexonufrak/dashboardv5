@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, CheckCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 /**
@@ -25,12 +25,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
  */
 const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
   const [email, setEmail] = useState("")
-  const [name, setName] = useState("")
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
   const [error, setError] = useState("")
   const [warning, setWarning] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCheckingDomain, setIsCheckingDomain] = useState(false)
-  const [useOverride, setUseOverride] = useState(false)
+  const [isValidDomain, setIsValidDomain] = useState(false)
+  const [institutionInfo, setInstitutionInfo] = useState(null)
+  const [isVerified, setIsVerified] = useState(false)
 
   // Reset form data when dialog opens/closes
   const handleOpenChange = (open) => {
@@ -43,37 +46,62 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
   // Reset form data
   const resetForm = () => {
     setEmail("")
-    setName("")
+    setFirstName("")
+    setLastName("")
     setError("")
     setWarning("")
     setIsSubmitting(false)
     setIsCheckingDomain(false)
-    setUseOverride(false)
+    setIsValidDomain(false)
+    setInstitutionInfo(null)
+    setIsVerified(false)
   }
   
-  // Check if the email domain matches the team institution
-  const checkEmailDomain = async (email) => {
-    if (!email || !email.includes('@')) return
+  // Verify the email domain matches the team institution
+  const verifyEmailDomain = async () => {
+    if (!email || !email.includes('@')) {
+      setError("Please enter a valid email address")
+      return
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address")
+      return
+    }
+    
+    setError("")
+    setWarning("")
+    setIsCheckingDomain(true)
+    setIsVerified(false)
     
     try {
-      setIsCheckingDomain(true)
-      setWarning("")
-      
       const response = await fetch(`/api/user/check-email?email=${encodeURIComponent(email)}`)
       
       if (!response.ok) {
-        console.error("Error checking email domain")
+        setError("Error verifying email domain")
         return
       }
       
       const data = await response.json()
+      setInstitutionInfo(data)
+      setIsVerified(true)
       
-      // If there's a domain mismatch, show a warning
+      // If there's a domain mismatch, show a warning and prevent submission
       if (data.mismatch) {
-        setWarning(`This email appears to be from ${data.institution || 'a different institution'}, which may not be the same as your team members. Please confirm this is correct.`)
+        setWarning(`This email is from ${data.institution || 'a different institution'}, which doesn't match your team's institution. You cannot invite members from other institutions.`)
+        setIsValidDomain(false)
+      } else if (data.institution) {
+        // Email domain matched an institution
+        setIsValidDomain(true)
+      } else {
+        // Email domain didn't match any known institution
+        setWarning("This email domain doesn't match any recognized institution. Please verify the email is correct.")
+        setIsValidDomain(false)
       }
     } catch (error) {
       console.error("Error checking email domain:", error)
+      setError("Failed to verify email domain")
     } finally {
       setIsCheckingDomain(false)
     }
@@ -93,10 +121,24 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
       return
     }
     
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address")
+    if (!firstName.trim()) {
+      setError("Please enter a first name")
+      return
+    }
+    
+    if (!lastName.trim()) {
+      setError("Please enter a last name")
+      return
+    }
+    
+    // Make sure email is verified and domain is valid
+    if (!isVerified) {
+      setError("Please verify the email domain first")
+      return
+    }
+    
+    if (!isValidDomain) {
+      setError("Cannot invite team members from different institutions")
       return
     }
     
@@ -104,7 +146,7 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
     setError("")
     
     try {
-      // Make the request with or without override based on state
+      // Make the request with institution info
       const response = await fetch(`/api/teams/${team.id}/invite`, {
         method: 'POST',
         headers: {
@@ -112,27 +154,12 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
         },
         body: JSON.stringify({
           email: email.trim(),
-          name: name.trim(),
-          overrideInstitutionCheck: useOverride,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          institutionId: institutionInfo?.institutionId || null,
+          institutionName: institutionInfo?.institution || null,
         }),
       })
-      
-      // Institution mismatch warning
-      if (response.status === 400) {
-        const errorData = await response.json()
-        
-        // Handle institution mismatch warnings specially
-        if (errorData.warning && errorData.details) {
-          setIsSubmitting(false)
-          setWarning(`${errorData.details.message} The email appears to be from ${errorData.details.inviteeInstitution} while your account is associated with ${errorData.details.userInstitution}. Click Send Again to confirm.`)
-          
-          // Set the override flag for the next submission
-          setUseOverride(true)
-          return
-        }
-        
-        throw new Error(errorData.error || "Failed to invite team member")
-      }
       
       if (!response.ok) {
         const errorData = await response.json()
@@ -181,51 +208,89 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
             </Alert>
           )}
           
+          {isVerified && isValidDomain && (
+            <Alert className="mt-4 bg-green-50 border-green-200 text-green-800">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <AlertDescription>
+                Email verified from {institutionInfo?.institution || "valid institution"}
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value)
-                  // Check domain when email has a valid format and contains @
-                  if (e.target.value.includes('@') && e.target.value.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-                    checkEmailDomain(e.target.value)
-                  } else {
-                    setWarning("")
-                  }
-                }}
-                placeholder="Enter email address"
-                required
-                autoComplete="email"
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    // Clear verification when email changes
+                    if (isVerified) {
+                      setIsVerified(false)
+                      setIsValidDomain(false)
+                      setWarning("")
+                    }
+                  }}
+                  placeholder="Enter email address"
+                  required
+                  autoComplete="email"
+                />
+                <Button 
+                  type="button" 
+                  onClick={verifyEmailDomain} 
+                  disabled={isCheckingDomain || !email}
+                  className="whitespace-nowrap"
+                >
+                  {isCheckingDomain ? "Checking..." : "Verify Email"}
+                </Button>
+              </div>
               {isCheckingDomain && (
                 <p className="text-xs text-muted-foreground mt-1">Checking institution...</p>
               )}
             </div>
             
-            <div className="grid gap-2">
-              <Label htmlFor="name">Name <span className="text-muted-foreground text-sm">(optional)</span></Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter full name"
-                autoComplete="name"
-              />
-              <p className="text-sm text-muted-foreground">
-                If the person doesn't have an account yet, we'll use this name to create their profile.
-              </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="firstName">First Name <span className="text-red-500">*</span></Label>
+                <Input
+                  id="firstName"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="First name"
+                  required
+                  autoComplete="given-name"
+                />
+              </div>
+              
+              <div className="grid gap-2">
+                <Label htmlFor="lastName">Last Name <span className="text-red-500">*</span></Label>
+                <Input
+                  id="lastName"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Last name"
+                  required
+                  autoComplete="family-name"
+                />
+              </div>
             </div>
+            
+            <p className="text-sm text-muted-foreground">
+              All team members must have email addresses from the same institution.
+            </p>
           </div>
           
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || !isVerified || !isValidDomain}
+            >
               {isSubmitting ? "Sending..." : "Send Invitation"}
             </Button>
           </DialogFooter>

@@ -1,6 +1,6 @@
 import { getUserByEmail } from '../../../lib/userProfile';
 import auth0Client from '../../../lib/auth0';
-import { lookupInstitutionByEmail } from '../../../lib/airtable';
+import { lookupInstitutionByEmail, getUserProfile } from '../../../lib/airtable';
 
 /**
  * API handler to check if a user exists by email and verify institution
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
       });
     }
     
-    // For GET requests, do a quick institution check only
+    // For GET requests, do a comprehensive institution check
     if (req.method === 'GET') {
       // Normalize the email to lowercase for consistency
       const normalizedEmail = email.toLowerCase().trim();
@@ -33,29 +33,66 @@ export default async function handler(req, res) {
         // Check if email domain matches an institution
         const institution = await lookupInstitutionByEmail(normalizedEmail);
         
-        // Get user's institution from session or query params if available
-        const userInstitution = req.query.userInstitution || null;
+        // Get current user's institution for comparison
+        let userInstitutionId = null;
+        let userInstitutionName = null;
+        
+        // Try to get user's institution from session if available
+        const session = req.query.session ? JSON.parse(req.query.session) : null;
+        if (session && session.user && session.user.email) {
+          try {
+            const userProfile = await getUserProfile(session.user.sub, session.user.email);
+            if (userProfile) {
+              // Try to get the institution ID from various possible fields
+              userInstitutionId = userProfile.institutionId || 
+                                (userProfile.Institution && userProfile.Institution.length > 0 ? 
+                                 userProfile.Institution[0] : null) ||
+                                (userProfile["Institution (from Education)"] && 
+                                 userProfile["Institution (from Education)"].length > 0 ? 
+                                 userProfile["Institution (from Education)"][0] : null);
+              
+              // Get the institution name if available
+              userInstitutionName = userProfile.institution?.name || 
+                                  userProfile["Name (from Institution)"]?.[0] || 
+                                  "Your institution";
+            }
+          } catch (profileError) {
+            console.error('Error getting user profile for domain check:', profileError);
+          }
+        } else if (req.query.userInstitutionId) {
+          // Alternatively, get from query params
+          userInstitutionId = req.query.userInstitutionId;
+          userInstitutionName = req.query.userInstitutionName || "Your institution";
+        }
         
         // Check for domain mismatch
-        const mismatch = institution && userInstitution && institution.id !== userInstitution;
+        const mismatch = institution && userInstitutionId && institution.id !== userInstitutionId;
+        
+        // Check if user exists in Airtable
+        const existingUser = await getUserByEmail(normalizedEmail);
         
         return res.status(200).json({
           email: normalizedEmail,
           institution: institution ? institution.name : null,
           institutionId: institution ? institution.id : null,
-          mismatch: mismatch
+          userInstitution: userInstitutionName,
+          userInstitutionId: userInstitutionId,
+          mismatch: mismatch,
+          exists: !!existingUser,
+          contactId: existingUser ? existingUser.contactId : null
         });
       } catch (error) {
         console.error('Error checking institution for email:', error);
         return res.status(200).json({
           email: normalizedEmail,
           institution: null,
-          mismatch: false
+          mismatch: false,
+          exists: false
         });
       }
     }
 
-    // Check user existence in both Airtable and Auth0
+    // Check user existence in both Airtable and Auth0 (for POST requests)
     try {
       // Normalize the email to lowercase for consistency
       const normalizedEmail = email.toLowerCase().trim();
@@ -77,11 +114,6 @@ export default async function handler(req, res) {
       const airtableOnlyButLikelyAuthorized = airtableExists && !auth0Exists;
       console.log(`Potential Auth0 visibility issue: ${airtableOnlyButLikelyAuthorized}`);
       
-      // In production, we should consider a user as existing if they're in Airtable
-      // This ensures users don't create duplicate accounts if there's an Auth0 Management API issue
-      // For thorough checking, we'll look at both Auth0 and Airtable
-      const userExists = auth0Exists || airtableExists;
-      
       // If user exists in Airtable but not in Auth0, prepare signup metadata
       let signupMetadata = null;
       if (airtableExists && !auth0Exists) {
@@ -95,13 +127,16 @@ export default async function handler(req, res) {
         }
       }
       
+      // Check institution information
+      let institution = null;
+      try {
+        institution = await lookupInstitutionByEmail(normalizedEmail);
+      } catch (instError) {
+        console.error('Error checking institution for email:', instError);
+      }
+      
       // Changed behavior: Only consider a user to exist if found in Auth0
       // If they are only in Airtable, still let them sign up with prefilled data
-      
-      // Modify the response based on the new behavior:
-      // 1. If user exists in Auth0, they should sign in instead (return exists: true)
-      // 2. If user only exists in Airtable, let them sign up with prefilled data (return exists: false)
-      // 3. If user doesn't exist anywhere, let them sign up (return exists: false)
       
       const message = auth0Exists 
         ? 'User exists in Auth0' 
@@ -118,7 +153,10 @@ export default async function handler(req, res) {
         // Include Airtable user ID if it exists (for updating during signup)
         airtableId: airtableExists ? airtableUser.contactId : null,
         // Include signup metadata if available (for prefilling)
-        signupMetadata: signupMetadata
+        signupMetadata: signupMetadata,
+        // Include institution information if available
+        institution: institution ? institution.name : null,
+        institutionId: institution ? institution.id : null
       });
     } catch (error) {
       console.error('Error checking user existence:', error);

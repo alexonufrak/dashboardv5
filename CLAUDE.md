@@ -14,7 +14,7 @@ Located in `/public/logos/`:
 - `X Icon White.svg` - X icon only in white
 
 ## Code Style Guidelines
-- **Imports**: Import React components first, followed by hooks, then utilities
+- **Imports**: Import React components first, followed by hooks, then utilities. Import components using 'npx shadcn add [component]'
 - **Component Structure**: Use functional components with React hooks
 - **Error Handling**: Use try/catch blocks with specific error messages in catch blocks
 - **Naming Conventions**:

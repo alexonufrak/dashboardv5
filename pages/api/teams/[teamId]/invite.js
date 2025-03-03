@@ -23,10 +23,25 @@ export default withApiAuthRequired(async function inviteTeamMemberHandler(req, r
     }
     
     // Get the request body containing invitation data
-    const { email, name, role = 'Member', overrideInstitutionCheck = false } = req.body
+    const { 
+      email, 
+      firstName, 
+      lastName, 
+      institutionId, 
+      institutionName,
+      role = 'Member'
+    } = req.body
     
     if (!email || !email.trim()) {
       return res.status(400).json({ error: 'Email is required' })
+    }
+    
+    if (!firstName || !firstName.trim()) {
+      return res.status(400).json({ error: 'First name is required' })
+    }
+    
+    if (!lastName || !lastName.trim()) {
+      return res.status(400).json({ error: 'Last name is required' })
     }
     
     // Normalize email
@@ -55,43 +70,49 @@ export default withApiAuthRequired(async function inviteTeamMemberHandler(req, r
       return res.status(403).json({ error: 'You must be a team member to invite others' })
     }
     
-    // Check if the invitee's institution matches the team members' institution if not overridden
-    if (!overrideInstitutionCheck) {
-      // Get the user's institution
-      const userInstitution = userProfile.institutionId
-      
-      // Check invitee's email domain
+    // Check if the invitee's institution matches the team members' institution
+    const userInstitutionId = userProfile.institutionId || 
+                             (userProfile.Institution && userProfile.Institution.length > 0 ? userProfile.Institution[0] : null) ||
+                             (userProfile["Institution (from Education)"] && userProfile["Institution (from Education)"].length > 0 ? 
+                              userProfile["Institution (from Education)"][0] : null)
+    
+    // Determine invitee's institution - either from the provided institutionId or by looking up the email domain
+    let inviteeInstitutionId = institutionId
+    let inviteeInstitutionName = institutionName
+    
+    if (!inviteeInstitutionId) {
+      // Look up institution by email domain if not provided
       const inviteeInstitution = await lookupInstitutionByEmail(normalizedEmail)
-      
-      // If both have institutions and they don't match, return a warning but allow with override
-      if (userInstitution && inviteeInstitution && userInstitution !== inviteeInstitution.id) {
-        return res.status(400).json({ 
-          error: 'Institution mismatch', 
-          warning: true,
-          details: {
-            userInstitution: userProfile.institution?.name || 'Unknown',
-            inviteeInstitution: inviteeInstitution.name,
-            message: 'The email domain appears to be from a different institution than yours. If this is intentional, please confirm.'
-          }
-        })
+      if (inviteeInstitution) {
+        inviteeInstitutionId = inviteeInstitution.id
+        inviteeInstitutionName = inviteeInstitution.name
       }
+    }
+    
+    // Both institutions must be known, and they must match
+    if (userInstitutionId && inviteeInstitutionId && userInstitutionId !== inviteeInstitutionId) {
+      return res.status(403).json({ 
+        error: 'Members must belong to the same institution. You cannot invite members from other institutions.'
+      })
     }
     
     // Get the required tables from Airtable
     const contactsTableId = process.env.AIRTABLE_CONTACTS_TABLE_ID
     const membersTableId = process.env.AIRTABLE_MEMBERS_TABLE_ID
     const formsTableId = process.env.AIRTABLE_FORMS_TABLE_ID
+    const educationTableId = process.env.AIRTABLE_EDUCATION_TABLE_ID
     
-    if (!contactsTableId || !membersTableId || !formsTableId) {
+    if (!contactsTableId || !membersTableId || !formsTableId || !educationTableId) {
       return res.status(500).json({ error: 'Required table IDs not configured' })
     }
     
     const contactsTable = base(contactsTableId)
     const membersTable = base(membersTableId)
     const formsTable = base(formsTableId)
+    const educationTable = base(educationTableId)
     
     // Check if the contact already exists
-    const filterByEmail = `LOWER({Email}) = "${email.toLowerCase()}"`
+    const filterByEmail = `LOWER({Email}) = "${normalizedEmail}"`
     
     const existingContacts = await contactsTable.select({
       filterByFormula: filterByEmail,
@@ -104,26 +125,54 @@ export default withApiAuthRequired(async function inviteTeamMemberHandler(req, r
       // Use the existing contact
       contactId = existingContacts[0].id
       console.log(`Using existing contact record: ${contactId}`)
+      
+      // Update contact with provided names if needed
+      if (firstName || lastName) {
+        await contactsTable.update(contactId, {
+          'First Name': firstName.trim(),
+          'Last Name': lastName.trim()
+        })
+      }
     } else {
       // Create a new contact record
-      console.log(`Creating new contact record for email: ${email}`)
-      
-      // Split name into first and last if provided
-      let firstName = '', lastName = ''
-      if (name) {
-        const nameParts = name.trim().split(' ')
-        firstName = nameParts[0] || ''
-        lastName = nameParts.slice(1).join(' ') || ''
-      }
+      console.log(`Creating new contact record for email: ${normalizedEmail}`)
       
       const newContact = await contactsTable.create({
-        'Email': email.trim(),
-        'First Name': firstName,
-        'Last Name': lastName,
+        'Email': normalizedEmail,
+        'First Name': firstName.trim(),
+        'Last Name': lastName.trim(),
         'Source': 'Team Invite'
       })
       
       contactId = newContact.id
+    }
+    
+    // If we have institution information, create or update education record
+    if (inviteeInstitutionId) {
+      // Check if contact already has an education record
+      const existingEducation = existingContacts && existingContacts.length > 0 && 
+                               existingContacts[0].fields.Education && 
+                               existingContacts[0].fields.Education.length > 0
+        ? existingContacts[0].fields.Education[0]
+        : null
+      
+      if (existingEducation) {
+        // Update existing education record with institution
+        await educationTable.update(existingEducation, {
+          'Institution': [inviteeInstitutionId]
+        })
+      } else {
+        // Create new education record
+        const newEducation = await educationTable.create({
+          'Contact': [contactId],
+          'Institution': [inviteeInstitutionId]
+        })
+        
+        // Update contact to link to education record
+        await contactsTable.update(contactId, {
+          'Education': [newEducation.id]
+        })
+      }
     }
     
     // Create a form record for the invitation
@@ -150,10 +199,14 @@ export default withApiAuthRequired(async function inviteTeamMemberHandler(req, r
       success: true,
       team: updatedTeam,
       invite: {
-        email,
+        email: normalizedEmail,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
         memberId: memberRecord.id,
         formId: formRecord.id,
-        status: 'Invited'
+        status: 'Invited',
+        institutionId: inviteeInstitutionId,
+        institutionName: inviteeInstitutionName
       }
     })
   } catch (error) {
