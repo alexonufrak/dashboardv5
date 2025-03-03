@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AlertCircle, CheckCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { toast } from "sonner"
 
 /**
  * Dialog component for inviting users to a team
@@ -172,6 +173,12 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
       if (onTeamUpdated && data.team) {
         onTeamUpdated(data.team)
       }
+      
+      // Show success message
+      toast.success(`Invitation sent to ${firstName} ${lastName}`, {
+        description: `An invitation to join ${team?.name || "your team"} has been sent to ${email}.`,
+        duration: 5000,
+      })
       
       // Close the dialog and reset the form
       resetForm()
