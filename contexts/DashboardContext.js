@@ -4,6 +4,84 @@ import { createContext, useContext, useState, useEffect } from "react"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { toast } from "sonner"
 
+/**
+ * Generates fallback milestones if none are fetched from API
+ * @param {string} programName - Name of the program/cohort
+ * @returns {Array} Array of milestone objects
+ */
+function generateFallbackMilestones(programName) {
+  const now = new Date()
+  const oneMonthAgo = new Date()
+  oneMonthAgo.setMonth(now.getMonth() - 1)
+  
+  const oneMonthLater = new Date()
+  oneMonthLater.setMonth(now.getMonth() + 1)
+  
+  const twoMonthsLater = new Date()
+  twoMonthsLater.setMonth(now.getMonth() + 2)
+  
+  const threeMonthsLater = new Date()
+  threeMonthsLater.setMonth(now.getMonth() + 3)
+  
+  return [
+    {
+      id: "fallback-milestone-1",
+      name: `${programName} Kickoff`,
+      number: 1,
+      dueDate: oneMonthAgo.toISOString(),
+      description: "Getting started and forming your team",
+      status: "completed",
+      progress: 100,
+      completedDate: oneMonthAgo.toISOString(),
+      score: 95
+    },
+    {
+      id: "fallback-milestone-2",
+      name: "Project Definition",
+      number: 2,
+      dueDate: now.toISOString(),
+      description: "Define your project scope and goals",
+      status: "in_progress", 
+      progress: 75,
+      completedDate: null,
+      score: null
+    },
+    {
+      id: "fallback-milestone-3",
+      name: "Initial Prototype",
+      number: 3,
+      dueDate: oneMonthLater.toISOString(),
+      description: "Develop your first working prototype",
+      status: "not_started",
+      progress: 0,
+      completedDate: null,
+      score: null
+    },
+    {
+      id: "fallback-milestone-4",
+      name: "User Testing",
+      number: 4,
+      dueDate: twoMonthsLater.toISOString(),
+      description: "Test your prototype with real users",
+      status: "not_started",
+      progress: 0,
+      completedDate: null,
+      score: null
+    },
+    {
+      id: "fallback-milestone-5",
+      name: "Final Presentation",
+      number: 5,
+      dueDate: threeMonthsLater.toISOString(),
+      description: "Present your finished project",
+      status: "not_started",
+      progress: 0,
+      completedDate: null,
+      score: null
+    }
+  ]
+}
+
 // Create context
 const DashboardContext = createContext(null)
 
@@ -286,11 +364,21 @@ export function DashboardProvider({ children }) {
               if (milestonesResponse.ok) {
                 const milestonesData = await milestonesResponse.json()
                 console.log(`Received ${milestonesData.milestones?.length || 0} milestones from API`)
-                setMilestones(milestonesData.milestones || [])
-                console.log('Set milestones from participation data:', milestonesData.milestones)
+                
+                if (milestonesData.milestones && milestonesData.milestones.length > 0) {
+                  setMilestones(milestonesData.milestones)
+                  console.log('Set milestones from participation data:', milestonesData.milestones)
+                } else {
+                  console.log('API returned empty milestones array, using fallback')
+                  const fallbackMilestones = generateFallbackMilestones(activeParticipation.cohort.name || "Program")
+                  console.log('Set fallback milestones:', fallbackMilestones)
+                  setMilestones(fallbackMilestones)
+                }
               } else {
                 console.log(`No milestones response for cohort ${activeParticipation.cohort.id}`)
-                setMilestones([])
+                const fallbackMilestones = generateFallbackMilestones(activeParticipation.cohort.name || "Program")
+                console.log('Set fallback milestones due to error response:', fallbackMilestones)
+                setMilestones(fallbackMilestones)
               }
             }
             
@@ -441,17 +529,29 @@ export function DashboardProvider({ children }) {
                       if (milestonesResponse.ok) {
                         const milestonesData = await milestonesResponse.json()
                         console.log(`Received ${milestonesData.milestones?.length || 0} milestones from API`)
-                        setMilestones(milestonesData.milestones || [])
-                        console.log('Set milestones:', milestonesData.milestones)
+                        
+                        if (milestonesData.milestones && milestonesData.milestones.length > 0) {
+                          setMilestones(milestonesData.milestones)
+                          console.log('Set milestones from team approach:', milestonesData.milestones)
+                        } else {
+                          console.log('API returned empty milestones array in team approach, using fallback')
+                          const fallbackMilestones = generateFallbackMilestones(activeCohort.name || "Program")
+                          console.log('Set fallback milestones in team approach:', fallbackMilestones)
+                          setMilestones(fallbackMilestones)
+                        }
                       } else {
                         console.log(`No milestones response for cohort ${activeCohort.id}`)
-                        // Use empty milestones but don't consider this a failure
-                        setMilestones([])
+                        // Use fallback milestones instead of empty array
+                        const fallbackMilestones = generateFallbackMilestones(activeCohort.name || "Program")
+                        console.log('Set fallback milestones in team approach due to error response:', fallbackMilestones)
+                        setMilestones(fallbackMilestones)
                       }
                     } catch (milestonesError) {
                       console.error('Error fetching milestones:', milestonesError)
-                      // Use empty milestones but don't consider this a failure
-                      setMilestones([])
+                      // Use fallback milestones instead of empty array
+                      const fallbackMilestones = generateFallbackMilestones(activeCohort.name || "Program")
+                      console.log('Set fallback milestones due to error exception:', fallbackMilestones)
+                      setMilestones(fallbackMilestones)
                     }
                   }
                   

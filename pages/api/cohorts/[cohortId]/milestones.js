@@ -31,57 +31,100 @@ export default withApiAuthRequired(async function handler(req, res) {
     
     console.log(`Fetching milestones for cohort: ${cohortId}`)
     
-    // Try multiple approaches for finding milestones
-    // First, use FIND_RECORD for exact record matching (preferred for linked records)
+    // Based on the Airtable schema, the Milestones table has a Cohort field that links to Cohorts
+    // We'll use simple approaches that are compatible with all Airtable API versions
     let milestones = []
     
+    // First, try a direct approach to match Cohort field records
     try {
-      console.log("Trying with FIND_RECORD formula...")
+      console.log("Trying direct approach - check if Cohort field contains cohortId...")
+      // This works when Cohort is a multipleRecordLinks field (array of IDs)
       milestones = await milestonesTable
         .select({
-          filterByFormula: `FIND_RECORD({Cohort}, "${cohortId}")`,
+          // We're checking if the cohortId is in the Cohort field
+          // No fancy functions, just using plain vanilla Airtable formula functions
+          filterByFormula: `OR(
+            FIND("${cohortId}", ARRAYJOIN(Cohort, ",")),
+            FIND("${cohortId}", ARRAYJOIN(Cohort))
+          )`,
           sort: [{ field: 'Number', direction: 'asc' }]
         })
         .firstPage()
       
-      console.log(`FIND_RECORD approach found ${milestones.length} milestones`)
+      console.log(`Direct approach found ${milestones.length} milestones`)
     } catch (error) {
-      console.error("Error with FIND_RECORD approach:", error)
+      console.error("Error with direct approach:", error)
     }
     
-    // If the first approach didn't work, try with OR and IS_SAME for multipleRecordLinks
+    // If first approach failed, try another formula
     if (milestones.length === 0) {
       try {
-        console.log("Trying with IS_SAME formula...")
-        const formula = `OR(
-          IS_SAME({Cohort}, ARRAYJOIN(ARRAYWRAP("${cohortId}"))),
-          IS_SAME(ARRAYJOIN({Cohort}), "${cohortId}")
-        )`
+        console.log("Trying alternative formula...")
         
+        // Get all milestones for diagnostic output
+        const allMilestones = await milestonesTable
+          .select({
+            maxRecords: 5
+          })
+          .firstPage()
+        
+        if (allMilestones.length > 0) {
+          // Log sample milestone records to understand their structure
+          console.log(`Sample milestone has fields:`, Object.keys(allMilestones[0].fields))
+          if (allMilestones[0].fields.Cohort) {
+            console.log(`Sample milestone Cohort field:`, allMilestones[0].fields.Cohort)
+            console.log(`Cohort field type:`, typeof allMilestones[0].fields.Cohort)
+            console.log(`Is array:`, Array.isArray(allMilestones[0].fields.Cohort))
+          }
+        }
+        
+        // Try again with a basic formula that looks for the cohortId within the Cohort field
         milestones = await milestonesTable
           .select({
-            filterByFormula: formula,
+            filterByFormula: `SEARCH("${cohortId}", ARRAYJOIN(Cohort))`,
             sort: [{ field: 'Number', direction: 'asc' }]
           })
           .firstPage()
         
-        console.log(`IS_SAME approach found ${milestones.length} milestones`)
+        console.log(`Alternative approach found ${milestones.length} milestones`)
       } catch (error) {
-        console.error("Error with IS_SAME approach:", error)
+        console.error("Error with alternative approach:", error)
       }
     }
     
-    // If all previous approaches failed, use the simpler FIND function as a last resort
+    // Last resort: Get all milestones and filter manually
     if (milestones.length === 0) {
-      console.log("Trying with FIND approach...")
-      milestones = await milestonesTable
-        .select({
-          filterByFormula: `FIND("${cohortId}", {Cohort})`,
-          sort: [{ field: 'Number', direction: 'asc' }]
+      try {
+        console.log("Trying manual filtering approach - getting all milestones...")
+        const allMilestones = await milestonesTable
+          .select({
+            sort: [{ field: 'Number', direction: 'asc' }]
+          })
+          .firstPage()
+        
+        console.log(`Retrieved ${allMilestones.length} total milestones for manual filtering`)
+        
+        // Filter milestones manually by checking if the Cohort field includes the cohortId
+        milestones = allMilestones.filter(record => {
+          if (!record.fields.Cohort) return false
+          
+          // If Cohort is an array (which it should be for a linked record)
+          if (Array.isArray(record.fields.Cohort)) {
+            return record.fields.Cohort.includes(cohortId)
+          }
+          
+          // If Cohort is a string (unexpected but handle just in case)
+          if (typeof record.fields.Cohort === 'string') {
+            return record.fields.Cohort.includes(cohortId)
+          }
+          
+          return false
         })
-        .firstPage()
-      
-      console.log(`FIND approach found ${milestones.length} milestones`)
+        
+        console.log(`Manual filtering approach found ${milestones.length} milestones`)
+      } catch (error) {
+        console.error("Error with manual filtering approach:", error)
+      }
     }
     
     // Log the milestones found
