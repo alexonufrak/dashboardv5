@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -8,8 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { CalendarIcon, Users, Award, BarChart3, Flag, ChevronRight, Loader2, CheckCircle, Clock, Circle, AlertCircle } from "lucide-react"
+import { CalendarIcon, Users, Award, BarChart3, Flag, ChevronRight, Loader2, CheckCircle, Clock, Circle, AlertCircle, Edit } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import TeamInviteDialog from "@/components/TeamInviteDialog"
+import TeamEditDialog from "@/components/TeamEditDialog"
 import TeamMilestoneProgress from "@/components/TeamMilestoneProgress"
 import TeamPointsSummary from "@/components/TeamPointsSummary"
 import TeamMemberList from "@/components/TeamMemberList"
@@ -22,6 +25,10 @@ const ProgramDashboardContent = dynamic(() => Promise.resolve(ProgramDashboardIn
 
 // Inner component that uses dashboard context
 function ProgramDashboardInner({ onNavigate }) {
+  // Add state for dialog control
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
   // Get data from dashboard context
   const { 
     profile, 
@@ -279,13 +286,20 @@ function ProgramDashboardInner({ onNavigate }) {
               </div>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsInviteDialogOpen(true)}
+              >
                 <Users className="h-4 w-4 mr-2" />
                 Invite Members
               </Button>
-              <Button size="sm">
-                <ChevronRight className="h-4 w-4 mr-2" />
-                Manage Team
+              <Button 
+                size="sm"
+                onClick={() => setIsEditDialogOpen(true)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Team
               </Button>
             </div>
           </div>
@@ -544,6 +558,30 @@ function ProgramDashboardInner({ onNavigate }) {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Team dialogs */}
+      {isTeamProgram && team && (
+        <>
+          {/* Invite Dialog */}
+          <TeamInviteDialog 
+            open={isInviteDialogOpen} 
+            onOpenChange={setIsInviteDialogOpen}
+            teamId={team.id}
+            teamName={team.name}
+          />
+          
+          {/* Edit Team Dialog */}
+          <TeamEditDialog
+            open={isEditDialogOpen}
+            onOpenChange={setIsEditDialogOpen}
+            team={team}
+            onSave={() => {
+              // After saving team details, refresh team data
+              refreshData('team');
+            }}
+          />
+        </>
+      )}
     </div>
   )
 }
