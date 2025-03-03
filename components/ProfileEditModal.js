@@ -31,6 +31,8 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     error: majorsError 
   } = useMajors();
   
+  console.log("Available majors:", majors);
+  
   // Reset form when profile changes
   useEffect(() => {
     if (profile) {
@@ -108,6 +110,8 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
         institutionId: formData.institutionId || profile.institution?.id
       };
       
+      console.log("Form data being submitted:", updateData);
+      
       // Use our centralized update function with cache invalidation
       const updatedProfile = await updateProfileData(updateData, queryClient);
       
@@ -118,6 +122,7 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
       
       onClose();
     } catch (err) {
+      console.error("Error in profile submission:", err);
       setError(err.message || "Failed to update profile");
     } finally {
       setIsSubmitting(false);
@@ -125,6 +130,13 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
   };
 
   console.log("ProfileEditModal render with isOpen =", isOpen);
+  
+  // Debug profile data
+  console.log("Current profile data:", {
+    profileData: profile,
+    programId: profile?.programId,
+    major: profile?.major
+  });
   
   return (
     <Dialog 
@@ -261,21 +273,26 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
                   {isLoadingMajors ? (
                     <div className="text-sm text-muted-foreground italic p-2">Loading majors...</div>
                   ) : (
-                    <select
-                      id="major"
-                      name="major"
-                      value={formData.major}
-                      onChange={handleInputChange}
-                      className="w-full p-2 border rounded-md"
-                      required={profile.showMajor}
-                    >
-                      <option value="">Select a Major</option>
-                      {majors.map(major => (
-                        <option key={major.id} value={major.id}>
-                          {major.name}
-                        </option>
-                      ))}
-                    </select>
+                    <div>
+                      <select
+                        id="major"
+                        name="major"
+                        value={formData.major}
+                        onChange={handleInputChange}
+                        className="w-full p-2 border rounded-md"
+                        required={profile.showMajor}
+                      >
+                        <option value="">Select a Major</option>
+                        {majors.map(major => (
+                          <option key={major.id} value={major.id}>
+                            {major.name}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Major ID: {formData.major || '(none selected)'}
+                      </p>
+                    </div>
                   )}
                 </div>
               )}

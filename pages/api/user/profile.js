@@ -24,11 +24,15 @@ async function handler(req, res) {
         FirstName: updateData.firstName,
         LastName: updateData.lastName,
         DegreeType: updateData.degreeType,
-        Major: updateData.major,
+        // Use programId (the ID reference) instead of text value for Major
+        Major: updateData.major,  // This should be a record ID from the Programs table
         GraduationYear: updateData.graduationYear,
         InstitutionId: updateData.institutionId,
         educationId: updateData.educationId, // Include education record ID for updating
       }
+      
+      // Debug the data being sent
+      console.log("Updating user profile with data:", JSON.stringify(airtableData, null, 2));
 
       const updatedProfile = await updateUserProfile(contactId, airtableData)
       const completeProfile = await getCompleteUserProfile(session.user)
