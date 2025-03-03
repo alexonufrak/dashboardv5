@@ -247,7 +247,12 @@ function ProgramDashboardInner({ onNavigate }) {
                 <h1 className="text-2xl font-bold tracking-tight">{team.name || "Your Team"}</h1>
                 <div className="flex items-center text-muted-foreground">
                   <Users className="h-4 w-4 mr-1" />
-                  <span>{team.members?.length || 0} members</span>
+                  <span>
+                    {(() => {
+                      const memberCount = team.members?.length || 0;
+                      return `${memberCount} ${memberCount === 1 ? 'member' : 'members'}`;
+                    })()}
+                  </span>
                   {team.points && (
                     <>
                       <span className="mx-2">•</span>
