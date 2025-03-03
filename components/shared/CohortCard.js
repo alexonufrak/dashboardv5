@@ -40,7 +40,8 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   // Extract relevant data from cohort
   const initiativeName = cohort.initiativeDetails?.name || "Unknown Initiative"
   const topics = cohort.topicNames || []
-  const status = cohort["Status"] || "Unknown"
+  // Access status field consistently - cohort.Status is the correct property
+  const status = cohort.Status || "Unknown"
   const actionButtonText = cohort["Action Button"] || "Apply Now"
   const filloutFormId = cohort["Application Form ID (Fillout)"]
   // Check if cohort is open for applications
