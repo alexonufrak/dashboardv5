@@ -1,176 +1,260 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/router";
-import { useUser } from "@auth0/nextjs-auth0/client";
-import { 
-  Home,
-  Compass, 
-  Users, 
-  ExternalLink, 
-  LogOut,
-  Command
-} from "lucide-react";
-
+import Link from "next/link";
+import { cn } from "../../lib/utils";
+import { useMobile } from "../hooks/use-mobile";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarSeparator
-} from "../ui/sidebar";
+  Home,
+  Users,
+  Award,
+  BookOpen,
+  Briefcase,
+  Calendar,
+  LayoutDashboard,
+  Settings,
+  BarChart,
+  FileText,
+  Rocket,
+  BookMarked,
+  LightbulbIcon
+} from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Badge } from "../ui/badge";
+import { ScrollArea } from "../ui/scroll-area";
+import { Separator } from "../ui/separator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 
-export function DashboardSidebarV2({ profile, onEditClick }) {
+/**
+ * Dashboard Sidebar Component
+ * Provides navigation and program access for the dashboard
+ */
+export function DashboardSidebar({ userProfile }) {
   const router = useRouter();
-  const { user } = useUser();
+  const isMobile = useMobile();
   
-  // Navigation links
+  // Skip rendering on mobile as we use a sheet in the header
+  if (isMobile) {
+    return null;
+  }
+  
+  // Main navigation links
   const mainNavLinks = [
     {
-      title: "Dashboard",
+      name: "Dashboard",
       href: "/dashboard",
-      icon: <Home className="h-4 w-4" />,
-      isActive: router.pathname === "/dashboard"
-    }
+      icon: <Home className="h-5 w-5" />,
+    },
+    {
+      name: "My Programs",
+      href: "/dashboard/programs",
+      icon: <LayoutDashboard className="h-5 w-5" />,
+      badge: {
+        text: "3",
+        variant: "default"
+      }
+    },
+    {
+      name: "My Teams",
+      href: "/dashboard/teams",
+      icon: <Users className="h-5 w-5" />,
+      badge: {
+        text: "2",
+        variant: "default"
+      }
+    },
+    {
+      name: "Points & Progress",
+      href: "/dashboard/points",
+      icon: <Award className="h-5 w-5" />,
+    },
+    {
+      name: "Opportunities",
+      href: "/dashboard/opportunities",
+      icon: <Rocket className="h-5 w-5" />,
+      badge: {
+        text: "New",
+        variant: "outline"
+      }
+    },
+    {
+      name: "Calendar",
+      href: "/dashboard/calendar",
+      icon: <Calendar className="h-5 w-5" />,
+    },
   ];
   
-  // External links
-  const externalLinks = [
+  // Program category links
+  const programLinks = [
     {
-      title: "ConneXions Community",
-      href: "https://connexions.xfoundry.org",
-      icon: <ExternalLink className="h-4 w-4" />
+      name: "Xperience",
+      href: "/dashboard/programs/xperience",
+      icon: <Briefcase className="h-5 w-5" />,
+      color: "text-blue-500"
     },
     {
-      title: "xFoundry Website",
-      href: "https://xfoundry.org",
-      icon: <ExternalLink className="h-4 w-4" />
+      name: "Xperiment",
+      href: "/dashboard/programs/xperiment",
+      icon: <BookOpen className="h-5 w-5" />,
+      color: "text-green-500"
     },
     {
-      title: "Sign Out",
-      href: "/api/auth/logout",
-      icon: <LogOut className="h-4 w-4" />
-    }
+      name: "Xtrapreneurs",
+      href: "/dashboard/programs/xtrapreneurs",
+      icon: <LightbulbIcon className="h-5 w-5" />,
+      color: "text-amber-500"
+    },
+    {
+      name: "Horizons",
+      href: "/dashboard/programs/horizons",
+      icon: <Rocket className="h-5 w-5" />,
+      color: "text-purple-500"
+    },
+  ];
+  
+  // Utility links
+  const utilityLinks = [
+    {
+      name: "Resources",
+      href: "/dashboard/resources",
+      icon: <BookMarked className="h-5 w-5" />,
+    },
+    {
+      name: "Reports",
+      href: "/dashboard/reports",
+      icon: <BarChart className="h-5 w-5" />,
+    },
+    {
+      name: "Documents",
+      href: "/dashboard/documents",
+      icon: <FileText className="h-5 w-5" />,
+    },
+    {
+      name: "Settings",
+      href: "/dashboard/settings",
+      icon: <Settings className="h-5 w-5" />,
+    },
   ];
 
-  return (
-    <Sidebar>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <a href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-white">
-                  <Command className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">xFoundry Hub</span>
-                  <span className="truncate text-xs">
-                    {profile?.institutionName || "Education Platform"}
-                  </span>
-                </div>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      
-      <SidebarContent>
-        {/* Main Navigation */}
-        <SidebarGroup>
-          <SidebarGroupLabel>NAVIGATION</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainNavLinks.map((link) => (
-                <SidebarMenuItem key={link.title}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={link.isActive}
-                  >
-                    <Link href={link.href}>
-                      {link.icon}
-                      <span>{link.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        
-        <SidebarSeparator />
-        
-        {/* User Profile Card */}
-        {profile && (
-          <SidebarGroup>
-            <SidebarGroupLabel>PROFILE</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <div className="flex flex-col items-center space-y-2 py-2 px-1">
-                <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-muted">
-                  <img 
-                    src={user?.picture || "/placeholder-user.jpg"} 
-                    alt={user?.name || "User Profile"} 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="text-center">
-                  <h3 className="font-medium text-sm">{profile?.firstName} {profile?.lastName}</h3>
-                  <p className="text-xs text-muted-foreground truncate max-w-[200px]">{user?.email}</p>
-                </div>
-                <button 
-                  onClick={onEditClick}
-                  className="text-xs text-primary hover:underline"
+  // Check if link is active
+  const isActiveLink = (href) => {
+    if (href === "/dashboard" && router.pathname === "/dashboard") {
+      return true;
+    }
+    return router.pathname.startsWith(href) && href !== "/dashboard";
+  };
+
+  // Render navigation link
+  const renderNavLink = (link) => {
+    const active = isActiveLink(link.href);
+    
+    return (
+      <TooltipProvider key={link.name}>
+        <Tooltip delayDuration={300}>
+          <TooltipTrigger asChild>
+            <Link
+              href={link.href}
+              className={cn(
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                active 
+                  ? "bg-accent text-accent-foreground" 
+                  : "hover:bg-accent/50 text-muted-foreground hover:text-foreground",
+                link.color
+              )}
+            >
+              {link.icon}
+              <span>{link.name}</span>
+              {link.badge && (
+                <Badge 
+                  variant={link.badge.variant} 
+                  className="ml-auto text-xs"
                 >
-                  Edit Profile
-                </button>
+                  {link.badge.text}
+                </Badge>
+              )}
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="right" align="center">
+            {link.name}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  };
+
+  return (
+    <aside className="hidden border-r bg-background md:block md:w-64 lg:w-72">
+      <ScrollArea className="h-[calc(100vh-4rem)]">
+        <div className="flex flex-col gap-2 p-4">
+          {/* User Profile Card */}
+          {userProfile && (
+            <div className="mb-2 flex flex-col items-center space-y-2 rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={userProfile.picture || "/placeholder-user.jpg"} />
+                <AvatarFallback>{userProfile.firstName?.[0]}{userProfile.lastName?.[0]}</AvatarFallback>
+              </Avatar>
+              <div className="text-center">
+                <h3 className="text-sm font-medium">
+                  {userProfile.firstName} {userProfile.lastName}
+                </h3>
+                <p className="text-xs text-muted-foreground">{userProfile.institutionName || "Student"}</p>
               </div>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-        
-        {/* External Links */}
-        <SidebarGroup className="mt-auto">
-          <SidebarGroupLabel>LINKS</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {externalLinks.map((link) => (
-                <SidebarMenuItem key={link.title}>
-                  <SidebarMenuButton asChild>
-                    {link.title === "Sign Out" ? (
-                      <Link href={link.href} className="flex justify-between">
-                        <span>{link.title}</span>
-                        {link.icon}
-                      </Link>
-                    ) : (
-                      <a 
-                        href={link.href} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="flex justify-between"
-                      >
-                        <span>{link.title}</span>
-                        {link.icon}
-                      </a>
-                    )}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      
-      <SidebarFooter className="pb-4">
-        <div className="px-3 py-2 text-xs text-center text-muted-foreground">
-          <p>© {new Date().getFullYear()} xFoundry</p>
+              <div className="flex items-center space-x-2 text-xs">
+                <div className="flex flex-col items-center">
+                  <span className="font-medium">330</span>
+                  <span className="text-muted-foreground">Points</span>
+                </div>
+                <Separator orientation="vertical" className="h-8" />
+                <div className="flex flex-col items-center">
+                  <span className="font-medium">3</span>
+                  <span className="text-muted-foreground">Programs</span>
+                </div>
+                <Separator orientation="vertical" className="h-8" />
+                <div className="flex flex-col items-center">
+                  <span className="font-medium">2</span>
+                  <span className="text-muted-foreground">Teams</span>
+                </div>
+              </div>
+              <Link
+                href="/profile"
+                className="text-xs text-primary hover:underline"
+              >
+                View Profile
+              </Link>
+            </div>
+          )}
+
+          {/* Main Navigation */}
+          <div className="py-2">
+            <h3 className="mb-2 px-3 text-xs font-medium text-muted-foreground">
+              NAVIGATION
+            </h3>
+            <nav className="flex flex-col gap-1">
+              {mainNavLinks.map(renderNavLink)}
+            </nav>
+          </div>
+
+          {/* Programs */}
+          <div className="py-2">
+            <h3 className="mb-2 px-3 text-xs font-medium text-muted-foreground">
+              PROGRAMS
+            </h3>
+            <nav className="flex flex-col gap-1">
+              {programLinks.map(renderNavLink)}
+            </nav>
+          </div>
+
+          {/* Utilities */}
+          <div className="py-2">
+            <h3 className="mb-2 px-3 text-xs font-medium text-muted-foreground">
+              UTILITIES
+            </h3>
+            <nav className="flex flex-col gap-1">
+              {utilityLinks.map(renderNavLink)}
+            </nav>
+          </div>
         </div>
-      </SidebarFooter>
-    </Sidebar>
+      </ScrollArea>
+    </aside>
   );
 }

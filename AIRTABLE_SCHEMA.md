@@ -488,6 +488,19 @@ Base Schema
             "relationshipType": "-> Rewards Claimed",
             "allowsMultipleRecords": true
           }
+        },
+        {
+          "name": "Source",
+          "type": "singleSelect",
+          "options": {}
+        },
+        {
+          "name": "Team Invites Sent",
+          "type": "multipleRecordLinks",
+          "options": {
+            "relationshipType": "-> Invites",
+            "allowsMultipleRecords": true
+          }
         }
       ]
     },
@@ -900,6 +913,16 @@ Base Schema
             "relationshipType": "-> Teams",
             "allowsMultipleRecords": true
           }
+        },
+        {
+          "name": "Xtrapreneurs/Commitment",
+          "type": "singleSelect",
+          "options": {}
+        },
+        {
+          "name": "Xtrapreneurs/Reason",
+          "type": "multilineText",
+          "options": {}
         }
       ]
     },
@@ -1071,7 +1094,12 @@ Base Schema
           }
         },
         {
-          "name": "Participatory Type",
+          "name": "Participation Type",
+          "type": "singleSelect",
+          "options": {}
+        },
+        {
+          "name": "Enrollment Type",
           "type": "singleSelect",
           "options": {}
         }
@@ -1503,6 +1531,14 @@ Base Schema
           "name": "Members copy",
           "type": "singleLineText",
           "options": {}
+        },
+        {
+          "name": "Invites",
+          "type": "multipleRecordLinks",
+          "options": {
+            "relationshipType": "-> Invites",
+            "allowsMultipleRecords": true
+          }
         }
       ]
     },
@@ -1646,6 +1682,85 @@ Base Schema
         {
           "name": "Reward Redemptions",
           "type": "singleLineText",
+          "options": {}
+        },
+        {
+          "name": "Invites",
+          "type": "multipleRecordLinks",
+          "options": {
+            "relationshipType": "-> Invites",
+            "allowsMultipleRecords": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "Invites",
+      "description": "",
+      "primaryFieldName": "",
+      "fields": [
+        {
+          "name": "Invite Token",
+          "type": "singleLineText",
+          "options": {}
+        },
+        {
+          "name": "Email",
+          "type": "email",
+          "options": {}
+        },
+        {
+          "name": "First Name",
+          "type": "singleLineText",
+          "options": {}
+        },
+        {
+          "name": "Last Name",
+          "type": "singleLineText",
+          "options": {}
+        },
+        {
+          "name": "Team",
+          "type": "multipleRecordLinks",
+          "options": {
+            "relationshipType": "-> Teams",
+            "allowsMultipleRecords": true
+          }
+        },
+        {
+          "name": "Member",
+          "type": "multipleRecordLinks",
+          "options": {
+            "relationshipType": "-> Members",
+            "allowsMultipleRecords": true
+          }
+        },
+        {
+          "name": "Created By",
+          "type": "multipleRecordLinks",
+          "options": {
+            "relationshipType": "-> Contacts",
+            "allowsMultipleRecords": true
+          }
+        },
+        {
+          "name": "Expiration Date",
+          "type": "dateTime",
+          "options": {}
+        },
+        {
+          "name": "Status",
+          "type": "singleSelect",
+          "options": {}
+        },
+        {
+          "name": "Created At",
+          "type": "dateTime",
+          "options": {}
+        },
+        {
+          "name": "Invite Link",
+          "type": "formula",
           "options": {}
         }
       ]
