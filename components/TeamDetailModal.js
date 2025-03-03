@@ -24,8 +24,16 @@ const TeamDetailModal = ({ team, isOpen, onClose, onTeamUpdated }) => {
   
   if (!team) return null
 
-  // Get active members only
-  const activeMembers = team.members ? team.members.filter(member => member.status === "Active") : []
+  // Get all members (we'll show status for each one)
+  let teamMembers = team.members || []
+  
+  // Sort members: Active first, then Invited, then others
+  teamMembers = [...teamMembers].sort((a, b) => {
+    const statusOrder = { "Active": 1, "Invited": 2 };
+    const statusA = statusOrder[a.status] || 3;
+    const statusB = statusOrder[b.status] || 3;
+    return statusA - statusB;
+  })
   
   // Check if user is a team member
   const isUserTeamMember = team.members?.some(member => member.isCurrentUser && member.status === "Active") || false
@@ -79,7 +87,7 @@ const TeamDetailModal = ({ team, isOpen, onClose, onTeamUpdated }) => {
               <div>
                 <h4 className="text-sm font-semibold mb-1">Members</h4>
                 <p className="text-lg font-medium">
-                  {activeMembers.length}
+                  {teamMembers.filter(member => member.status === "Active").length} active
                 </p>
               </div>
               {team.points !== undefined && (
@@ -99,9 +107,9 @@ const TeamDetailModal = ({ team, isOpen, onClose, onTeamUpdated }) => {
               <h4 className="text-sm font-semibold mb-3">Team Members</h4>
               
               <ScrollArea className="h-[200px] pr-4">
-                {activeMembers.length > 0 ? (
+                {teamMembers.length > 0 ? (
                   <div className="space-y-3">
-                    {activeMembers.map((member, index) => (
+                    {teamMembers.map((member, index) => (
                       <div 
                         key={member.id || index} 
                         className="flex items-center gap-3 p-2 rounded-md hover:bg-muted"
@@ -113,15 +121,37 @@ const TeamDetailModal = ({ team, isOpen, onClose, onTeamUpdated }) => {
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {member.name || member.email || "Unknown Member"}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium truncate">
+                              {member.name || member.email || "Unknown Member"}
+                            </p>
+                            
+                            {/* Member Status Badge */}
+                            {member.status && (
+                              <Badge
+                                variant={
+                                  member.status === "Active" ? "success" : 
+                                  member.status === "Invited" ? "outline" : 
+                                  "secondary"
+                                }
+                                className={`text-xs px-2 py-0 h-5 font-normal ${
+                                  member.status === "Active" ? "bg-green-100 text-green-800 hover:bg-green-200 border-green-200" : 
+                                  member.status === "Invited" ? "bg-blue-50 text-blue-800 hover:bg-blue-100 border-blue-200" : 
+                                  "bg-gray-100 text-gray-800"
+                                }`}
+                              >
+                                {member.status}
+                              </Badge>
+                            )}
+                          </div>
+                          
                           {member.email && member.name && (
                             <p className="text-xs text-muted-foreground truncate">
                               {member.email}
                             </p>
                           )}
                         </div>
+                        
                         {member.isCurrentUser && (
                           <Badge variant="secondary" className="ml-auto">You</Badge>
                         )}
@@ -130,7 +160,7 @@ const TeamDetailModal = ({ team, isOpen, onClose, onTeamUpdated }) => {
                   </div>
                 ) : (
                   <p className="text-center py-8 text-muted-foreground italic">
-                    No active team members found.
+                    No team members found.
                   </p>
                 )}
               </ScrollArea>
