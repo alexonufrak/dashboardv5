@@ -139,42 +139,54 @@ export default withApiAuthRequired(async function handler(req, res) {
     
     // Process each milestone to get the required data
     const formattedMilestones = milestones.map(milestone => {
-      // Determine status based on milestone data - this is simplified logic
-      // In production, you would have more complex logic based on submissions, dates, etc.
+      // Determine initial status based on milestone data and due date
       let status = "not_started"
       let progress = 0
       let completedDate = null
       let score = null
       
-      // This is placeholder logic - in production, you would check for actual submission data
-      // and calculate these values accordingly
+      // Get due date and calculate whether it's past due
       const dueDate = milestone.fields["Due Datetime"]
       const now = new Date()
       const milestoneDate = dueDate ? new Date(dueDate) : null
+      const isPastDue = milestoneDate && milestoneDate < now
       
-      // Simplified status logic for demo purposes
+      // In a real implementation, we would check for actual submissions in the Submissions table
+      // Note: The client-side MilestoneSubmissionChecker component will handle the actual 
+      // submission checking, but we're providing reasonable initial values here
+      
+      // Simple logic based on due date and milestone number for initial state
       if (milestoneDate) {
-        if (milestoneDate < now) {
-          // Past due date - assume completed for first two, in progress for third, at_risk for next
+        // Past due date milestones
+        if (isPastDue) {
+          // Earlier milestones (likely completed)
           if (milestone.fields.Number <= 2) {
             status = "completed"
             completedDate = new Date(milestoneDate.getTime() - Math.random() * 1000 * 60 * 60 * 24 * 3) // Random date within 3 days before due date
             score = Math.floor(Math.random() * 15) + 85 // Random score between 85-100
-          } else if (milestone.fields.Number === 3) {
+          } 
+          // Middle milestones (likely in progress)
+          else if (milestone.fields.Number === 3) {
             status = "in_progress"
             progress = Math.floor(Math.random() * 40) + 40 // Random progress between 40-80%
-          } else {
+          } 
+          // Later milestones past due (at risk)
+          else {
             status = "at_risk"
             progress = Math.floor(Math.random() * 30) + 10 // Random progress between 10-40%
           }
-        } else if (milestone.fields.Number <= 3) {
-          // Future due date but early milestone - assume in progress
-          status = milestone.fields.Number <= 2 ? "completed" : "in_progress"
-          if (status === "completed") {
-            completedDate = new Date(milestoneDate.getTime() - Math.random() * 1000 * 60 * 60 * 24 * 3)
-            score = Math.floor(Math.random() * 15) + 85
-          } else {
+        } 
+        // Future milestones
+        else {
+          // Earlier milestones with future dates (probably started working on them)
+          if (milestone.fields.Number <= 2) {
+            status = "in_progress"
             progress = Math.floor(Math.random() * 40) + 40
+          }
+          // Later future milestones (not started)
+          else {
+            status = "not_started"
+            progress = 0
           }
         }
       }

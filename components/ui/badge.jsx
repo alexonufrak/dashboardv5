@@ -16,6 +16,10 @@ const badgeVariants = cva(
           "border-transparent bg-red-500 text-neutral-50 shadow-sm hover:bg-red-500/80 dark:bg-red-900 dark:text-neutral-50 dark:hover:bg-red-900/80",
         success:
           "border-transparent bg-green-500 text-neutral-50 shadow-sm hover:bg-green-500/80 dark:bg-green-900 dark:text-neutral-50 dark:hover:bg-green-900/80",
+        warning:
+          "border-transparent bg-amber-500 text-neutral-50 shadow-sm hover:bg-amber-500/80 dark:bg-amber-900 dark:text-neutral-50 dark:hover:bg-amber-900/80",
+        info:
+          "border-transparent bg-blue-500 text-neutral-50 shadow-sm hover:bg-blue-500/80 dark:bg-blue-900 dark:text-neutral-50 dark:hover:bg-blue-900/80",
         outline: "text-neutral-950 dark:text-neutral-50",
       },
     },
