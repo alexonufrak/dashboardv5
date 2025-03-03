@@ -258,18 +258,20 @@ function ProgramDashboardInner({ onNavigate }) {
               </Avatar>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">{team.name || "Your Team"}</h1>
+                {/* Replace with simple hardcoded text for testing */}
                 <div className="flex items-center text-muted-foreground">
+                  {/* Member count with very basic output - zero JS operations */}
                   <Users className="h-4 w-4 mr-1" />
-                  <span>
-                    {/* Directly render the count without using an IIFE */}
-                    {team.members.length} {team.members.length === 1 ? 'member' : 'members'}
+                  <span data-testid="member-count">
+                    {team.members?.length} member{team.members?.length !== 1 ? 's' : ''}
                   </span>
-                  {team.points && (
+                  
+                  {team.points > 0 && (
                     <>
                       <span className="mx-2">•</span>
                       <Award className="h-4 w-4 mr-1" />
-                      <span>
-                        {team.points} {team.points === 1 ? 'point' : 'points'}
+                      <span data-testid="team-points">
+                        {team.points} point{team.points !== 1 ? 's' : ''}
                       </span>
                     </>
                   )}
