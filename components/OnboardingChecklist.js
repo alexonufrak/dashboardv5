@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useUser } from '@auth0/nextjs-auth0/client'
+import { useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -22,6 +23,16 @@ import TeamCreateDialog from './TeamCreateDialog'
 import TeamSelectDialog from './TeamSelectDialog'
 import FilloutPopupEmbed from './FilloutPopupEmbed'
 
+// Import our data fetching hooks
+import { 
+  useTeamsData, 
+  useApplicationsData, 
+  useUserMetadata,
+  useUpdateUserMetadata,
+  useUpdateOnboardingStatus,
+  useCreateTeam
+} from '@/lib/useDataFetching'
+
 const OnboardingChecklist = ({ 
   profile, 
   onComplete, 
@@ -32,17 +43,34 @@ const OnboardingChecklist = ({
   const { user } = useUser()
   const router = useRouter()
   
+  const queryClient = useQueryClient()
+  
   // Core state - separate state for each step's expansion status
   const [registerExpanded, setRegisterExpanded] = useState(true)
   const [cohortExpanded, setCohortExpanded] = useState(false)
   
+  // Use our React Query hooks for data fetching
+  const { data: userMetadata = {} } = useUserMetadata()
+  const { data: teamData = [], isLoading: isLoadingTeams } = useTeamsData()
+  const { data: appData = [], isLoading: isLoadingAppData, refetch: refetchApps } = useApplicationsData()
+  
+  // Use our mutation hooks
+  const updateMetadata = useUpdateUserMetadata()
+  const updateOnboarding = useUpdateOnboardingStatus()
+  const createTeamMutation = useCreateTeam()
+  
+  // Combine applications - prefer the ones passed as props, but use our query data if not provided
+  const allApplications = Array.isArray(applications) && applications.length > 0 
+    ? applications 
+    : appData
+  
   // Check if user has any applications (used for step completion state)
-  const hasApplications = Array.isArray(applications) && applications.length > 0
+  const hasApplications = Array.isArray(allApplications) && allApplications.length > 0
   
   const [stepStatus, setStepStatus] = useState({
     register: { completed: true, title: 'Create an account', description: 'Sign up with your institutional email' },
     selectCohort: { 
-      completed: hasApplications, // Initialize based on applications prop
+      completed: hasApplications, // Initialize based on applications
       title: 'Get involved', 
       description: 'Select a program to join' 
     }
@@ -60,10 +88,9 @@ const OnboardingChecklist = ({
   const [checkedCohortSubmission, setCheckedCohortSubmission] = useState(hasApplications)
   const [isLoading, setIsLoading] = useState(false)
   const [selectedCohort, setSelectedCohort] = useState(
-    hasApplications && applications[0].cohortId ? applications[0].cohortId : null
+    hasApplications && allApplications[0]?.cohortId ? allApplications[0].cohortId : 
+    userMetadata?.selectedCohort || null
   )
-  const [userTeams, setUserTeams] = useState([])
-  const [isLoadingTeams, setIsLoadingTeams] = useState(false)
   
   // Initialize onboarding state
   useEffect(() => {
@@ -75,9 +102,6 @@ const OnboardingChecklist = ({
       setSelectedCohort(cohortId);
     }
     
-    // Load user metadata
-    loadUserMetadata();
-    
     // Always mark register step as completed
     markStepComplete('register', false);
     
@@ -86,24 +110,44 @@ const OnboardingChecklist = ({
     setCohortExpanded(false);
   }, []);
   
-  // When profile or applications change, update state
+  // When userMetadata changes, update state based on what's in metadata
   useEffect(() => {
-    if (profile?.contactId) {
-      fetchUserTeams();
+    if (userMetadata) {
+      // Update steps based on metadata
+      if (userMetadata.onboarding && Array.isArray(userMetadata.onboarding)) {
+        const updatedStatus = { ...stepStatus };
+        
+        Object.keys(updatedStatus).forEach(stepId => {
+          updatedStatus[stepId].completed = userMetadata.onboarding.includes(stepId);
+        });
+        
+        setStepStatus(updatedStatus);
+      }
       
-      // Only check cohort submission if we don't have applications from props
-      if (!hasApplications && !isLoadingApplications) {
-        checkCohortSubmission();
+      // Set selected cohort if available
+      if (userMetadata.selectedCohort && !selectedCohort) {
+        setSelectedCohort(userMetadata.selectedCohort);
       }
     }
-  }, [profile]);
+  }, [userMetadata]);
   
-  // Update step status when applications prop changes
+  // When teamData changes, update local state
+  useEffect(() => {
+    // If user has teams and cohort completion is set, check if we need to mark the step as completed
+    if (teamData && teamData.length > 0 && allApplications && allApplications.length > 0) {
+      // If user has a team and applications, mark step as completed
+      if (!stepStatus.selectCohort.completed) {
+        markStepComplete('selectCohort');
+      }
+    }
+  }, [teamData, allApplications]);
+  
+  // Update step status when applications data changes
   useEffect(() => {
     if (!isLoadingApplications) {
-      // If we receive applications from props, mark step as completed
+      // If we have applications, mark step as completed
       if (hasApplications && !stepStatus.selectCohort.completed) {
-        console.log('Setting selectCohort to completed from applications prop');
+        console.log('Setting selectCohort to completed from applications data');
         setStepStatus(prev => ({
           ...prev,
           selectCohort: {
@@ -113,13 +157,13 @@ const OnboardingChecklist = ({
         }));
         
         // If we have a cohort ID, save it
-        if (applications[0].cohortId) {
-          setSelectedCohort(applications[0].cohortId);
-          saveCohortToMetadata(applications[0].cohortId);
+        if (allApplications[0]?.cohortId) {
+          setSelectedCohort(allApplications[0].cohortId);
+          saveCohortToMetadata(allApplications[0].cohortId);
         }
       }
     }
-  }, [applications, isLoadingApplications]);
+  }, [allApplications, isLoadingApplications]);
   
   // Update completion percentage when steps change
   useEffect(() => {
@@ -133,98 +177,14 @@ const OnboardingChecklist = ({
     }
   }, [stepStatus]);
   
-  // Load user metadata from API
-  const loadUserMetadata = async () => {
-    try {
-      const response = await fetch('/api/user/metadata');
-      if (response.ok) {
-        const metadata = await response.json();
-        
-        // Update steps based on metadata
-        if (metadata.onboarding && Array.isArray(metadata.onboarding)) {
-          const updatedStatus = { ...stepStatus };
-          
-          Object.keys(updatedStatus).forEach(stepId => {
-            updatedStatus[stepId].completed = metadata.onboarding.includes(stepId);
-          });
-          
-          setStepStatus(updatedStatus);
-        }
-        
-        // Set selected cohort if available
-        if (metadata.selectedCohort) {
-          setSelectedCohort(metadata.selectedCohort);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading user metadata:', error);
-    }
-  };
+  // These functions are now replaced by React Query hooks
   
-  // Fetch user teams
-  const fetchUserTeams = async () => {
-    if (!profile?.contactId || isLoadingTeams) return;
-    
-    setIsLoadingTeams(true);
-    try {
-      const response = await fetch('/api/teams');
-      if (response.ok) {
-        const data = await response.json();
-        setUserTeams(data.teams || []);
-      }
-    } catch (error) {
-      console.error('Error fetching user teams:', error);
-    } finally {
-      setIsLoadingTeams(false);
-    }
-  };
-  
-  // Check if user has already applied to any cohort
-  const checkCohortSubmission = async () => {
-    if (profile?.contactId && !checkedCohortSubmission) {
-      setIsLoading(true);
-      try {
-        // Get all applications without filtering by cohort
-        const response = await fetch('/api/user/check-application');
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Applications in OnboardingChecklist:', data);
-          
-          // If user has any applications, mark the selectCohort step as completed
-          if (data.applications && data.applications.length > 0) {
-            console.log('User has applications, marking selectCohort as completed');
-            markStepComplete('selectCohort');
-            
-            // If a specific cohort was selected, save it in metadata
-            if (selectedCohort) {
-              saveCohortToMetadata(selectedCohort);
-            } else if (data.applications[0].cohortId) {
-              // Otherwise, use the first application's cohort ID
-              saveCohortToMetadata(data.applications[0].cohortId);
-              setSelectedCohort(data.applications[0].cohortId);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error checking cohort submissions:', error);
-      } finally {
-        setCheckedCohortSubmission(true);
-        setIsLoading(false);
-      }
-    }
-  };
-  
-  // Save selected cohort to user metadata
+  // Save selected cohort to user metadata using our mutation hook
   const saveCohortToMetadata = async (cohortId) => {
     try {
-      await fetch('/api/user/metadata', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          selectedCohort: cohortId
-        })
+      // Use our mutation hook to update metadata with proper cache invalidation
+      await updateMetadata.mutateAsync({
+        selectedCohort: cohortId
       });
     } catch (error) {
       console.error('Error saving cohort to metadata:', error);
@@ -253,14 +213,9 @@ const OnboardingChecklist = ({
           }
         });
         
-        await fetch('/api/user/metadata', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            onboarding: completedStepIds
-          })
+        // Use our mutation hook to update metadata with proper cache invalidation
+        await updateMetadata.mutateAsync({
+          onboarding: completedStepIds
         });
         
         // REMOVED auto-completion - we want the user to explicitly click "Complete Onboarding"
@@ -286,7 +241,7 @@ const OnboardingChecklist = ({
     // Check if this is a team or individual application
     if (participationType.toLowerCase().includes("team")) {
       // Team application flow
-      if (userTeams.length === 0) {
+      if (!teamData || teamData.length === 0) {
         // User doesn't have a team, show team creation dialog
         setActiveTeamCreateDialog(true);
         setSelectedCohort(cohort.id);
@@ -294,7 +249,7 @@ const OnboardingChecklist = ({
         // User has teams, show team selection dialog
         setActiveTeamSelectDialog({
           cohort: cohort,
-          teams: userTeams
+          teams: teamData // Use our cached team data
         });
       }
     } else {
@@ -313,8 +268,7 @@ const OnboardingChecklist = ({
   
   // Handle team creation
   const handleTeamCreated = (team) => {
-    // Add new team to user's teams
-    setUserTeams(prev => [...prev, team]);
+    // No need to manually update our team state - React Query will handle it
     setActiveTeamCreateDialog(false);
     
     // If we have a pending cohort, open the team selection dialog
@@ -327,6 +281,9 @@ const OnboardingChecklist = ({
         });
       }
     }
+    
+    // Invalidate team queries to ensure we have the latest data
+    queryClient.invalidateQueries({ queryKey: ['teams'] });
   };
   
   // Handle completion of form submission
@@ -336,8 +293,12 @@ const OnboardingChecklist = ({
     // Mark the step as complete
     await markStepComplete('selectCohort');
     
-    // Refresh team data to ensure dashboard is up-to-date
-    await fetchUserTeams();
+    // Invalidate queries to refresh data
+    queryClient.invalidateQueries({ queryKey: ['teams'] });
+    queryClient.invalidateQueries({ queryKey: ['applications'] });
+    
+    // Manually refetch applications if needed
+    await refetchApps();
     
     // Call onApplySuccess callback if provided in props
     if (onApplySuccess && selectedCohort) {
@@ -355,8 +316,9 @@ const OnboardingChecklist = ({
     // Mark the step as complete
     await markStepComplete('selectCohort');
     
-    // Refresh team data to ensure dashboard is up-to-date
-    await fetchUserTeams();
+    // Invalidate queries to refresh data
+    queryClient.invalidateQueries({ queryKey: ['teams'] });
+    queryClient.invalidateQueries({ queryKey: ['applications'] });
     
     // Call onApplySuccess callback if provided in props
     if (onApplySuccess && application?.cohortId) {
@@ -382,14 +344,19 @@ const OnboardingChecklist = ({
     // Start the completion animation
     setIsCompleting(true);
     
-    // Delay the actual callback slightly to allow animation to play
-    setTimeout(() => {
-      // Then call parent callback to hide checklist and update API
-      if (onComplete) {
-        console.log("Calling parent onComplete to hide checklist and update API");
-        onComplete(false, hasAppliedToProgram);
+    // Use our mutation hook to mark onboarding as completed in the API
+    updateOnboarding.mutate(true, {
+      onSuccess: () => {
+        // Delay the actual callback slightly to allow animation to play
+        setTimeout(() => {
+          // Then call parent callback to hide checklist
+          if (onComplete) {
+            console.log("Calling parent onComplete to hide checklist");
+            onComplete(false, hasAppliedToProgram);
+          }
+        }, 800); // Slight delay for animation to be visible
       }
-    }, 800); // Slight delay for animation to be visible
+    });
   };
   
   // Check if all steps are completed
