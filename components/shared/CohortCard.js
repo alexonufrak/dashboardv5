@@ -365,43 +365,43 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
           <Button 
             variant="outline"
             size="sm"
-            className="flex-1 h-9 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis"
+            className="flex-1 h-9 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis cursor-pointer"
             onClick={handleViewDetails}
           >
-            <Eye className="mr-1 h-4 w-4 flex-shrink-0" />
-            <span className="truncate">View Details</span>
+            <Eye className="mr-1 h-4 w-4 flex-shrink-0 pointer-events-none" />
+            <span className="truncate pointer-events-none">View Details</span>
           </Button>
           
           {hasApplied ? (
             // Show Connexions button if user has already applied
             <Button 
               size="sm"
-              className="flex-1 h-9 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis" 
+              className="flex-1 h-9 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis cursor-pointer" 
               variant="secondary"
               onClick={() => window.open(connexionsUrl, '_blank')}
             >
-              <ExternalLink className="mr-1 h-4 w-4 flex-shrink-0" />
-              <span className="truncate">Connexions</span>
+              <ExternalLink className="mr-1 h-4 w-4 flex-shrink-0 pointer-events-none" />
+              <span className="truncate pointer-events-none">Connexions</span>
             </Button>
           ) : (
             // Show apply button if user hasn't applied yet
             <Button 
               size="sm"
-              className="flex-1 h-9 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis" 
+              className="flex-1 h-9 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis cursor-pointer" 
               variant={isOpen ? "default" : "secondary"}
               disabled={!isOpen || (!filloutFormId && !participationType.toLowerCase().includes('team')) || isApplying}
               onClick={handleApply}
             >
               {isApplying ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <span className="flex items-center justify-center pointer-events-none">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white pointer-events-none" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                   Applying...
                 </span>
               ) : (
-                <span className="truncate">{actionButtonText}</span>
+                <span className="truncate pointer-events-none">{actionButtonText}</span>
               )}
             </Button>
           )}
