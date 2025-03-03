@@ -30,6 +30,7 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
   const [warning, setWarning] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCheckingDomain, setIsCheckingDomain] = useState(false)
+  const [useOverride, setUseOverride] = useState(false)
 
   // Reset form data when dialog opens/closes
   const handleOpenChange = (open) => {
@@ -47,6 +48,7 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
     setWarning("")
     setIsSubmitting(false)
     setIsCheckingDomain(false)
+    setUseOverride(false)
   }
   
   // Check if the email domain matches the team institution
@@ -102,7 +104,7 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
     setError("")
     
     try {
-      // First attempt - don't override institution check
+      // Make the request with or without override based on state
       const response = await fetch(`/api/teams/${team.id}/invite`, {
         method: 'POST',
         headers: {
@@ -111,7 +113,7 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
         body: JSON.stringify({
           email: email.trim(),
           name: name.trim(),
-          overrideInstitutionCheck: false,
+          overrideInstitutionCheck: useOverride,
         }),
       })
       
@@ -124,49 +126,8 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
           setIsSubmitting(false)
           setWarning(`${errorData.details.message} The email appears to be from ${errorData.details.inviteeInstitution} while your account is associated with ${errorData.details.userInstitution}. Click Send Again to confirm.`)
           
-          // Change the submit handler to use override on next click
-          const originalSubmitHandler = handleSubmit
-          handleSubmit = async (e) => {
-            e.preventDefault()
-            setIsSubmitting(true)
-            
-            try {
-              // Try again with override flag
-              const overrideResponse = await fetch(`/api/teams/${team.id}/invite`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  email: email.trim(),
-                  name: name.trim(),
-                  overrideInstitutionCheck: true,
-                }),
-              })
-              
-              if (!overrideResponse.ok) {
-                const overrideErrorData = await overrideResponse.json()
-                throw new Error(overrideErrorData.error || "Failed to invite team member")
-              }
-              
-              const data = await overrideResponse.json()
-              
-              // Call the callback with the updated team
-              if (onTeamUpdated && data.team) {
-                onTeamUpdated(data.team)
-              }
-              
-              // Close the dialog and reset the form
-              resetForm()
-              onClose()
-            } catch (error) {
-              console.error("Error inviting team member with override:", error)
-              setError(error.message || "Failed to invite team member")
-            } finally {
-              setIsSubmitting(false)
-            }
-          }
-          
+          // Set the override flag for the next submission
+          setUseOverride(true)
           return
         }
         
@@ -214,7 +175,7 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
           )}
           
           {warning && (
-            <Alert variant="warning" className="mt-4 bg-amber-50 border-amber-200 text-amber-800">
+            <Alert className="mt-4 bg-amber-50 border-amber-200 text-amber-800">
               <AlertCircle className="h-4 w-4 text-amber-600" />
               <AlertDescription>{warning}</AlertDescription>
             </Alert>
