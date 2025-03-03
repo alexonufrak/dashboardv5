@@ -58,22 +58,31 @@ export default withApiAuthRequired(async function handler(req, res) {
     const topicsTable = base(topicsTableId)
     
     // Get the user's active participation records
-    const participationRecords = await participationTable
-      .select({
-        filterByFormula: `FIND("${profile.contactId}", {Contacts})`,
-        // Only get active participation with appropriate capacity
-        // filterByFormula: `AND(FIND("${profile.contactId}", {Contacts}), {Capacity}="Participant")`,
-        sort: [{ field: "Last Modified", direction: "desc" }]
-      })
-      .firstPage()
-    
+    let participationRecords = []
+
+    // Use SEARCH with ARRAYJOIN for more precise ID matching
+    const formula = `SEARCH("${profile.contactId}", ARRAYJOIN({Contacts})) > 0`
+
+    console.log(`Looking for participation records with formula: ${formula}`)
+
+    // Get ALL pages of records using eachPage instead of firstPage
+    await participationTable.select({
+      filterByFormula: formula,
+      sort: [{ field: "Last Modified", direction: "desc" }]
+    }).eachPage((records, fetchNextPage) => {
+      participationRecords = participationRecords.concat(records)
+      fetchNextPage()
+    })
+
+    // Log the results
+    console.log(`Found ${participationRecords.length} participation records for contact ${profile.contactId}`)
+
     // Check if we found any participation records
     if (!participationRecords || participationRecords.length === 0) {
       console.log(`No participation records found for contact ${profile.contactId}`)
       return res.status(200).json({ participation: [] })
     }
     
-    console.log(`Found ${participationRecords.length} participation records for contact ${profile.contactId}`)
     // Log details of the first record for debugging
     if (participationRecords.length > 0) {
       const firstRecord = participationRecords[0]
