@@ -51,11 +51,13 @@ function ProfilePageInner({ onNavigate }) {
   }
   
   const handleEditClick = () => {
-    setIsEditModalOpen(true)
+    console.log("Opening edit modal");
+    setIsEditModalOpen(true);
   }
   
   const handleEditClose = () => {
-    setIsEditModalOpen(false)
+    console.log("Closing edit modal");
+    setIsEditModalOpen(false);
   }
   
   return (

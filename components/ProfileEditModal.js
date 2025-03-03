@@ -46,9 +46,6 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     }
   }, [profile]);
 
-  // The modal won't render if not open
-  if (!isOpen) return null;
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     
@@ -127,8 +124,16 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     }
   };
 
+  console.log("ProfileEditModal render with isOpen =", isOpen);
+  
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()} className="transition-all duration-300 ease-in-out">
+    <Dialog 
+      open={isOpen} 
+      onOpenChange={(open) => {
+        console.log("Dialog onOpenChange called with", open);
+        if (!open) onClose();
+      }}
+    >
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
@@ -140,7 +145,7 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
           </Alert>
         )}
         
-        {majorsError && profile.showMajor && (
+        {majorsError && profile?.showMajor && (
           <Alert variant="destructive" className="my-2">
             <AlertDescription>Failed to load majors: {majorsError.message}</AlertDescription>
           </Alert>
