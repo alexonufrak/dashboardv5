@@ -285,9 +285,14 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
                           </option>
                         ))}
                       </select>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Major ID: {formData.major || '(none selected)'}
-                      </p>
+                      <div className="flex flex-col text-xs text-muted-foreground mt-1">
+                        <p>
+                          Major ID: {formData.major || '(none selected)'}
+                        </p>
+                        <p>
+                          Selected: {majors.find(m => m.id === formData.major)?.name || 'None'}
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>

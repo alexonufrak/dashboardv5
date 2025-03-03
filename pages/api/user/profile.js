@@ -19,6 +19,14 @@ async function handler(req, res) {
         return res.status(400).json({ error: "Contact ID is required for updates" })
       }
 
+      // Check if major ID is valid - it must NOT be "Information Science" text
+      if (updateData.major && typeof updateData.major === 'string') {
+        if (!updateData.major.startsWith('rec')) {
+          console.warn(`Invalid major ID format received: ${updateData.major}`);
+          return res.status(400).json({ error: "Invalid major ID format. Expected record ID but received text value." });
+        }
+      }
+
       // Map fields to Airtable field names
       const airtableData = {
         FirstName: updateData.firstName,
