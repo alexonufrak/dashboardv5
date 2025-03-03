@@ -10,6 +10,17 @@ import { useRouter } from "next/router"
 function ProgramDashboard() {
   const router = useRouter()
   
+  return (
+    <DashboardProvider>
+      <ProgramDashboardContent />
+    </DashboardProvider>
+  )
+}
+
+// Separate the content to ensure context is available
+function ProgramDashboardContent() {
+  const router = useRouter()
+  
   // Set program dashboard as the initial view
   useEffect(() => {
     // Just ensure the activePage is set to program in the DashboardShell
@@ -17,10 +28,10 @@ function ProgramDashboard() {
   }, [])
   
   return (
-    <DashboardProvider>
+    <>
       <DashboardShell />
       <Toaster position="top-right" />
-    </DashboardProvider>
+    </>
   )
 }
 

@@ -8,9 +8,18 @@ import { Toaster } from "sonner"
 function Dashboard() {
   return (
     <DashboardProvider>
+      <DashboardContent />
+    </DashboardProvider>
+  )
+}
+
+// Separate the content to ensure context is available
+function DashboardContent() {
+  return (
+    <>
       <DashboardShell />
       <Toaster position="top-right" />
-    </DashboardProvider>
+    </>
   )
 }
 

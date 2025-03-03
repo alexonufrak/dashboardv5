@@ -44,7 +44,8 @@ export default function DashboardShell() {
     isLoading, 
     error, 
     refreshData,
-    programError // Track program errors specifically
+    programError, // Track program errors specifically
+    cohort // Add cohort from context
   } = useDashboard()
   
   // Track current page
@@ -164,12 +165,12 @@ export default function DashboardShell() {
       
       // When initial profile loads, but we don't see cohort/program data yet,
       // trigger a manual refresh of program data
-      if (!cohort && activePage === "program") {
+      if (!cohort && activePage === "program" && refreshData) {
         console.log("No program data found but on program page - triggering refresh")
         refreshData('program');
       }
     }
-  }, [profile, cohort, activePage, initialLoadComplete]);
+  }, [profile, cohort, activePage, initialLoadComplete, refreshData]);
   
   // Only show full loader on initial app load, never between page navigations
   const showFullLoader = isLoading && !initialLoadComplete;
