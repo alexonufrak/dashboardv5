@@ -67,6 +67,11 @@ export default function DashboardShell() {
       setTitle("xFoundry Hub")
     }
     
+    // Handle redirect for dashboard-shell legacy path
+    if (path === "/dashboard-shell") {
+      router.replace("/dashboard", undefined, { shallow: true })
+    }
+    
     // Simulate client-side redirect
     if (path !== "/dashboard" && path !== "/program-dashboard" && path !== "/profile") {
       if (path.startsWith("/dashboard")) {

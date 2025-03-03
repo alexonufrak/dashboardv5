@@ -1,30 +1,30 @@
 "use client"
 
 import { withPageAuthRequired } from "@auth0/nextjs-auth0"
-import { useRouter } from "next/router"
+import { DashboardProvider } from "@/contexts/DashboardContext"
+import DashboardShell from "@/components/DashboardShell"
+import { Toaster } from "sonner"
 import { useEffect } from "react"
-import { Loader2 } from "lucide-react"
+import { useRouter } from "next/router"
 
-const ProgramDashboard = () => {
+function ProgramDashboard() {
   const router = useRouter()
   
-  // Redirect to the new dashboard shell
+  // Set program dashboard as the initial page
   useEffect(() => {
-    router.replace("/dashboard-shell")
+    // Using shallow routing to avoid full page reload
+    router.push("/program-dashboard", undefined, { shallow: true })
   }, [router])
   
-  // Show loading screen while redirecting
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <Loader2 className="h-10 w-10 mx-auto mb-4 animate-spin text-primary" />
-        <h1 className="text-2xl font-bold">Loading Program Dashboard</h1>
-        <p className="text-muted-foreground">Redirecting to the new dashboard experience...</p>
-      </div>
-    </div>
+    <DashboardProvider>
+      <DashboardShell />
+      <Toaster position="top-right" />
+    </DashboardProvider>
   )
 }
 
+// Wrap with auth protection
 export const getServerSideProps = withPageAuthRequired()
 
 export default ProgramDashboard

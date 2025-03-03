@@ -26,10 +26,11 @@ import { Separator } from "../ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 
 /**
- * Dashboard Sidebar Component
- * Provides navigation and program access for the dashboard
+ * PROTOTYPE Dashboard Sidebar Component
+ * Provides navigation and program access for the dashboard v2 prototype
+ * Note: This is a prototype component and not used in production
  */
-export function DashboardSidebar({ userProfile }) {
+export function DashboardSidebarPrototype({ userProfile }) {
   const router = useRouter();
   const isMobile = useIsMobile();
   
