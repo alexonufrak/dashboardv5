@@ -274,10 +274,23 @@ export function DashboardProvider({ children }) {
             
             // Get milestones for this cohort
             if (activeParticipation.cohort?.id) {
-              const milestonesResponse = await fetch(`/api/cohorts/${activeParticipation.cohort.id}/milestones`)
+              console.log(`Fetching milestones for cohort ${activeParticipation.cohort.id} from participation data...`)
+              
+              // Add timestamp to avoid caching issues
+              const timestamp = new Date().getTime()
+              const milestonesResponse = await fetch(`/api/cohorts/${activeParticipation.cohort.id}/milestones?_t=${timestamp}`)
+              
+              // Log status for debugging
+              console.log(`Milestones API response status: ${milestonesResponse.status}`)
+              
               if (milestonesResponse.ok) {
                 const milestonesData = await milestonesResponse.json()
+                console.log(`Received ${milestonesData.milestones?.length || 0} milestones from API`)
                 setMilestones(milestonesData.milestones || [])
+                console.log('Set milestones from participation data:', milestonesData.milestones)
+              } else {
+                console.log(`No milestones response for cohort ${activeParticipation.cohort.id}`)
+                setMilestones([])
               }
             }
             
@@ -418,9 +431,16 @@ export function DashboardProvider({ children }) {
                   if (activeCohort.id) {
                     console.log(`Fetching milestones for cohort ${activeCohort.id}...`)
                     try {
-                      const milestonesResponse = await fetch(`/api/cohorts/${activeCohort.id}/milestones`)
+                      // Add timestamp to avoid caching issues
+                      const timestamp = new Date().getTime()
+                      const milestonesResponse = await fetch(`/api/cohorts/${activeCohort.id}/milestones?_t=${timestamp}`)
+                      
+                      // Log status for debugging
+                      console.log(`Milestones API response status: ${milestonesResponse.status}`)
+                      
                       if (milestonesResponse.ok) {
                         const milestonesData = await milestonesResponse.json()
+                        console.log(`Received ${milestonesData.milestones?.length || 0} milestones from API`)
                         setMilestones(milestonesData.milestones || [])
                         console.log('Set milestones:', milestonesData.milestones)
                       } else {

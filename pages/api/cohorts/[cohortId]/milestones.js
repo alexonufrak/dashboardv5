@@ -29,13 +29,70 @@ export default withApiAuthRequired(async function handler(req, res) {
     // Initialize the milestones table
     const milestonesTable = base(milestonesTableId)
     
-    // Fetch milestones for this cohort
-    const milestones = await milestonesTable
-      .select({
-        filterByFormula: `FIND("${cohortId}", {Cohort})`,
-        sort: [{ field: 'Number', direction: 'asc' }]
+    console.log(`Fetching milestones for cohort: ${cohortId}`)
+    
+    // Try multiple approaches for finding milestones
+    // First, use FIND_RECORD for exact record matching (preferred for linked records)
+    let milestones = []
+    
+    try {
+      console.log("Trying with FIND_RECORD formula...")
+      milestones = await milestonesTable
+        .select({
+          filterByFormula: `FIND_RECORD({Cohort}, "${cohortId}")`,
+          sort: [{ field: 'Number', direction: 'asc' }]
+        })
+        .firstPage()
+      
+      console.log(`FIND_RECORD approach found ${milestones.length} milestones`)
+    } catch (error) {
+      console.error("Error with FIND_RECORD approach:", error)
+    }
+    
+    // If the first approach didn't work, try with OR and IS_SAME for multipleRecordLinks
+    if (milestones.length === 0) {
+      try {
+        console.log("Trying with IS_SAME formula...")
+        const formula = `OR(
+          IS_SAME({Cohort}, ARRAYJOIN(ARRAYWRAP("${cohortId}"))),
+          IS_SAME(ARRAYJOIN({Cohort}), "${cohortId}")
+        )`
+        
+        milestones = await milestonesTable
+          .select({
+            filterByFormula: formula,
+            sort: [{ field: 'Number', direction: 'asc' }]
+          })
+          .firstPage()
+        
+        console.log(`IS_SAME approach found ${milestones.length} milestones`)
+      } catch (error) {
+        console.error("Error with IS_SAME approach:", error)
+      }
+    }
+    
+    // If all previous approaches failed, use the simpler FIND function as a last resort
+    if (milestones.length === 0) {
+      console.log("Trying with FIND approach...")
+      milestones = await milestonesTable
+        .select({
+          filterByFormula: `FIND("${cohortId}", {Cohort})`,
+          sort: [{ field: 'Number', direction: 'asc' }]
+        })
+        .firstPage()
+      
+      console.log(`FIND approach found ${milestones.length} milestones`)
+    }
+    
+    // Log the milestones found
+    console.log(`Found ${milestones.length} milestones in total for cohort ${cohortId}`)
+    if (milestones.length > 0) {
+      console.log("First milestone:", {
+        id: milestones[0].id,
+        name: milestones[0].fields.Name,
+        cohort: milestones[0].fields.Cohort
       })
-      .firstPage()
+    }
     
     // Process each milestone to get the required data
     const formattedMilestones = milestones.map(milestone => {
