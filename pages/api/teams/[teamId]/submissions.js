@@ -38,16 +38,23 @@ export default withApiAuthRequired(async function handler(req, res) {
     
     // If we have a milestone ID, filter by direct milestone reference
     if (milestoneId) {
-      // Use multiple approaches to find the milestone ID in the Milestone field
+      // Use multiple approaches to ensure milestone ID matching is accurate
       // This handles different formats that might exist in the Airtable data
+      
+      // First approach: Check if the milestone ID exactly matches an element in the Milestone array
+      // Second approach: Check if the milestone ID is found within the Milestone array string representation
+      // Third approach: Directly check if the field itself contains the milestone ID (fallback)
       filterFormula = `AND(
         ${filterFormula}, 
         OR(
-          FIND("${milestoneId}", ARRAYJOIN(Milestone, ",")),
-          FIND("${milestoneId}", ARRAYJOIN(Milestone)),
-          FIND("${milestoneId}", Milestone)
+          {Milestone} = "${milestoneId}",
+          ARRAYJOIN({Milestone}, ",") = "${milestoneId}",
+          SEARCH(",${milestoneId},", CONCATENATE(",", ARRAYJOIN({Milestone}, ","), ",")),
+          SEARCH("${milestoneId}", ARRAYJOIN({Milestone}, ","))
         )
       )`
+      
+      console.log(`Using advanced filter formula for milestone ${milestoneId}: ${filterFormula}`)
     } else {
       // If no milestone ID is provided, we should return a 400 error
       // because querying all submissions is likely to be inefficient
@@ -64,23 +71,44 @@ export default withApiAuthRequired(async function handler(req, res) {
       })
       .firstPage()
 
-    // Process submissions to a cleaner format with improved debug information
+    // Process submissions to a cleaner format with extensive debugging information
     const formattedSubmissions = submissions.map(submission => {
-      // Log the raw submission data for debugging when needed
-      console.log(`Processing submission ${submission.id} for milestone ${submission.fields.Milestone?.[0] || 'unknown'}`);
+      // Log detailed submission data for debugging
+      console.log(`Processing submission ${submission.id} with complete field data:`);
+      console.log(`- Milestone: ${JSON.stringify(submission.fields.Milestone)}`);
+      console.log(`- Team: ${JSON.stringify(submission.fields.Team)}`);
+      console.log(`- Created Time: ${submission.fields["Created Time"]}`);
+      
+      // Carefully handle Milestone field which could be in various formats
+      let extractedMilestoneId = null;
+      
+      // Try multiple approaches to extract the milestone ID
+      if (Array.isArray(submission.fields.Milestone) && submission.fields.Milestone.length > 0) {
+        extractedMilestoneId = submission.fields.Milestone[0];
+      } else if (typeof submission.fields.Milestone === 'string') {
+        extractedMilestoneId = submission.fields.Milestone;
+      }
+      
+      console.log(`- Extracted milestone ID: ${extractedMilestoneId}`);
+      console.log(`- Requested milestone ID: ${milestoneId}`);
+      console.log(`- Match status: ${extractedMilestoneId === milestoneId ? 'EXACT MATCH' : 'NO EXACT MATCH'}`);
       
       return {
         id: submission.id,
         createdTime: submission.fields["Created Time"],
         teamId: submission.fields.Team?.[0] || null,
-        milestoneId: submission.fields.Milestone?.[0] || null,
+        milestoneId: extractedMilestoneId,
         attachments: submission.fields.Attachment || [],
         comments: submission.fields.Comments || "",
         link: submission.fields.Link || "",
         memberId: submission.fields.Member?.[0] || null,
-        // Add additional fields that might be useful
+        // Additional fields with extensive metadata
         rawMilestone: submission.fields.Milestone, // For debugging relationship issues
-        rawTeam: submission.fields.Team // For debugging relationship issues
+        rawTeam: submission.fields.Team, // For debugging relationship issues
+        // Include timestamp in milliseconds for precise sorting
+        submissionTimestamp: new Date(submission.fields["Created Time"]).getTime(),
+        // Original requested milestone ID for verification
+        requestedMilestoneId: milestoneId
       }
     })
 

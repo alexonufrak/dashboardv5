@@ -107,67 +107,125 @@ export default function MilestoneTable({
         const updatedMilestones = [...prevMilestones]
         const milestone = { ...updatedMilestones[index] }
         
-        console.log(`Processing submission check for milestone ${milestone.id} (${milestone.name}): 
-          hasSubmission=${hasSubmission}, 
-          submissionsCount=${submissions?.length || 0}`)
+        // Enhanced logging for troubleshooting
+        console.log(`======= MILESTONE SUBMISSION CHECK =======`);
+        console.log(`Milestone: ${milestone.id} (${milestone.name})`);
+        console.log(`Has Submission: ${hasSubmission}`);
+        console.log(`Submissions Count: ${submissions?.length || 0}`);
+        if (submissions && submissions.length > 0) {
+          console.log(`First Submission ID: ${submissions[0].id}`);
+          console.log(`First Submission Milestone ID: ${submissions[0].milestoneId}`);
+          console.log(`First Submission Created: ${submissions[0].createdTime}`);
+          console.log(`Raw Milestone Data: ${JSON.stringify(submissions[0].rawMilestone || 'N/A')}`);
+        }
+        console.log(`=======================================`);
         
-        // Update milestone based on submission data
+        // Update milestone based on validated submission data
         if (hasSubmission && submissions && submissions.length > 0) {
-          // Sort by date (newest first) and use the most recent
+          // Should already be sorted by the MilestoneSubmissionChecker component
+          // but we'll sort again to be certain
           const sortedSubmissions = [...submissions].sort((a, b) => {
-            return new Date(b.createdTime) - new Date(a.createdTime)
+            // Use timestamp if available, otherwise parse date
+            const timeA = a.submissionTimestamp || new Date(a.createdTime).getTime();
+            const timeB = b.submissionTimestamp || new Date(b.createdTime).getTime();
+            return timeB - timeA; // newest first
           })
           
           const latestSubmission = sortedSubmissions[0]
-          console.log(`Using latest submission from ${latestSubmission.createdTime} for milestone ${milestone.id}`)
+          console.log(`Using latest submission: ID=${latestSubmission.id}, Date=${latestSubmission.createdTime}`);
           
-          // Update milestone with submission data
-          milestone.hasSubmission = true
-          milestone.submissions = sortedSubmissions
-          milestone.submissionDate = latestSubmission.createdTime
-          milestone.status = "completed"
-          milestone.completedDate = latestSubmission.createdTime
+          // Ensure we have a valid creation date
+          let submissionDate = latestSubmission.createdTime;
+          let validSubmissionDate = true;
+          
+          try {
+            // Validate the date format
+            const parsedDate = new Date(submissionDate);
+            if (isNaN(parsedDate.getTime())) {
+              console.error(`Invalid submission date format: ${submissionDate}`);
+              submissionDate = new Date().toISOString(); // Use current date as fallback
+              validSubmissionDate = false;
+            }
+          } catch (err) {
+            console.error(`Error parsing submission date: ${err.message}`);
+            submissionDate = new Date().toISOString(); // Use current date as fallback
+            validSubmissionDate = false;
+          }
+          
+          // Update milestone with validated submission data
+          milestone.hasSubmission = true;
+          milestone.submissions = sortedSubmissions;
+          milestone.submissionDate = submissionDate;
+          milestone.status = "completed";
+          milestone.completedDate = submissionDate;
+          milestone.validSubmissionDate = validSubmissionDate;
+          
+          // Include submission ID for reference
+          milestone.submissionId = latestSubmission.id;
           
           // Include link if available
           if (latestSubmission.link) {
-            milestone.submissionLink = latestSubmission.link
+            milestone.submissionLink = latestSubmission.link;
           }
           
-          // Include attachment info if available
+          // Process attachments with validation
           if (latestSubmission.attachments && latestSubmission.attachments.length > 0) {
-            milestone.hasAttachments = true
-            milestone.attachmentCount = latestSubmission.attachments.length
+            // Filter out any invalid attachments
+            const validAttachments = latestSubmission.attachments.filter(att => att !== null);
+            
+            milestone.hasAttachments = validAttachments.length > 0;
+            milestone.attachmentCount = validAttachments.length;
+            milestone.attachments = validAttachments;
           }
           
-          // Log the milestone update
-          console.log(`Milestone ${milestone.id} marked as COMPLETED with submission from ${milestone.submissionDate}`)
+          // Log successful update
+          console.log(`MILESTONE STATUS UPDATE: ${milestone.id} marked as COMPLETED`);
+          console.log(`Submission date: ${milestone.submissionDate}`);
+          console.log(`Attachment count: ${milestone.attachmentCount || 0}`);
         } else {
-          // No submission - determine status based on due date
-          milestone.hasSubmission = false
-          milestone.submissions = []
+          // No submission - determine status based on due date with enhanced validation
+          milestone.hasSubmission = false;
+          milestone.submissions = [];
           
-          // Check if milestone is past due - ensure reliable date handling
+          // Check if milestone is past due - with robust date handling
           try {
-            const dueDate = milestone.dueDate ? new Date(milestone.dueDate) : null
-            const isValidDate = dueDate && !isNaN(dueDate.getTime())
+            let dueDate = null;
             
-            if (isValidDate && isPast(dueDate)) {
-              milestone.status = "late"
-              console.log(`Milestone ${milestone.id} marked as LATE (due date ${milestone.dueDate} has passed)`)
+            if (milestone.dueDate) {
+              // Try to parse the due date
+              dueDate = parseISO(milestone.dueDate);
+              
+              // Validate the parsed date
+              if (!isValid(dueDate)) {
+                console.error(`Invalid due date format: ${milestone.dueDate}`);
+                dueDate = null;
+              }
+            }
+            
+            // Determine status based on validated due date
+            if (dueDate && isPast(dueDate)) {
+              milestone.status = "late";
+              console.log(`MILESTONE STATUS UPDATE: ${milestone.id} marked as LATE`);
+              console.log(`Due date: ${format(dueDate, 'yyyy-MM-dd')} (${milestone.dueDate})`);
+            } else if (dueDate) {
+              milestone.status = "upcoming";
+              console.log(`MILESTONE STATUS UPDATE: ${milestone.id} marked as UPCOMING`);
+              console.log(`Due date: ${format(dueDate, 'yyyy-MM-dd')} (${milestone.dueDate})`);
             } else {
-              milestone.status = "upcoming"
-              console.log(`Milestone ${milestone.id} marked as UPCOMING (due date ${milestone.dueDate} is in the future)`)
+              // No valid due date - treat as upcoming
+              milestone.status = "upcoming";
+              console.log(`MILESTONE STATUS UPDATE: ${milestone.id} marked as UPCOMING (no valid due date)`);
             }
           } catch (err) {
-            console.error("Error processing milestone due date:", err)
-            milestone.status = "upcoming" // Default to upcoming if date processing fails
-            console.log(`Milestone ${milestone.id} marked as UPCOMING (default) due to date processing error`)
+            console.error(`Error processing milestone due date for ${milestone.id}:`, err);
+            milestone.status = "upcoming"; // Default to upcoming if date processing fails
+            console.log(`MILESTONE STATUS UPDATE: ${milestone.id} marked as UPCOMING (due to error)`);
           }
         }
         
-        updatedMilestones[index] = milestone
-        return updatedMilestones
-      })
+        updatedMilestones[index] = milestone;
+        return updatedMilestones;
+      });
     }
   }
 
