@@ -44,9 +44,7 @@ export default withApiAuthRequired(async function handler(req, res) {
         ${filterFormula}, 
         OR(
           {Milestone} = "${milestoneId}",
-          FIND("${milestoneId}", ARRAYJOIN({Milestone}, ",")),
-          {Deliverable} = "${milestoneId}",
-          FIND("${milestoneId}", ARRAYJOIN({Deliverable}, ","))
+          FIND("${milestoneId}", ARRAYJOIN({Milestone}, ","))
         )
       )`
       
@@ -78,14 +76,12 @@ export default withApiAuthRequired(async function handler(req, res) {
     // Return only the submissions matching our milestone
     return submissions.filter(submission => {
       const milestoneField = submission.fields.Milestone || [];
-      const deliverableField = submission.fields.Deliverable || [];
       
       // Process as arrays
       const milestones = Array.isArray(milestoneField) ? milestoneField : [milestoneField].filter(Boolean);
-      const deliverables = Array.isArray(deliverableField) ? deliverableField : [deliverableField].filter(Boolean);
       
       // Check for exact match
-      return milestones.includes(milestoneId) || deliverables.includes(milestoneId);
+      return milestones.includes(milestoneId);
     })
 
     // Process submissions to a cleaner format with extensive debugging information
@@ -94,7 +90,7 @@ export default withApiAuthRequired(async function handler(req, res) {
       console.log(`Processing submission ${submission.id}`);
       
       // Log important fields only to keep logs manageable
-      const milestoneField = submission.fields.Milestone || submission.fields.Deliverable;
+      const milestoneField = submission.fields.Milestone;
       // Keep original Created Time from Airtable
       const createdTime = submission.fields["Created Time"];
       const teamField = submission.fields.Team;
