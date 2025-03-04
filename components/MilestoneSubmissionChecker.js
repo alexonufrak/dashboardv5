@@ -9,13 +9,11 @@ import { useTeamSubmissions } from "@/lib/useDataFetching"
  * 
  * @param {Object} props - Component props
  * @param {string} props.milestoneId - The ID of the milestone to check
- * @param {string} props.deliverableId - Optional deliverable ID if checking specific deliverable
  * @param {Function} props.onSubmissionCheck - Callback function that receives submission status
  * @param {React.ReactNode} props.children - Child components (not typically used)
  */
 export default function MilestoneSubmissionChecker({ 
   milestoneId, 
-  deliverableId, 
   onSubmissionCheck,
   children 
 }) {
@@ -42,8 +40,7 @@ export default function MilestoneSubmissionChecker({
       return
     }
     
-    // Get all submissions, no need to filter by deliverableId anymore
-    // since we're now directly linking milestones to submissions
+    // Get all submissions directly linked to this milestone
     let filteredSubmissions = data.submissions || []
     
     // Check if any submissions exist
@@ -70,7 +67,7 @@ export default function MilestoneSubmissionChecker({
         hasAnySubmission ? filteredSubmissions : null
       )
     }
-  }, [data, error, deliverableId, onSubmissionCheck])
+  }, [data, error, onSubmissionCheck])
 
   // This component doesn't render anything itself
   return children || null

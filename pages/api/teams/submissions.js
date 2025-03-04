@@ -56,36 +56,11 @@ export default withApiAuthRequired(async function handler(req, res) {
       return res.status(400).json({ error: "Milestone ID is required" })
     }
 
-    // Get the Airtable table IDs from environment variables
+    // Get the Airtable table ID from environment variables
     const submissionsTableId = process.env.AIRTABLE_SUBMISSIONS_TABLE_ID
-    const deliverablesTableId = process.env.AIRTABLE_DELIVERABLES_TABLE_ID
 
     if (!submissionsTableId) {
       return res.status(500).json({ error: "Submissions table not configured" })
-    }
-
-    // Get deliverable ID for this milestone if not directly provided
-    let deliverableId = null
-    
-    if (deliverablesTableId) {
-      try {
-        // First, get the first deliverable for this milestone
-        const deliverablesTable = base(deliverablesTableId)
-        
-        const deliverables = await deliverablesTable
-          .select({
-            maxRecords: 1,
-            filterByFormula: `FIND("${milestoneId}", ARRAYJOIN(Milestones, ","))`
-          })
-          .firstPage()
-          
-        if (deliverables && deliverables.length > 0) {
-          deliverableId = deliverables[0].id
-        }
-      } catch (error) {
-        console.error("Error fetching deliverable ID:", error)
-        // Continue without deliverable ID if it fails
-      }
     }
 
     // Initialize the submissions table
@@ -123,16 +98,7 @@ export default withApiAuthRequired(async function handler(req, res) {
     const record = {
       Team: [teamId],
       Comments: comments || "",
-    }
-
-    // Add deliverable reference if available
-    if (deliverableId) {
-      record.Deliverable = [deliverableId]
-    }
-
-    // Add milestone reference directly if table supports it
-    if (milestoneId) {
-      record.Milestone = [milestoneId]
+      Milestone: [milestoneId]
     }
 
     // Add link if provided
