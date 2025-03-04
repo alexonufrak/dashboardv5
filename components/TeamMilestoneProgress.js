@@ -1,8 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import { Progress } from "@/components/ui/progress"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, TableIcon, AlignLeft } from "lucide-react"
 import MilestoneTimeline from "./MilestoneTimeline"
+import MilestoneTable from "./MilestoneTable"
+import { Button } from "@/components/ui/button"
 
 // Calculate overall progress percentage based on milestone statuses
 const calculateOverallProgress = (milestones) => {
@@ -16,6 +19,8 @@ const calculateOverallProgress = (milestones) => {
 }
 
 export default function TeamMilestoneProgress({ milestones, detailed = false, programName, programId, programType = "xperience" }) {
+  const [viewMode, setViewMode] = useState("timeline") // "timeline" or "table"
+  
   if (!milestones || milestones.length === 0) {
     return <div className="text-muted-foreground">No milestone data available.</div>
   }
@@ -25,25 +30,63 @@ export default function TeamMilestoneProgress({ milestones, detailed = false, pr
   
   return (
     <div>
-      {!detailed && (
-        <div className="mb-4">
-          <div className="flex justify-between text-sm mb-1">
-            <span className="font-medium">Overall Progress</span>
-            <span>{overallProgress}%</span>
-          </div>
-          <Progress value={overallProgress} className="h-2.5" />
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex-1">
+          {!detailed && (
+            <>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="font-medium">Overall Progress</span>
+                <span>{overallProgress}%</span>
+              </div>
+              <Progress value={overallProgress} className="h-2.5" />
+            </>
+          )}
         </div>
-      )}
+        
+        {/* View mode toggle */}
+        <div className="flex ml-4">
+          <div className="border rounded-md flex bg-muted/20">
+            <Button
+              variant={viewMode === "timeline" ? "secondary" : "ghost"}
+              size="sm"
+              className="rounded-r-none"
+              onClick={() => setViewMode("timeline")}
+            >
+              <AlignLeft className="h-4 w-4 mr-1" />
+              Timeline
+            </Button>
+            <Button
+              variant={viewMode === "table" ? "secondary" : "ghost"}
+              size="sm"
+              className="rounded-l-none"
+              onClick={() => setViewMode("table")}
+            >
+              <TableIcon className="h-4 w-4 mr-1" />
+              Table
+            </Button>
+          </div>
+        </div>
+      </div>
       
-      {/* Use the new MilestoneTimeline component */}
-      <MilestoneTimeline
-        programName={programName || "Team Milestones"}
-        programId={programId}
-        programType={programType}
-        milestones={milestones}
-        linkToDetail={!detailed}
-        className="mt-4"
-      />
+      {/* Render either timeline or table view */}
+      {viewMode === "timeline" ? (
+        <MilestoneTimeline
+          programName={programName || "Team Milestones"}
+          programId={programId}
+          programType={programType}
+          milestones={milestones}
+          linkToDetail={!detailed}
+          className="mt-4"
+        />
+      ) : (
+        <MilestoneTable
+          programName={programName || "Team Milestones"}
+          programId={programId}
+          programType={programType}
+          milestones={milestones}
+          className="mt-4"
+        />
+      )}
       
       {!detailed && !programId && (
         <div className="flex justify-between items-center text-sm mt-3">
