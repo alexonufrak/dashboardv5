@@ -15,7 +15,8 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     firstName: profile?.firstName || "",
     lastName: profile?.lastName || "",
     degreeType: profile?.degreeType || "",
-    major: profile?.programId || "", // Use programId for the value
+    major: profile?.programId || "", // Use programId for the value (should be Airtable record ID)
+    majorName: profile?.major || "", // Store the name for display purposes
     graduationYear: profile?.graduationYear || "",
     educationId: profile?.educationId || null,
     institutionId: profile?.institution?.id || null,
@@ -52,11 +53,17 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
         firstName: profile.firstName || "",
         lastName: profile.lastName || "",
         degreeType: profile.degreeType || "",
-        major: profile.programId || "",
+        major: profile.programId || "", // Record ID format
+        majorName: profile.major || "", // Display name format
         graduationYear: profile.graduationYear || "",
         educationId: profile.educationId || null,
         institutionId: profile.institution?.id || null,
       });
+      
+      // Validate profile data for debugging
+      if (profile.programId && !profile.programId.startsWith('rec')) {
+        console.warn(`Profile contains invalid major ID format: "${profile.programId}"`);
+      }
     }
   }, [profile]);
 
@@ -78,13 +85,26 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
       return;
     }
     
-    // For major field, explicitly log the value being set
+    // For major field, handle special selection logic
     if (name === "major") {
       console.log(`Setting major value: "${value}" (${typeof value})`);
       
       // Check if this is a valid Airtable ID format
       if (!value.startsWith('rec') && value) {
         console.warn(`Warning: Major value doesn't appear to be a valid Airtable record ID: ${value}`);
+      }
+      
+      // When major is selected, also update majorName for display
+      if (value) {
+        const selectedMajor = majors.find(m => m.id === value);
+        if (selectedMajor) {
+          setFormData(prev => ({
+            ...prev,
+            major: value,
+            majorName: selectedMajor.name
+          }));
+          return; // Skip the general update since we're doing a custom one
+        }
       }
     }
     
