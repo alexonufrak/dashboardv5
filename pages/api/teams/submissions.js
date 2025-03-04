@@ -1,6 +1,6 @@
 import { getSession, withApiAuthRequired } from "@auth0/nextjs-auth0"
 import { base } from "@/lib/airtable"
-import formidable from "formidable"
+import { formidable } from "formidable"
 import fs from "fs"
 
 // Disable the default body parser to handle file uploads
@@ -28,14 +28,14 @@ export default withApiAuthRequired(async function handler(req, res) {
     }
 
     // Parse the multipart form data (files and fields)
-    const form = new formidable.IncomingForm({
+    const formOptions = {
       keepExtensions: true,
       maxFileSize: 10 * 1024 * 1024, // 10MB limit
       multiples: true,
-    })
+    }
 
     const [fields, files] = await new Promise((resolve, reject) => {
-      form.parse(req, (err, fields, files) => {
+      formidable(formOptions).parse(req, (err, fields, files) => {
         if (err) reject(err)
         resolve([fields, files])
       })

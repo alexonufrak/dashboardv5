@@ -17,6 +17,8 @@ import TeamMilestoneProgress from "@/components/TeamMilestoneProgress"
 import TeamPointsSummary from "@/components/TeamPointsSummary"
 import TeamMemberList from "@/components/TeamMemberList"
 import TeamActivityFeed from "@/components/TeamActivityFeed"
+import MilestoneSummaryCard from "@/components/MilestoneSummaryCard"
+import SubmissionSummaryCard from "@/components/SubmissionSummaryCard"
 
 // Use dynamic import with SSR disabled to prevent context errors during build
 const ProgramDashboardContent = dynamic(() => Promise.resolve(ProgramDashboardInner), { 
@@ -341,90 +343,21 @@ function ProgramDashboardInner({ onNavigate }) {
           <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
             {/* Main Overview Content */}
             <div className="md:col-span-5 space-y-4">
-              {/* Current Milestone - Condensed Table */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Milestone Progress</CardTitle>
-                  <CardDescription>Track your progress on program milestones</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {/* Condensed Milestone Table */}
-                  <div className="overflow-hidden rounded-md border">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/50">
-                        <tr className="border-b">
-                          <th className="h-10 px-4 text-left font-medium text-muted-foreground">Name</th>
-                          <th className="h-10 px-2 text-left font-medium text-muted-foreground">Status</th>
-                          <th className="h-10 px-2 text-left font-medium text-muted-foreground">Due Date</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(milestones.length > 0 ? milestones : placeholderMilestones).slice(0, 4).map((milestone, i) => (
-                          <tr key={milestone.id || i} className={i % 2 === 0 ? "bg-white" : "bg-muted/20"}>
-                            <td className="p-2 pl-4">{milestone.name}</td>
-                            <td className="p-2">
-                              <Badge variant={
-                                milestone.status === "completed" ? "success" : 
-                                milestone.status === "in_progress" ? "default" :
-                                milestone.status === "late" ? "destructive" : 
-                                milestone.status === "at_risk" ? "warning" : "outline"
-                              } className="whitespace-nowrap">
-                                {milestone.status === "completed" ? "Completed" : 
-                                 milestone.status === "in_progress" ? "In Progress" :
-                                 milestone.status === "late" ? "Late" :
-                                 milestone.status === "at_risk" ? "At Risk" : "Not Started"}
-                              </Badge>
-                            </td>
-                            <td className="p-2 whitespace-nowrap">
-                              {milestone.dueDate ? new Date(milestone.dueDate).toLocaleDateString('en-US', {
-                                month: 'short', day: 'numeric'
-                              }) : "No date"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                    {(milestones.length > 0 ? milestones : placeholderMilestones).length > 4 && (
-                      <div className="flex justify-center items-center p-2 border-t bg-muted/20 text-sm text-muted-foreground">
-                        <span>{(milestones.length > 0 ? milestones : placeholderMilestones).length - 4} more milestone{(milestones.length > 0 ? milestones : placeholderMilestones).length - 4 !== 1 ? 's' : ''} not shown</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Progress indicator */}
-                  <div className="mt-4">
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium">Overall Progress</span>
-                      <span>
-                        {(() => {
-                          const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
-                          const completedCount = milestonesData.filter(m => m.status === "completed").length;
-                          return `${completedCount} of ${milestonesData.length} completed`;
-                        })()}
-                      </span>
-                    </div>
-                    <Progress value={(() => {
-                      const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
-                      const completedCount = milestonesData.filter(m => m.status === "completed").length;
-                      const inProgressCount = milestonesData.filter(m => m.status === "in_progress").length;
-                      return milestonesData.length > 0 
-                        ? Math.round((completedCount + (inProgressCount * 0.5)) / milestonesData.length * 100) 
-                        : 0;
-                    })()} className="h-2" />
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Milestone Summary Card */}
+              <MilestoneSummaryCard 
+                milestones={milestones.length > 0 ? milestones : placeholderMilestones}
+                onViewMilestones={() => {
+                  // Find the milestones tab element and click it programmatically
+                  const milestonesTab = document.querySelector('[value="milestones"]')
+                  if (milestonesTab) milestonesTab.click()
+                }}
+              />
 
-              {/* Activity Feed */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">Recent Activity</CardTitle>
-                  <CardDescription>Latest updates and achievements</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <TeamActivityFeed team={team} />
-                </CardContent>
-              </Card>
+              {/* Submission Summary Card */}
+              <SubmissionSummaryCard 
+                milestones={milestones.length > 0 ? milestones : placeholderMilestones}
+                submissions={team?.submissions || []}
+              />
             </div>
             
             {/* Sidebar */}
@@ -453,7 +386,16 @@ function ProgramDashboardInner({ onNavigate }) {
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">Team Members</CardTitle>
-                      <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 px-2 text-xs"
+                        onClick={() => {
+                          // Find the members tab element and click it programmatically
+                          const membersTab = document.querySelector('[value="members"]')
+                          if (membersTab) membersTab.click()
+                        }}
+                      >
                         View All
                       </Button>
                     </div>

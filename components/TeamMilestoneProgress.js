@@ -19,7 +19,7 @@ const calculateOverallProgress = (milestones) => {
 }
 
 export default function TeamMilestoneProgress({ milestones, detailed = false, programName, programId, programType = "xperience" }) {
-  const [viewMode, setViewMode] = useState("timeline") // "timeline" or "table"
+  const [viewMode, setViewMode] = useState("table") // "table" or "timeline"
   
   if (!milestones || milestones.length === 0) {
     return <div className="text-muted-foreground">No milestone data available.</div>
@@ -47,22 +47,22 @@ export default function TeamMilestoneProgress({ milestones, detailed = false, pr
         <div className="flex ml-4">
           <div className="border rounded-md flex bg-muted/20">
             <Button
-              variant={viewMode === "timeline" ? "secondary" : "ghost"}
-              size="sm"
-              className="rounded-r-none"
-              onClick={() => setViewMode("timeline")}
-            >
-              <AlignLeft className="h-4 w-4 mr-1" />
-              Timeline
-            </Button>
-            <Button
               variant={viewMode === "table" ? "secondary" : "ghost"}
               size="sm"
-              className="rounded-l-none"
+              className="rounded-r-none"
               onClick={() => setViewMode("table")}
             >
               <TableIcon className="h-4 w-4 mr-1" />
               Table
+            </Button>
+            <Button
+              variant={viewMode === "timeline" ? "secondary" : "ghost"}
+              size="sm"
+              className="rounded-l-none"
+              onClick={() => setViewMode("timeline")}
+            >
+              <AlignLeft className="h-4 w-4 mr-1" />
+              Timeline
             </Button>
           </div>
         </div>
