@@ -32,19 +32,7 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     error: majorsError 
   } = useMajors();
   
-  // Log majors when they load to debug
-  useEffect(() => {
-    if (majors && majors.length > 0) {
-      console.log(`Loaded ${majors.length} majors, first 3:`, majors.slice(0, 3));
-      
-      // Check if any majors have invalid IDs (not starting with 'rec')
-      const invalidMajors = majors.filter(m => !m.id.startsWith('rec'));
-      if (invalidMajors.length > 0) {
-        console.warn(`Found ${invalidMajors.length} majors with invalid ID format:`, 
-          invalidMajors.slice(0, 3));
-      }
-    }
-  }, [majors]);
+  // Removed major debugging useEffect
   
   // Reset form when profile changes
   useEffect(() => {
@@ -59,11 +47,6 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
         educationId: profile.educationId || null,
         institutionId: profile.institution?.id || null,
       });
-      
-      // Validate profile data for debugging
-      if (profile.programId && !profile.programId.startsWith('rec')) {
-        console.warn(`Profile contains invalid major ID format: "${profile.programId}"`);
-      }
     }
   }, [profile]);
 
@@ -87,13 +70,6 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     
     // For major field, handle special selection logic
     if (name === "major") {
-      console.log(`Setting major value: "${value}" (${typeof value})`);
-      
-      // Check if this is a valid Airtable ID format
-      if (!value.startsWith('rec') && value) {
-        console.warn(`Warning: Major value doesn't appear to be a valid Airtable record ID: ${value}`);
-      }
-      
       // When major is selected, also update majorName for display
       if (value) {
         const selectedMajor = majors.find(m => m.id === value);
@@ -367,19 +343,8 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
                             </option>
                         ))}
                       </select>
-                      <div className="flex flex-col text-xs bg-gray-50 p-2 mt-1 rounded border">
-                        <p className="font-medium">Debug Information:</p>
-                        <p>
-                          Major ID: <code className="bg-gray-100 px-1">{formData.major || '(none selected)'}</code>
-                        </p>
-                        <p>
-                          Selected: <code className="bg-gray-100 px-1">{majors.find(m => m.id === formData.major)?.name || 'None'}</code>
-                        </p>
-                        <p className="text-xs text-red-600">
-                          {!formData.major?.startsWith('rec') && formData.major 
-                            ? '⚠️ Warning: Major ID does not appear to be a valid Airtable record ID!' 
-                            : ''}
-                        </p>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Selected: {majors.find(m => m.id === formData.major)?.name || 'None'}
                       </div>
                     </div>
                   )}
