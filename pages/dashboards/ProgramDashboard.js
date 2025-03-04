@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useDashboard } from "@/contexts/DashboardContext"
+import { useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import dynamic from "next/dynamic"
@@ -27,6 +28,9 @@ const ProgramDashboardContent = dynamic(() => Promise.resolve(ProgramDashboardIn
 
 // Inner component that uses dashboard context
 function ProgramDashboardInner({ onNavigate }) {
+  // Get query client for cache access
+  const queryClient = useQueryClient();
+  
   // Add state for dialog control
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -351,10 +355,55 @@ function ProgramDashboardInner({ onNavigate }) {
                 }}
               />
 
-              {/* Submission Summary Card */}
+              {/* Submission Summary Card with enhanced submission data */}
               <SubmissionSummaryCard 
                 milestones={milestones.length > 0 ? milestones : placeholderMilestones}
-                submissions={team?.submissions || []}
+                submissions={(() => {
+                  // Log submission data availability for debugging
+                  console.log(`Team submissions data availability check:`)
+                  console.log(`- Team data available: ${!!team}`);
+                  console.log(`- Team submissions field exists: ${!!team?.submissions}`);
+                  console.log(`- Team submissions count: ${team?.submissions?.length || 0}`);
+                  
+                  // If team has direct submissions property, use it
+                  if (team?.submissions && Array.isArray(team.submissions) && team.submissions.length > 0) {
+                    console.log(`Using ${team.submissions.length} submissions from team object`);
+                    return team.submissions;
+                  }
+                  
+                  // Otherwise attempt to get submissions from the query cache for each milestone
+                  const querySubmissions = [];
+                  
+                  if (teamData?.id && (milestones.length > 0 || placeholderMilestones.length > 0)) {
+                    const activeMilestones = milestones.length > 0 ? milestones : placeholderMilestones;
+                    console.log(`Attempting to find submissions for ${activeMilestones.length} milestones in query cache`);
+                    
+                    activeMilestones.forEach(milestone => {
+                      if (milestone.id) {
+                        // Check if we have cached data for this milestone
+                        const cachedSubmissionData = queryClient.getQueryData(['submissions', teamData.id, milestone.id]);
+                        if (cachedSubmissionData?.submissions?.length > 0) {
+                          console.log(`Found ${cachedSubmissionData.submissions.length} submissions for milestone ${milestone.id} in cache`);
+                          
+                          // Add these submissions to our collection
+                          cachedSubmissionData.submissions.forEach(sub => {
+                            // Add milestone data for reference if not present
+                            const enhancedSub = {
+                              ...sub,
+                              milestoneId: sub.milestoneId || milestone.id,
+                              milestoneName: milestone.name
+                            };
+                            querySubmissions.push(enhancedSub);
+                          });
+                        }
+                      }
+                    });
+                    
+                    console.log(`Found total of ${querySubmissions.length} submissions from query cache`);
+                  }
+                  
+                  return querySubmissions.length > 0 ? querySubmissions : [];
+                })()}
               />
             </div>
             

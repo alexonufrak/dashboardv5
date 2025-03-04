@@ -182,14 +182,53 @@ export function DashboardProvider({ children }) {
   
   // Process milestones data with fallbacks
   const milestones = useMemo(() => {
-    if (milestonesData?.milestones && milestonesData.milestones.length > 0) {
-      return milestonesData.milestones
-    } else if (programDataProcessed.cohort) {
-      return generateFallbackMilestones(programDataProcessed.cohort.name || "Program")
-    } else {
-      return []
+    const processedMilestones = milestonesData?.milestones && milestonesData.milestones.length > 0
+      ? milestonesData.milestones
+      : programDataProcessed.cohort 
+        ? generateFallbackMilestones(programDataProcessed.cohort.name || "Program")
+        : [];
+    
+    // Only proceed with prefetching if we have both team and milestones
+    if (teamData?.id && processedMilestones.length > 0) {
+      console.log(`Prefetching submissions for ${processedMilestones.length} milestones`);
+      
+      // Prefetch submissions for all milestones to populate cache
+      // We'll do this asynchronously to avoid blocking the UI
+      setTimeout(() => {
+        processedMilestones.forEach(milestone => {
+          if (milestone.id) {
+            console.log(`Prefetching submissions for milestone: ${milestone.id} (${milestone.name})`);
+            
+            // Use the query client to prefetch this data
+            queryClient.prefetchQuery({
+              queryKey: ['submissions', teamData.id, milestone.id],
+              queryFn: async () => {
+                const url = `/api/teams/${teamData.id}/submissions?milestoneId=${encodeURIComponent(milestone.id)}&_t=${new Date().getTime()}`;
+                
+                try {
+                  const response = await fetch(url);
+                  if (!response.ok) {
+                    console.warn(`Prefetch failed for milestone ${milestone.id}: ${response.status} ${response.statusText}`);
+                    return { submissions: [] };
+                  }
+                  
+                  const data = await response.json();
+                  console.log(`Prefetched ${data.submissions?.length || 0} submissions for milestone ${milestone.id}`);
+                  return { submissions: data.submissions || [] };
+                } catch (err) {
+                  console.warn(`Error prefetching submissions for milestone ${milestone.id}:`, err);
+                  return { submissions: [] };
+                }
+              },
+              staleTime: 60 * 1000 // 1 minute
+            });
+          }
+        });
+      }, 1000); // Delay prefetching by 1 second to let initial render complete
     }
-  }, [milestonesData, programDataProcessed.cohort])
+    
+    return processedMilestones;
+  }, [milestonesData, programDataProcessed.cohort, teamData?.id, queryClient])
   
   // Combine loading states
   const isLoading = isUserLoading || isProfileLoading
