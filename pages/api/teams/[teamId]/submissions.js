@@ -60,112 +60,63 @@ export default withApiAuthRequired(async function handler(req, res) {
     // Query submissions with the constructed filter
     console.log(`Fetching submissions for team ${teamId} with filter: ${filterFormula}`)
     
-    try {
-      const submissions = await submissionsTable
-        .select({
-          filterByFormula: filterFormula,
-          sort: [{ field: 'Created Time', direction: 'desc' }]
-        })
-        .firstPage()
-      
-      // If we get here, the formula worked
-      console.log(`Successfully fetched ${submissions.length} submissions with filter formula`)
-      return submissions
-    } catch (error) {
-      // If the formula failed, try with just the team filter
-      console.error(`Error with filter formula: ${error.message}`)
-      console.log(`Falling back to simple team filter`)
-      
-      const simpleFilter = `FIND("${teamId}", ARRAYJOIN(Team, ","))`
-      
-      const fallbackSubmissions = await submissionsTable
-        .select({
-          filterByFormula: simpleFilter,
-          sort: [{ field: 'Created Time', direction: 'desc' }]
-        })
-        .firstPage()
-      
-      // If we get submissions, filter them in code instead of in the query
-      return fallbackSubmissions.filter(submission => {
-        // Check if milestone fields contain the milestone ID
-        const milestoneField = submission.fields.Milestone || [];
-        const deliverableField = submission.fields.Deliverable || [];
-        
-        // Convert to arrays if they're not already
-        const milestones = Array.isArray(milestoneField) ? milestoneField : [milestoneField];
-        const deliverables = Array.isArray(deliverableField) ? deliverableField : [deliverableField];
-        
-        // Check if the milestone ID is in either field
-        return milestones.includes(milestoneId) || deliverables.includes(milestoneId);
-      })
-    }
-
-    // Use the submissions returned from our try/catch block
-    const submissionsData = await submissions;
+    // Use a very simple filter to avoid timeouts
+    const simpleFilter = `FIND("${teamId}", ARRAYJOIN(Team, ","))`
     
+    // Limit to a small number of records to prevent timeout
+    const submissions = await submissionsTable
+      .select({
+        filterByFormula: simpleFilter,
+        sort: [{ field: 'Created Time', direction: 'desc' }],
+        maxRecords: 20 // Limit records to avoid timeout
+      })
+      .firstPage()
+    
+    // If we get submissions, filter them in code 
+    console.log(`Retrieved ${submissions.length} team submissions, filtering for milestone ${milestoneId}`)
+    
+    // Return only the submissions matching our milestone
+    return submissions.filter(submission => {
+      const milestoneField = submission.fields.Milestone || [];
+      const deliverableField = submission.fields.Deliverable || [];
+      
+      // Process as arrays
+      const milestones = Array.isArray(milestoneField) ? milestoneField : [milestoneField].filter(Boolean);
+      const deliverables = Array.isArray(deliverableField) ? deliverableField : [deliverableField].filter(Boolean);
+      
+      // Check for exact match
+      return milestones.includes(milestoneId) || deliverables.includes(milestoneId);
+    })
+
     // Process submissions to a cleaner format with extensive debugging information
-    const formattedSubmissions = submissionsData.map(submission => {
+    const formattedSubmissions = submissions.map(submission => {
       // More concise logging to prevent console flooding
       console.log(`Processing submission ${submission.id}`);
       
       // Log important fields only to keep logs manageable
       const milestoneField = submission.fields.Milestone || submission.fields.Deliverable;
-      const createdTime = submission.fields["Created Time"] || submission.fields.created;
+      // Keep original Created Time from Airtable
+      const createdTime = submission.fields["Created Time"];
       const teamField = submission.fields.Team;
       
-      // Try multiple approaches to extract the milestone ID from various possible field names
-      let extractedMilestoneId = null;
-      
-      // Check various field names that could contain the milestone reference
-      if (Array.isArray(submission.fields.Milestone) && submission.fields.Milestone.length > 0) {
-        extractedMilestoneId = submission.fields.Milestone[0];
-      } else if (typeof submission.fields.Milestone === 'string') {
-        extractedMilestoneId = submission.fields.Milestone;
-      } else if (Array.isArray(submission.fields.Deliverable) && submission.fields.Deliverable.length > 0) {
-        extractedMilestoneId = submission.fields.Deliverable[0];
-      } else if (typeof submission.fields.Deliverable === 'string') {
-        extractedMilestoneId = submission.fields.Deliverable;
-      } else if (submission.fields.Milestone_ID) {
-        extractedMilestoneId = submission.fields.Milestone_ID;
-      } else if (submission.fields.MilestoneID) {
-        extractedMilestoneId = submission.fields.MilestoneID;
-      }
-      
-      // If we still don't have a milestone ID, force it to the requested one
-      // This ensures the submission is associated with the milestone even if the field naming is unexpected
-      if (!extractedMilestoneId && milestoneId) {
-        extractedMilestoneId = milestoneId;
-        console.log(`No milestone ID found in submission ${submission.id}, using requested milestone ID: ${milestoneId}`);
-      }
-      
-      // Get created time in a standardized format with error handling
-      let standardCreatedTime = null;
-      try {
-        standardCreatedTime = createdTime ? new Date(createdTime).toISOString() : new Date().toISOString();
-      } catch (err) {
-        console.error(`Error parsing created time for submission ${submission.id}:`, err);
-        standardCreatedTime = new Date().toISOString(); // Fallback to current time
-      }
-      
-      // Log match status for debugging
-      console.log(`- Match status for ${submission.id}: ${extractedMilestoneId === milestoneId ? 'EXACT MATCH' : 'NO EXACT MATCH'}`);
+      // Simplify extraction - we already filtered for milestone match
+      // Just use the requested milestone ID
+      let extractedMilestoneId = milestoneId;
       
       return {
         id: submission.id,
-        createdTime: standardCreatedTime,
+        createdTime: createdTime,
         teamId: teamField?.[0] || teamId, // Fall back to teamId from query if not available
         milestoneId: extractedMilestoneId,
         attachments: submission.fields.Attachment || [],
         comments: submission.fields.Comments || submission.fields.notes || "",
         link: submission.fields.Link || submission.fields.URL || "",
         memberId: submission.fields.Member?.[0] || null,
-        // Additional fields with extensive metadata
-        rawMilestone: milestoneField, // For debugging relationship issues
-        rawTeam: teamField, // For debugging relationship issues
-        rawDeliverable: submission.fields.Deliverable, // Add deliverable field for debugging
-        // Include timestamp in milliseconds for precise sorting
-        submissionTimestamp: new Date(standardCreatedTime).getTime(),
-        // Original requested milestone ID for verification
+        // Additional fields with minimal metadata to reduce response size
+        rawMilestone: milestoneField, 
+        // Include timestamp in milliseconds for precise sorting (if created time exists)
+        submissionTimestamp: createdTime ? new Date(createdTime).getTime() : Date.now(),
+        // Milestone ID verification
         requestedMilestoneId: milestoneId
       }
     })

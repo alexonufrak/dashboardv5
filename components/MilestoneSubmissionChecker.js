@@ -78,24 +78,10 @@ export default function MilestoneSubmissionChecker({
     // Enhanced processing with minimal logging to prevent console flooding
     let submissions = data.submissions || [];
     
-    // Apply validation to ensure milestoneIds match exactly
+    // We can trust the API filtering now, so only basic validation
     const validatedSubmissions = submissions.filter(sub => {
-      // Check exact match first
-      if (sub.milestoneId === milestoneId) {
-        return true;
-      }
-      
-      // Check rawMilestone field
-      if (Array.isArray(sub.rawMilestone) && sub.rawMilestone.includes(milestoneId)) {
-        return true;
-      }
-      
-      // Check requested milestone ID
-      if (sub.requestedMilestoneId === milestoneId) {
-        return true;
-      }
-      
-      return false;
+      // Must have an ID and either milestone or created fields
+      return sub && sub.id && (sub.milestoneId || sub.requestedMilestoneId);
     });
     
     // Sort submissions to ensure most recent first
