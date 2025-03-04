@@ -320,16 +320,31 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
                       <select
                         id="major"
                         name="major"
-                        value={formData.major}
-                        onChange={handleInputChange}
+                        value={formData.major || ""}
+                        onChange={(e) => {
+                          const selectedValue = e.target.value;
+                          // Log the selection in detail
+                          console.log(`Major selection changed to: "${selectedValue}"`);
+                          
+                          // Validate the value is a valid Airtable ID
+                          if (selectedValue && !selectedValue.startsWith('rec')) {
+                            console.warn(`Selected major value is not a valid Airtable ID: ${selectedValue}`);
+                          }
+                          
+                          // Use our existing handler
+                          handleInputChange(e);
+                        }}
                         className="w-full p-2 border rounded-md"
                         required={profile.showMajor}
                       >
                         <option value="">Select a Major</option>
-                        {majors.map(major => (
-                          <option key={major.id} value={major.id}>
-                            {major.name}
-                          </option>
+                        {majors
+                          // Only include majors with valid IDs
+                          .filter(major => major.id && major.id.startsWith('rec'))
+                          .map(major => (
+                            <option key={major.id} value={major.id}>
+                              {major.name}
+                            </option>
                         ))}
                       </select>
                       <div className="flex flex-col text-xs bg-gray-50 p-2 mt-1 rounded border">
