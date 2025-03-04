@@ -69,22 +69,24 @@ export function DashboardLayout({
           
           <main className="flex-1 overflow-auto">
             <div className="container max-w-7xl mx-auto p-4 md:p-6 space-y-6">
-              {/* Breadcrumbs navigation */}
-              {breadcrumbs.length > 0 && (
-                <Breadcrumbs items={breadcrumbs} />
-              )}
-              
-              {/* Alert messages */}
-              {alert && (
-                <Alert variant={alert.variant || "default"}>
-                  {alert.icon}
-                  <AlertTitle>{alert.title}</AlertTitle>
-                  <AlertDescription>{alert.description}</AlertDescription>
-                </Alert>
-              )}
-              
-              {/* Main content */}
-              {children}
+              <div className="animate-fadeInUp">
+                {/* Breadcrumbs navigation */}
+                {breadcrumbs.length > 0 && (
+                  <Breadcrumbs items={breadcrumbs} />
+                )}
+                
+                {/* Alert messages */}
+                {alert && (
+                  <Alert variant={alert.variant || "default"}>
+                    {alert.icon}
+                    <AlertTitle>{alert.title}</AlertTitle>
+                    <AlertDescription>{alert.description}</AlertDescription>
+                  </Alert>
+                )}
+                
+                {/* Main content */}
+                {children}
+              </div>
             </div>
           </main>
         </div>

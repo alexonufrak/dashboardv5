@@ -6,27 +6,28 @@
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 
-## Logo Files
-Located in `/public/logos/`:
-- `xFoundry Blue 900 (1).svg` - Full horizontal logo with text in blue
-- `xFoundry Logo.svg` - Full horizontal logo with text in white
-- `X Icon Blue.svg` - X icon only in blue
-- `X Icon White.svg` - X icon only in white
-
 ## Code Style Guidelines
-- **Imports**: Import React components first, followed by hooks, then utilities. Import components using 'npx shadcn add [component]'
-- **Component Structure**: Use functional components with React hooks
-- **Error Handling**: Use try/catch blocks with specific error messages in catch blocks
+- **Framework**: Next.js with React functional components and hooks
+- **UI Library**: shadcn/ui components with Tailwind CSS
+- **Imports**: React components first, then hooks, then utilities
+- **Component Creation**: Use `npx shadcn add [component]` for shadcn components
+- **Formatting**: 
+  - 2-space indentation, semicolons required
+  - Use parentheses for multi-line JSX returns
+- **Styling**: Tailwind CSS and inline styles object pattern
+- **Error Handling**: Try/catch blocks with specific error messages
 - **Naming Conventions**:
-  - Files: PascalCase for components, camelCase for utilities
-  - Variables/Functions: camelCase (e.g., getUserProfile)
-  - React Components: PascalCase (e.g., ProfileCard)
-- **State Management**: Use React hooks (useState, useEffect) for component state
+  - Files: PascalCase for components (e.g., ProfileCard.js), camelCase for utilities
+  - Functions/Variables: camelCase (e.g., getUserProfile)
+  - React Components: PascalCase with descriptive names
+- **State Management**: React hooks (useState, useEffect, useContext)
 - **API Calls**: Centralize in lib/ directory (airtable.js, auth0.js)
-- **Documentation**: Include JSDoc comments for functions with @param and @returns
+- **Documentation**: JSDoc comments with @param and @returns
 
 ## Project Structure
-- `components/`: Reusable UI components
+- `components/`: Reusable UI components (shadcn/ui in components/ui/)
 - `lib/`: Utility functions and API integrations
 - `pages/`: Next.js pages and API routes
-- `styles/`: Global CSS styles
+- `contexts/`: React Context providers
+- `public/logos/`: Logo assets in various formats
+- `styles/`: Global CSS styles with Tailwind

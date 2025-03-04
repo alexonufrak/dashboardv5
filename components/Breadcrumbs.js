@@ -42,7 +42,7 @@ const Breadcrumbs = () => {
   const breadcrumbs = generateBreadcrumbs()
   
   return (
-    <Breadcrumb className="mb-6 animate-fadeInUp">
+    <Breadcrumb className="mb-6">
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
