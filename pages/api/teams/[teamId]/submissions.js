@@ -38,29 +38,15 @@ export default withApiAuthRequired(async function handler(req, res) {
     
     // If we have a milestone ID, filter by direct milestone reference
     if (milestoneId) {
-      // Try multiple approaches to match milestones across different field names and formats
-      // This handles different formats that might exist in the Airtable data
-      
-      // Approach 1: Check various field names that might hold milestone references
-      // Approach 2: Try different array join formats to catch different storage patterns
-      // Approach 3: Use contains operations for partial matches in case the ID is part of a longer string
+      // Simplify the filtering approach with reliable formula components
+      // Use only fields that are confirmed to exist in the Airtable schema
       filterFormula = `AND(
         ${filterFormula}, 
         OR(
           {Milestone} = "${milestoneId}",
-          ARRAYJOIN({Milestone}, ",") = "${milestoneId}",
-          SEARCH(",${milestoneId},", CONCATENATE(",", ARRAYJOIN({Milestone}, ","), ",")),
-          SEARCH("${milestoneId}", ARRAYJOIN({Milestone}, ",")),
-          
+          FIND("${milestoneId}", ARRAYJOIN({Milestone}, ",")),
           {Deliverable} = "${milestoneId}",
-          ARRAYJOIN({Deliverable}, ",") = "${milestoneId}",
-          SEARCH(",${milestoneId},", CONCATENATE(",", ARRAYJOIN({Deliverable}, ","), ",")),
-          SEARCH("${milestoneId}", ARRAYJOIN({Deliverable}, ",")),
-          
-          {Milestone_ID} = "${milestoneId}",
-          {MilestoneID} = "${milestoneId}",
-          
-          ARRAYJOIN({Submissions}, ",") CONTAINS("${milestoneId}")
+          FIND("${milestoneId}", ARRAYJOIN({Deliverable}, ","))
         )
       )`
       
@@ -74,15 +60,51 @@ export default withApiAuthRequired(async function handler(req, res) {
     // Query submissions with the constructed filter
     console.log(`Fetching submissions for team ${teamId} with filter: ${filterFormula}`)
     
-    const submissions = await submissionsTable
-      .select({
-        filterByFormula: filterFormula,
-        sort: [{ field: 'Created Time', direction: 'desc' }]
+    try {
+      const submissions = await submissionsTable
+        .select({
+          filterByFormula: filterFormula,
+          sort: [{ field: 'Created Time', direction: 'desc' }]
+        })
+        .firstPage()
+      
+      // If we get here, the formula worked
+      console.log(`Successfully fetched ${submissions.length} submissions with filter formula`)
+      return submissions
+    } catch (error) {
+      // If the formula failed, try with just the team filter
+      console.error(`Error with filter formula: ${error.message}`)
+      console.log(`Falling back to simple team filter`)
+      
+      const simpleFilter = `FIND("${teamId}", ARRAYJOIN(Team, ","))`
+      
+      const fallbackSubmissions = await submissionsTable
+        .select({
+          filterByFormula: simpleFilter,
+          sort: [{ field: 'Created Time', direction: 'desc' }]
+        })
+        .firstPage()
+      
+      // If we get submissions, filter them in code instead of in the query
+      return fallbackSubmissions.filter(submission => {
+        // Check if milestone fields contain the milestone ID
+        const milestoneField = submission.fields.Milestone || [];
+        const deliverableField = submission.fields.Deliverable || [];
+        
+        // Convert to arrays if they're not already
+        const milestones = Array.isArray(milestoneField) ? milestoneField : [milestoneField];
+        const deliverables = Array.isArray(deliverableField) ? deliverableField : [deliverableField];
+        
+        // Check if the milestone ID is in either field
+        return milestones.includes(milestoneId) || deliverables.includes(milestoneId);
       })
-      .firstPage()
+    }
 
+    // Use the submissions returned from our try/catch block
+    const submissionsData = await submissions;
+    
     // Process submissions to a cleaner format with extensive debugging information
-    const formattedSubmissions = submissions.map(submission => {
+    const formattedSubmissions = submissionsData.map(submission => {
       // More concise logging to prevent console flooding
       console.log(`Processing submission ${submission.id}`);
       

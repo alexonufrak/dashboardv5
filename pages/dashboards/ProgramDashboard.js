@@ -391,8 +391,9 @@ function ProgramDashboardInner({ onNavigate }) {
                     const activeMilestones = milestones.length > 0 ? milestones : placeholderMilestones;
                     console.log(`Attempting to find submissions for ${activeMilestones.length} milestones in query cache`);
                     
-                    // Prefetch any uncached milestone submissions to ensure we have the data
-                    // This helps fill the cache for future use
+                    // Disable prefetching temporarily to avoid causing unnecessary errors
+                    // We'll re-enable once the API endpoint is working correctly
+                    /*
                     activeMilestones.forEach(milestone => {
                       if (milestone.id) {
                         const cachedData = queryClient.getQueryData(['submissions', teamData.id, milestone.id]);
@@ -416,6 +417,7 @@ function ProgramDashboardInner({ onNavigate }) {
                         }
                       }
                     });
+                    */
                     
                     // Use existing cache data for current display
                     activeMilestones.forEach(milestone => {
