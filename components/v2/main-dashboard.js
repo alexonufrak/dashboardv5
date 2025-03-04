@@ -156,7 +156,7 @@ export function MainDashboard({ userProfile }) {
         programType: "xperiment",
         dueDate: "2023-11-14",
         daysRemaining: 3,
-        status: "not_started"
+        status: "upcoming"
       },
       {
         id: "del2",
@@ -260,7 +260,8 @@ export function MainDashboard({ userProfile }) {
     }
     
     const statusMap = {
-      not_started: <Badge variant="outline">Not Started</Badge>,
+      not_started: <Badge variant="outline">Upcoming</Badge>,
+      upcoming: <Badge variant="outline">Upcoming</Badge>,
       in_progress: <Badge variant="secondary">In Progress</Badge>,
       completed: <Badge variant="success">Completed</Badge>,
       rsvp_pending: <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">RSVP Pending</Badge>

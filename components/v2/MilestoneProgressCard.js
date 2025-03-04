@@ -26,7 +26,7 @@ export function MilestoneProgressCard({
   milestones = [],
   className = "",
 }) {
-  // Calculate progress percentage
+  // Calculate progress percentage (simplified - now just completed/total)
   const calculateProgress = () => {
     if (!milestones || milestones.length === 0) return 0;
     
@@ -48,11 +48,11 @@ export function MilestoneProgressCard({
     }
   };
 
-  // Get active milestone - first non-completed one, or most recent completed if all are completed
+  // Get active milestone - first upcoming one, or most recent completed if all are completed
   const getActiveMilestone = () => {
     if (!milestones || milestones.length === 0) return null;
     
-    // First, try to find the first non-completed milestone
+    // First, try to find the first upcoming milestone
     const active = milestones
       .filter(m => m.status !== "completed")
       .sort((a, b) => {
@@ -152,13 +152,14 @@ export function MilestoneProgressCard({
           <div className="flex items-center mb-1">
             {activeMilestone.status === "completed" ? (
               <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-            ) : activeMilestone.status === "at_risk" ? (
-              <AlertCircle className="h-5 w-5 text-amber-500 mr-2" />
+            ) : activeMilestone.status === "late" ? (
+              <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
             ) : (
               <Clock className="h-5 w-5 text-blue-500 mr-2" />
             )}
             <h3 className="font-medium">
-              {activeMilestone.status === "completed" ? "Recently Completed:" : "Current Milestone:"}
+              {activeMilestone.status === "completed" ? "Recently Completed:" : 
+               activeMilestone.status === "late" ? "Overdue Milestone:" : "Upcoming Milestone:"}
             </h3>
           </div>
           <div className="ml-7">
@@ -168,11 +169,7 @@ export function MilestoneProgressCard({
                 ? `Completed on ${formatDate(activeMilestone.completedDate)}`
                 : activeMilestone.dueDate
                 ? `Due: ${formatDate(activeMilestone.dueDate)}`
-                : activeMilestone.status === "in_progress"
-                ? "In progress"
-                : activeMilestone.status === "at_risk"
-                ? "At risk"
-                : "Not started"}
+                : "Upcoming"}
             </p>
           </div>
         </div>

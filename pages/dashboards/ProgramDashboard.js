@@ -179,20 +179,19 @@ function ProgramDashboardInner({ onNavigate }) {
     {
       id: "m3",
       name: "Prototype Development",
-      status: "in_progress",
-      dueDate: "2025-04-25",
-      progress: 65
+      status: "upcoming",
+      dueDate: "2025-04-25"
     },
     {
       id: "m4",
       name: "User Testing",
-      status: "not_started",
+      status: "upcoming",
       dueDate: "2025-05-15"
     },
     {
       id: "m5",
       name: "Final Presentation",
-      status: "not_started",
+      status: "upcoming",
       dueDate: "2025-06-07"
     }
   ]
@@ -251,9 +250,8 @@ function ProgramDashboardInner({ onNavigate }) {
                     // Calculate progress using the same function as TeamMilestoneProgress
                     const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
                     const completedCount = milestonesData.filter(m => m.status === "completed").length;
-                    const inProgressCount = milestonesData.filter(m => m.status === "in_progress").length;
                     const progressPercentage = milestonesData.length > 0 
-                      ? Math.round((completedCount + (inProgressCount * 0.5)) / milestonesData.length * 100) 
+                      ? Math.round((completedCount) / milestonesData.length * 100) 
                       : 0;
                     return `${progressPercentage}% Complete`;
                   })()}
@@ -423,9 +421,8 @@ function ProgramDashboardInner({ onNavigate }) {
                       {(() => {
                         const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
                         const completedCount = milestonesData.filter(m => m.status === "completed").length;
-                        const inProgressCount = milestonesData.filter(m => m.status === "in_progress").length;
-                        const notStartedCount = milestonesData.filter(m => m.status === "not_started" || !m.status).length;
-                        const atRiskCount = milestonesData.filter(m => m.status === "at_risk" || m.status === "late").length;
+                        const lateCount = milestonesData.filter(m => m.status === "late").length;
+                        const upcomingCount = milestonesData.filter(m => m.status !== "completed" && m.status !== "late").length;
                         
                         return (
                           <>
@@ -435,17 +432,13 @@ function ProgramDashboardInner({ onNavigate }) {
                                 <span><strong>{completedCount}</strong> Completed</span>
                               </span>
                               <span className="flex items-center gap-1">
-                                <Clock className="h-4 w-4 text-blue-600" />
-                                <span><strong>{inProgressCount}</strong> In Progress</span>
-                              </span>
-                              <span className="flex items-center gap-1">
                                 <Circle className="h-4 w-4 text-gray-400" />
-                                <span><strong>{notStartedCount}</strong> Not Started</span>
+                                <span><strong>{upcomingCount}</strong> Upcoming</span>
                               </span>
-                              {atRiskCount > 0 && (
+                              {lateCount > 0 && (
                                 <span className="flex items-center gap-1">
-                                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                                  <span><strong>{atRiskCount}</strong> At Risk</span>
+                                  <AlertCircle className="h-4 w-4 text-red-600" />
+                                  <span><strong>{lateCount}</strong> Late</span>
                                 </span>
                               )}
                             </div>
@@ -461,17 +454,15 @@ function ProgramDashboardInner({ onNavigate }) {
                         {(() => {
                           const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
                           const completedCount = milestonesData.filter(m => m.status === "completed").length;
-                          const inProgressCount = milestonesData.filter(m => m.status === "in_progress").length;
-                          return `${Math.round((completedCount + (inProgressCount * 0.5)) / milestonesData.length * 100)}%`;
+                          return `${Math.round((completedCount) / milestonesData.length * 100)}%`;
                         })()}
                       </Badge>
                     </div>
                     <Progress value={(() => {
                       const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
                       const completedCount = milestonesData.filter(m => m.status === "completed").length;
-                      const inProgressCount = milestonesData.filter(m => m.status === "in_progress").length;
                       return milestonesData.length > 0 
-                        ? Math.round((completedCount + (inProgressCount * 0.5)) / milestonesData.length * 100) 
+                        ? Math.round((completedCount) / milestonesData.length * 100) 
                         : 0;
                     })()} className="h-2 w-[200px]" />
                   </div>

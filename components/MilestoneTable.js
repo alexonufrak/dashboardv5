@@ -44,7 +44,7 @@ export default function MilestoneTable({
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState("submit") // "submit" or "view"
   
-  // Status configuration for visual elements
+  // Status configuration for visual elements - completed/upcoming/late
   const statusConfig = {
     completed: { 
       icon: <CheckCircle className="h-5 w-5 text-green-500" />,
@@ -54,11 +54,7 @@ export default function MilestoneTable({
       icon: <Circle className="h-5 w-5 text-gray-300" />,
       textClass: "text-gray-500"
     },
-    at_risk: { 
-      icon: <AlertCircle className="h-5 w-5 text-amber-500" />,
-      textClass: "text-amber-700"
-    },
-    late: { 
+    late: {
       icon: <AlertCircle className="h-5 w-5 text-red-500" />,
       textClass: "text-red-700"
     }
@@ -142,12 +138,10 @@ export default function MilestoneTable({
           milestone.hasSubmission = false
           milestone.submissions = []
           
-          // If due date is in the past and no submission, mark as late
+          // Check if milestone is past due
           if (milestone.dueDate && isPast(new Date(milestone.dueDate))) {
             milestone.status = "late"
-          }
-          // Otherwise, default to upcoming
-          else {
+          } else {
             milestone.status = "upcoming"
           }
         }
@@ -284,16 +278,10 @@ export default function MilestoneTable({
                       <span>{formatDate(milestone.dueDate) || "No due date"}</span>
                     </div>
                     
-                    {/* Days remaining indicator */}
+                    {/* Days remaining indicator - simplified */}
                     {status !== "completed" && daysRemaining !== null && (
-                      <Badge variant="outline" className={
-                        daysRemaining < 0 ? "mt-1 bg-red-50 text-red-700 border-red-200" :
-                        daysRemaining <= 3 ? "mt-1 bg-amber-50 text-amber-700 border-amber-200" :
-                        "mt-1 bg-gray-50 text-gray-700 border-gray-200"
-                      }>
-                        {daysRemaining < 0 ? `${Math.abs(daysRemaining)} days overdue` :
-                         daysRemaining === 0 ? "Due today" :
-                         `${daysRemaining} days remaining`}
+                      <Badge variant="outline" className="mt-1 bg-gray-50 text-gray-700 border-gray-200">
+                        {daysRemaining <= 0 ? "Due today" : `${daysRemaining} days remaining`}
                       </Badge>
                     )}
                     
@@ -311,13 +299,10 @@ export default function MilestoneTable({
                 <TableCell>
                   <Badge 
                     variant={status === "completed" ? "success" : 
-                            status === "in_progress" ? "default" :
-                            status === "late" ? "destructive" : 
-                            status === "at_risk" ? "warning" : "outline"}
+                             status === "late" ? "destructive" : "outline"}
                   >
                     {status === "completed" ? "Completed" : 
-                     status === "late" ? "Late" :
-                     status === "at_risk" ? "At Risk" : "Upcoming"}
+                     status === "late" ? "Late" : "Upcoming"}
                   </Badge>
                   
                   {/* Additional submission info */}

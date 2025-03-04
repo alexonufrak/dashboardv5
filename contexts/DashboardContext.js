@@ -52,8 +52,7 @@ function generateFallbackMilestones(programName) {
       number: 2,
       dueDate: now.toISOString(),
       description: "Define your project scope and goals",
-      status: "in_progress", 
-      progress: 75,
+      status: "upcoming",
       completedDate: null,
       score: null
     },
@@ -63,7 +62,7 @@ function generateFallbackMilestones(programName) {
       number: 3,
       dueDate: oneMonthLater.toISOString(),
       description: "Develop your first working prototype",
-      status: "not_started",
+      status: "upcoming",
       progress: 0,
       completedDate: null,
       score: null
@@ -74,7 +73,7 @@ function generateFallbackMilestones(programName) {
       number: 4,
       dueDate: twoMonthsLater.toISOString(),
       description: "Test your prototype with real users",
-      status: "not_started",
+      status: "upcoming",
       progress: 0,
       completedDate: null,
       score: null
@@ -85,7 +84,7 @@ function generateFallbackMilestones(programName) {
       number: 5,
       dueDate: threeMonthsLater.toISOString(),
       description: "Present your finished project",
-      status: "not_started",
+      status: "upcoming",
       progress: 0,
       completedDate: null,
       score: null

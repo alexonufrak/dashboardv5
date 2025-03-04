@@ -121,7 +121,7 @@ export function ActiveProgramsDashboard({ userProfile }) {
         {
           id: "m5",
           name: "Final Presentation",
-          status: "not_started",
+          status: "upcoming",
           dueDate: "2023-12-07"
         }
       ],
@@ -130,7 +130,7 @@ export function ActiveProgramsDashboard({ userProfile }) {
         tasks: [
           { name: "User Testing Protocol", status: "completed", dueDate: "2023-11-10" },
           { name: "User Interview Sessions", status: "in_progress", dueDate: "2023-11-14" },
-          { name: "Testing Analysis", status: "not_started", dueDate: "2023-11-16" }
+          { name: "Testing Analysis", status: "upcoming", dueDate: "2023-11-16" }
         ]
       }
     },
@@ -171,7 +171,7 @@ export function ActiveProgramsDashboard({ userProfile }) {
       assignments: [
         { 
           name: "Reading Response 9", 
-          status: "not_started", 
+          status: "upcoming", 
           dueDate: "2023-11-14",
           type: "individual"
         },
@@ -183,7 +183,7 @@ export function ActiveProgramsDashboard({ userProfile }) {
         },
         { 
           name: "Final Project", 
-          status: "not_started", 
+          status: "upcoming", 
           dueDate: "2023-12-12",
           type: "team"
         }
@@ -277,9 +277,10 @@ export function ActiveProgramsDashboard({ userProfile }) {
     const statusIcons = {
       completed: <Badge variant="success" className="rounded-full w-5 h-5 p-0.5">✓</Badge>,
       in_progress: <Badge variant="secondary" className="rounded-full w-5 h-5 p-0.5">⟳</Badge>,
-      not_started: <Badge variant="outline" className="rounded-full w-5 h-5 p-0.5" />
+      not_started: <Badge variant="outline" className="rounded-full w-5 h-5 p-0.5" />,
+      upcoming: <Badge variant="outline" className="rounded-full w-5 h-5 p-0.5" />
     };
-    return statusIcons[status] || statusIcons.not_started;
+    return statusIcons[status] || statusIcons.upcoming;
   };
 
   // Helper function to render progress indicators
@@ -341,7 +342,7 @@ export function ActiveProgramsDashboard({ userProfile }) {
     const statusMap = {
       completed: <Badge variant="success">Completed</Badge>,
       in_progress: <Badge variant="secondary">In Progress</Badge>,
-      not_started: <Badge variant="outline">Not Started</Badge>,
+      not_started: <Badge variant="outline">Upcoming</Badge>,
       upcoming: <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Upcoming</Badge>,
       rsvp_pending: <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">RSVP Pending</Badge>
     };

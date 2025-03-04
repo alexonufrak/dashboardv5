@@ -350,16 +350,10 @@ export default function MilestoneSubmissionDialog({
               <Clock className="h-4 w-4 mr-1 text-gray-400" />
             )}
             <span className={
-              milestone?.status === "completed" ? "text-green-600" :
-              milestone?.status === "late" ? "text-red-600" :
-              milestone?.status === "in_progress" ? "text-blue-600" :
-              "text-gray-500"
+              milestone?.status === "completed" ? "text-green-600" : "text-gray-500"
             }>
               Status: {
-                milestone?.status === "completed" ? "Completed" :
-                milestone?.status === "late" ? "Late" :
-                milestone?.status === "in_progress" ? "In Progress" :
-                "Not Started"
+                milestone?.status === "completed" ? "Completed" : "Upcoming"
               }
             </span>
           </div>

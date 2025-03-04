@@ -151,16 +151,13 @@ export default withApiAuthRequired(async function handler(req, res) {
       const milestoneDate = dueDate ? new Date(dueDate) : null
       const isPastDue = milestoneDate && milestoneDate < now
       
-      // If the milestone is past due, mark it as at_risk
-      // The client component will determine the actual status based on submissions
+      // Mark past due milestones as "late", future milestones as "upcoming"
       if (isPastDue) {
-        status = "at_risk"
+        status = "late"
       }
       
-      // Only set status to in_progress or completed if we have actual data
-      // from Airtable indicating this (which we don't in this API yet)
       // The client-side MilestoneSubmissionChecker component will handle
-      // checking for actual submissions and updating status accordingly
+      // checking for actual submissions and updating status to "completed" accordingly
       
       return {
         id: milestone.id,

@@ -34,7 +34,7 @@ export default function MilestoneTimeline({
   const [enhancedMilestones, setEnhancedMilestones] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   
-  // Status configuration for visual elements
+  // Status configuration for visual elements - completed/upcoming/late
   const statusConfig = {
     completed: { 
       icon: <CheckCircle className="h-5 w-5 text-green-500" />,
@@ -47,12 +47,6 @@ export default function MilestoneTimeline({
       lineClass: "bg-gray-200",
       nodeClass: "border-gray-300 bg-gray-50",
       textClass: "text-gray-500"
-    },
-    at_risk: { 
-      icon: <AlertCircle className="h-5 w-5 text-amber-500" />,
-      lineClass: "bg-amber-500",
-      nodeClass: "border-amber-500 bg-amber-100",
-      textClass: "text-amber-700"
     },
     late: { 
       icon: <AlertCircle className="h-5 w-5 text-red-500" />,
@@ -138,12 +132,10 @@ export default function MilestoneTimeline({
           // No submission - determine status based on due date
           milestone.hasSubmission = false
           
-          // If due date is in the past and no submission, mark as late
+          // Check if milestone is past due
           if (milestone.dueDate && isPast(new Date(milestone.dueDate))) {
             milestone.status = "late"
-          }
-          // Otherwise, default to upcoming
-          else {
+          } else {
             milestone.status = "upcoming"
           }
         }
@@ -269,13 +261,10 @@ export default function MilestoneTimeline({
                   <Badge 
                     className="ml-2"
                     variant={status === "completed" ? "success" : 
-                            status === "in_progress" ? "default" :
-                            status === "late" ? "destructive" : 
-                            status === "at_risk" ? "warning" : "outline"}
+                            status === "late" ? "destructive" : "outline"}
                   >
                     {status === "completed" ? "Completed" : 
-                     status === "late" ? "Late" :
-                     status === "at_risk" ? "At Risk" : "Upcoming"}
+                     status === "late" ? "Late" : "Upcoming"}
                   </Badge>
                 </div>
                 
@@ -286,16 +275,10 @@ export default function MilestoneTimeline({
                       <Calendar className="h-3.5 w-3.5" />
                       <span>Due: {formatDate(milestone.dueDate)}</span>
                       
-                      {/* Days remaining indicator */}
+                      {/* Days remaining indicator - simplified colors */}
                       {status !== "completed" && daysRemaining !== null && (
-                        <Badge variant="outline" className={
-                          daysRemaining < 0 ? "bg-red-50 text-red-700 border-red-200" :
-                          daysRemaining <= 3 ? "bg-amber-50 text-amber-700 border-amber-200" :
-                          "bg-gray-50 text-gray-700 border-gray-200"
-                        }>
-                          {daysRemaining < 0 ? `${Math.abs(daysRemaining)} days overdue` :
-                           daysRemaining === 0 ? "Due today" :
-                           `${daysRemaining} days remaining`}
+                        <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+                          {daysRemaining <= 0 ? "Due today" : `${daysRemaining} days remaining`}
                         </Badge>
                       )}
                     </div>
