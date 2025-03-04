@@ -1284,6 +1284,21 @@ Base Schema
           "name": "Application Form ID (Fillout)",
           "type": "singleLineText",
           "options": {}
+        },
+        {
+          "name": "Start Date",
+          "type": "date",
+          "options": {}
+        },
+        {
+          "name": "End Date",
+          "type": "date",
+          "options": {}
+        },
+        {
+          "name": "Current Cohort",
+          "type": "formula",
+          "options": {}
         }
       ]
     },
@@ -2751,6 +2766,14 @@ Base Schema
           "name": "Request Attendance",
           "type": "checkbox",
           "options": {}
+        },
+        {
+          "name": "Submissions",
+          "type": "multipleRecordLinks",
+          "options": {
+            "relationshipType": "-> Submissions",
+            "allowsMultipleRecords": true
+          }
         }
       ]
     },
@@ -2858,21 +2881,9 @@ Base Schema
           "name": "Members copy",
           "type": "singleLineText",
           "options": {}
-        }
-      ]
-    },
-    {
-      "name": "Deliverables",
-      "description": "The things that are due for milestones and bounties",
-      "primaryFieldName": "",
-      "fields": [
-        {
-          "name": "Deliverable ID",
-          "type": "formula",
-          "options": {}
         },
         {
-          "name": "Milestones",
+          "name": "Milestone",
           "type": "multipleRecordLinks",
           "options": {
             "relationshipType": "-> Milestones",
@@ -2880,44 +2891,8 @@ Base Schema
           }
         },
         {
-          "name": "Submissions",
-          "type": "multipleRecordLinks",
-          "options": {
-            "relationshipType": "-> Submissions",
-            "allowsMultipleRecords": true
-          }
-        },
-        {
-          "name": "ID",
-          "type": "autoNumber",
-          "options": {}
-        },
-        {
-          "name": "Name",
-          "type": "singleLineText",
-          "options": {}
-        },
-        {
-          "name": "Details",
-          "type": "richText",
-          "options": {}
-        },
-        {
-          "name": "Bounties",
-          "type": "multipleRecordLinks",
-          "options": {
-            "relationshipType": "-> Bounties",
-            "allowsMultipleRecords": true
-          }
-        },
-        {
-          "name": "Bounty Evaluation Criteria",
-          "type": "multilineText",
-          "options": {}
-        },
-        {
-          "name": "Bounty Deliverable Submission Form",
-          "type": "formula",
+          "name": "Name (from Milestone)",
+          "type": "multipleLookupValues",
           "options": {}
         }
       ]
@@ -3019,6 +2994,67 @@ Base Schema
         {
           "name": "Visibility",
           "type": "singleSelect",
+          "options": {}
+        }
+      ]
+    },
+    {
+      "name": "Deliverables",
+      "description": "The things that are due for milestones and bounties",
+      "primaryFieldName": "",
+      "fields": [
+        {
+          "name": "Deliverable ID",
+          "type": "formula",
+          "options": {}
+        },
+        {
+          "name": "Milestones",
+          "type": "multipleRecordLinks",
+          "options": {
+            "relationshipType": "-> Milestones",
+            "allowsMultipleRecords": true
+          }
+        },
+        {
+          "name": "Submissions",
+          "type": "multipleRecordLinks",
+          "options": {
+            "relationshipType": "-> Submissions",
+            "allowsMultipleRecords": true
+          }
+        },
+        {
+          "name": "ID",
+          "type": "autoNumber",
+          "options": {}
+        },
+        {
+          "name": "Name",
+          "type": "singleLineText",
+          "options": {}
+        },
+        {
+          "name": "Details",
+          "type": "richText",
+          "options": {}
+        },
+        {
+          "name": "Bounties",
+          "type": "multipleRecordLinks",
+          "options": {
+            "relationshipType": "-> Bounties",
+            "allowsMultipleRecords": true
+          }
+        },
+        {
+          "name": "Bounty Evaluation Criteria",
+          "type": "multilineText",
+          "options": {}
+        },
+        {
+          "name": "Bounty Deliverable Submission Form",
+          "type": "formula",
           "options": {}
         }
       ]

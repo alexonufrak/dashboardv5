@@ -362,10 +362,15 @@ function ProgramDashboardInner({ onNavigate }) {
                   // Skip lengthy processing if team data isn't available
                   if (!teamData?.id) return [];
                   
-                  // Get any submissions directly from team data
-                  if (teamData?.fields?.Submissions && Array.isArray(teamData.fields.Submissions)) {
+                  // Start with an empty array for submissions
+                  let submissions = [];
+                  
+                  // APPROACH 1: Get submissions directly from team data (per Airtable schema)
+                  if (teamData.fields?.Submissions && Array.isArray(teamData.fields.Submissions)) {
+                    console.log(`Team has ${teamData.fields.Submissions.length} submission IDs in Airtable`);
+                    
                     // Convert raw submission IDs to properly formatted submission objects
-                    return teamData.fields.Submissions
+                    submissions = teamData.fields.Submissions
                       .filter(Boolean)
                       .map(submissionId => ({
                         id: submissionId,
@@ -374,8 +379,32 @@ function ProgramDashboardInner({ onNavigate }) {
                       }));
                   }
                   
-                  // Otherwise return empty array
-                  return [];
+                  // APPROACH 2: Get submissions from team members
+                  if (submissions.length === 0 && teamData.members && Array.isArray(teamData.members)) {
+                    // Collect member submission IDs
+                    const memberSubmissions = [];
+                    
+                    teamData.members.forEach(member => {
+                      if (member.submissions && Array.isArray(member.submissions)) {
+                        member.submissions.forEach(submissionId => {
+                          if (!memberSubmissions.includes(submissionId)) {
+                            memberSubmissions.push(submissionId);
+                          }
+                        });
+                      }
+                    });
+                    
+                    if (memberSubmissions.length > 0) {
+                      submissions = memberSubmissions.map(submissionId => ({
+                        id: submissionId,
+                        teamId: teamData.id,
+                        createdTime: new Date().toISOString()
+                      }));
+                    }
+                  }
+                  
+                  console.log(`Providing ${submissions.length} submissions to SubmissionSummaryCard`);
+                  return submissions;
                 })()}
               />
             </div>
