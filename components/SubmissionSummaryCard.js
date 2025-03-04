@@ -6,17 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 
 export default function SubmissionSummaryCard({ submissions = [], milestones = [] }) {
-  // Log initial data for debugging
-  console.log(`SubmissionSummaryCard initialized with:
-    - ${submissions.length} submissions
-    - ${milestones.length} milestones`);
-    
+  // Minimal initial logging to prevent console flooding
+  console.log(`SubmissionSummaryCard: ${submissions.length} submissions, ${milestones.length} milestones`);
+  
+  // Only log detailed submission info if we have actual submissions
   if (submissions.length > 0) {
-    console.log(`First submission info:
-    - ID: ${submissions[0].id}
-    - Milestone ID: ${submissions[0].milestoneId}
-    - Created: ${submissions[0].createdTime}
-    - Raw milestone: ${JSON.stringify(submissions[0].rawMilestone || 'N/A')}`);
+    console.log(`Found ${submissions.length} submissions to display`);
   }
   
   // Validate submissions and convert formats
@@ -96,24 +91,10 @@ export default function SubmissionSummaryCard({ submissions = [], milestones = [
         return false;
       });
       
-      // Enhanced debugging for submission matching issues
-      if (isDueDate && notCompleted) {
-        console.log(`========== MILESTONE SUBMISSION CHECK ==========`);
-        console.log(`Milestone: ${m.id} (${m.name})`);
-        console.log(`Due Date: ${m.dueDate}, Status: ${m.status}`);
-        console.log(`Has No Submission: ${hasNoSubmission}`);
-        console.log(`Available Submissions: ${validatedSubmissions.length}`);
-        
-        if (validatedSubmissions.length > 0) {
-          validatedSubmissions.forEach((sub, idx) => {
-            console.log(`Submission ${idx+1}:`);
-            console.log(`- ID: ${sub.id}`);
-            console.log(`- MilestoneID: ${sub.milestoneId}`);
-            console.log(`- Raw Milestone: ${JSON.stringify(sub.rawMilestone || 'N/A')}`);
-            console.log(`- Created: ${sub.createdTime}`);
-          });
-        }
-        console.log(`================================================`);
+      // Minimal logging for overdue check - only log if there are submissions but milestone still shows as overdue
+      if (isDueDate && notCompleted && hasNoSubmission && validatedSubmissions.length > 0) {
+        // This is an unusual case - we have submissions but the milestone is still showing as overdue
+        console.log(`Warning: Milestone ${m.id.slice(0, 8)}... (${m.name}) shows as overdue despite ${validatedSubmissions.length} submissions`);
       }
       
       return isDueDate && notCompleted && hasNoSubmission;
@@ -162,14 +143,10 @@ export default function SubmissionSummaryCard({ submissions = [], milestones = [
   // Calculate submission rate with validation
   const completedMilestones = milestones.filter(m => m.status === 'completed').length;
   
-  // Log detailed submission statistics for debugging
-  console.log(`Submission Statistics:
-    - Total Milestones: ${totalMilestones}
-    - Completed Milestones: ${completedMilestones}
-    - Overdue Milestones: ${overdueCount}
-    - Total Submissions: ${totalSubmissions}
-    - Recent Submissions: ${recentSubmissions.length}
-    - Upcoming Deadlines: ${upcomingDeadlines.length}`);
+  // Only log statistics if there's something interesting to report
+  if (totalSubmissions > 0 || completedMilestones > 0) {
+    console.log(`Stats: ${completedMilestones}/${totalMilestones} milestones completed, ${overdueCount} overdue, ${totalSubmissions} submissions`);
+  }
   
   const submissionRate = totalMilestones > 0 
     ? Math.round((completedMilestones / totalMilestones) * 100) 

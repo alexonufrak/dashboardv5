@@ -190,41 +190,60 @@ export function DashboardProvider({ children }) {
     
     // Only proceed with prefetching if we have both team and milestones
     if (teamData?.id && processedMilestones.length > 0) {
-      console.log(`Prefetching submissions for ${processedMilestones.length} milestones`);
+      console.log(`Starting background prefetch for ${processedMilestones.length} milestones`);
       
-      // Prefetch submissions for all milestones to populate cache
-      // We'll do this asynchronously to avoid blocking the UI
+      // Prefetch submissions for milestones in the background
+      // Using setTimeout to avoid blocking the UI rendering
       setTimeout(() => {
-        processedMilestones.forEach(milestone => {
-          if (milestone.id) {
-            console.log(`Prefetching submissions for milestone: ${milestone.id} (${milestone.name})`);
-            
-            // Use the query client to prefetch this data
-            queryClient.prefetchQuery({
-              queryKey: ['submissions', teamData.id, milestone.id],
-              queryFn: async () => {
-                const url = `/api/teams/${teamData.id}/submissions?milestoneId=${encodeURIComponent(milestone.id)}&_t=${new Date().getTime()}`;
-                
-                try {
-                  const response = await fetch(url);
-                  if (!response.ok) {
-                    console.warn(`Prefetch failed for milestone ${milestone.id}: ${response.status} ${response.statusText}`);
+        // Single log message instead of one per milestone
+        const milestoneIds = processedMilestones
+          .filter(m => m.id)
+          .map(m => m.id)
+          .slice(0, 3); // Only show first 3 in log
+          
+        console.log(`Prefetching milestones: ${milestoneIds.length > 3 ? 
+          `${milestoneIds.join(', ')}... and ${processedMilestones.length - 3} more` : 
+          milestoneIds.join(', ')}`);
+        
+        // Process milestones in batches to reduce network congestion
+        const processMilestones = (milestones, batchSize = 2) => {
+          const batch = milestones.slice(0, batchSize);
+          const remaining = milestones.slice(batchSize);
+          
+          // Process current batch
+          batch.forEach(milestone => {
+            if (milestone.id) {
+              queryClient.prefetchQuery({
+                queryKey: ['submissions', teamData.id, milestone.id],
+                queryFn: async () => {
+                  const url = `/api/teams/${teamData.id}/submissions?milestoneId=${encodeURIComponent(milestone.id)}&_t=${new Date().getTime()}`;
+                  
+                  try {
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                      return { submissions: [] };
+                    }
+                    
+                    const data = await response.json();
+                    return { submissions: data.submissions || [] };
+                  } catch (err) {
                     return { submissions: [] };
                   }
-                  
-                  const data = await response.json();
-                  console.log(`Prefetched ${data.submissions?.length || 0} submissions for milestone ${milestone.id}`);
-                  return { submissions: data.submissions || [] };
-                } catch (err) {
-                  console.warn(`Error prefetching submissions for milestone ${milestone.id}:`, err);
-                  return { submissions: [] };
-                }
-              },
-              staleTime: 60 * 1000 // 1 minute
-            });
+                },
+                staleTime: 60 * 1000 // 1 minute
+              });
+            }
+          });
+          
+          // Process next batch if any
+          if (remaining.length > 0) {
+            setTimeout(() => processMilestones(remaining, batchSize), 500);
           }
-        });
-      }, 1000); // Delay prefetching by 1 second to let initial render complete
+        };
+        
+        // Start processing in batches
+        processMilestones(processedMilestones.filter(m => m.id));
+      }, 1000); // Delay initial prefetching to let initial render complete
     }
     
     return processedMilestones;

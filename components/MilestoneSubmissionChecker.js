@@ -28,15 +28,30 @@ export default function MilestoneSubmissionChecker({
     error 
   } = useTeamSubmissions(teamData?.id, milestoneId)
   
-  // Process the submissions data whenever it changes
+  // Keep track of whether we've processed this milestone already
+  const [hasProcessed, setHasProcessed] = useState(false);
+  
+  // Process the submissions data when fetched (but only once per milestone/team combination)
   useEffect(() => {
-    // Enhanced logging for debugging the milestone and team data
-    console.log(`Checking submissions for milestone ${milestoneId} with team ${teamData?.id || 'unknown'}`)
-    console.log(`Milestone ID type: ${typeof milestoneId}, Team ID type: ${typeof teamData?.id}`)
+    // Skip if we've already processed this milestone/team combination or don't have data yet
+    // This prevents an infinite re-render loop
+    if (hasProcessed || isLoading) {
+      return;
+    }
+    
+    // Mark as processed to prevent further checks
+    setHasProcessed(true);
+    
+    // More concise logging to prevent console flooding
+    console.log(`Initial submission check for milestone ${milestoneId.slice(0, 8)}... (team ${teamData?.id?.slice(0, 8)}...)`)
     
     // Don't do anything if we don't have data or there was an error
     if (!data || error) {
-      console.log(`No data or error for milestone ${milestoneId}:`, error || 'No data returned')
+      // Concise error logging
+      if (error) {
+        console.error(`Error fetching submissions for milestone ${milestoneId.slice(0, 8)}...`, error);
+      }
+      
       setHasSubmission(false)
       setSubmissionData(null)
       if (onSubmissionCheck) {
@@ -45,75 +60,61 @@ export default function MilestoneSubmissionChecker({
       return
     }
     
-    // Enhanced processing for submissions with detailed validation
-    let submissions = data.submissions || []
+    // Enhanced processing with minimal logging to prevent console flooding
+    let submissions = data.submissions || [];
     
-    // Apply additional validation to ensure milestoneIds match exactly
-    // This helps catch cases where the API might return incorrect matches
+    // Apply validation to ensure milestoneIds match exactly
     const validatedSubmissions = submissions.filter(sub => {
-      // Check for exact match first
+      // Check exact match first
       if (sub.milestoneId === milestoneId) {
         return true;
       }
       
-      // Check if it's in the rawMilestone field (array or string)
+      // Check rawMilestone field
       if (Array.isArray(sub.rawMilestone) && sub.rawMilestone.includes(milestoneId)) {
-        console.log(`Found milestone ${milestoneId} in rawMilestone array`);
         return true;
       }
       
-      // Final check with requested milestone ID
+      // Check requested milestone ID
       if (sub.requestedMilestoneId === milestoneId) {
-        console.log(`Submission matches requested milestone ID ${milestoneId}`);
         return true;
       }
-      
-      // Log mismatches for debugging
-      console.log(`Submission ${sub.id} milestone mismatch: 
-        - Expected: ${milestoneId}
-        - Found: ${sub.milestoneId}
-        - Raw: ${JSON.stringify(sub.rawMilestone)}`);
       
       return false;
     });
     
-    // Sort submissions to ensure the most recent is first
-    // Even though the API should sort, we'll sort again to be certain
+    // Sort submissions to ensure most recent first
     validatedSubmissions.sort((a, b) => {
-      // Use submissionTimestamp if available, otherwise parse the createdTime
       const timeA = a.submissionTimestamp || new Date(a.createdTime).getTime();
       const timeB = b.submissionTimestamp || new Date(b.createdTime).getTime();
-      return timeB - timeA; // descending order (newest first)
+      return timeB - timeA; // newest first
     });
     
-    // Log the submissions we found after validation
-    console.log(`Found ${validatedSubmissions.length} validated submissions for milestone ${milestoneId} (original count: ${submissions.length})`, 
-      validatedSubmissions.length > 0 
-        ? `First submission ID: ${validatedSubmissions[0].id}, createdTime: ${validatedSubmissions[0].createdTime}` 
-        : 'No submissions after validation'
-    )
-    
-    // Check if any validated submissions exist
-    const hasAnySubmission = validatedSubmissions.length > 0
-    setHasSubmission(hasAnySubmission)
-    
-    // If there are validated submissions, use the most recent one
-    if (hasAnySubmission) {
-      const mostRecentSubmission = validatedSubmissions[0]
-      setSubmissionData(mostRecentSubmission)
-      console.log(`Using most recent submission from ${mostRecentSubmission.createdTime}`)
-    } else {
-      setSubmissionData(null)
+    // Only log if we found submissions or need to log once for debugging
+    if (validatedSubmissions.length > 0) {
+      console.log(`Found ${validatedSubmissions.length} submissions for milestone ${milestoneId.slice(0, 8)}...`);
     }
     
-    // Call the callback if provided
+    // Process submission status
+    const hasAnySubmission = validatedSubmissions.length > 0;
+    setHasSubmission(hasAnySubmission);
+    
+    // Update submission data
+    if (hasAnySubmission) {
+      const mostRecentSubmission = validatedSubmissions[0];
+      setSubmissionData(mostRecentSubmission);
+    } else {
+      setSubmissionData(null);
+    }
+    
+    // Call the callback with results
     if (onSubmissionCheck) {
       onSubmissionCheck(
         hasAnySubmission, 
         hasAnySubmission ? validatedSubmissions : null
-      )
+      );
     }
-  }, [data, error, onSubmissionCheck, milestoneId, teamData?.id])
+  }, [data, error, onSubmissionCheck, milestoneId, teamData?.id, isLoading, hasProcessed])
 
   // This component doesn't render anything itself
   return children || null
