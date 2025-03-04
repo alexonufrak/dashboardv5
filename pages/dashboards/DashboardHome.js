@@ -94,15 +94,6 @@ function DashboardHomeInner({ onNavigate }) {
   // Main JSX content
   return (
     <div className="dashboard-content space-y-6">
-      {/* Try the dashboard shell banner */}
-      <Alert className="bg-blue-50 border-blue-200">
-        <AlertTitle className="text-blue-800">New Seamless Navigation</AlertTitle>
-        <AlertDescription className="text-blue-700">
-          We've updated the dashboard to support seamless navigation between pages.
-          Try clicking between tabs in the sidebar!
-        </AlertDescription>
-      </Alert>
-      
       {/* Alerts and notifications */}
       {user?.emailMismatch && <EmailMismatchAlert emailMismatch={user.emailMismatch} />}
       <TeamInviteSuccessAlert />
