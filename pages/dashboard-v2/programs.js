@@ -64,10 +64,6 @@ const ProgramsPage = () => {
   return (
     <DashboardLayout 
       title="My Programs | xFoundry Dashboard (v2)"
-      breadcrumbs={[
-        { label: "Dashboard", href: "/dashboard-v2" },
-        { label: "Programs", href: "/dashboard-v2/programs" }
-      ]}
       profile={userProfile}
     >
       <ActiveProgramsDashboard userProfile={userProfile} />

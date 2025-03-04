@@ -6,10 +6,6 @@ export default function ProgramsPage({ user, profile }) {
   return (
     <DashboardLayout 
       title="My Programs | xFoundry Dashboard"
-      breadcrumbs={[
-        { label: "Dashboard", href: "/dashboard" },
-        { label: "Programs", href: "/dashboard/programs" }
-      ]}
       profile={profile}
     >
       <ActiveProgramsDashboard userProfile={profile} />
