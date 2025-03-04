@@ -38,7 +38,16 @@ export default withApiAuthRequired(async function handler(req, res) {
     
     // If we have a milestone ID, filter by direct milestone reference
     if (milestoneId) {
-      filterFormula = `AND(${filterFormula}, FIND("${milestoneId}", ARRAYJOIN(Milestone, ",")))`
+      // Use multiple approaches to find the milestone ID in the Milestone field
+      // This handles different formats that might exist in the Airtable data
+      filterFormula = `AND(
+        ${filterFormula}, 
+        OR(
+          FIND("${milestoneId}", ARRAYJOIN(Milestone, ",")),
+          FIND("${milestoneId}", ARRAYJOIN(Milestone)),
+          FIND("${milestoneId}", Milestone)
+        )
+      )`
     } else {
       // If no milestone ID is provided, we should return a 400 error
       // because querying all submissions is likely to be inefficient
@@ -55,8 +64,11 @@ export default withApiAuthRequired(async function handler(req, res) {
       })
       .firstPage()
 
-    // Process submissions to a cleaner format
+    // Process submissions to a cleaner format with improved debug information
     const formattedSubmissions = submissions.map(submission => {
+      // Log the raw submission data for debugging when needed
+      console.log(`Processing submission ${submission.id} for milestone ${submission.fields.Milestone?.[0] || 'unknown'}`);
+      
       return {
         id: submission.id,
         createdTime: submission.fields["Created Time"],
@@ -65,7 +77,10 @@ export default withApiAuthRequired(async function handler(req, res) {
         attachments: submission.fields.Attachment || [],
         comments: submission.fields.Comments || "",
         link: submission.fields.Link || "",
-        memberId: submission.fields.Member?.[0] || null
+        memberId: submission.fields.Member?.[0] || null,
+        // Add additional fields that might be useful
+        rawMilestone: submission.fields.Milestone, // For debugging relationship issues
+        rawTeam: submission.fields.Team // For debugging relationship issues
       }
     })
 

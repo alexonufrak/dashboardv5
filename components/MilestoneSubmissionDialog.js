@@ -274,17 +274,25 @@ export default function MilestoneSubmissionDialog({
                       <span>
                         {submission.attachments.length} {submission.attachments.length === 1 ? 'file' : 'files'}
                       </span>
-                      {submission.attachments.map((att, i) => (
-                        <a 
-                          key={i}
-                          href={att.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline ml-2 text-xs"
-                        >
-                          View file {i+1}
-                        </a>
-                      ))}
+                      {/* Safely map attachments with proper URL handling */}
+                      {(submission.attachments || [])
+                        .filter(att => att && (att.url || att.thumbnails?.large?.url))
+                        .map((att, i) => {
+                          // Get the appropriate URL - either direct or from thumbnails
+                          const fileUrl = att.url || att.thumbnails?.large?.url || '#';
+                          return (
+                            <a 
+                              key={i}
+                              href={fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline ml-2 text-xs"
+                            >
+                              View file {i+1}
+                            </a>
+                          );
+                        })
+                      }
                     </div>
                   )}
                   

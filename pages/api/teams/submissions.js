@@ -98,8 +98,11 @@ export default withApiAuthRequired(async function handler(req, res) {
     const record = {
       Team: [teamId],
       Comments: comments || "",
-      Milestone: [milestoneId]
+      Milestone: [milestoneId] // Ensure Milestone is always an array with a single ID
     }
+    
+    // Log the record creation for debugging
+    console.log(`Creating submission record with Team: ${teamId}, Milestone: ${milestoneId}`)
 
     // Add link if provided
     if (link) {

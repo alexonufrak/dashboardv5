@@ -30,8 +30,12 @@ export default function MilestoneSubmissionChecker({
   
   // Process the submissions data whenever it changes
   useEffect(() => {
+    // Log the current milestone we're checking
+    console.log(`Checking submissions for milestone ${milestoneId} with team ${teamData?.id || 'unknown'}`)
+    
     // Don't do anything if we don't have data or there was an error
     if (!data || error) {
+      console.log(`No data or error for milestone ${milestoneId}:`, error || 'No data returned')
       setHasSubmission(false)
       setSubmissionData(null)
       if (onSubmissionCheck) {
@@ -44,6 +48,13 @@ export default function MilestoneSubmissionChecker({
     // Since API already sorts by created time desc, we can trust the order
     let submissions = data.submissions || []
     
+    // Log the submissions we found
+    console.log(`Found ${submissions.length} submissions for milestone ${milestoneId}:`, 
+      submissions.length > 0 
+        ? `First submission ID: ${submissions[0].id}, createdTime: ${submissions[0].createdTime}` 
+        : 'No submissions'
+    )
+    
     // Check if any submissions exist
     const hasAnySubmission = submissions.length > 0
     setHasSubmission(hasAnySubmission)
@@ -53,6 +64,7 @@ export default function MilestoneSubmissionChecker({
     if (hasAnySubmission) {
       const mostRecentSubmission = submissions[0]
       setSubmissionData(mostRecentSubmission)
+      console.log(`Using most recent submission from ${mostRecentSubmission.createdTime}`)
     } else {
       setSubmissionData(null)
     }
@@ -64,7 +76,7 @@ export default function MilestoneSubmissionChecker({
         hasAnySubmission ? submissions : null
       )
     }
-  }, [data, error, onSubmissionCheck])
+  }, [data, error, onSubmissionCheck, milestoneId, teamData?.id])
 
   // This component doesn't render anything itself
   return children || null

@@ -107,6 +107,10 @@ export default function MilestoneTable({
         const updatedMilestones = [...prevMilestones]
         const milestone = { ...updatedMilestones[index] }
         
+        console.log(`Processing submission check for milestone ${milestone.id} (${milestone.name}): 
+          hasSubmission=${hasSubmission}, 
+          submissionsCount=${submissions?.length || 0}`)
+        
         // Update milestone based on submission data
         if (hasSubmission && submissions && submissions.length > 0) {
           // Sort by date (newest first) and use the most recent
@@ -115,6 +119,7 @@ export default function MilestoneTable({
           })
           
           const latestSubmission = sortedSubmissions[0]
+          console.log(`Using latest submission from ${latestSubmission.createdTime} for milestone ${milestone.id}`)
           
           // Update milestone with submission data
           milestone.hasSubmission = true
@@ -133,6 +138,9 @@ export default function MilestoneTable({
             milestone.hasAttachments = true
             milestone.attachmentCount = latestSubmission.attachments.length
           }
+          
+          // Log the milestone update
+          console.log(`Milestone ${milestone.id} marked as COMPLETED with submission from ${milestone.submissionDate}`)
         } else {
           // No submission - determine status based on due date
           milestone.hasSubmission = false
@@ -145,12 +153,15 @@ export default function MilestoneTable({
             
             if (isValidDate && isPast(dueDate)) {
               milestone.status = "late"
+              console.log(`Milestone ${milestone.id} marked as LATE (due date ${milestone.dueDate} has passed)`)
             } else {
               milestone.status = "upcoming"
+              console.log(`Milestone ${milestone.id} marked as UPCOMING (due date ${milestone.dueDate} is in the future)`)
             }
           } catch (err) {
             console.error("Error processing milestone due date:", err)
             milestone.status = "upcoming" // Default to upcoming if date processing fails
+            console.log(`Milestone ${milestone.id} marked as UPCOMING (default) due to date processing error`)
           }
         }
         
