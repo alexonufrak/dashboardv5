@@ -103,31 +103,10 @@ export default function MilestoneSubmissionChecker({
       createdTime: s.createdTime?.substring(0, 10) || null
     }))));
     
-    // First, check for direct milestone matches using the Milestone field
-    // (According to AIRTABLE_SCHEMA.md, Submissions has a direct link to Milestones)
-    const directMatches = submissions.filter(submission => {
-      // Handle exact match
-      if (submission.milestoneId === milestoneId) {
-        return true;
-      }
-      
-      // Handle array of milestone IDs
-      if (Array.isArray(submission.milestoneId) && submission.milestoneId.includes(milestoneId)) {
-        return true;
-      }
-      
-      // Handle special case for milestone fields
-      if (submission.fields && submission.fields.Milestone) {
-        if (Array.isArray(submission.fields.Milestone)) {
-          return submission.fields.Milestone.includes(milestoneId);
-        } else if (submission.fields.Milestone === milestoneId) {
-          return true;
-        }
-      }
-      
-      // No matches
-      return false;
-    });
+    // Since we're only using Team and Member fields as directed, all submissions
+    // returned from the API are already associated with the team
+    // We don't need to filter by milestoneId - all submissions for this team are valid
+    const directMatches = submissions;
     
     if (directMatches.length > 0) {
       console.log(`Found ${directMatches.length} direct milestone matches`);

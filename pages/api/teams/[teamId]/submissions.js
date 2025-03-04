@@ -57,14 +57,14 @@ export default async function handler(req, res) {
             console.warn("Team field not found in submission record");
           }
           
-          // Check for Milestone field
-          if (sampleRecord[0].fields.Milestone) {
-            console.log("Milestone field exists with type:", typeof sampleRecord[0].fields.Milestone);
-            if (Array.isArray(sampleRecord[0].fields.Milestone)) {
-              console.log("Milestone field is an array with length:", sampleRecord[0].fields.Milestone.length);
+          // Check for Member field
+          if (sampleRecord[0].fields.Member) {
+            console.log("Member field exists with type:", typeof sampleRecord[0].fields.Member);
+            if (Array.isArray(sampleRecord[0].fields.Member)) {
+              console.log("Member field is an array with length:", sampleRecord[0].fields.Member.length);
             }
           } else {
-            console.warn("Milestone field not found in submission record");
+            console.warn("Member field not found in submission record");
           }
         } else {
           console.log("No sample submission records found");
@@ -73,14 +73,12 @@ export default async function handler(req, res) {
         console.error("Error fetching sample submission record:", error);
       }
       
-      // Build the filter formula based on the provided parameters and verified field names
-      // Team field in Submissions table should be a reference to Teams table (from AIRTABLE_SCHEMA.md)
+      // Build the filter formula based on the provided parameters
+      // IMPORTANT: Only using Team field as directed
+      // Team field in Submissions table is a single item relation to Teams table
       let filterFormula = `{Team}="${teamId}"`;
       
-      // If milestone ID is provided, add that to the filter
-      if (milestoneId) {
-        filterFormula = `AND(${filterFormula}, {Milestone}="${milestoneId}")`;
-      }
+      // Note: Not filtering by Milestone ID here since we're only using Team and Member fields
       
       // Make the query to the Submissions table
       const records = await submissionsTable
@@ -110,55 +108,59 @@ export default async function handler(req, res) {
       // Continue to next approach if this one fails
     }
     
-    // APPROACH 2: Try alternative field names based on schema variations
-    // Some environments might have slight differences in field naming
+    // APPROACH 2: Try finding submissions by Member in case they're linked that way
     if (submissions.length === 0) {
       try {
-        console.log("Trying alternative field names...");
+        console.log("Trying to find submissions by Member field...");
         
-        // Get the sample record again to check for alternative field names
-        const sampleRecords = await submissionsTable
-          .select({
-            maxRecords: 1
-          })
-          .firstPage();
+        // First, we need the members of this team from the members table
+        const membersTableId = process.env.AIRTABLE_MEMBERS_TABLE_ID;
         
-        if (sampleRecords && sampleRecords.length > 0) {
-          const fieldNames = Object.keys(sampleRecords[0].fields);
-          console.log("Available fields:", fieldNames);
+        if (membersTableId) {
+          const membersTable = base(membersTableId);
           
-          // Check for alternative Team field names
-          const possibleTeamFields = ["Team", "Teams", "team", "teams"];
-          const teamField = possibleTeamFields.find(field => fieldNames.includes(field));
+          // Get team members
+          const memberRecords = await membersTable.select({
+            filterByFormula: `{Team}="${teamId}"`,
+            fields: ["id"]
+          }).firstPage();
           
-          // Check for alternative Milestone field names
-          const possibleMilestoneFields = ["Milestone", "Milestones", "milestone", "milestones", "Deliverable", "Deliverables"];
-          const milestoneField = possibleMilestoneFields.find(field => fieldNames.includes(field));
+          console.log(`Found ${memberRecords.length} members for team ${teamId}`);
           
-          if (teamField) {
-            console.log(`Found alternative Team field: ${teamField}`);
-            let filterFormula = `{${teamField}}="${teamId}"`;
+          if (memberRecords.length > 0) {
+            // Extract member IDs
+            const memberIds = memberRecords.map(record => record.id);
             
-            if (milestoneId && milestoneField) {
-              console.log(`Found alternative Milestone field: ${milestoneField}`);
-              filterFormula = `AND(${filterFormula}, {${milestoneField}}="${milestoneId}")`;
+            // Look for submissions with these member IDs
+            // Create OR conditions for each member ID (handled in batches for formula length limitations)
+            const batchSize = 10;
+            let batchedSubmissions = [];
+            
+            for (let i = 0; i < memberIds.length; i += batchSize) {
+              const batchMemberIds = memberIds.slice(i, i + batchSize);
+              const memberConditions = batchMemberIds.map(id => `{Member}="${id}"`).join(",");
+              const batchFilter = `OR(${memberConditions})`;
+              
+              console.log(`Querying for batch ${i/batchSize + 1} with ${batchMemberIds.length} members`);
+              
+              const batchRecords = await submissionsTable.select({
+                filterByFormula: batchFilter,
+                sort: [{ field: "Created Time", direction: "desc" }]
+              }).firstPage();
+              
+              console.log(`Found ${batchRecords.length} submissions for member batch ${i/batchSize + 1}`);
+              
+              if (batchRecords.length > 0) {
+                batchedSubmissions = [...batchedSubmissions, ...batchRecords];
+              }
             }
             
-            // Query with alternative field names
-            const records = await submissionsTable
-              .select({
-                filterByFormula: filterFormula,
-                sort: [{ field: "Created Time", direction: "desc" }]
-              })
-              .firstPage();
-            
-            console.log(`Found ${records.length} submissions using alternative fields`);
-            
-            if (records.length > 0) {
-              submissions = records.map(record => ({
+            if (batchedSubmissions.length > 0) {
+              console.log(`Found a total of ${batchedSubmissions.length} submissions via Member relationship`);
+              
+              submissions = batchedSubmissions.map(record => ({
                 id: record.id,
-                teamId: teamId,
-                milestoneId: milestoneId || (record.fields[milestoneField]?.[0] || null),
+                teamId: teamId, 
                 createdTime: record.fields["Created Time"] || new Date().toISOString(),
                 attachment: record.fields.Attachment,
                 comments: record.fields.Comments,
@@ -166,20 +168,20 @@ export default async function handler(req, res) {
               }));
             }
           }
+        } else {
+          console.log("Members table ID not configured, skipping member-based approach");
         }
       } catch (error) {
-        console.error("Error with alternative field names approach:", error);
+        console.error("Error with member-based approach:", error);
       }
     }
     
-    // APPROACH 3: If previous approaches didn't find any submissions,
-    // and we have a milestone ID, try to search all team submissions
-    // and filter them manually
-    if (submissions.length === 0 && milestoneId) {
+    // APPROACH 3: Try alternative field names for the Team field as fallback
+    if (submissions.length === 0) {
       try {
-        console.log("No matches found with direct queries. Trying manual filtering...");
+        console.log("Trying alternative Team field names...");
         
-        // Get all submissions for this team using all possible field names
+        // Get all submissions for this team using all possible Team field name variations
         const possibleTeamFields = ["Team", "Teams", "team", "teams"];
         const teamConditions = possibleTeamFields.map(field => `{${field}}="${teamId}"`).join(",");
         const filterFormula = `OR(${teamConditions})`;
@@ -191,38 +193,20 @@ export default async function handler(req, res) {
           })
           .firstPage();
         
-        console.log(`Found ${records.length} total submissions for team ID: ${teamId}`);
+        console.log(`Found ${records.length} total submissions using alternative Team field names`);
         
         if (records.length > 0) {
-          // Process and filter the submissions
-          const possibleMilestoneFields = ["Milestone", "Milestones", "milestone", "milestones", "Deliverable", "Deliverables"];
-          
-          submissions = records
-            .filter(record => {
-              // Check each possible milestone field
-              for (const field of possibleMilestoneFields) {
-                if (record.fields[field] && Array.isArray(record.fields[field])) {
-                  if (record.fields[field].includes(milestoneId)) {
-                    return true;
-                  }
-                }
-              }
-              return false;
-            })
-            .map(record => ({
-              id: record.id,
-              teamId: teamId,
-              milestoneId: milestoneId,
-              createdTime: record.fields["Created Time"] || new Date().toISOString(),
-              attachment: record.fields.Attachment,
-              comments: record.fields.Comments,
-              link: record.fields.Link
-            }));
-          
-          console.log(`After filtering, found ${submissions.length} submissions for milestone ID: ${milestoneId}`);
+          submissions = records.map(record => ({
+            id: record.id,
+            teamId: teamId,
+            createdTime: record.fields["Created Time"] || new Date().toISOString(),
+            attachment: record.fields.Attachment,
+            comments: record.fields.Comments,
+            link: record.fields.Link
+          }));
         }
       } catch (error) {
-        console.error("Error with manual filtering approach:", error);
+        console.error("Error with alternative field names approach:", error);
       }
     }
     
