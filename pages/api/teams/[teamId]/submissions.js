@@ -2,17 +2,17 @@ import { base } from "@/lib/airtable"
 
 /**
  * API endpoint to get submissions for a specific team
- * Correctly fetches and filters submissions based on Airtable schema relationships
+ * Strictly uses only Team and Member fields for fetching submissions
  * 
  * @param {object} req - Next.js API request
  * @param {object} res - Next.js API response
  */
 export default async function handler(req, res) {
   try {
-    // Get team ID and milestone ID from the query
+    // Get team ID from the query (milestoneId still received but not used for filtering)
     const { teamId, milestoneId } = req.query
     
-    console.log(`Fetching submissions for teamId=${teamId}, milestoneId=${milestoneId}`);
+    console.log(`Fetching submissions for teamId=${teamId}, milestone=${milestoneId} (not used for filtering)`);
     
     // Validate required parameters
     if (!teamId) {
@@ -23,168 +23,166 @@ export default async function handler(req, res) {
     const submissionsTableId = process.env.AIRTABLE_SUBMISSIONS_TABLE_ID;
     if (!submissionsTableId) {
       console.error("Submissions table ID not configured");
-      return res.status(200).json({ submissions: [] });
+      return res.status(200).json({ submissions: [], meta: { error: "Submissions table not configured" } });
     }
     
     // Initialize the submissions table
     const submissionsTable = base(submissionsTableId);
     
+    // Get the Members table ID for potential member lookup
+    const membersTableId = process.env.AIRTABLE_MEMBERS_TABLE_ID;
+    const teamsTableId = process.env.AIRTABLE_TEAMS_TABLE_ID;
+    
     // Initialize empty array to store the submissions
     let submissions = [];
+    let approachUsed = "none";
     
-    // APPROACH 1: Use direct relationship to query Submissions for this team + milestone
+    // Inspect a sample submission record to verify field structure
     try {
-      console.log("Fetching submissions using direct team and milestone relationship");
-      
-      // Inspect a sample submission record to verify field names
-      try {
-        const sampleRecord = await submissionsTable
-          .select({
-            maxRecords: 1
-          })
-          .firstPage();
-          
-        if (sampleRecord && sampleRecord.length > 0) {
-          console.log("Sample submission record fields:", Object.keys(sampleRecord[0].fields));
-          
-          // Check for Team field
-          if (sampleRecord[0].fields.Team) {
-            console.log("Team field exists with type:", typeof sampleRecord[0].fields.Team);
-            if (Array.isArray(sampleRecord[0].fields.Team)) {
-              console.log("Team field is an array with length:", sampleRecord[0].fields.Team.length);
-            }
-          } else {
-            console.warn("Team field not found in submission record");
-          }
-          
-          // Check for Member field
-          if (sampleRecord[0].fields.Member) {
-            console.log("Member field exists with type:", typeof sampleRecord[0].fields.Member);
-            if (Array.isArray(sampleRecord[0].fields.Member)) {
-              console.log("Member field is an array with length:", sampleRecord[0].fields.Member.length);
-            }
-          } else {
-            console.warn("Member field not found in submission record");
+      const sampleRecord = await submissionsTable
+        .select({
+          maxRecords: 1
+        })
+        .firstPage();
+        
+      if (sampleRecord && sampleRecord.length > 0) {
+        console.log("Sample submission record fields:", Object.keys(sampleRecord[0].fields));
+        
+        // Check for Team field
+        if (sampleRecord[0].fields.Team) {
+          console.log("Team field exists with type:", typeof sampleRecord[0].fields.Team);
+          if (Array.isArray(sampleRecord[0].fields.Team)) {
+            console.log("Team field is an array with length:", sampleRecord[0].fields.Team.length);
           }
         } else {
-          console.log("No sample submission records found");
+          console.warn("Team field not found in submission record");
         }
-      } catch (error) {
-        console.error("Error fetching sample submission record:", error);
+        
+        // Check for Member field
+        if (sampleRecord[0].fields.Member) {
+          console.log("Member field exists with type:", typeof sampleRecord[0].fields.Member);
+          if (Array.isArray(sampleRecord[0].fields.Member)) {
+            console.log("Member field is an array with length:", sampleRecord[0].fields.Member.length);
+          }
+        } else {
+          console.warn("Member field not found in submission record");
+        }
+      } else {
+        console.log("No sample submission records found");
       }
+    } catch (error) {
+      console.error("Error fetching sample submission record:", error);
+    }
+    
+    // APPROACH 1: Query submissions directly by Team field
+    try {
+      console.log("APPROACH 1: Querying submissions by Team field");
       
-      // Build the filter formula based on the provided parameters
-      // IMPORTANT: Only using Team field as directed
-      // Team field in Submissions table is a single item relation to Teams table
+      // Build a filter formula using only the Team field
       let filterFormula = `{Team}="${teamId}"`;
-      
-      // Note: Not filtering by Milestone ID here since we're only using Team and Member fields
       
       // Make the query to the Submissions table
       const records = await submissionsTable
         .select({
           filterByFormula: filterFormula,
-          // Sort by created time in descending order to get the most recent first
           sort: [{ field: "Created Time", direction: "desc" }]
         })
         .firstPage();
       
-      console.log(`Found ${records.length} direct submissions for team ID: ${teamId}`);
+      console.log(`Found ${records.length} submissions using Team field direct query`);
       
-      // Process the submissions
-      submissions = records.map(record => ({
-        id: record.id,
-        teamId: teamId,
-        // Use the milestone from the record if available, otherwise use the one from the query
-        milestoneId: record.fields.Milestone?.[0] || milestoneId,
-        createdTime: record.fields["Created Time"],
-        // Include additional fields that might be useful
-        attachment: record.fields.Attachment,
-        comments: record.fields.Comments,
-        link: record.fields.Link
-      }));
+      if (records && records.length > 0) {
+        approachUsed = "direct-team";
+        submissions = records.map(record => ({
+          id: record.id,
+          teamId: teamId,
+          createdTime: record.fields["Created Time"],
+          attachment: record.fields.Attachment,
+          comments: record.fields.Comments,
+          link: record.fields.Link,
+          // Include raw Team field value for debugging
+          _teamField: record.fields.Team,
+          _memberField: record.fields.Member
+        }));
+      }
     } catch (error) {
-      console.error("Error fetching submissions by team and milestone:", error);
-      // Continue to next approach if this one fails
+      console.error("Error querying submissions by Team field:", error);
     }
     
-    // APPROACH 2: Try finding submissions by Member in case they're linked that way
-    if (submissions.length === 0) {
+    // APPROACH 2: If no results from direct Team query, try using Member IDs
+    if (submissions.length === 0 && membersTableId && teamsTableId) {
       try {
-        console.log("Trying to find submissions by Member field...");
+        console.log("APPROACH 2: Querying submissions by Member IDs");
         
-        // First, we need the members of this team from the members table
-        const membersTableId = process.env.AIRTABLE_MEMBERS_TABLE_ID;
+        // Initialize tables
+        const membersTable = base(membersTableId);
+        const teamsTable = base(teamsTableId);
         
-        if (membersTableId) {
-          const membersTable = base(membersTableId);
+        // First get the team record to access Members field
+        const teamRecord = await teamsTable.find(teamId);
+        console.log(`Team record retrieved: ${teamRecord.id}`);
+        
+        // Get member IDs from the team record
+        const memberIds = teamRecord.fields.Members || [];
+        console.log(`Found ${memberIds.length} member IDs from team record`);
+        
+        if (memberIds.length > 0) {
+          // Create OR conditions for all member IDs (handling in batches for long queries)
+          const batchSize = 10;
+          let batchedSubmissions = [];
           
-          // Get team members
-          const memberRecords = await membersTable.select({
-            filterByFormula: `{Team}="${teamId}"`,
-            fields: ["id"]
-          }).firstPage();
-          
-          console.log(`Found ${memberRecords.length} members for team ${teamId}`);
-          
-          if (memberRecords.length > 0) {
-            // Extract member IDs
-            const memberIds = memberRecords.map(record => record.id);
+          for (let i = 0; i < memberIds.length; i += batchSize) {
+            const batchMemberIds = memberIds.slice(i, i + batchSize);
+            const memberConditions = batchMemberIds.map(id => `{Member}="${id}"`).join(",");
+            const batchFilter = `OR(${memberConditions})`;
             
-            // Look for submissions with these member IDs
-            // Create OR conditions for each member ID (handled in batches for formula length limitations)
-            const batchSize = 10;
-            let batchedSubmissions = [];
+            console.log(`Querying batch ${Math.floor(i/batchSize) + 1} with ${batchMemberIds.length} members`);
             
-            for (let i = 0; i < memberIds.length; i += batchSize) {
-              const batchMemberIds = memberIds.slice(i, i + batchSize);
-              const memberConditions = batchMemberIds.map(id => `{Member}="${id}"`).join(",");
-              const batchFilter = `OR(${memberConditions})`;
-              
-              console.log(`Querying for batch ${i/batchSize + 1} with ${batchMemberIds.length} members`);
-              
-              const batchRecords = await submissionsTable.select({
-                filterByFormula: batchFilter,
-                sort: [{ field: "Created Time", direction: "desc" }]
-              }).firstPage();
-              
-              console.log(`Found ${batchRecords.length} submissions for member batch ${i/batchSize + 1}`);
-              
-              if (batchRecords.length > 0) {
-                batchedSubmissions = [...batchedSubmissions, ...batchRecords];
-              }
-            }
+            const batchRecords = await submissionsTable.select({
+              filterByFormula: batchFilter,
+              sort: [{ field: "Created Time", direction: "desc" }]
+            }).firstPage();
             
-            if (batchedSubmissions.length > 0) {
-              console.log(`Found a total of ${batchedSubmissions.length} submissions via Member relationship`);
-              
-              submissions = batchedSubmissions.map(record => ({
-                id: record.id,
-                teamId: teamId, 
-                createdTime: record.fields["Created Time"] || new Date().toISOString(),
-                attachment: record.fields.Attachment,
-                comments: record.fields.Comments,
-                link: record.fields.Link
-              }));
+            console.log(`Found ${batchRecords.length} submissions for member batch ${Math.floor(i/batchSize) + 1}`);
+            
+            if (batchRecords.length > 0) {
+              batchedSubmissions = [...batchedSubmissions, ...batchRecords];
             }
           }
-        } else {
-          console.log("Members table ID not configured, skipping member-based approach");
+          
+          if (batchedSubmissions.length > 0) {
+            console.log(`Found ${batchedSubmissions.length} total submissions via Member relationship`);
+            approachUsed = "member-based";
+            
+            submissions = batchedSubmissions.map(record => ({
+              id: record.id,
+              teamId: teamId,
+              createdTime: record.fields["Created Time"] || new Date().toISOString(),
+              attachment: record.fields.Attachment,
+              comments: record.fields.Comments,
+              link: record.fields.Link,
+              // Include raw Member field value for debugging
+              _memberField: record.fields.Member,
+              _teamField: record.fields.Team
+            }));
+          }
         }
       } catch (error) {
-        console.error("Error with member-based approach:", error);
+        console.error("Error querying submissions by Member IDs:", error);
       }
     }
     
-    // APPROACH 3: Try alternative field names for the Team field as fallback
+    // APPROACH 3: Try alternative field names for Team and Member as fallback
     if (submissions.length === 0) {
       try {
-        console.log("Trying alternative Team field names...");
+        console.log("APPROACH 3: Trying alternative field names");
         
-        // Get all submissions for this team using all possible Team field name variations
+        // For Team field variations
         const possibleTeamFields = ["Team", "Teams", "team", "teams"];
         const teamConditions = possibleTeamFields.map(field => `{${field}}="${teamId}"`).join(",");
         const filterFormula = `OR(${teamConditions})`;
+        
+        console.log(`Using alternative field formula: ${filterFormula}`);
         
         const records = await submissionsTable
           .select({
@@ -193,16 +191,20 @@ export default async function handler(req, res) {
           })
           .firstPage();
         
-        console.log(`Found ${records.length} total submissions using alternative Team field names`);
+        console.log(`Found ${records.length} submissions using alternative field names`);
         
         if (records.length > 0) {
+          approachUsed = "alternative-field-names";
+          
           submissions = records.map(record => ({
             id: record.id,
             teamId: teamId,
             createdTime: record.fields["Created Time"] || new Date().toISOString(),
             attachment: record.fields.Attachment,
             comments: record.fields.Comments,
-            link: record.fields.Link
+            link: record.fields.Link,
+            // For each record, note which field variant matched
+            _matchedField: possibleTeamFields.find(field => record.fields[field])
           }));
         }
       } catch (error) {
@@ -211,37 +213,45 @@ export default async function handler(req, res) {
     }
     
     // Add diagnostic logging before returning
-    console.log(`Final result: Returning ${submissions.length} submissions`);
+    console.log(`Final result: Returning ${submissions.length} submissions using approach: ${approachUsed}`);
+    
     if (submissions.length > 0) {
       console.log("First submission details:", {
         id: submissions[0].id,
         teamId: submissions[0].teamId,
-        milestoneId: submissions[0].milestoneId,
         attachmentCount: submissions[0].attachment ? 
           (Array.isArray(submissions[0].attachment) ? submissions[0].attachment.length : 1) : 0,
         hasComments: !!submissions[0].comments,
-        hasLink: !!submissions[0].link
+        hasLink: !!submissions[0].link,
+        teamField: submissions[0]._teamField,
+        memberField: submissions[0]._memberField
       });
     }
     
     // Return the submissions we found
     return res.status(200).json({
       submissions,
-      // Include metadata to help with debugging
+      // Include detailed metadata for debugging
       meta: {
         queryDetails: {
           teamId,
-          milestoneId,
+          requestedMilestoneId: milestoneId, // Note we received it but didn't use it
           timestamp: new Date().toISOString()
         },
-        resultCount: submissions.length
+        approach: approachUsed,
+        resultCount: submissions.length,
+        message: "Using only Team and Member fields for filtering"
       }
     });
   } catch (error) {
     console.error("Error in submissions endpoint:", error);
     // Return empty array rather than an error to prevent UI issues
     return res.status(200).json({ 
-      submissions: []
+      submissions: [],
+      meta: {
+        error: error.message,
+        timestamp: new Date().toISOString()
+      }
     });
   }
 }
