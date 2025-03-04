@@ -19,19 +19,31 @@ async function handler(req, res) {
         return res.status(400).json({ error: "Contact ID is required for updates" })
       }
 
-      // Check if major ID is valid - it must be an Airtable record ID format
-      if (updateData.major && typeof updateData.major === 'string') {
-        // Log the received major value for debugging
-        console.log(`Major field received in update: "${updateData.major}" (${typeof updateData.major})`);
-        
-        // Validate the major field is an Airtable record ID (usually starts with "rec")
-        if (!updateData.major.startsWith('rec')) {
-          console.warn(`Invalid major ID format received: ${updateData.major}`);
-          return res.status(400).json({ 
-            error: "Invalid major ID format. Expected record ID but received text value.",
-            receivedValue: updateData.major
+      // Check if major ID is valid - it must be an Airtable record ID format or null/undefined
+      if (updateData.major !== undefined && updateData.major !== null) {
+        if (typeof updateData.major === 'string') {
+          // Log the received major value for debugging
+          console.log(`Major field received in update: "${updateData.major}" (${typeof updateData.major})`);
+          
+          // Validate the major field is an Airtable record ID (usually starts with "rec")
+          if (!updateData.major.startsWith('rec')) {
+            console.warn(`Invalid major ID format received: ${updateData.major}`);
+            return res.status(400).json({ 
+              error: "Invalid major ID format. Expected record ID but received text value.",
+              receivedValue: updateData.major
+            });
+          }
+        } else {
+          // If it's not a string or null, it's invalid
+          console.warn(`Invalid major field type received: ${typeof updateData.major}`);
+          return res.status(400).json({
+            error: "Invalid major field type. Expected string record ID or null.",
+            receivedType: typeof updateData.major
           });
         }
+      } else {
+        // Handle explicit null/undefined case (clearing the field)
+        console.log("Major field is null or undefined - will be cleared");
       }
 
       // Map fields to Airtable field names

@@ -15,7 +15,7 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     firstName: profile?.firstName || "",
     lastName: profile?.lastName || "",
     degreeType: profile?.degreeType || "",
-    major: profile?.programId || "", // Use programId for the value (should be Airtable record ID)
+    major: profile?.programId && profile?.programId.startsWith('rec') ? profile.programId : "", // Ensure it's a valid record ID
     majorName: profile?.major || "", // Store the name for display purposes
     graduationYear: profile?.graduationYear || "",
     educationId: profile?.educationId || null,
@@ -41,11 +41,12 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
         firstName: profile.firstName || "",
         lastName: profile.lastName || "",
         degreeType: profile.degreeType || "",
-        major: profile.programId || "", // Record ID format
+        major: profile.programId && profile.programId.startsWith('rec') ? profile.programId : "", // Validate record ID
         majorName: profile.major || "", // Display name format
         graduationYear: profile.graduationYear || "",
         educationId: profile.educationId || null,
         institutionId: profile.institution?.id || null,
+        programId: profile.programId // Keep original programId as a backup
       });
     }
   }, [profile]);
@@ -122,20 +123,34 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
       }
       
       // Validate major field format - must be a valid Airtable record ID
-      if (formData.major && typeof formData.major === 'string' && !formData.major.startsWith('rec')) {
-        console.error(`Invalid major ID format: "${formData.major}"`);
-        
-        // Try to find the correct record ID based on the name
-        const majorName = formData.major;
-        const matchingMajor = majors.find(m => m.name === majorName);
-        
-        if (matchingMajor) {
-          console.log(`Found matching major record ID for "${majorName}": ${matchingMajor.id}`);
-          // Replace the text value with the record ID
-          formData.major = matchingMajor.id;
-        } else {
-          throw new Error(`Invalid major format. Please select a major from the dropdown.`);
+      if (formData.major && typeof formData.major === 'string') {
+        if (!formData.major.startsWith('rec')) {
+          console.error(`Invalid major ID format: "${formData.major}"`);
+          
+          // Try to find the correct record ID based on the name
+          const majorName = formData.major;
+          const matchingMajor = majors.find(m => m.name === majorName);
+          
+          if (matchingMajor) {
+            console.log(`Found matching major record ID for "${majorName}": ${matchingMajor.id}`);
+            // Replace the text value with the record ID
+            formData.major = matchingMajor.id;
+          } else if (formData.programId && formData.programId.startsWith('rec')) {
+            // Fall back to the programId from the profile if it's valid
+            console.log(`Falling back to profile programId: ${formData.programId}`);
+            formData.major = formData.programId;
+          } else if (formData.major.trim() === '') {
+            // If it's an empty string, set to null to clear the field
+            formData.major = null;
+          } else {
+            // Last resort - if we can't resolve it, don't send an invalid value
+            console.warn(`Unable to resolve major field: "${formData.major}". Setting to null.`);
+            formData.major = null;
+          }
         }
+      } else if (formData.major === undefined || formData.major === null) {
+        // Explicitly set to null for API handling
+        formData.major = null;
       }
       
       // Add contact ID and institution ID to the data
@@ -343,9 +358,6 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
                             </option>
                         ))}
                       </select>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Selected: {majors.find(m => m.id === formData.major)?.name || 'None'}
-                      </div>
                     </div>
                   )}
                 </div>
