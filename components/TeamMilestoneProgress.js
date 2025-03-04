@@ -12,10 +12,9 @@ const calculateOverallProgress = (milestones) => {
   if (!milestones || milestones.length === 0) return 0
   
   const completedCount = milestones.filter(m => m.status === "completed").length
-  const inProgressCount = milestones.filter(m => m.status === "in_progress").length
   
-  // Count in-progress milestones as half complete for the calculation
-  return Math.round((completedCount + (inProgressCount * 0.5)) / milestones.length * 100)
+  // Just use completed/total as the progress indicator
+  return Math.round((completedCount) / milestones.length * 100)
 }
 
 export default function TeamMilestoneProgress({ milestones, detailed = false, programName, programId, programType = "xperience" }) {

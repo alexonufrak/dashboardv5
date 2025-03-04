@@ -139,8 +139,8 @@ export default withApiAuthRequired(async function handler(req, res) {
     
     // Process each milestone to get the required data
     const formattedMilestones = milestones.map(milestone => {
-      // Initial status is always "not_started" unless we have data indicating otherwise
-      let status = "not_started"
+      // Initial status is always "upcoming" unless we have data indicating otherwise
+      let status = "upcoming"
       let progress = 0
       let completedDate = null
       let score = null // Initialize score variable

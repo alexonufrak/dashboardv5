@@ -42,13 +42,7 @@ export default function MilestoneTimeline({
       nodeClass: "border-green-500 bg-green-100",
       textClass: "text-green-700"
     },
-    in_progress: { 
-      icon: <Clock className="h-5 w-5 text-blue-500" />,
-      lineClass: "bg-blue-500",
-      nodeClass: "border-blue-500 bg-blue-100",
-      textClass: "text-blue-700"
-    },
-    not_started: { 
+    upcoming: { 
       icon: <Circle className="h-5 w-5 text-gray-300" />,
       lineClass: "bg-gray-200",
       nodeClass: "border-gray-300 bg-gray-50",
@@ -148,9 +142,9 @@ export default function MilestoneTimeline({
           if (milestone.dueDate && isPast(new Date(milestone.dueDate))) {
             milestone.status = "late"
           }
-          // Otherwise, keep original status or default to not_started
-          else if (!milestone.status || milestone.status === "completed") {
-            milestone.status = "not_started"
+          // Otherwise, default to upcoming
+          else {
+            milestone.status = "upcoming"
           }
         }
         
@@ -188,7 +182,7 @@ export default function MilestoneTimeline({
       hasAttachments: false,
       attachmentCount: 0,
       // Preserve original status but will be updated based on submissions
-      originalStatus: milestone.status || "not_started"
+      originalStatus: milestone.status || "upcoming"
     }))
     
     setEnhancedMilestones(initialEnhanced)
@@ -280,9 +274,8 @@ export default function MilestoneTimeline({
                             status === "at_risk" ? "warning" : "outline"}
                   >
                     {status === "completed" ? "Completed" : 
-                     status === "in_progress" ? "In Progress" :
                      status === "late" ? "Late" :
-                     status === "at_risk" ? "At Risk" : "Not Started"}
+                     status === "at_risk" ? "At Risk" : "Upcoming"}
                   </Badge>
                 </div>
                 

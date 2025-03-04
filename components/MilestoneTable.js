@@ -50,11 +50,7 @@ export default function MilestoneTable({
       icon: <CheckCircle className="h-5 w-5 text-green-500" />,
       textClass: "text-green-700"
     },
-    in_progress: { 
-      icon: <Clock className="h-5 w-5 text-blue-500" />,
-      textClass: "text-blue-700"
-    },
-    not_started: { 
+    upcoming: { 
       icon: <Circle className="h-5 w-5 text-gray-300" />,
       textClass: "text-gray-500"
     },
@@ -150,9 +146,9 @@ export default function MilestoneTable({
           if (milestone.dueDate && isPast(new Date(milestone.dueDate))) {
             milestone.status = "late"
           }
-          // Otherwise, keep original status or default to not_started
-          else if (!milestone.status || milestone.status === "completed") {
-            milestone.status = "not_started"
+          // Otherwise, default to upcoming
+          else {
+            milestone.status = "upcoming"
           }
         }
         
@@ -181,7 +177,7 @@ export default function MilestoneTable({
       hasAttachments: false,
       attachmentCount: 0,
       // Preserve original status but will be updated based on submissions
-      originalStatus: milestone.status || "not_started"
+      originalStatus: milestone.status || "upcoming"
     }))
     
     setEnhancedMilestones(initialEnhanced)
@@ -320,9 +316,8 @@ export default function MilestoneTable({
                             status === "at_risk" ? "warning" : "outline"}
                   >
                     {status === "completed" ? "Completed" : 
-                     status === "in_progress" ? "In Progress" :
                      status === "late" ? "Late" :
-                     status === "at_risk" ? "At Risk" : "Not Started"}
+                     status === "at_risk" ? "At Risk" : "Upcoming"}
                   </Badge>
                   
                   {/* Additional submission info */}
