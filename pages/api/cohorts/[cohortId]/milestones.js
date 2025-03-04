@@ -152,8 +152,15 @@ export default withApiAuthRequired(async function handler(req, res) {
       const isPastDue = milestoneDate && milestoneDate < now
       
       // Mark past due milestones as "late", future milestones as "upcoming"
-      if (isPastDue) {
-        status = "late"
+      // Make sure we're doing reliable date handling
+      try {
+        if (isPastDue) {
+          status = "late"
+        }
+      } catch (dateError) {
+        console.error("Error checking milestone due date:", dateError)
+        // Default to upcoming if date comparison fails
+        status = "upcoming"
       }
       
       // The client-side MilestoneSubmissionChecker component will handle

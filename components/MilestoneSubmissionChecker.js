@@ -41,20 +41,17 @@ export default function MilestoneSubmissionChecker({
     }
     
     // Get all submissions directly linked to this milestone
-    let filteredSubmissions = data.submissions || []
+    // Since API already sorts by created time desc, we can trust the order
+    let submissions = data.submissions || []
     
     // Check if any submissions exist
-    const hasAnySubmission = filteredSubmissions.length > 0
+    const hasAnySubmission = submissions.length > 0
     setHasSubmission(hasAnySubmission)
     
-    // If there are submissions, get the most recent one
+    // If there are submissions, the first one is already the most recent
+    // thanks to the API sort order (Created Time desc)
     if (hasAnySubmission) {
-      // Sort submissions by creation date (most recent first)
-      const sortedSubmissions = [...filteredSubmissions].sort((a, b) => {
-        return new Date(b.createdTime) - new Date(a.createdTime)
-      })
-      
-      const mostRecentSubmission = sortedSubmissions[0]
+      const mostRecentSubmission = submissions[0]
       setSubmissionData(mostRecentSubmission)
     } else {
       setSubmissionData(null)
@@ -64,7 +61,7 @@ export default function MilestoneSubmissionChecker({
     if (onSubmissionCheck) {
       onSubmissionCheck(
         hasAnySubmission, 
-        hasAnySubmission ? filteredSubmissions : null
+        hasAnySubmission ? submissions : null
       )
     }
   }, [data, error, onSubmissionCheck])

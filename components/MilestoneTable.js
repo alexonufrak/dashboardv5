@@ -138,11 +138,19 @@ export default function MilestoneTable({
           milestone.hasSubmission = false
           milestone.submissions = []
           
-          // Check if milestone is past due
-          if (milestone.dueDate && isPast(new Date(milestone.dueDate))) {
-            milestone.status = "late"
-          } else {
-            milestone.status = "upcoming"
+          // Check if milestone is past due - ensure reliable date handling
+          try {
+            const dueDate = milestone.dueDate ? new Date(milestone.dueDate) : null
+            const isValidDate = dueDate && !isNaN(dueDate.getTime())
+            
+            if (isValidDate && isPast(dueDate)) {
+              milestone.status = "late"
+            } else {
+              milestone.status = "upcoming"
+            }
+          } catch (err) {
+            console.error("Error processing milestone due date:", err)
+            milestone.status = "upcoming" // Default to upcoming if date processing fails
           }
         }
         

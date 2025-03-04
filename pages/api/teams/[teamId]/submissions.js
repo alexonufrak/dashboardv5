@@ -39,6 +39,10 @@ export default withApiAuthRequired(async function handler(req, res) {
     // If we have a milestone ID, filter by direct milestone reference
     if (milestoneId) {
       filterFormula = `AND(${filterFormula}, FIND("${milestoneId}", ARRAYJOIN(Milestone, ",")))`
+    } else {
+      // If no milestone ID is provided, we should return a 400 error
+      // because querying all submissions is likely to be inefficient
+      return res.status(400).json({ error: "Milestone ID is required for efficiency. Please provide a milestoneId parameter." })
     }
 
     // Query submissions with the constructed filter
