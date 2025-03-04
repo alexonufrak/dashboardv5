@@ -103,7 +103,7 @@ export default withApiAuthRequired(async function handler(req, res) {
             const fileData = fs.readFileSync(f.filepath)
             fileAttachments.push({
               filename: f.originalFilename,
-              data: fileData,
+              content: fileData.toString('base64'),
               type: f.mimetype
             })
           }
@@ -112,7 +112,7 @@ export default withApiAuthRequired(async function handler(req, res) {
           const fileData = fs.readFileSync(file.filepath)
           fileAttachments.push({
             filename: file.originalFilename,
-            data: fileData,
+            content: fileData.toString('base64'),
             type: file.mimetype
           })
         }

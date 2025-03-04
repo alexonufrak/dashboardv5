@@ -42,15 +42,11 @@ export default function MilestoneSubmissionChecker({
       return
     }
     
-    // Filter by deliverable ID if needed
+    // Get all submissions, no need to filter by deliverableId anymore
+    // since we're now directly linking milestones to submissions
     let filteredSubmissions = data.submissions || []
-    if (deliverableId && filteredSubmissions.length > 0) {
-      filteredSubmissions = filteredSubmissions.filter(s => 
-        s.deliverableId === deliverableId
-      )
-    }
     
-    // Check if any submissions exist after filtering
+    // Check if any submissions exist
     const hasAnySubmission = filteredSubmissions.length > 0
     setHasSubmission(hasAnySubmission)
     
