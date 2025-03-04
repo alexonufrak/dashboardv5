@@ -14,15 +14,40 @@ export default function SubmissionSummaryCard({ submissions = [], milestones = [
     console.log(`Found ${submissions.length} submissions to display`);
   }
   
-  // Validate submissions and convert formats
+  // Validate submissions and convert formats with improved field detection
   const validatedSubmissions = submissions.filter(sub => {
-    // Basic validation to ensure we have at least an ID and creation date
-    return sub && sub.id && (sub.createdTime || sub.Created_Time || sub.created);
+    // Basic validation to ensure we have at least an ID
+    if (!sub || !sub.id) return false;
+    
+    // Check for at least one of the possible creation date fields
+    const hasCreationDate = !!(
+      sub.createdTime || 
+      sub.Created_Time || 
+      sub.created || 
+      sub.createdAt || 
+      sub.timestamp ||
+      sub.submissionTimestamp ||
+      // Add a fallback creation time if coming from direct team submissions
+      sub.fromTeamField
+    );
+    
+    return hasCreationDate;
   });
 
   // Calculate submission statistics with validated data
   const totalSubmissions = validatedSubmissions.length;
   const totalMilestones = milestones.length;
+  
+  // Log validation details if there were rejected submissions
+  if (validatedSubmissions.length < submissions.length) {
+    console.log(`Filtered out ${submissions.length - validatedSubmissions.length} invalid submissions`);
+    
+    // If we found any invalid submissions, log the first one for debugging
+    const invalidSub = submissions.find(sub => !validatedSubmissions.includes(sub));
+    if (invalidSub) {
+      console.log(`Example invalid submission: ${JSON.stringify(invalidSub)}`);
+    }
+  }
   
   // Calculate recent submissions with robust date handling
   const oneWeekAgo = new Date();

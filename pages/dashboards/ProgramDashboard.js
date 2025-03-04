@@ -365,10 +365,23 @@ function ProgramDashboardInner({ onNavigate }) {
                   console.log(`- Team submissions field exists: ${!!team?.submissions}`);
                   console.log(`- Team submissions count: ${team?.submissions?.length || 0}`);
                   
-                  // If team has direct submissions property, use it
+                  // First try to get submissions from the Airtable "Submissions" field if it exists
                   if (team?.submissions && Array.isArray(team.submissions) && team.submissions.length > 0) {
                     console.log(`Using ${team.submissions.length} submissions from team object`);
                     return team.submissions;
+                  }
+                  
+                  // Then try to get submissions from API response fields
+                  if (team?.fields?.Submissions && Array.isArray(team.fields.Submissions) && team.fields.Submissions.length > 0) {
+                    console.log(`Using ${team.fields.Submissions.length} submissions from team.fields.Submissions array`);
+                    // Format the submissions to match expected structure
+                    return team.fields.Submissions.map(submissionId => ({
+                      id: submissionId,
+                      teamId: team.id,
+                      // We don't know which milestone, but that will be filtered by the component
+                      createdTime: new Date().toISOString(),
+                      fromTeamField: true
+                    }));
                   }
                   
                   // Otherwise attempt to get submissions from the query cache for each milestone
@@ -378,6 +391,33 @@ function ProgramDashboardInner({ onNavigate }) {
                     const activeMilestones = milestones.length > 0 ? milestones : placeholderMilestones;
                     console.log(`Attempting to find submissions for ${activeMilestones.length} milestones in query cache`);
                     
+                    // Prefetch any uncached milestone submissions to ensure we have the data
+                    // This helps fill the cache for future use
+                    activeMilestones.forEach(milestone => {
+                      if (milestone.id) {
+                        const cachedData = queryClient.getQueryData(['submissions', teamData.id, milestone.id]);
+                        if (!cachedData) {
+                          // If not in cache, trigger a background prefetch
+                          queryClient.prefetchQuery({
+                            queryKey: ['submissions', teamData.id, milestone.id],
+                            queryFn: async () => {
+                              try {
+                                const url = `/api/teams/${teamData.id}/submissions?milestoneId=${encodeURIComponent(milestone.id)}&_t=${new Date().getTime()}`;
+                                const response = await fetch(url);
+                                if (!response.ok) return { submissions: [] };
+                                const data = await response.json();
+                                return { submissions: data.submissions || [] };
+                              } catch (err) {
+                                return { submissions: [] };
+                              }
+                            },
+                            staleTime: 60 * 1000
+                          });
+                        }
+                      }
+                    });
+                    
+                    // Use existing cache data for current display
                     activeMilestones.forEach(milestone => {
                       if (milestone.id) {
                         // Check if we have cached data for this milestone

@@ -31,6 +31,17 @@ export default function MilestoneSubmissionChecker({
   // Keep track of whether we've processed this milestone already
   const [hasProcessed, setHasProcessed] = useState(false);
   
+  // Track if team data changes
+  const [lastTeamId, setLastTeamId] = useState(teamData?.id);
+  
+  // Force reprocessing if team ID changes
+  useEffect(() => {
+    if (teamData?.id !== lastTeamId) {
+      setLastTeamId(teamData?.id);
+      setHasProcessed(false);
+    }
+  }, [teamData?.id, lastTeamId]);
+  
   // Process the submissions data when fetched (but only once per milestone/team combination)
   useEffect(() => {
     // Skip if we've already processed this milestone/team combination or don't have data yet
@@ -42,12 +53,16 @@ export default function MilestoneSubmissionChecker({
     // Mark as processed to prevent further checks
     setHasProcessed(true);
     
-    // More concise logging to prevent console flooding
-    console.log(`Initial submission check for milestone ${milestoneId.slice(0, 8)}... (team ${teamData?.id?.slice(0, 8)}...)`)
+    // Minimal logging to prevent console flooding
+    // Only log if we have a specific milestone ID and team ID
+    const shouldLog = milestoneId && teamData?.id;
+    if (shouldLog) {
+      console.log(`Initial submission check for milestone ${milestoneId.slice(0, 8)}... (team ${teamData?.id?.slice(0, 8)}...)`)
+    }
     
     // Don't do anything if we don't have data or there was an error
     if (!data || error) {
-      // Concise error logging
+      // Only log errors, not missing data
       if (error) {
         console.error(`Error fetching submissions for milestone ${milestoneId.slice(0, 8)}...`, error);
       }
