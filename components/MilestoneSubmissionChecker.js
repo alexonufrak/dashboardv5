@@ -42,25 +42,29 @@ export default function MilestoneSubmissionChecker({
     }
   }, [teamData?.id, lastTeamId]);
   
-  // Simplified implementation that always returns no submissions
+  // Simple, direct implementation to check for submissions
   useEffect(() => {
     // Skip if we've already processed this milestone/team combination
-    if (hasProcessed) {
+    if (hasProcessed || isLoading) {
       return;
     }
     
     // Mark as processed to prevent further checks
     setHasProcessed(true);
     
-    // We are not fetching submissions at this time, so always return false
-    setHasSubmission(false);
-    setSubmissionData(null);
+    // Get relevant submissions data
+    const submissions = data?.submissions || [];
     
-    // Call the callback with empty results
+    // Update state based on submissions
+    const hasAnySubmission = submissions.length > 0;
+    setHasSubmission(hasAnySubmission);
+    setSubmissionData(hasAnySubmission ? submissions[0] : null);
+    
+    // Call the callback with results
     if (onSubmissionCheck) {
-      onSubmissionCheck(false, null);
+      onSubmissionCheck(hasAnySubmission, hasAnySubmission ? submissions : null);
     }
-  }, [hasProcessed, onSubmissionCheck])
+  }, [data, isLoading, hasProcessed, onSubmissionCheck])
 
   // This component doesn't render anything itself
   return children || null

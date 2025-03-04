@@ -358,7 +358,25 @@ function ProgramDashboardInner({ onNavigate }) {
               {/* Submission Summary Card with enhanced submission data */}
               <SubmissionSummaryCard 
                 milestones={milestones.length > 0 ? milestones : placeholderMilestones}
-                submissions={[]}
+                submissions={(() => {
+                  // Skip lengthy processing if team data isn't available
+                  if (!teamData?.id) return [];
+                  
+                  // Get any submissions directly from team data
+                  if (teamData?.fields?.Submissions && Array.isArray(teamData.fields.Submissions)) {
+                    // Convert raw submission IDs to properly formatted submission objects
+                    return teamData.fields.Submissions
+                      .filter(Boolean)
+                      .map(submissionId => ({
+                        id: submissionId,
+                        teamId: teamData.id,
+                        createdTime: new Date().toISOString()
+                      }));
+                  }
+                  
+                  // Otherwise return empty array
+                  return [];
+                })()}
               />
             </div>
             
