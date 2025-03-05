@@ -88,14 +88,21 @@ export default withApiAuthRequired(async function getTeamCohorts(req, res) {
     // Convert Set to Array
     const uniqueCohortIds = Array.from(cohortIds);
     
+    // Add debug logging for cohort IDs
+    console.log(`Found ${uniqueCohortIds.length} unique cohort IDs for team: ${teamId}`);
+    console.log(`Cohort IDs: ${JSON.stringify(uniqueCohortIds)}`);
+    
     // Get cohort details
     const cohortDetails = [];
     
     for (const cohortId of uniqueCohortIds) {
       try {
+        console.log(`Fetching details for cohort: ${cohortId}`);
         const cohortRecord = await cohortsTable.find(cohortId);
         
         if (cohortRecord) {
+          console.log(`Found cohort record: ${cohortRecord.id}, Name: ${cohortRecord.fields['Short Name'] || cohortRecord.fields.Name || "Unknown"}`);
+          
           // Extract initiative details
           let initiativeDetails = null;
           if (cohortRecord.fields.Initiative && Array.isArray(cohortRecord.fields.Initiative) && cohortRecord.fields.Initiative.length > 0) {
@@ -104,13 +111,20 @@ export default withApiAuthRequired(async function getTeamCohorts(req, res) {
               : null;
               
             if (initiativesTable) {
-              const initiativeRecord = await initiativesTable.find(cohortRecord.fields.Initiative[0]).catch(() => null);
+              const initiativeId = cohortRecord.fields.Initiative[0];
+              console.log(`Fetching initiative: ${initiativeId} for cohort: ${cohortId}`);
+              const initiativeRecord = await initiativesTable.find(initiativeId).catch(err => {
+                console.error(`Error fetching initiative ${initiativeId}: ${err.message}`);
+                return null;
+              });
+              
               if (initiativeRecord) {
                 initiativeDetails = {
                   id: initiativeRecord.id,
                   name: initiativeRecord.fields.Name || "Unknown Initiative",
                   description: initiativeRecord.fields.Description || ""
                 };
+                console.log(`Found initiative: ${initiativeDetails.name}`);
               }
             }
           }

@@ -141,7 +141,13 @@ export function DashboardProvider({ children }) {
   
   // Process program data
   const programDataProcessed = useMemo(() => {
+    console.log("Processing participation data:", {
+      hasData: !!participationData,
+      recordCount: participationData?.participation?.length || 0
+    });
+    
     if (!participationData?.participation || participationData.participation.length === 0) {
+      console.log("No participation records found, using default program data");
       return {
         cohort: null,
         initiativeName: "Program",
@@ -181,10 +187,14 @@ export function DashboardProvider({ children }) {
   }, [participationData])
   
   // Fetch milestones data using the cohort ID
+  // Add enhanced logging to debug milestone fetching
+  const cohortId = programDataProcessed.cohort?.id;
+  console.log(`Using cohortId for milestone fetching: ${cohortId}`);
+  
   const { 
     data: milestonesData,
     isLoading: isMilestonesLoading 
-  } = useMilestoneData(programDataProcessed.cohort?.id)
+  } = useMilestoneData(cohortId)
   
   // Process milestones data with fallbacks
   const milestones = useMemo(() => {

@@ -99,8 +99,15 @@ export default withApiAuthRequired(async function handler(req, res) {
     // and it's a multipleRecordLinks field, so we need to check if it contains
     // the contact ID as a record reference
     
-    // Use the dedicated contactId field with SEARCH for reliable matching
-    const formula = `SEARCH("${profile.contactId}", {contactId})`
+    // Enhanced debugging for participation lookup
+    console.log(`Looking for participation records with contactId="${profile.contactId}"`)
+    
+    // Try both approaches for robustness: dedicated field and linked record search
+    // OR condition to find matches with either method
+    const formula = `OR(
+      SEARCH("${profile.contactId}", {contactId}),
+      SEARCH("${profile.contactId}", ARRAYJOIN(Contacts))
+    )`
     
     console.log(`Using formula: ${formula}`)
 
@@ -123,8 +130,9 @@ export default withApiAuthRequired(async function handler(req, res) {
     if (participationRecords.length === 0) {
       try {
         console.log("Trying alternative SEARCH approach...")
-        // Use the same dedicated contactId field with SEARCH as a fallback
-        const directFormula = `SEARCH("${profile.contactId}", {contactId})`
+        // Try even simpler formula as a fallback
+        // Use basic condition on Contacts field
+        const directFormula = `FIND("${profile.contactId}", {Contacts})`
         
         let records = await participationTable.select({
           filterByFormula: directFormula,
