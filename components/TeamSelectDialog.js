@@ -9,6 +9,7 @@ import {
   DialogDescription,
   DialogFooter
 } from '@/components/ui/dialog'
+import { extractTeamData } from '@/lib/utils'
 import { 
   Select,
   SelectContent,
@@ -286,7 +287,7 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
       const response = await fetch(`/api/teams/${newTeam.id}`);
       if (response.ok) {
         const data = await response.json();
-        const refreshedTeam = data.team;
+        const refreshedTeam = extractTeamData(data);
         
         console.log("Retrieved fresh team data after creation:", refreshedTeam);
         

@@ -37,7 +37,7 @@ export default withApiAuthRequired(async function teamHandler(req, res) {
         return res.status(404).json({ error: 'Team not found' })
       }
       
-      return res.status(200).json(team)
+      return res.status(200).json({ team })
     }
     
     // PATCH request - update team details
@@ -71,7 +71,7 @@ export default withApiAuthRequired(async function teamHandler(req, res) {
       // Get the complete updated team with members
       const completeTeam = await getTeamById(teamId, userProfile.contactId)
       
-      return res.status(200).json(completeTeam)
+      return res.status(200).json({ team: completeTeam })
     }
   } catch (error) {
     console.error(`Error handling team ${teamId}:`, error)

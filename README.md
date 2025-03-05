@@ -94,6 +94,44 @@ Airtable is used as the primary data storage solution. The integration is manage
 - \`DashboardHeader.js\`: Displays user information on the dashboard
 - \`ProfileCard.js\`: Shows and allows editing of user profile information
 
+### API Standards
+
+#### API Response Format
+
+All API endpoints consistently use a wrapped response format:
+
+```js
+{
+  resourceName: resourceData,  // e.g., team, submissions, profile
+  meta: {} // Optional metadata
+}
+```
+
+For example, team data is returned as:
+
+```js
+{
+  team: {
+    id: "team123",
+    name: "Team Name",
+    members: [...]
+  }
+}
+```
+
+#### Handling API Responses
+
+Client code can use the adapter functions in \`lib/utils.js\` to handle API responses consistently:
+
+```js
+import { extractTeamData } from '@/lib/utils'
+
+// Fetching data
+const response = await fetch('/api/teams/123')
+const data = await response.json()
+const team = extractTeamData(data) // Works with both formats: data.team or direct data
+```
+
 ## Additional Notes
 
 ### Authentication Flow
