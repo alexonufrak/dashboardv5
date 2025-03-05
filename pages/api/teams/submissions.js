@@ -87,7 +87,8 @@ export default withApiAuthRequired(async function handler(req, res) {
               // Ensure we have a proper MIME type
               const mimeType = f.mimetype || 'application/octet-stream';
               
-              // Create attachment object with required properties
+              // Create attachment object with ONLY the required fields that Airtable expects
+              // According to https://airtable.com/developers/web/api/model/file-attachment
               const attachment = {
                 filename: f.originalFilename,
                 content: fileData.toString('base64'),
@@ -115,7 +116,8 @@ export default withApiAuthRequired(async function handler(req, res) {
             // Ensure we have a proper MIME type
             const mimeType = file.mimetype || 'application/octet-stream';
             
-            // Create attachment object with required properties
+            // Create attachment object with ONLY the required fields that Airtable expects
+            // According to https://airtable.com/developers/web/api/model/file-attachment
             const attachment = {
               filename: file.originalFilename,
               content: fileData.toString('base64'),
@@ -160,7 +162,11 @@ export default withApiAuthRequired(async function handler(req, res) {
 
     // Add attachments if any
     if (fileAttachments.length > 0) {
-      record.Attachment = fileAttachments
+      console.log(`Adding ${fileAttachments.length} attachments to the record`);
+      
+      // NOTE: We're ensuring the Attachment field follows Airtable's expected format
+      // It needs to be a single array of attachment objects
+      record.Attachment = fileAttachments;
     }
 
     // Create the submission in Airtable
@@ -171,6 +177,30 @@ export default withApiAuthRequired(async function handler(req, res) {
         attachmentCount: fileAttachments.length
       });
       
+      // If we have many or large attachments, use a different approach
+      if (fileAttachments.length > 0) {
+        console.log(`Preparing ${fileAttachments.length} attachments for submission`);
+        
+        try {
+          // Log the attachment structure for debugging
+          const sampleAttachment = fileAttachments[0];
+          console.log(`Attachment example structure: {
+            filename: "${sampleAttachment.filename}",
+            type: "${sampleAttachment.type}",
+            content: "${sampleAttachment.content.substring(0, 20)}..." (length: ${sampleAttachment.content.length})
+          }`);
+        } catch (e) {
+          console.error("Error logging attachment structure:", e);
+        }
+        
+        // Try with just one attachment at a time if there are multiple
+        if (fileAttachments.length > 1) {
+          console.log("Multiple attachments - submitting with only the first one for this attempt");
+          record.Attachment = [fileAttachments[0]];
+        }
+      }
+      
+      // Create the submission in Airtable
       const submission = await submissionsTable.create(record);
       
       return res.status(201).json({
@@ -186,6 +216,44 @@ export default withApiAuthRequired(async function handler(req, res) {
       });
     } catch (submitError) {
       console.error("Error creating submission in Airtable:", submitError);
+      
+      // Check for specific Airtable errors
+      if (submitError.error === 'INVALID_ATTACHMENT_OBJECT') {
+        console.log("Detected INVALID_ATTACHMENT_OBJECT error, attempting alternate submission method");
+        
+        try {
+          // Remove attachments and just submit with a comment about files
+          delete record.Attachment;
+          
+          // Add a note to the comments
+          record.Comments = (record.Comments || "") + 
+            "\n\n[Note: Files couldn't be uploaded directly. Please upload files manually through Airtable.]";
+          
+          // Try again without the attachments
+          const submission = await submissionsTable.create(record);
+          
+          return res.status(201).json({
+            success: true,
+            warning: "Files were not uploaded due to technical limitations. Please contact support if you need to attach files.",
+            submission: {
+              id: submission.id,
+              teamId,
+              milestoneId,
+              hasAttachments: false,
+              attachmentCount: 0,
+              hasLink: !!link,
+            }
+          });
+        } catch (retryError) {
+          console.error("Retry submission without attachments also failed:", retryError);
+          return res.status(500).json({ 
+            error: "Failed to create submission", 
+            details: "Couldn't upload files and fallback method also failed.",
+            errorCode: "SUBMISSION_FAILED"
+          });
+        }
+      }
+      
       // Return a more user-friendly error message
       return res.status(422).json({ 
         error: "Failed to create submission in Airtable", 

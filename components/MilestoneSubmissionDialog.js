@@ -75,13 +75,42 @@ export default function MilestoneSubmissionDialog({
 
   // Dropzone setup
   const onDrop = useCallback(acceptedFiles => {
-    // Add preview URL to each file object
-    const filesWithPreview = acceptedFiles.map(file => 
-      Object.assign(file, {
-        preview: URL.createObjectURL(file)
-      })
-    )
-    setFiles(filesWithPreview)
+    // Maximum allowed combined file size (10MB)
+    const MAX_TOTAL_SIZE = 10 * 1024 * 1024;
+    
+    // Filter out files that are too large or not compatible
+    const validFiles = [];
+    let totalSize = 0;
+    
+    acceptedFiles.forEach(file => {
+      // Check file size
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`"${file.name}" is too large. Files must be under 5MB each.`);
+        return;
+      }
+      
+      // Check total accumulated size
+      if (totalSize + file.size > MAX_TOTAL_SIZE) {
+        toast.error(`Total file size exceeds 10MB limit. "${file.name}" was not added.`);
+        return;
+      }
+      
+      // Add to valid files and update total size
+      totalSize += file.size;
+      validFiles.push(file);
+    });
+    
+    // If we have any valid files, add them to the state
+    if (validFiles.length > 0) {
+      // Add preview URL to each file object
+      const filesWithPreview = validFiles.map(file => 
+        Object.assign(file, {
+          preview: URL.createObjectURL(file)
+        })
+      );
+      
+      setFiles(prev => [...prev, ...filesWithPreview]);
+    }
   }, [])
 
   const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
@@ -169,10 +198,17 @@ export default function MilestoneSubmissionDialog({
         body: formData,
       })
       
+      const responseData = await response.json();
+      
       if (!response.ok) {
-        const errorData = await response.json()
-        console.error("Submission error response:", errorData);
-        throw new Error(errorData.details || errorData.error || "Failed to submit")
+        console.error("Submission error response:", responseData);
+        throw new Error(responseData.details || responseData.error || "Failed to submit")
+      }
+      
+      // Check for warnings in the response
+      if (responseData.warning) {
+        toast.warning(responseData.warning);
+        console.warn("Submission warning:", responseData.warning);
       }
       
       toast.success("Milestone submission successful")
