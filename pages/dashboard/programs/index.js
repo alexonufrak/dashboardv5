@@ -1,15 +1,19 @@
 import { withPageAuthRequired } from "@auth0/nextjs-auth0";
-import { DashboardLayout } from "../../../components/v2/dashboard-layout-prototype";
-import { ActiveProgramsDashboard } from "../../../components/v2/ActiveProgramsDashboard";
+import DashboardShell from "../../../components/DashboardShell";
 
 export default function ProgramsPage({ user, profile }) {
   return (
-    <DashboardLayout 
+    <DashboardShell 
       title="My Programs | xFoundry Dashboard"
       profile={profile}
     >
-      <ActiveProgramsDashboard userProfile={profile} />
-    </DashboardLayout>
+      <div className="container mx-auto py-8">
+        <h1 className="text-2xl font-bold mb-6">My Programs</h1>
+        <p className="text-muted-foreground">
+          Your active programs will be displayed here. Please check back later.
+        </p>
+      </div>
+    </DashboardShell>
   );
 }
 

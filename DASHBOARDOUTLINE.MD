@@ -50,4 +50,4 @@ The dashboard uses a custom UI component system located in `/components/ui/`, wi
 
 ## Future Development
 
-The `/components/v2` directory contains prototype components for a future dashboard redesign, but these are not currently used in production.
+The dashboard will continue to evolve based on user needs and feedback.

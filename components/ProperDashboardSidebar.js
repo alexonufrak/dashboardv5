@@ -47,12 +47,6 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
       href: "/program-dashboard",
       label: initiativeName || "Program",
       icon: <Compass className="h-4 w-4" />
-    },
-    {
-      id: "programs",
-      href: "#programs",
-      label: "Programs",
-      icon: <Users className="h-4 w-4" />
     }
   ]
   
