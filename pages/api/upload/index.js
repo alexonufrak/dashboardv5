@@ -23,31 +23,75 @@ export default withApiAuthRequired(async function handler(req, res) {
     // Check if FILE_UPLOAD_READ_WRITE_TOKEN environment variable is set
     if (!process.env.FILE_UPLOAD_READ_WRITE_TOKEN) {
       console.error('FILE_UPLOAD_READ_WRITE_TOKEN environment variable is not set');
+      
+      // Return a specific error code that can be identified by the client
       return res.status(500).json({
-        error: 'Server configuration error: Blob storage is not properly configured'
+        error: 'Server configuration error: Blob storage is not properly configured',
+        code: 'MISSING_BLOB_TOKEN',
+        message: 'Direct file uploads are currently not available. Please use the link option instead.'
       });
     }
 
-    // Handle the upload with detailed error logging
+    // Log successful token detection
+    console.log('Using FILE_UPLOAD_READ_WRITE_TOKEN for Vercel Blob uploads');
+
+    // Try to parse body for handleUpload, as it might be needed depending on the request type
+    let body;
+    try {
+      if (req.method === 'POST' && req.headers['content-type']?.includes('application/json')) {
+        body = await new Promise((resolve) => {
+          let data = '';
+          req.on('data', (chunk) => {
+            data += chunk;
+          });
+          req.on('end', () => {
+            try {
+              resolve(JSON.parse(data));
+            } catch (e) {
+              console.error('Error parsing request body as JSON:', e);
+              resolve({});
+            }
+          });
+        });
+      }
+    } catch (error) {
+      console.error('Error handling request body:', error);
+    }
+
+    // Handle the upload with detailed error logging - this handles both token generation and upload completion
     const response = await handleUpload({
-      body: req.body, // Add this if handling JSON requests
       request: req,
-      token: process.env.FILE_UPLOAD_READ_WRITE_TOKEN, // Explicitly provide the token
+      token: process.env.FILE_UPLOAD_READ_WRITE_TOKEN, // Explicitly provide the custom token
+      body, // Add the body parameter for JSON requests
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         // Log for debugging
         console.log(`Upload token requested for: ${pathname}`);
         
-        // Parse client payload
+        // Parse client payload for additional metadata
         let metadata = {};
         try {
-          metadata = clientPayload ? JSON.parse(clientPayload) : {};
-          console.log('Upload metadata:', metadata);
+          if (clientPayload) {
+            metadata = JSON.parse(clientPayload);
+            console.log('Upload metadata:', metadata);
+            
+            // Validate payload has expected fields when uploading milestone submissions
+            if (metadata.teamId && metadata.milestoneId) {
+              console.log(`Processing upload for team ${metadata.teamId}, milestone ${metadata.milestoneId}`);
+            } else {
+              console.warn("Missing expected metadata fields in upload request");
+            }
+          }
         } catch (e) {
           console.error('Error parsing client payload:', e);
           // Don't throw here, just log and continue with empty metadata
         }
         
+        // Set token expiration
+        const now = new Date();
+        const validUntil = now.setMinutes(now.getMinutes() + 30); // 30 minute token validity
+        
         return {
+          // Allow specific file types for milestone submissions
           allowedContentTypes: [
             'application/pdf',
             'application/msword',
@@ -64,9 +108,12 @@ export default withApiAuthRequired(async function handler(req, res) {
             'image/svg+xml'
           ],
           maximumSizeInBytes: 5 * 1024 * 1024, // 5MB
+          validUntil,
+          addRandomSuffix: true, // Add random suffix to prevent filename conflicts
           tokenPayload: JSON.stringify({
             userId: session.user.sub,
             email: session.user.email,
+            timestamp: Date.now(),
             ...metadata
           }),
         };
@@ -77,6 +124,20 @@ export default withApiAuthRequired(async function handler(req, res) {
         try {
           const payload = JSON.parse(tokenPayload);
           console.log('Upload completed by:', payload.email);
+          
+          // Log additional useful information from the blob and payload
+          console.log(`File uploaded: ${blob.pathname}`);
+          console.log(`File size: ${blob.size} bytes`);
+          console.log(`Content type: ${blob.contentType}`);
+          console.log(`Upload time: ${new Date().toISOString()}`);
+          
+          if (payload.teamId && payload.milestoneId) {
+            console.log(`Milestone submission: Team ${payload.teamId}, Milestone ${payload.milestoneId}`);
+            
+            // Here you could update a database to record the submission
+            // This is a great place to update Airtable or another database with the submission details
+            // await updateSubmissionRecord(payload.teamId, payload.milestoneId, blob.url);
+          }
         } catch (e) {
           console.error('Error parsing token payload:', e);
         }

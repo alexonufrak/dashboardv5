@@ -189,11 +189,19 @@ export default function MilestoneSubmissionDialog({
       
       console.log(`Starting upload of ${safeFilename} to Vercel Blob...`);
       
-      // Upload file to Vercel Blob with enhanced error handling and retries
-      const blob = await upload(`${folderPath}/${safeFilename}`, file, {
+      // Add a timeout to catch stalled uploads
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Upload timed out after 30 seconds. The server may not be configured correctly.'));
+        }, 30000); // 30 second timeout
+      });
+      
+      // Pure client-side upload with Vercel Blob client
+      const uploadPromise = upload(`${folderPath}/${safeFilename}`, file, {
         access: 'public',
         handleUploadUrl: '/api/upload',
         clientPayload,
+        multipart: file.size > 3 * 1024 * 1024, // Use multipart for files larger than 3MB
         maxRetries: 3, // Retry failed uploads up to 3 times
         retryDelay: 1000, // Wait 1 second between retries
         onUploadProgress: ({ loaded, total, percentage }) => {
@@ -214,7 +222,10 @@ export default function MilestoneSubmissionDialog({
           });
         }
       });
-
+      
+      // Race between the upload and the timeout
+      const blob = await Promise.race([uploadPromise, timeoutPromise]);
+      
       // Update progress state to complete
       setUploadProgress(prev => ({
         ...prev,
@@ -257,24 +268,62 @@ export default function MilestoneSubmissionDialog({
         }
       }));
       
-      // Check for specific error types and provide better error messages
+      // Check for specific error types and provide better error messages based on the Vercel Blob documentation
       let errorMessage = 'Failed to upload file';
+      let shouldSuggestLinkOption = false;
       
       if (error.message) {
+        // Check for specific Vercel Blob error patterns
         if (error.message.includes('token') || error.message.includes('Failed to retrieve the client token')) {
-          errorMessage = 'Authentication error during upload. Please try again later.';
+          errorMessage = 'Authentication error during upload. Please use the link option instead.';
           console.log('Blob token error: Server may be missing FILE_UPLOAD_READ_WRITE_TOKEN environment variable');
-        } else if (error.message.includes('size')) {
+          shouldSuggestLinkOption = true;
+          
+          // Switch to link tab automatically after a short delay
+          setTimeout(() => {
+            setCurrentTab('link');
+            toast.info('Switched to link submission due to upload issues', { 
+              duration: 4000,
+              icon: <LinkIcon className="h-4 w-4"/>
+            });
+          }, 1500);
+          
+        } else if (error.message.includes('allowedContentTypes')) {
+          errorMessage = 'File type not allowed. Please upload a supported file type.';
+          console.log('Content type rejected by Vercel Blob:', file.type);
+          
+        } else if (error.message.includes('maximumSizeInBytes') || error.message.includes('size')) {
           errorMessage = 'File exceeds maximum size limit (5MB).';
-        } else if (error.message.includes('type')) {
-          errorMessage = 'File type not supported.';
+          shouldSuggestLinkOption = true;
+          
         } else if (error.message.includes('network') || error.message.includes('fetch')) {
-          errorMessage = 'Network error during upload. Please check your connection and try again.';
+          errorMessage = 'Network error during upload. Please check your connection or use the link option.';
+          shouldSuggestLinkOption = true;
+          
         } else if (error.message.includes('timeout')) {
-          errorMessage = 'Upload timed out. Please try again with a smaller file.';
+          errorMessage = 'Upload timed out. Please try using the link option instead.';
+          shouldSuggestLinkOption = true;
+          
         } else if (error.message.includes('aborted')) {
           errorMessage = 'Upload was cancelled.';
+          
+        } else if (error.message.includes('multipart')) {
+          errorMessage = 'Error during multipart upload. Please try again with a smaller file.';
+          shouldSuggestLinkOption = true;
+          
+        } else if (error.message.includes('access')) {
+          errorMessage = 'Access denied. File storage is not correctly configured.';
+          shouldSuggestLinkOption = true;
+          console.error('Blob access error:', error);
         }
+      }
+      
+      // Add link suggestion to error message if appropriate
+      if (shouldSuggestLinkOption) {
+        toast.info(
+          'Try uploading your file to Google Drive, Dropbox or similar service and share the link instead', 
+          { duration: 8000 }
+        );
       }
       
       // Log enhanced error for debugging
@@ -772,6 +821,20 @@ export default function MilestoneSubmissionDialog({
               {/* File upload */}
               {currentTab === 'file' && (
                 <div>
+                  {/* Add Link Option Notice */}
+                  <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                    <div className="flex items-start">
+                      <AlertCircle className="h-5 w-5 text-yellow-500 mr-2 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-yellow-800">File Upload Alternative</p>
+                        <p className="text-xs text-yellow-700 mt-0.5">
+                          If file upload doesn't work, you can upload your file to Google Drive, Dropbox, 
+                          or another service and share the link using the "Add Link" tab.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                
                   <div
                     {...getRootProps()}
                     className={`border-2 border-dashed rounded-md p-8 text-center cursor-pointer transition-colors
@@ -788,12 +851,34 @@ export default function MilestoneSubmissionDialog({
                   </div>
                   
                   {renderFileList()}
+                  
+                  {/* Easy switch to link tab */}
+                  {files.length === 0 && (
+                    <button 
+                      type="button"
+                      onClick={() => setCurrentTab('link')}
+                      className="w-full mt-2 text-sm text-blue-600 hover:text-blue-800 flex items-center justify-center"
+                    >
+                      <LinkIcon className="h-3.5 w-3.5 mr-1" />
+                      Switch to link submission instead
+                    </button>
+                  )}
                 </div>
               )}
               
               {/* Link input */}
               {currentTab === 'link' && (
-                <div className="space-y-2">
+                <div className="space-y-3">
+                  {/* Instructions panel */}
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-md mb-4">
+                    <h3 className="text-sm font-medium text-blue-800 mb-1">How to share your work via a link</h3>
+                    <ol className="text-xs text-blue-700 list-decimal ml-4 space-y-1">
+                      <li>Upload your file to a cloud storage service (Google Drive, Dropbox, OneDrive, etc.)</li>
+                      <li>Create a shareable link with <b>public access</b> to the file</li>
+                      <li>Copy the link and paste it below</li>
+                    </ol>
+                  </div>
+                
                   <Label htmlFor="link">Add a link to your work</Label>
                   <div className="flex items-center space-x-2">
                     <LinkIcon className="h-4 w-4 text-muted-foreground" />
@@ -805,8 +890,29 @@ export default function MilestoneSubmissionDialog({
                       onChange={(e) => setLinkUrl(e.target.value)}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Add a link to Google Drive, GitHub, or other external resources
+                  
+                  {/* Link type selection */}
+                  <div className="mt-2">
+                    <Label className="text-xs mb-1 block">Link type (optional)</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {["Google Drive", "Dropbox", "OneDrive", "GitHub", "Other"].map(type => (
+                        <Badge 
+                          key={type}
+                          variant="outline" 
+                          className="cursor-pointer hover:bg-muted"
+                          onClick={() => {
+                            // Could set link type metadata here
+                            toast.info(`Selected ${type} link type`, { duration: 1500 });
+                          }}
+                        >
+                          {type}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Make sure your link is publicly accessible so reviewers can view it
                   </p>
                 </div>
               )}
