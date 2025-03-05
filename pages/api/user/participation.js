@@ -102,12 +102,22 @@ export default withApiAuthRequired(async function handler(req, res) {
     // Enhanced debugging for participation lookup
     console.log(`Looking for participation records with contactId="${profile.contactId}"`)
     
-    // Use FIND for exact matching with record IDs
-    // This works reliably for finding record IDs in linked record fields
+    // Use Airtable's FIND function with proper field name handling
+    // Ensure we're using the exact field name that exists in Airtable
+    // Added extra logging to debug the exact formula being sent
     const formula = `OR(
       FIND("${profile.contactId}", {contactId}),
       FIND("${profile.contactId}", {Contacts})
     )`
+    
+    // Debug the exact formula with quotes to catch any invisible characters or formatting issues
+    console.log(`Raw formula: "${formula}"`)
+    
+    // Also check the contactId value for any issues
+    console.log(`Contact ID value type: ${typeof profile.contactId}, value: "${profile.contactId}"`)
+    if (!profile.contactId || typeof profile.contactId !== 'string' || !profile.contactId.startsWith('rec')) {
+      console.warn(`Warning: Contact ID "${profile.contactId}" doesn't look like a valid Airtable record ID`)
+    }
     
     console.log(`Using formula: ${formula}`)
 
@@ -115,8 +125,14 @@ export default withApiAuthRequired(async function handler(req, res) {
     console.log("Querying participation records with Contacts linking to contact ID...")
     
     try {
+      // Try a simpler approach with just record ID equality
+      // This is the most reliable way to match record IDs in Airtable
+      const safeContactId = profile.contactId.replace(/['"\\]/g, ''); // Sanitize the ID
+      const safeFormula = `OR({contactId} = "${safeContactId}", FIND("${safeContactId}", {Contacts}))`;
+      console.log(`Using safer formula: ${safeFormula}`);
+      
       let records = await participationTable.select({
-        filterByFormula: formula,
+        filterByFormula: safeFormula,
         sort: [{ field: "Last Modified", direction: "desc" }]
       }).firstPage()
       
@@ -130,9 +146,10 @@ export default withApiAuthRequired(async function handler(req, res) {
     if (participationRecords.length === 0) {
       try {
         console.log("Trying alternative FIND approach...")
-        // Try even simpler formula as a fallback
-        // Use FIND for reliable record ID matching
-        const directFormula = `FIND("${profile.contactId}", {Contacts})`
+        // Try an even simpler formula as a fallback
+        // Use direct field equality as it's most reliable with Airtable
+        const safeContactId = profile.contactId.replace(/['"\\]/g, ''); // Sanitize the ID
+        const directFormula = `{Contacts} = "${safeContactId}"`
         
         let records = await participationTable.select({
           filterByFormula: directFormula,
@@ -280,10 +297,12 @@ export default withApiAuthRequired(async function handler(req, res) {
               // Initialize the members table
               const membersTable = base(membersTableId)
               
-              // First find the member records for this user using the dedicated contactId field with FIND
+              // First find the member records for this user using direct equality match
+              // Using direct equality match is more reliable than FIND for record IDs
+              const safeContactId = profile.contactId.replace(/['"\\]/g, ''); // Sanitize the ID
               const memberRecords = await membersTable
                 .select({
-                  filterByFormula: `FIND("${profile.contactId}", {contactId})`,
+                  filterByFormula: `{contactId} = "${safeContactId}"`,
                   fields: ["Team", "Status"]
                 })
                 .firstPage()
