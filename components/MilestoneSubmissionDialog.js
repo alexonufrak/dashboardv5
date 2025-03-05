@@ -610,22 +610,22 @@ export default function MilestoneSubmissionDialog({
     }
     
     return (
-      <Table>
+      <Table className="w-full table-fixed">
         <TableCaption>Submissions for this milestone</TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead>Date</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Details</TableHead>
+            <TableHead className="w-[30%]">Date</TableHead>
+            <TableHead className="w-[20%]">Type</TableHead>
+            <TableHead className="w-[50%]">Details</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {milestone.submissions.map((submission, index) => (
             <TableRow key={index}>
-              <TableCell>
+              <TableCell className="align-top">
                 {formatDate(submission.createdTime)}
               </TableCell>
-              <TableCell>
+              <TableCell className="align-top">
                 {submission.attachments && submission.attachments.length > 0 && (
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                     <FileText className="h-3 w-3 mr-1" />
@@ -639,10 +639,10 @@ export default function MilestoneSubmissionDialog({
                   </Badge>
                 )}
               </TableCell>
-              <TableCell>
+              <TableCell className="align-top break-words">
                 <div className="space-y-1">
                   {submission.attachments && submission.attachments.length > 0 && (
-                    <div className="flex items-center text-sm">
+                    <div className="flex flex-wrap items-center text-sm">
                       <FileText className="h-3.5 w-3.5 mr-1 text-blue-600" />
                       <span>
                         {submission.attachments.length} {submission.attachments.length === 1 ? 'file' : 'files'}
@@ -688,45 +688,49 @@ export default function MilestoneSubmissionDialog({
                         console.log(`Found ${validAttachments.length} valid attachments of ${submission.attachments.length} total`);
                         
                         // Map valid attachments to links
-                        return validAttachments.map((att, i) => {
-                          // Get the best available URL
-                          let fileUrl = '#';
-                          let fileName = `File ${i+1}`;
-                          
-                          // Direct URL - best option
-                          if (att.url) {
-                            fileUrl = att.url;
-                            fileName = att.filename || `File ${i+1}`;
-                          } 
-                          // Thumbnail URL from Airtable - second best option
-                          else if (att.thumbnails?.large?.url) {
-                            fileUrl = att.thumbnails.large.url;
-                            fileName = att.filename || `File ${i+1}`;
-                          }
-                          // Small thumbnail fallback
-                          else if (att.thumbnails?.small?.url) {
-                            fileUrl = att.thumbnails.small.url;
-                            fileName = att.filename || `File ${i+1}`;
-                          }
-                          // Last resort - use the ID as a key
-                          else if (att.id) {
-                            fileUrl = '#'; // No direct URL available
-                            fileName = att.filename || `File ${i+1}`;
-                          }
-                          
-                          return (
-                            <a 
-                              key={i}
-                              href={fileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline ml-2 text-xs"
-                              title={fileName}
-                            >
-                              {fileName.length > 15 ? `${fileName.substring(0, 12)}...` : fileName}
-                            </a>
-                          );
-                        });
+                        return (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {validAttachments.map((att, i) => {
+                              // Get the best available URL
+                              let fileUrl = '#';
+                              let fileName = `File ${i+1}`;
+                              
+                              // Direct URL - best option
+                              if (att.url) {
+                                fileUrl = att.url;
+                                fileName = att.filename || `File ${i+1}`;
+                              } 
+                              // Thumbnail URL from Airtable - second best option
+                              else if (att.thumbnails?.large?.url) {
+                                fileUrl = att.thumbnails.large.url;
+                                fileName = att.filename || `File ${i+1}`;
+                              }
+                              // Small thumbnail fallback
+                              else if (att.thumbnails?.small?.url) {
+                                fileUrl = att.thumbnails.small.url;
+                                fileName = att.filename || `File ${i+1}`;
+                              }
+                              // Last resort - use the ID as a key
+                              else if (att.id) {
+                                fileUrl = '#'; // No direct URL available
+                                fileName = att.filename || `File ${i+1}`;
+                              }
+                              
+                              return (
+                                <a 
+                                  key={i}
+                                  href={fileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline text-xs bg-blue-50 px-2 py-1 rounded-md"
+                                  title={fileName}
+                                >
+                                  {fileName.length > 15 ? `${fileName.substring(0, 12)}...` : fileName}
+                                </a>
+                              );
+                            })}
+                          </div>
+                        );
                       })()}
                     </div>
                   )}
@@ -738,7 +742,7 @@ export default function MilestoneSubmissionDialog({
                         href={submission.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
+                        className="text-blue-600 hover:underline break-all"
                       >
                         {submission.link.length > 30 ? `${submission.link.substring(0, 30)}...` : submission.link}
                       </a>
@@ -746,7 +750,7 @@ export default function MilestoneSubmissionDialog({
                   )}
                   
                   {submission.comments && (
-                    <div className="text-xs text-muted-foreground mt-1">
+                    <div className="text-xs text-muted-foreground mt-1 break-words">
                       {submission.comments.length > 100 
                         ? `${submission.comments.substring(0, 100)}...` 
                         : submission.comments}
@@ -763,7 +767,7 @@ export default function MilestoneSubmissionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {mode === "submit" ? "Submit Milestone" : "View Submissions"}

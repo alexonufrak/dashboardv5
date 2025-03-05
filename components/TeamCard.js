@@ -141,16 +141,6 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
             View Details
           </Button>
           
-          <Button 
-            variant="default"
-            className="flex-1"
-            size="default"
-            onClick={handleProgramDashboardClick}
-          >
-            <Compass className="h-4 w-4 mr-1" />
-            Program Dashboard
-          </Button>
-          
           {activeMembers.some(m => m.isCurrentUser) && (
             <>
               <Button

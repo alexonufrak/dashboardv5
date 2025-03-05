@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { useTeamSubmissions } from "@/lib/useDataFetching"
 
@@ -24,6 +24,7 @@ export default function MilestoneSubmissionChecker({
   const [hasProcessed, setHasProcessed] = useState(false)
   const [lastTeamId, setLastTeamId] = useState(null)
   const [lastMilestoneId, setLastMilestoneId] = useState(null)
+  const processingRef = useRef(false)
   
   // Get team data from context
   const { teamData } = useDashboard()
@@ -63,31 +64,16 @@ export default function MilestoneSubmissionChecker({
     };
   }, [milestoneId, teamData?.id, refetch]);
   
-  // Debug logging
+  // Debug logging - reduced to essential messages
   useEffect(() => {
-    if (milestoneId && teamData?.id) {
-      console.log(`MilestoneSubmissionChecker for milestone=${milestoneId}, team=${teamData.id}`);
-    }
-    
-    // Log when data changes
-    if (data) {
-      console.log(`Submission data received: ${data.submissions?.length || 0} submissions`);
-    }
-    
-    // Log loading states and errors
-    if (isLoading) {
-      console.log("Loading submission data...");
-    }
-    
     if (error) {
       console.error("Error loading submission data:", error);
     }
-  }, [milestoneId, teamData?.id, data, isLoading, error]);
+  }, [error]);
   
   // Force reprocessing when team or milestone changes
   useEffect(() => {
     if (teamData?.id !== lastTeamId || milestoneId !== lastMilestoneId) {
-      console.log("Team or milestone changed, resetting submission state");
       setLastTeamId(teamData?.id);
       setLastMilestoneId(milestoneId);
       setHasProcessed(false);
@@ -115,20 +101,16 @@ export default function MilestoneSubmissionChecker({
       return;
     }
     
-    console.log(`Processing submissions for milestone ${milestoneId}`);
+    // Skip if already processed or currently processing
+    if (hasProcessed || processingRef.current) {
+      return;
+    }
     
-    // Mark as processed
-    setHasProcessed(true);
+    // Mark as processing to prevent duplicate processing
+    processingRef.current = true;
     
     // Get relevant submissions data
     const submissions = data.submissions || [];
-    
-    // Add detailed diagnostic logging
-    console.log("Available submissions:", JSON.stringify(submissions.map(s => ({
-      id: s.id,
-      milestoneId: s.milestoneId,
-      createdTime: s.createdTime?.substring(0, 10) || null
-    }))));
     
     // First try to find submissions specifically linked to this milestone
     const milestoneMatches = submissions.filter(s => 
@@ -138,7 +120,6 @@ export default function MilestoneSubmissionChecker({
     );
     
     if (milestoneMatches.length > 0) {
-      console.log(`Found ${milestoneMatches.length} direct milestone matches for ${milestoneId}`);
       setHasSubmission(true);
       setSubmissionData(milestoneMatches[0]);
       
@@ -146,6 +127,10 @@ export default function MilestoneSubmissionChecker({
       if (onSubmissionCheck) {
         onSubmissionCheck(true, milestoneMatches);
       }
+      
+      // Mark as processed
+      setHasProcessed(true);
+      processingRef.current = false;
       return;
     }
     
@@ -161,7 +146,6 @@ export default function MilestoneSubmissionChecker({
       });
       
       if (milestoneNameMatches.length > 0) {
-        console.log(`Found ${milestoneNameMatches.length} milestone name matches`);
         setHasSubmission(true);
         setSubmissionData(milestoneNameMatches[0]);
         
@@ -169,6 +153,10 @@ export default function MilestoneSubmissionChecker({
         if (onSubmissionCheck) {
           onSubmissionCheck(true, milestoneNameMatches);
         }
+        
+        // Mark as processed
+        setHasProcessed(true);
+        processingRef.current = false;
         return;
       }
     }
@@ -176,7 +164,6 @@ export default function MilestoneSubmissionChecker({
     // Last resort - if no direct matches but we have submissions, assume the most recent is relevant
     // This is a fallback for when milestone relationships aren't properly set
     if (submissions.length > 0) {
-      console.log(`Using fallback: ${submissions.length} team submissions (no direct milestone links)`);
       setHasSubmission(true);
       setSubmissionData(submissions[0]);
       
@@ -184,11 +171,14 @@ export default function MilestoneSubmissionChecker({
       if (onSubmissionCheck) {
         onSubmissionCheck(true, submissions);
       }
+      
+      // Mark as processed
+      setHasProcessed(true);
+      processingRef.current = false;
       return;
     }
     
     // If no submissions found at all
-    console.log("No submissions found for this milestone");
     setHasSubmission(false);
     setSubmissionData(null);
     
@@ -196,6 +186,10 @@ export default function MilestoneSubmissionChecker({
     if (onSubmissionCheck) {
       onSubmissionCheck(false, null);
     }
+    
+    // Mark as processed
+    setHasProcessed(true);
+    processingRef.current = false;
   }, [data, isLoading, hasProcessed, teamData?.id, milestoneId, onSubmissionCheck]);
 
   // This component doesn't render anything itself

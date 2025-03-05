@@ -47,17 +47,20 @@ export default function MilestoneTable({
   
   // Listen for submission updates
   useEffect(() => {
+    // Track if the component is mounted to prevent state updates after unmount
+    let isMounted = true;
+    
     // Event handler for the custom submission updated event
     const handleSubmissionUpdate = (event) => {
+      if (!isMounted) return;
+      
       const { milestoneId } = event.detail;
       
       // Check if the updated milestone is in our list
       const milestoneIndex = enhancedMilestones.findIndex(m => m.id === milestoneId);
       
       if (milestoneIndex >= 0) {
-        console.log(`MilestoneTable received update for milestone: ${milestoneId}`);
-        
-        // Update the refresh trigger to force milestone reprocessing
+        // Update the refresh trigger to force milestone reprocessing, but only once
         setRefreshTrigger(prev => prev + 1);
       }
     };
@@ -67,6 +70,7 @@ export default function MilestoneTable({
     
     // Cleanup
     return () => {
+      isMounted = false;
       window.removeEventListener('milestoneSubmissionUpdated', handleSubmissionUpdate);
     };
   }, [enhancedMilestones]);
