@@ -218,7 +218,7 @@ export default withApiAuthRequired(async function handler(req, res) {
               try {
                 const memberRecords = await membersTable
                   .select({
-                    filterByFormula: `{contactId} = "${safeContactId}"`,
+                    filterByFormula: `{contact_ids} = "${safeContactId}"`,
                     fields: ["Team", "Status"]
                   })
                   .firstPage();
