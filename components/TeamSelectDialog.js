@@ -98,12 +98,12 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
   const [showTeamConflictDialog, setShowTeamConflictDialog] = useState(false)
   const [teamConflictDetails, setTeamConflictDetails] = useState(null)
   
-  // Check if the selected team has any conflicts with the cohort's initiative
+  // Check if the selected team is already in a team program
   const checkTeamInitiativeConflicts = async (teamId) => {
     try {
-      console.log(`Checking initiative conflicts for team ${teamId} with cohort ${cohort.id}`);
+      console.log(`Checking team program conflicts for team ${teamId} with cohort ${cohort.id}`);
       
-      // Get the team's cohorts and check for initiative conflicts
+      // Get the team's cohorts to see if it's already in a program
       const response = await fetch(`/api/teams/${teamId}/cohorts`)
       
       if (!response.ok) {
@@ -161,43 +161,24 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
         return { allowed: true };
       }
       
-      // Check if current initiative is Xperience or Xtrapreneurs
-      const isXperience = currentInitiative.toLowerCase().includes("xperience");
-      const isXtrapreneurs = currentInitiative.toLowerCase().includes("xtrapreneurs");
-      
-      const isXperienceOrXtrapreneurs = isXperience || isXtrapreneurs;
-      
-      if (!isXperienceOrXtrapreneurs) {
-        console.log(`Initiative "${currentInitiative}" has no restrictions, allowing application`);
-        return { allowed: true }; // No restrictions for other initiatives
+      // If team already has any cohorts, show a conflict message
+      if (teamCohorts.length > 0) {
+        const teamCohort = teamCohorts[0]; // Use the first team cohort for the message
+        console.log(`Team program conflict: team "${teamId}" is already in cohort "${teamCohort.name}"`);
+        return {
+          allowed: false,
+          reason: "team_program_conflict", // Change conflict type to team_program_conflict
+          details: {
+            currentProgram: teamCohort.name || teamCohort.initiativeDetails?.name || "Current Program",
+            appliedProgram: currentInitiative
+          }
+        };
       }
       
-      console.log(`Checking ${isXperience ? "Xperience" : "Xtrapreneurs"} restrictions`);
-      
-      // Check each team cohort
-      for (const teamCohort of teamCohorts) {
-        const teamInitiative = teamCohort.initiativeDetails?.name || "";
-        console.log(`Team cohort "${teamCohort.name}" initiative: "${teamInitiative}"`);
-        
-        // If team is already in a different initiative (Xperience or Xtrapreneurs)
-        if ((isXperience && teamInitiative.toLowerCase().includes("xtrapreneurs")) ||
-            (isXtrapreneurs && teamInitiative.toLowerCase().includes("xperience"))) {
-          console.log(`Initiative conflict: current "${currentInitiative}" vs. team "${teamInitiative}"`);
-          return {
-            allowed: false,
-            reason: "initiative_conflict",
-            details: {
-              currentInitiative: currentInitiative,
-              teamInitiative: teamInitiative
-            }
-          };
-        }
-      }
-      
-      console.log("No initiative conflicts found, allowing application");
+      console.log("No team program conflicts found, allowing application");
       return { allowed: true };
     } catch (error) {
-      console.error('Error checking team initiative conflicts:', error);
+      console.error('Error checking team program conflicts:', error);
       return { allowed: true }; // If check fails, allow it
     }
   };
@@ -479,9 +460,7 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
             onCreateTeam: handleOpenCreateTeam  // Pass the handler for creating a new team
           } : null
         }
-        conflictType={teamConflictDetails?.reason === "topic_mismatch" ? 
-          "topic_mismatch" : "team_initiative_conflict"
-        }
+        conflictType={teamConflictDetails?.reason || "team_program_conflict"}
       />
     </>
   )

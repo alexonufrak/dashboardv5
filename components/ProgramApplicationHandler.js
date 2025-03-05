@@ -113,7 +113,7 @@ const ProgramApplicationHandler = ({
     }
   }
   
-  // Check if a user is already part of an initiative or if their team is part of a cohort
+  // Check if a user is already part of a team program when trying to join another team program
   const checkInitiativeRestrictions = async () => {
     try {
       // Get the current cohort's initiative
@@ -128,53 +128,47 @@ const ProgramApplicationHandler = ({
         return { allowed: true };
       }
       
-      // Check if current initiative is Xperience or Xtrapreneurs
-      const isXperience = currentInitiativeName.toLowerCase().includes("xperience");
-      const isXtrapreneurs = currentInitiativeName.toLowerCase().includes("xtrapreneurs");
+      // Check if this is a team program
+      const isTeamProgram = participationType.toLowerCase() === "team" || 
+                         participationType.toLowerCase().includes("team");
       
-      if (!isXperience && !isXtrapreneurs) {
-        console.log("No restrictions for initiative:", currentInitiativeName);
-        return { allowed: true }; // No restrictions for other initiatives
+      // Only check team program conflicts for team programs
+      if (!isTeamProgram) {
+        console.log(`Not a team program (${participationType}), skipping team program conflict check`);
+        return { allowed: true };
       }
       
-      // Check if we have profile data with a contactId
+      // Check if we have profile data
       if (!profile) {
-        console.warn("Profile data not available for initiative conflict check");
+        console.warn("Profile data not available for team program conflict check");
         return { allowed: true }; // Allow if profile is not available
       }
       
-      // We need to make an API call to check if the user has participation records with conflicting initiatives
-      if (!profile.contactId) {
-        console.warn("No contact ID available for initiative conflict check - profile may not be fully loaded");
-        return { allowed: true }; // Allow if contactId is missing
-      }
-      
-      console.log(`Calling API to check participation records for contact ${profile.contactId}`);
-      const response = await fetch(`/api/user/check-initiative-conflicts?initiative=${encodeURIComponent(currentInitiativeName)}`);
-      
-      if (!response.ok) {
-        console.error("Error checking initiative conflicts:", response.statusText);
-        return { allowed: true }; // Allow if we can't check
-      }
-      
-      const data = await response.json();
-      
-      if (data.hasConflict) {
-        console.log("API found conflicting initiative:", data.conflictingInitiative);
-        return {
-          allowed: false,
-          reason: "initiative_conflict",
-          details: {
-            currentInitiative: currentInitiativeName,
-            conflictingInitiative: data.conflictingInitiative
+      // Check if the user is already in a team program
+      if (profile.teams && profile.teams.length > 0) {
+        // Check if any of the user's teams are in a team program
+        const userTeams = profile.teams;
+        
+        for (const team of userTeams) {
+          if (team.cohortIds && team.cohortIds.length > 0) {
+            // The user is already in a team that has cohorts
+            console.log(`User is already in team program: ${team.name}`);
+            return {
+              allowed: false,
+              reason: "team_program_conflict",
+              details: {
+                currentProgram: team.name || "Current Team Program",
+                appliedProgram: currentInitiativeName
+              }
+            };
           }
-        };
+        }
       }
       
-      console.log("No conflicts found, allowing application");
+      console.log("No team program conflicts found, allowing application");
       return { allowed: true };
     } catch (error) {
-      console.error("Error in initiative restriction check:", error);
+      console.error("Error in team program conflict check:", error);
       return { allowed: true }; // In case of error, allow the application
     }
   };

@@ -34,6 +34,8 @@ const InitiativeConflictDialog = ({
     title = "Team Initiative Conflict";
   } else if (conflictType === "topic_mismatch") {
     title = "Topic Mismatch";
+  } else if (conflictType === "team_program_conflict") {
+    title = "Team Program Conflict";
   }
 
   return (
@@ -47,49 +49,23 @@ const InitiativeConflictDialog = ({
         </DialogHeader>
 
         <div className="space-y-4">
-          {conflictType === "initiative_conflict" && (
+          {/* Note: initiative_conflict and team_initiative_conflict are kept for backward compatibility */}
+          {(conflictType === "initiative_conflict" || conflictType === "team_initiative_conflict") && (
             <>
               <p>
-                You already have an application for the <strong>{details.conflictingInitiative}</strong> initiative.
+                You are trying to apply to a team program while you are already in a team program.
               </p>
               <p>
-                Users can only participate in one of these initiatives at a time:
+                Current program: <strong>{details.conflictingInitiative || details.teamInitiative || "Current Program"}</strong><br />
+                Program you're applying to: <strong>{details.currentInitiative || details.appliedProgram || "New Program"}</strong>
               </p>
-              <ul className="list-disc pl-6 space-y-1">
-                <li>Xperience</li>
-                <li>Xtrapreneurs</li>
-              </ul>
               <p>
-                If you want to apply for <strong>{details.currentInitiative}</strong>, you'll
-                need to exit from <strong>{details.conflictingInitiative}</strong> first, which means
-                you'll lose access to that initiative.
+                Users can only participate in one team program at a time. If you want to apply to this
+                program, you'll need to exit your current team program first.
               </p>
               <p className="text-sm text-muted-foreground">
-                Note: Your existing application will remain in the system, but you won't be able to
-                access both initiatives simultaneously.
-              </p>
-            </>
-          )}
-
-          {conflictType === "team_initiative_conflict" && (
-            <>
-              <p>
-                This team is already part of the <strong>{details.teamInitiative}</strong> initiative.
-              </p>
-              <p>
-                Teams can only participate in one of these initiatives at a time:
-              </p>
-              <ul className="list-disc pl-6 space-y-1">
-                <li>Xperience</li>
-                <li>Xtrapreneurs</li>
-              </ul>
-              <p>
-                To apply for <strong>{details.currentInitiative}</strong>, your team
-                would need to exit from <strong>{details.teamInitiative}</strong> first.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                If you want to participate in this initiative, you may need to create a new team
-                or join a different team.
+                If you want to participate in this program without leaving your current program, 
+                you may need to create a new team or join a different team.
               </p>
             </>
           )}
@@ -108,6 +84,26 @@ const InitiativeConflictDialog = ({
               </p>
               <p className="text-sm text-muted-foreground">
                 If you want to work on a different topic, you may need to create a new team.
+              </p>
+            </>
+          )}
+          
+          {conflictType === "team_program_conflict" && (
+            <>
+              <p>
+                You are trying to apply to a team program while you are already in a team program.
+              </p>
+              <p>
+                Current program: <strong>{details.currentProgram}</strong><br />
+                Program you're applying to: <strong>{details.appliedProgram}</strong>
+              </p>
+              <p>
+                Users can only participate in one team program at a time. If you want to apply to this
+                program, you'll need to exit your current team program first.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                If you want to participate in this program without leaving your current program, 
+                you may need to create a new team or join a different team.
               </p>
             </>
           )}
