@@ -35,66 +35,46 @@ export default async function handler(req, res) {
     
     // Query all submissions for the team
     // We use simple formula that should work reliably
-    // Try a much simpler approach - just fetch records that have a non-empty Team field
-    // And then filter on our side to include only records with matching team IDs
-    // This should bypass any Airtable formula limitations with linked records
-    // Airtable API has a limit on how many records it will return in one query
-    // Set maxRecords to ensure we get everything we need
-    const formula = `Team != ""`;
-    console.log(`Using simplified Airtable formula: ${formula}`);
+    // Use FIND with concatenation for more reliable linked record filtering
+    // This creates a pattern like ",teamId," and looks for it in ",ARRAYJOIN(Team),"
+    // This ensures we match exactly the team ID without partial matches
+    let formula;
     
+    if (milestoneId) {
+      // If we have both team and milestone IDs, filter for both directly in Airtable
+      formula = `AND(
+        FIND(CONCATENATE(",", "${teamId}", ","), CONCATENATE(",", ARRAYJOIN(Team), ",")),
+        FIND(CONCATENATE(",", "${milestoneId}", ","), CONCATENATE(",", ARRAYJOIN(Milestone), ","))
+      )`;
+    } else {
+      // If we only have team ID, just filter for that
+      formula = `FIND(CONCATENATE(",", "${teamId}", ","), CONCATENATE(",", ARRAYJOIN(Team), ","))`;
+    }
+    
+    console.log(`Using advanced Airtable formula: ${formula}`);
+    
+    // Select only the fields we need to reduce data transfer
     const records = await submissionsTable
       .select({
         filterByFormula: formula,
-        // Set a high maximum to make sure we get all records
-        maxRecords: 1000,
+        fields: ['Team', 'Milestone', 'Comments', 'Link', 'Attachment', 'Created Time', 
+                'Name (from Milestone)', 'deliverableId', 'deliverableName', 'Name (from Deliverable)'],
         // Sort by created time in descending order to get the most recent first
         sort: [{ field: "Created Time", direction: "desc" }]
       })
       .firstPage();
       
-    console.log(`Found ${records.length} total submissions with any team assigned`);
+    console.log(`Found ${records.length} total submissions matching our formula`);
     
     // Log field names from the first record if available
     if (records.length > 0) {
       console.log("Available fields in submission records:", Object.keys(records[0].fields));
+      // Log the first record's team and milestone fields for verification
+      console.log(`First record - Team: ${JSON.stringify(records[0].fields.Team)}, Milestone: ${JSON.stringify(records[0].fields.Milestone)}`);
     }
     
-    // First filter to only records that include our team ID
-    const teamRecords = records.filter(record => {
-      if (!record.fields.Team || !Array.isArray(record.fields.Team)) {
-        return false;
-      }
-      // Log each record's team array to help debug
-      console.log(`Record ${record.id} has teams: ${JSON.stringify(record.fields.Team)}`);
-      return record.fields.Team.includes(teamId);
-    });
-    
-    console.log(`Filtered to ${teamRecords.length} submissions for team ID: ${teamId}`);
-    
-    // Process and filter submissions
-    // If milestoneId is provided, we filter here in code rather than in the Airtable query
-    let filteredRecords = teamRecords;
-    if (milestoneId) {
-      // Log the raw data before filtering to see what we're working with
-      if (teamRecords.length > 0) {
-        console.log(`First team record milestone field:`, teamRecords[0].fields.Milestone);
-        // Check data type and structure to help debug issues
-        if (teamRecords[0].fields.Milestone) {
-          console.log(`Milestone field type: ${typeof teamRecords[0].fields.Milestone}, isArray: ${Array.isArray(teamRecords[0].fields.Milestone)}`);
-        }
-      }
-      
-      filteredRecords = teamRecords.filter(record => {
-        if (!record.fields.Milestone || !Array.isArray(record.fields.Milestone)) {
-          return false;
-        }
-        const includes = record.fields.Milestone.includes(milestoneId);
-        console.log(`Record ID ${record.id} - Milestone: ${record.fields.Milestone}, includes ${milestoneId}: ${includes}`);
-        return includes;
-      });
-      console.log(`Filtered to ${filteredRecords.length} submissions for milestone ID: ${milestoneId}`);
-    }
+    // For optimization, we're directly using the records from Airtable's filtered results
+    const filteredRecords = records;
     
     // Process the filtered submissions
     const submissions = filteredRecords.map(record => {
