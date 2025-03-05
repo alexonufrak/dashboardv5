@@ -263,7 +263,7 @@ export default function MilestoneSubmissionDialog({
       if (error.message) {
         if (error.message.includes('token') || error.message.includes('Failed to retrieve the client token')) {
           errorMessage = 'Authentication error during upload. Please try again later.';
-          console.log('Blob token error: Server may be missing BLOB_READ_WRITE_TOKEN environment variable');
+          console.log('Blob token error: Server may be missing FILE_UPLOAD_READ_WRITE_TOKEN environment variable');
         } else if (error.message.includes('size')) {
           errorMessage = 'File exceeds maximum size limit (5MB).';
         } else if (error.message.includes('type')) {

@@ -20,9 +20,9 @@ export default withApiAuthRequired(async function handler(req, res) {
       return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // Check if BLOB_READ_WRITE_TOKEN environment variable is set
-    if (!process.env.BLOB_READ_WRITE_TOKEN) {
-      console.error('BLOB_READ_WRITE_TOKEN environment variable is not set');
+    // Check if FILE_UPLOAD_READ_WRITE_TOKEN environment variable is set
+    if (!process.env.FILE_UPLOAD_READ_WRITE_TOKEN) {
+      console.error('FILE_UPLOAD_READ_WRITE_TOKEN environment variable is not set');
       return res.status(500).json({
         error: 'Server configuration error: Blob storage is not properly configured'
       });
@@ -32,7 +32,7 @@ export default withApiAuthRequired(async function handler(req, res) {
     const response = await handleUpload({
       body: req.body, // Add this if handling JSON requests
       request: req,
-      token: process.env.BLOB_READ_WRITE_TOKEN, // Explicitly provide the token
+      token: process.env.FILE_UPLOAD_READ_WRITE_TOKEN, // Explicitly provide the token
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         // Log for debugging
         console.log(`Upload token requested for: ${pathname}`);
