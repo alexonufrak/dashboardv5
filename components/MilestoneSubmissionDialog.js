@@ -84,7 +84,7 @@ export default function MilestoneSubmissionDialog({
     setFiles(filesWithPreview)
   }, [])
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
     onDrop,
     maxFiles: 5,
     maxSize: 10485760, // 10MB
@@ -100,6 +100,14 @@ export default function MilestoneSubmissionDialog({
       'image/png': ['.png'],
       'application/zip': ['.zip'],
       'text/plain': ['.txt']
+    },
+    onDropRejected: (rejectedFiles) => {
+      // Show a toast for each rejected file
+      rejectedFiles.forEach(rejection => {
+        const { file, errors } = rejection;
+        const errorMessages = errors.map(e => e.message).join(', ');
+        toast.error(`${file.name}: ${errorMessages}`);
+      });
     }
   })
 
@@ -163,7 +171,8 @@ export default function MilestoneSubmissionDialog({
       
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to submit")
+        console.error("Submission error response:", errorData);
+        throw new Error(errorData.details || errorData.error || "Failed to submit")
       }
       
       toast.success("Milestone submission successful")

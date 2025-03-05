@@ -74,24 +74,73 @@ export default withApiAuthRequired(async function handler(req, res) {
         const file = files[key]
         if (Array.isArray(file)) {
           for (const f of file) {
-            // Read the file and prepare for Airtable upload
-            const fileData = fs.readFileSync(f.filepath)
-            fileAttachments.push({
-              filename: f.originalFilename,
-              content: fileData.toString('base64'),
-              type: f.mimetype
-            })
+            try {
+              // Validate file
+              if (!f.filepath || !f.originalFilename) {
+                console.warn('Skipping invalid file (missing filepath or name):', f);
+                continue;
+              }
+              
+              // Read the file and prepare for Airtable upload
+              const fileData = fs.readFileSync(f.filepath)
+              
+              // Ensure we have a proper MIME type
+              const mimeType = f.mimetype || 'application/octet-stream';
+              
+              // Create attachment object with required properties
+              const attachment = {
+                filename: f.originalFilename,
+                content: fileData.toString('base64'),
+                type: mimeType
+              };
+              
+              console.log(`Processing file: ${f.originalFilename}, size: ${fileData.length} bytes, type: ${mimeType}`);
+              fileAttachments.push(attachment);
+            } catch (fileError) {
+              console.error(`Error processing file ${f.originalFilename}:`, fileError);
+              // Continue with other files instead of failing completely
+            }
           }
         } else {
-          // Read the file and prepare for Airtable upload
-          const fileData = fs.readFileSync(file.filepath)
-          fileAttachments.push({
-            filename: file.originalFilename,
-            content: fileData.toString('base64'),
-            type: file.mimetype
-          })
+          try {
+            // Validate file
+            if (!file.filepath || !file.originalFilename) {
+              console.warn('Skipping invalid file (missing filepath or name):', file);
+              continue;
+            }
+            
+            // Read the file and prepare for Airtable upload
+            const fileData = fs.readFileSync(file.filepath)
+            
+            // Ensure we have a proper MIME type
+            const mimeType = file.mimetype || 'application/octet-stream';
+            
+            // Create attachment object with required properties
+            const attachment = {
+              filename: file.originalFilename,
+              content: fileData.toString('base64'),
+              type: mimeType
+            };
+            
+            console.log(`Processing file: ${file.originalFilename}, size: ${fileData.length} bytes, type: ${mimeType}`);
+            fileAttachments.push(attachment);
+          } catch (fileError) {
+            console.error(`Error processing file ${file.originalFilename}:`, fileError);
+            // Continue with other files instead of failing completely
+          }
         }
       }
+    }
+    
+    console.log(`Total attachments to submit: ${fileAttachments.length}`);
+    
+    // If we couldn't process any files but the user tried to upload some, return an error
+    if (fileAttachments.length === 0 && Object.keys(files).length > 0) {
+      console.error('No valid files could be processed');
+      return res.status(400).json({ 
+        error: "File upload failed",
+        details: "None of the provided files could be processed. Please try different files."
+      });
     }
 
     // Create submission record
@@ -115,24 +164,51 @@ export default withApiAuthRequired(async function handler(req, res) {
     }
 
     // Create the submission in Airtable
-    const submission = await submissionsTable.create(record)
-
-    return res.status(201).json({
-      success: true,
-      submission: {
-        id: submission.id,
+    try {
+      console.log('Submitting to Airtable:', {
         teamId,
         milestoneId,
-        hasAttachments: fileAttachments.length > 0,
-        attachmentCount: fileAttachments.length,
-        hasLink: !!link,
-      }
-    })
+        attachmentCount: fileAttachments.length
+      });
+      
+      const submission = await submissionsTable.create(record);
+      
+      return res.status(201).json({
+        success: true,
+        submission: {
+          id: submission.id,
+          teamId,
+          milestoneId,
+          hasAttachments: fileAttachments.length > 0,
+          attachmentCount: fileAttachments.length,
+          hasLink: !!link,
+        }
+      });
+    } catch (submitError) {
+      console.error("Error creating submission in Airtable:", submitError);
+      // Return a more user-friendly error message
+      return res.status(422).json({ 
+        error: "Failed to create submission in Airtable", 
+        details: submitError.message || "Unknown error",
+        errorCode: submitError.error || "UNKNOWN_ERROR"
+      });
+    }
   } catch (error) {
-    console.error("Error creating submission:", error)
-    return res.status(500).json({ 
+    console.error("Error processing submission request:", error);
+    
+    // Sanitize and improve error details
+    let errorDetails = error.message || "Unknown error";
+    let statusCode = 500;
+    
+    // Handle specific error types with better messages
+    if (error.message && error.message.includes('INVALID_ATTACHMENT_OBJECT')) {
+      statusCode = 422;
+      errorDetails = "Invalid attachment format. Please check your file and try again.";
+    }
+    
+    return res.status(statusCode).json({ 
       error: "Failed to create submission", 
-      details: error.message 
-    })
+      details: errorDetails
+    });
   }
 })
