@@ -13,6 +13,55 @@ export default function MilestoneSummaryCard({ milestones = [], onViewMilestones
   const { teamData } = useDashboard()
   const [enhancedMilestones, setEnhancedMilestones] = useState([])
   const [isProcessing, setIsProcessing] = useState(true)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+  
+  // Listen for submission updates from other components
+  useEffect(() => {
+    // Event handler for the custom submission updated event
+    const handleSubmissionUpdate = (event) => {
+      const { milestoneId, teamId, submissions } = event.detail;
+      
+      // Make sure this event is for our team
+      if (teamData?.id && teamId && teamData.id !== teamId) {
+        console.log(`Ignoring submission update for different team: ${teamId} vs ${teamData.id}`);
+        return;
+      }
+      
+      // Check if the updated milestone is in our list
+      const milestoneIndex = enhancedMilestones.findIndex(m => m.id === milestoneId);
+      
+      if (milestoneIndex >= 0) {
+        console.log(`MilestoneSummaryCard received update for milestone: ${milestoneId}`);
+        
+        // Update the milestone directly to ensure immediate feedback
+        setEnhancedMilestones(prev => 
+          prev.map(m => {
+            if (m.id === milestoneId) {
+              return {
+                ...m,
+                hasSubmission: true,
+                status: "completed",
+                submissions: submissions || []
+              };
+            }
+            return m;
+          })
+        );
+        
+        // Also trigger a full refresh to ensure all stats are updated
+        setRefreshTrigger(prev => prev + 1);
+        setIsProcessing(false); // Ensure we're not in processing state
+      }
+    };
+    
+    // Add event listener
+    window.addEventListener('milestoneSubmissionUpdated', handleSubmissionUpdate);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('milestoneSubmissionUpdated', handleSubmissionUpdate);
+    };
+  }, [enhancedMilestones, teamData?.id]);
   
   // Initialize enhancedMilestones from the raw milestones prop
   useEffect(() => {
@@ -28,35 +77,92 @@ export default function MilestoneSummaryCard({ milestones = [], onViewMilestones
       setEnhancedMilestones(initialMilestones)
       setIsProcessing(false)
     }
-  }, [milestones])
+  }, [milestones, refreshTrigger]) // Add refreshTrigger to dependencies
   
   // Update milestone status when submissions are checked
-  const handleSubmissionCheck = (milestoneId, hasSubmission) => {
+  const handleSubmissionCheck = (milestoneId, hasSubmission, submissions) => {
+    console.log(`Updating milestone ${milestoneId}: hasSubmission=${hasSubmission}, submissions=${submissions?.length || 0}`);
+    
     setEnhancedMilestones(prev => 
       prev.map(m => {
         if (m.id === milestoneId) {
-          // If there's a submission, mark as completed
+          let updatedStatus = m.status;
+          
+          // If there's a submission, always mark as completed
+          if (hasSubmission) {
+            updatedStatus = "completed";
+          } 
+          // If no submission, check if past due date
+          else if (m.dueDate) {
+            try {
+              const dueDate = new Date(m.dueDate);
+              const now = new Date();
+              if (dueDate < now) {
+                updatedStatus = "late";
+              } else {
+                updatedStatus = "upcoming";
+              }
+            } catch (e) {
+              console.warn(`Invalid due date for milestone ${milestoneId}: ${m.dueDate}`);
+              updatedStatus = "upcoming"; // Default to upcoming if date is invalid
+            }
+          }
+          
+          // Store submission data if available
+          let submissionData = [];
+          if (submissions && submissions.length > 0) {
+            submissionData = submissions;
+          }
+          
+          // Log what we're doing
+          console.log(`Milestone ${milestoneId} updated: status=${updatedStatus}, hasSubmission=${hasSubmission}`);
+          
+          // Return updated milestone
           return {
             ...m,
             hasSubmission,
-            status: hasSubmission ? "completed" : m.status
-          }
+            submissions: submissionData,
+            status: updatedStatus
+          };
         }
-        return m
+        return m;
       })
-    )
+    );
   }
   
   // Calculate milestone statistics using enhanced milestones with submission data
-  const completedCount = enhancedMilestones.filter(m => m.status === "completed").length
-  const lateCount = enhancedMilestones.filter(m => m.status === "late").length
-  const upcomingCount = enhancedMilestones.filter(m => 
-    m.status !== "completed" && m.status !== "late").length
+  const completedCount = enhancedMilestones.filter(m => m.status === "completed" || m.hasSubmission).length
+  
+  // For late milestones, consider due date and submission status
+  const lateCount = enhancedMilestones.filter(m => {
+    // If it's already marked as late
+    if (m.status === "late") return true;
+    
+    // Check if it's past due date and has no submission
+    if (!m.hasSubmission && m.dueDate) {
+      try {
+        const dueDate = new Date(m.dueDate);
+        const now = new Date();
+        return dueDate < now;
+      } catch (e) {
+        console.warn(`Invalid due date for milestone ${m.id}: ${m.dueDate}`);
+        return false;
+      }
+    }
+    
+    return false;
+  }).length;
+  
+  // Upcoming is everything else
+  const upcomingCount = enhancedMilestones.length - completedCount - lateCount;
   
   // Calculate overall progress percentage
   const progressPercentage = enhancedMilestones.length > 0 
     ? Math.round((completedCount) / enhancedMilestones.length * 100) 
     : 0
+    
+  // Log current statistics for debugging
+  console.log(`MilestoneSummaryCard stats: ${completedCount} completed, ${lateCount} late, ${upcomingCount} upcoming, ${progressPercentage}% progress`)
   
   // Find the next upcoming milestone
   const upcomingMilestones = enhancedMilestones
@@ -84,7 +190,9 @@ export default function MilestoneSummaryCard({ milestones = [], onViewMilestones
           <MilestoneSubmissionChecker
             key={`submission-check-${milestone.id}`}
             milestoneId={milestone.id}
-            onSubmissionCheck={(hasSubmission) => handleSubmissionCheck(milestone.id, hasSubmission)}
+            onSubmissionCheck={(hasSubmission, submissions) => 
+              handleSubmissionCheck(milestone.id, hasSubmission, submissions)
+            }
           />
         ))}
         
@@ -141,13 +249,7 @@ export default function MilestoneSummaryCard({ milestones = [], onViewMilestones
           </div>
         )}
         
-        {/* View all button */}
-        <div className="mt-6 text-center">
-          <Button variant="outline" onClick={onViewMilestones}>
-            View All Milestones
-            <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
+        {/* View all button removed */}
       </CardContent>
     </Card>
   )

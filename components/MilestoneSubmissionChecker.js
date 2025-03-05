@@ -36,6 +36,33 @@ export default function MilestoneSubmissionChecker({
     refetch
   } = useTeamSubmissions(teamData?.id, milestoneId)
   
+  // Listen for submission updates from the MilestoneSubmissionDialog component
+  useEffect(() => {
+    // Event handler for the custom submission updated event
+    const handleSubmissionUpdate = (event) => {
+      const { milestoneId: updatedMilestoneId, teamId } = event.detail;
+      
+      // Only process events for this milestone and team
+      if (updatedMilestoneId === milestoneId && teamId === teamData?.id) {
+        console.log("Received submission update event for this milestone");
+        
+        // Force a refetch of the submission data
+        refetch();
+        
+        // Reset processed state to force reprocessing 
+        setHasProcessed(false);
+      }
+    };
+    
+    // Add event listener
+    window.addEventListener('milestoneSubmissionUpdated', handleSubmissionUpdate);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('milestoneSubmissionUpdated', handleSubmissionUpdate);
+    };
+  }, [milestoneId, teamData?.id, refetch]);
+  
   // Debug logging
   useEffect(() => {
     if (milestoneId && teamData?.id) {
@@ -78,8 +105,8 @@ export default function MilestoneSubmissionChecker({
   
   // Process submission data when it becomes available
   useEffect(() => {
-    // Skip if already processed or still loading
-    if (hasProcessed || isLoading || !data) {
+    // Skip if still loading
+    if (isLoading || !data) {
       return;
     }
     
@@ -90,7 +117,7 @@ export default function MilestoneSubmissionChecker({
     
     console.log(`Processing submissions for milestone ${milestoneId}`);
     
-    // Mark as processed to prevent repeated processing
+    // Mark as processed
     setHasProcessed(true);
     
     // Get relevant submissions data
@@ -103,27 +130,53 @@ export default function MilestoneSubmissionChecker({
       createdTime: s.createdTime?.substring(0, 10) || null
     }))));
     
-    // Since we're only using Team and Member fields as directed, all submissions
-    // returned from the API are already associated with the team
-    // We don't need to filter by milestoneId - all submissions for this team are valid
-    const directMatches = submissions;
+    // First try to find submissions specifically linked to this milestone
+    const milestoneMatches = submissions.filter(s => 
+      s.milestoneId === milestoneId || 
+      s.milestone?.id === milestoneId ||
+      (s.milestone && (s.milestone.id === milestoneId || s.milestone.recordId === milestoneId))
+    );
     
-    if (directMatches.length > 0) {
-      console.log(`Found ${directMatches.length} direct milestone matches`);
+    if (milestoneMatches.length > 0) {
+      console.log(`Found ${milestoneMatches.length} direct milestone matches for ${milestoneId}`);
       setHasSubmission(true);
-      setSubmissionData(directMatches[0]);
+      setSubmissionData(milestoneMatches[0]);
       
       // Call the callback with results
       if (onSubmissionCheck) {
-        onSubmissionCheck(true, directMatches);
+        onSubmissionCheck(true, milestoneMatches);
       }
       return;
     }
     
-    // If no direct matches, check if any submissions exist for the team
-    // This is a fallback for when proper milestone relationships aren't set
+    // If no specific milestone matches, try by milestone name if available
     if (submissions.length > 0) {
-      console.log(`Found ${submissions.length} team submissions (no direct milestone links)`);
+      // Try to get the milestone name from one of the component parents
+      const milestoneNameMatches = submissions.filter(s => {
+        if (s.milestoneName && s.milestone?.name) {
+          // Match by name if available
+          return s.milestoneName === s.milestone.name;
+        }
+        return false;
+      });
+      
+      if (milestoneNameMatches.length > 0) {
+        console.log(`Found ${milestoneNameMatches.length} milestone name matches`);
+        setHasSubmission(true);
+        setSubmissionData(milestoneNameMatches[0]);
+        
+        // Call the callback with results
+        if (onSubmissionCheck) {
+          onSubmissionCheck(true, milestoneNameMatches);
+        }
+        return;
+      }
+    }
+    
+    // Last resort - if no direct matches but we have submissions, assume the most recent is relevant
+    // This is a fallback for when milestone relationships aren't properly set
+    if (submissions.length > 0) {
+      console.log(`Using fallback: ${submissions.length} team submissions (no direct milestone links)`);
       setHasSubmission(true);
       setSubmissionData(submissions[0]);
       

@@ -438,6 +438,38 @@ export default function MilestoneSubmissionDialog({
       toast.success("Milestone submission successful", {
         id: submissionToastId
       });
+
+      // Trigger a refresh of milestone submissions
+      // We need to delay this slightly to ensure the backend data is updated
+      setTimeout(async () => {
+        try {
+          // Fetch the latest submissions for this milestone
+          const refreshResponse = await fetch(`/api/teams/${teamData.id}/submissions?milestoneId=${milestone.id}`);
+          
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json();
+            console.log("Refreshed submission data:", refreshData);
+            
+            // If the milestone has an onSubmissionUpdated callback, call it with the new data
+            if (milestone?.onSubmissionUpdated) {
+              milestone.onSubmissionUpdated(refreshData);
+            }
+            
+            // Dispatch a custom event that parent components can listen for
+            const submissionEvent = new CustomEvent('milestoneSubmissionUpdated', {
+              detail: {
+                milestoneId: milestone.id,
+                teamId: teamData.id,
+                submissions: refreshData
+              }
+            });
+            window.dispatchEvent(submissionEvent);
+          }
+        } catch (refreshError) {
+          console.error("Error refreshing submission data:", refreshError);
+          // Don't throw here, as the submission itself was successful
+        }
+      }, 1000);
       
       // Reset form
       setFiles([])
@@ -446,14 +478,10 @@ export default function MilestoneSubmissionDialog({
       setLinkUrl("")
       setComments("")
       
-      // Close dialog
-      onOpenChange(false)
-      
-      // Optional: add a small delay to ensure the success message is seen
-      // before the dialog closes
+      // Close dialog after a small delay to ensure success message is seen
       setTimeout(() => {
         onOpenChange(false);
-      }, 500);
+      }, 1500);
       
     } catch (error) {
       console.error("Submission error:", error);

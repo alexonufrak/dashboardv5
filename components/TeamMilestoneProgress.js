@@ -58,6 +58,49 @@ export default function TeamMilestoneProgress({ milestones: initialMilestones = 
     )
   }
   
+  // Listen for submission updates
+  useEffect(() => {
+    // Event handler for the custom submission updated event
+    const handleSubmissionUpdate = (event) => {
+      const { milestoneId, teamId, submissions } = event.detail;
+      
+      // Make sure this event is for our team
+      if (teamData?.id && teamId && teamData.id !== teamId) {
+        return;
+      }
+      
+      // Check if the updated milestone is in our list
+      const milestoneIndex = processedMilestones.findIndex(m => m.id === milestoneId);
+      
+      if (milestoneIndex >= 0) {
+        console.log(`TeamMilestoneProgress received update for milestone: ${milestoneId}`);
+        
+        // Update the milestone directly
+        setProcessedMilestones(prev => 
+          prev.map(m => {
+            if (m.id === milestoneId) {
+              return {
+                ...m,
+                hasSubmission: true,
+                status: "completed",
+                submissions: submissions || []
+              };
+            }
+            return m;
+          })
+        );
+      }
+    };
+    
+    // Add event listener
+    window.addEventListener('milestoneSubmissionUpdated', handleSubmissionUpdate);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('milestoneSubmissionUpdated', handleSubmissionUpdate);
+    };
+  }, [processedMilestones, teamData?.id]);
+  
   // Use processed milestones if initialized, otherwise use initial milestones
   const milestones = isInitialized ? processedMilestones : initialMilestones;
   

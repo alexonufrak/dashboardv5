@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { 
   CheckCircle, 
   Circle, 
@@ -43,6 +43,33 @@ export default function MilestoneTable({
   const [selectedMilestone, setSelectedMilestone] = useState(null)
   const [submissionDialogOpen, setSubmissionDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState("submit") // "submit" or "view"
+  const [refreshTrigger, setRefreshTrigger] = useState(0) // Used to trigger re-processing of milestones
+  
+  // Listen for submission updates
+  useEffect(() => {
+    // Event handler for the custom submission updated event
+    const handleSubmissionUpdate = (event) => {
+      const { milestoneId } = event.detail;
+      
+      // Check if the updated milestone is in our list
+      const milestoneIndex = enhancedMilestones.findIndex(m => m.id === milestoneId);
+      
+      if (milestoneIndex >= 0) {
+        console.log(`MilestoneTable received update for milestone: ${milestoneId}`);
+        
+        // Update the refresh trigger to force milestone reprocessing
+        setRefreshTrigger(prev => prev + 1);
+      }
+    };
+    
+    // Add event listener
+    window.addEventListener('milestoneSubmissionUpdated', handleSubmissionUpdate);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('milestoneSubmissionUpdated', handleSubmissionUpdate);
+    };
+  }, [enhancedMilestones]);
   
   // Status configuration for visual elements - completed/upcoming/late
   const statusConfig = {
