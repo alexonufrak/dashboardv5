@@ -21,13 +21,7 @@ export default withApiAuthRequired(async function handler(req, res) {
       return res.status(404).json({ error: "User profile not found" })
     }
     
-    // Add this right after getting the profile
     console.log(`Looking up participation for contact ID: "${profile.contactId}"`)
-    console.log(`Contact profile details:`, {
-      email: session.user.email,
-      contactId: profile.contactId,
-      name: profile.name || 'Not available'
-    })
     
     // Get the Participation table ID from environment variables
     const participationTableId = process.env.AIRTABLE_PARTICIPATION_TABLE_ID
@@ -67,386 +61,273 @@ export default withApiAuthRequired(async function handler(req, res) {
     
     // Get the user's active participation records
     let participationRecords = []
-
-    // Try multiple approaches for finding the participation records
-
-    // First, dump all participation records to inspect the structure
-    console.log("Retrieving participation records to inspect structure...")
-    const allRecords = await participationTable.select({
-      maxRecords: 5, // Just get a few to inspect
-    }).firstPage()
-
-    // Check how contacts are stored in the records
-    if (allRecords.length > 0) {
-      const firstRecord = allRecords[0]
-      console.log("Sample participation record fields:", firstRecord.fields)
-      console.log("Contacts field type:", typeof firstRecord.fields.Contacts)
-      
-      if (firstRecord.fields.Contacts) {
-        if (Array.isArray(firstRecord.fields.Contacts)) {
-          console.log("Contacts stored as array:", firstRecord.fields.Contacts)
-        } else {
-          console.log("Contacts stored as string:", firstRecord.fields.Contacts)
-        }
-      } else {
-        console.log("No Contacts field found in record")
-        // Check for other possible field names
-        console.log("Available fields:", Object.keys(firstRecord.fields))
-      }
-    }
-
-    // Based on the Airtable schema, the field is called "Contacts" (plural)
-    // and it's a multipleRecordLinks field, so we need to check if it contains
-    // the contact ID as a record reference
-    
-    // Enhanced debugging for participation lookup
-    console.log(`Looking for participation records with contactId="${profile.contactId}"`)
-    
-    // Use Airtable's FIND function with proper field name handling
-    // Ensure we're using the exact field name that exists in Airtable
-    // Added extra logging to debug the exact formula being sent
-    const formula = `OR(
-      FIND("${profile.contactId}", {contactId}),
-      FIND("${profile.contactId}", {Contacts})
-    )`
-    
-    // Debug the exact formula with quotes to catch any invisible characters or formatting issues
-    console.log(`Raw formula: "${formula}"`)
-    
-    // Also check the contactId value for any issues
-    console.log(`Contact ID value type: ${typeof profile.contactId}, value: "${profile.contactId}"`)
-    if (!profile.contactId || typeof profile.contactId !== 'string' || !profile.contactId.startsWith('rec')) {
-      console.warn(`Warning: Contact ID "${profile.contactId}" doesn't look like a valid Airtable record ID`)
-    }
-    
-    console.log(`Using formula: ${formula}`)
-
-    // Try using our primary formula that should work with multipleRecordLinks fields
-    console.log("Querying participation records with Contacts linking to contact ID...")
     
     try {
-      // Try a simpler approach with just record ID equality
-      // This is the most reliable way to match record IDs in Airtable
-      const safeContactId = profile.contactId.replace(/['"\\]/g, ''); // Sanitize the ID
-      const safeFormula = `OR({contactId} = "${safeContactId}", FIND("${safeContactId}", {Contacts}))`;
-      console.log(`Using safer formula: ${safeFormula}`);
+      // Sanitize the contact ID to prevent formula injection
+      const safeContactId = profile.contactId.replace(/['"\\]/g, '');
       
-      let records = await participationTable.select({
-        filterByFormula: safeFormula,
+      // Use SEARCH instead of FIND for more reliable record matching
+      // Focus on the 'Contacts' field which is confirmed to exist in Airtable
+      const formula = `SEARCH("${safeContactId}", {Contacts})`;
+      
+      console.log(`Using formula: ${formula}`);
+      
+      const records = await participationTable.select({
+        filterByFormula: formula,
         sort: [{ field: "Last Modified", direction: "desc" }]
-      }).firstPage()
+      }).firstPage();
       
-      console.log(`Formula found ${records.length} records`)
-      participationRecords = [...records]
+      console.log(`Formula found ${records.length} records`);
+      participationRecords = [...records];
     } catch (err) {
-      console.error("Error using primary formula:", err)
+      console.error("Error querying participation records:", err);
     }
     
-    // If no records found, try an alternative approach with FIND
+    // If no records found with SEARCH formula, try direct equality matching
     if (participationRecords.length === 0) {
       try {
-        console.log("Trying alternative FIND approach...")
-        // Try an even simpler formula as a fallback
-        // Use direct field equality as it's most reliable with Airtable
-        const safeContactId = profile.contactId.replace(/['"\\]/g, ''); // Sanitize the ID
-        const directFormula = `{Contacts} = "${safeContactId}"`
+        console.log("Trying direct equality matching...");
+        const safeContactId = profile.contactId.replace(/['"\\]/g, '');
         
-        let records = await participationTable.select({
+        // Try direct equality with Contacts field (most reliable for record IDs)
+        const directFormula = `{Contacts} = "${safeContactId}"`;
+        
+        const records = await participationTable.select({
           filterByFormula: directFormula,
           sort: [{ field: "Last Modified", direction: "desc" }]
-        }).firstPage()
+        }).firstPage();
         
-        console.log(`Alternative formula found ${records.length} records`)
-        participationRecords = [...records]
+        console.log(`Direct equality formula found ${records.length} records`);
+        participationRecords = [...records];
       } catch (err) {
-        console.error("Error using alternative formula:", err)
+        console.error("Error using direct equality formula:", err);
       }
     }
     
-    // Fall back to getting all records and filtering on the client side
+    // If still no records, use client-side filtering as fallback
     if (participationRecords.length === 0) {
-      console.log("No records found with formulas. Fetching and filtering records manually...")
-    }
-    
-    // Try one more approach - direct API call to get all records and filter client-side
-    if (participationRecords.length === 0) {
-      console.log("Trying client-side filtering approach...")
+      console.log("No records found with formulas. Using client-side filtering as fallback...");
       
-      // Get all records (limited to 100 for performance)
+      // Get a limited set of records (for performance)
       const allParticipationRecords = await participationTable.select({
         maxRecords: 100,
         sort: [{ field: "Last Modified", direction: "desc" }]
-      }).firstPage()
+      }).firstPage();
       
-      console.log(`Retrieved ${allParticipationRecords.length} total participation records`)
-      
-      // Client-side filtering logic - focusing on the "Contacts" field that we know exists
+      // Client-side filtering focusing on the Contacts field (array of record IDs)
       participationRecords = allParticipationRecords.filter(record => {
-        // Log the fields for debugging
-        console.log(`Checking record ${record.id}, fields:`, Object.keys(record.fields));
-        
-        // Check if the record has Contacts field
-        if (!record.fields.Contacts) {
-          console.log(`Record ${record.id} has no Contacts field`);
-          return false;
+        // If Contacts is an array and it includes the contact ID
+        if (record.fields.Contacts && Array.isArray(record.fields.Contacts)) {
+          return record.fields.Contacts.includes(profile.contactId);
         }
-        
-        // Log the Contacts field value and type
-        console.log(`Record ${record.id} Contacts:`, record.fields.Contacts, 
-                    `(type: ${typeof record.fields.Contacts}, isArray: ${Array.isArray(record.fields.Contacts)})`);
-        
-        // If Contacts is an array (which it should be for a multipleRecordLinks field)
-        if (Array.isArray(record.fields.Contacts)) {
-          const isMatch = record.fields.Contacts.includes(profile.contactId);
-          if (isMatch) {
-            console.log(`✅ Found match in record ${record.id} - contactId ${profile.contactId} is in Contacts array`);
-            return true;
-          }
-        }
-        
         return false;
-      })
+      });
       
-      console.log(`Client-side filtering found ${participationRecords.length} matching records`)
-    }
-
-    // Log the results
-    console.log(`Found ${participationRecords.length} participation records for contact ${profile.contactId}`)
-
-    // Check if we found any participation records
-    if (!participationRecords || participationRecords.length === 0) {
-      console.log(`No participation records found for contact ${profile.contactId}`)
-      return res.status(200).json({ participation: [] })
+      console.log(`Client-side filtering found ${participationRecords.length} matching records`);
     }
     
-    // Log details of the first record for debugging
-    if (participationRecords.length > 0) {
-      const firstRecord = participationRecords[0]
-      console.log(`First participation record: ID=${firstRecord.id}, Cohorts=${JSON.stringify(firstRecord.fields.Cohorts)}`)
+    // Check if we found any participation records
+    if (!participationRecords || participationRecords.length === 0) {
+      console.log(`No participation records found for contact ${profile.contactId}`);
+      return res.status(200).json({ participation: [] });
     }
     
     // Process each participation record to get associated cohort and team info
-    const processedParticipation = []
+    const processedParticipation = [];
     
     for (const participationRecord of participationRecords) {
       // Extract cohort IDs from the participation record
-      const cohortIds = participationRecord.fields.Cohorts || []
+      // Handle both singular "Cohort" and plural "Cohorts" field names
+      const cohortIds = participationRecord.fields.Cohorts || 
+                       (participationRecord.fields.Cohort ? [participationRecord.fields.Cohort] : []);
       
       if (cohortIds.length === 0) {
-        continue // Skip participation records with no cohorts
+        console.log(`Skipping participation record ${participationRecord.id} - no cohorts found`);
+        continue; // Skip participation records with no cohorts
       }
       
-      // For simplicity, focus on the first cohort for now
-      const cohortId = cohortIds[0]
-      
-      try {
-        // Get cohort details
-        const cohort = await cohortsTable.find(cohortId)
-        
-        // Extract initiative IDs from the cohort
-        const initiativeIds = cohort.fields.Initiative || []
-        
-        // Get initiative details if available
-        let initiativeDetails = null
-        if (initiativeIds.length > 0) {
-          const initiative = await initiativesTable.find(initiativeIds[0])
+      // Process each cohort for this participation record
+      for (const cohortId of cohortIds) {
+        try {
+          // Get cohort details
+          const cohort = await cohortsTable.find(cohortId);
           
-          // Extract participation type with fallback
-          let participationType = "Individual"
-          if (initiative.fields["Participation Type"]) {
-            const rawType = String(initiative.fields["Participation Type"])
-            participationType = rawType.charAt(0).toUpperCase() + rawType.slice(1).toLowerCase()
+          // Extract initiative IDs from the cohort
+          const initiativeIds = cohort.fields.Initiative || [];
+          
+          // Get initiative details if available
+          let initiativeDetails = null;
+          if (initiativeIds.length > 0) {
+            try {
+              const initiative = await initiativesTable.find(initiativeIds[0]);
+              
+              // Extract participation type with fallback
+              let participationType = "Individual";
+              if (initiative.fields["Participation Type"]) {
+                const rawType = String(initiative.fields["Participation Type"]);
+                participationType = rawType.charAt(0).toUpperCase() + rawType.slice(1).toLowerCase();
+              }
+              
+              initiativeDetails = {
+                id: initiative.id,
+                name: initiative.fields.Name || "Untitled Initiative",
+                description: initiative.fields.Description || "",
+                "Participation Type": participationType
+              };
+            } catch (err) {
+              console.error(`Error fetching initiative ${initiativeIds[0]}:`, err);
+              // Continue with null initiative details rather than failing
+            }
           }
           
-          initiativeDetails = {
-            id: initiative.id,
-            name: initiative.fields.Name || "Untitled Initiative",
-            description: initiative.fields.Description || "",
-            "Participation Type": participationType
+          // Get topic information if available
+          const topicIds = cohort.fields.Topics || [];
+          const topicNames = [];
+          
+          // Limit topic lookups to reduce API calls if there are many
+          const topicsToLookup = topicIds.slice(0, 5); // Limit to first 5 topics
+          
+          for (const topicId of topicsToLookup) {
+            try {
+              const topic = await topicsTable.find(topicId);
+              topicNames.push(topic.fields.Name || "Unknown Topic");
+            } catch (err) {
+              console.error(`Error fetching topic ${topicId}:`, err);
+            }
           }
-        }
-        
-        // Get topic information if available
-        const topicIds = cohort.fields.Topics || []
-        const topicNames = []
-        
-        for (const topicId of topicIds) {
-          try {
-            const topic = await topicsTable.find(topicId)
-            topicNames.push(topic.fields.Name || "Unknown Topic")
-          } catch (err) {
-            console.error(`Error fetching topic ${topicId}:`, err)
-          }
-        }
-        
-        // Get team information if applicable
-        let teamId = null
-        
-        // If this is a team-based program, we need to find the user's team
-        if (initiativeDetails && (initiativeDetails["Participation Type"] === "Team" || 
-            initiativeDetails["Participation Type"].toLowerCase().includes("team"))) {
-          // Get the teams table ID
-          const teamsTableId = process.env.AIRTABLE_TEAMS_TABLE_ID
-          if (teamsTableId) {
-            // Initialize the teams table
-            const teamsTable = base(teamsTableId)
+          
+          // Get team information if applicable
+          let teamId = null;
+          
+          // If this is a team-based program, find the user's team
+          const isTeamBased = initiativeDetails && 
+                             (initiativeDetails["Participation Type"] === "Team" || 
+                              initiativeDetails["Participation Type"].toLowerCase().includes("team"));
+          
+          if (isTeamBased) {
+            const teamsTableId = process.env.AIRTABLE_TEAMS_TABLE_ID;
+            const membersTableId = process.env.AIRTABLE_MEMBERS_TABLE_ID;
             
-            // Get the members table ID
-            const membersTableId = process.env.AIRTABLE_MEMBERS_TABLE_ID
-            if (membersTableId) {
-              // Initialize the members table
-              const membersTable = base(membersTableId)
+            if (teamsTableId && membersTableId) {
+              // Initialize required tables
+              const teamsTable = base(teamsTableId);
+              const membersTable = base(membersTableId);
               
-              // First find the member records for this user using direct equality match
-              // Using direct equality match is more reliable than FIND for record IDs
-              const safeContactId = profile.contactId.replace(/['"\\]/g, ''); // Sanitize the ID
-              const memberRecords = await membersTable
-                .select({
-                  filterByFormula: `{contactId} = "${safeContactId}"`,
-                  fields: ["Team", "Status"]
-                })
-                .firstPage()
-              
-              // Find an active member record associated with teams in this cohort
-              for (const memberRecord of memberRecords) {
-                if (memberRecord.fields.Status === "Active" && memberRecord.fields.Team && memberRecord.fields.Team.length > 0) {
-                  // For each team, check if it's associated with this cohort
-                  for (const possibleTeamId of memberRecord.fields.Team) {
-                    try {
-                      const team = await teamsTable.find(possibleTeamId)
-                      
-                      // Check if this team is associated with the cohort
-                      // First check the dedicated cohortId field if it exists
-                      const hasCohortIdField = team.fields.cohortId !== undefined;
-                      // Improved checking for record IDs in fields
-                      // Using indexOf for more reliable string checking
-                      const cohortIdMatch = hasCohortIdField && 
-                                          team.fields.cohortId && 
-                                          (typeof team.fields.cohortId === 'string' ?
-                                            team.fields.cohortId.indexOf(cohortId) >= 0 :
-                                            (Array.isArray(team.fields.cohortId) && 
-                                             team.fields.cohortId.some(id => id === cohortId)));
-                      
-                      if (cohortIdMatch) {
-                        teamId = team.id;
-                        break;
+              // Find the member records for this user
+              const safeContactId = profile.contactId.replace(/['"\\]/g, '');
+              try {
+                const memberRecords = await membersTable
+                  .select({
+                    filterByFormula: `{contactId} = "${safeContactId}"`,
+                    fields: ["Team", "Status"]
+                  })
+                  .firstPage();
+                
+                // Process active member records to find teams in this cohort
+                for (const memberRecord of memberRecords) {
+                  if (memberRecord.fields.Status === "Active" && 
+                      memberRecord.fields.Team && 
+                      memberRecord.fields.Team.length > 0) {
+                    
+                    // For each team, check if it's associated with this cohort
+                    for (const possibleTeamId of memberRecord.fields.Team) {
+                      try {
+                        const team = await teamsTable.find(possibleTeamId);
+                        
+                        // Check if this team is associated with the cohort using various field patterns
+                        const teamCohortIds = team.fields.Cohorts || team.fields.Cohort || team.fields.cohortId || [];
+                        const teamCohortIdsArray = Array.isArray(teamCohortIds) ? teamCohortIds : [teamCohortIds];
+                        
+                        // If this team is associated with the current cohort, use it
+                        if (teamCohortIdsArray.includes(cohortId)) {
+                          teamId = team.id;
+                          break;
+                        }
+                      } catch (err) {
+                        console.error(`Error checking team ${possibleTeamId}:`, err);
                       }
-                      // Fall back to the linked Cohorts field if needed
-                      else if (team.fields.Cohorts && (
-                        // Check both array-based includes and string-based FIND logic
-                        (Array.isArray(team.fields.Cohorts) && team.fields.Cohorts.includes(cohortId)) ||
-                        (typeof team.fields.Cohorts === 'string' && team.fields.Cohorts.indexOf(cohortId) >= 0)
-                      )) {
-                        teamId = team.id;
-                        break;
-                      }
-                    } catch (err) {
-                      console.error(`Error checking team ${possibleTeamId}:`, err)
                     }
+                    
+                    // If we found a team, no need to check other member records
+                    if (teamId) break;
                   }
-                  
-                  // If we found a team, no need to check other member records
-                  if (teamId) break
                 }
+              } catch (err) {
+                console.error("Error fetching member records:", err);
               }
             }
           }
-        }
-        
-        // Extract start and end dates if available
-        const startDate = cohort.fields["Start Date"] || null;
-        const endDate = cohort.fields["End Date"] || null;
-        
-        // Calculate if the cohort is current based on dates
-        const now = new Date();
-        let isCurrentByDates = false;
-        
-        if (startDate && endDate) {
-          const startDateObj = new Date(startDate);
-          const endDateObj = new Date(endDate);
-          isCurrentByDates = now >= startDateObj && now <= endDateObj;
-        }
-        
-        // Check if the "Current Cohort" or "Is Current" field is set to true
-        // Handle different possible field names and value types
-        let isCurrentByField = false;
-        
-        // Check for "Current Cohort" field, handling different value types
-        if (cohort.fields["Current Cohort"] !== undefined) {
-          const fieldValue = cohort.fields["Current Cohort"];
-          if (fieldValue === true || fieldValue === "true" || fieldValue === "yes" || fieldValue === 1) {
-            isCurrentByField = true;
+          
+          // Extract and normalize cohort dates and status
+          const startDate = cohort.fields["Start Date"] || null;
+          const endDate = cohort.fields["End Date"] || null;
+          
+          // Determine if cohort is current based on dates and status fields
+          let isCurrent = false;
+          
+          // Check date-based currency
+          if (startDate && endDate) {
+            const now = new Date();
+            const startDateObj = new Date(startDate);
+            const endDateObj = new Date(endDate);
+            if (now >= startDateObj && now <= endDateObj) {
+              isCurrent = true;
+            }
           }
-          // Also handle checkbox fields which might come back as strings
-          if (typeof fieldValue === "string" && fieldValue.toLowerCase() === "true") {
-            isCurrentByField = true;
+          
+          // Check field-based currency (override if explicitly marked as current)
+          // Handle both common field names for current status
+          const currentCohortField = cohort.fields["Current Cohort"];
+          const isCurrentField = cohort.fields["Is Current"];
+          
+          // Process various formats for "true" values
+          const isTrueValue = (value) => {
+            if (value === true || value === 1) return true;
+            if (typeof value === "string" && ["true", "yes"].includes(value.toLowerCase())) return true;
+            return false;
+          };
+          
+          if (isTrueValue(currentCohortField) || isTrueValue(isCurrentField)) {
+            isCurrent = true;
           }
+          
+          // Add to processed participation with all required fields
+          processedParticipation.push({
+            id: participationRecord.id,
+            capacity: participationRecord.fields.Capacity || "Participant",
+            cohort: {
+              id: cohort.id,
+              name: cohort.fields.Name || "Unnamed Cohort",
+              Short_Name: cohort.fields["Short Name"] || "",
+              Status: cohort.fields.Status || "Unknown",
+              "Start Date": startDate,
+              "End Date": endDate,
+              "Current Cohort": isCurrent,
+              initiativeDetails,
+              topicNames,
+              participationType: initiativeDetails ? initiativeDetails["Participation Type"] : "Individual"
+            },
+            teamId
+          });
+        } catch (err) {
+          console.error(`Error processing cohort ${cohortId}:`, err);
+          // Continue with other cohorts rather than failing the entire request
         }
-        
-        // Check for "Is Current" field, handling different value types
-        if (!isCurrentByField && cohort.fields["Is Current"] !== undefined) {
-          const fieldValue = cohort.fields["Is Current"];
-          if (fieldValue === true || fieldValue === "true" || fieldValue === "yes" || fieldValue === 1) {
-            isCurrentByField = true;
-          }
-          // Also handle checkbox fields which might come back as strings
-          if (typeof fieldValue === "string" && fieldValue.toLowerCase() === "true") {
-            isCurrentByField = true;
-          }
-        }
-        
-        // Use either method to determine if cohort is current
-        const isCurrent = isCurrentByField || isCurrentByDates;
-        
-        console.log(`Cohort ${cohort.id} current status:`, {
-          name: cohort.fields.Name || "Unknown cohort",
-          currentField: cohort.fields["Current Cohort"],
-          startDate,
-          endDate,
-          isCurrentByDates,
-          isCurrentByField,
-          finalCurrentStatus: isCurrent
-        });
-        
-        // Add to processed participation
-        processedParticipation.push({
-          id: participationRecord.id,
-          capacity: participationRecord.fields.Capacity || "Participant",
-          cohort: {
-            id: cohort.id,
-            name: cohort.fields.Name || "Unnamed Cohort",
-            Short_Name: cohort.fields["Short Name"] || "",
-            Status: cohort.fields.Status || "Unknown",
-            "Start Date": startDate,
-            "End Date": endDate,
-            "Current Cohort": isCurrent,
-            initiativeDetails,
-            topicNames,
-            participationType: initiativeDetails ? initiativeDetails["Participation Type"] : "Individual"
-          },
-          teamId
-        })
-      } catch (err) {
-        console.error(`Error processing participation record ${participationRecord.id}:`, err)
       }
     }
     
-    // Log the processed results for debugging
-    console.log(`Successfully processed ${processedParticipation.length} participation records`)
+    // Log the processed results
+    console.log(`Successfully processed ${processedParticipation.length} participation records`);
     if (processedParticipation.length === 0) {
-      console.log("No processed participation records available to return")
-    } else {
-      // Log details of first processed record
-      const firstProcessed = processedParticipation[0]
-      console.log(`First processed participation: cohort=${firstProcessed.cohort?.id}, initiative=${firstProcessed.cohort?.initiativeDetails?.name}, teamId=${firstProcessed.teamId}`)
+      console.log("No processed participation records available to return");
     }
     
     // Return the processed participation records
     return res.status(200).json({
       participation: processedParticipation
-    })
+    });
   } catch (error) {
-    console.error("Error fetching participation:", error)
-    return res.status(500).json({ error: "Failed to fetch participation", details: error.message })
+    console.error("Error fetching participation:", error);
+    return res.status(500).json({ error: "Failed to fetch participation", details: error.message });
   }
 })
