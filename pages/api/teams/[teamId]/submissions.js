@@ -30,11 +30,13 @@ export default async function handler(req, res) {
     const submissionsTable = base(submissionsTableId);
     
     // Build the filter formula based on the provided parameters
-    let filterFormula = `{Team}="${teamId}"`;
+    // Per Airtable schema, Team and Milestone are multipleRecordLinks fields
+    // We need to check if one of the linked records matches our ID
+    let filterFormula = `FIND("${teamId}", ARRAYJOIN(Team))`;
     
     // Add milestone filter if provided
     if (milestoneId) {
-      filterFormula = `AND(${filterFormula}, {Milestone}="${milestoneId}")`;
+      filterFormula = `AND(${filterFormula}, FIND("${milestoneId}", ARRAYJOIN(Milestone)))`;
     }
     
     console.log(`Using filter formula: ${filterFormula}`);
@@ -51,15 +53,31 @@ export default async function handler(req, res) {
     console.log(`Found ${records.length} submissions for team ID: ${teamId}${milestoneId ? ` and milestone ID: ${milestoneId}` : ''}`);
     
     // Process the submissions
-    const submissions = records.map(record => ({
-      id: record.id,
-      teamId: teamId,
-      milestoneId: record.fields.Milestone?.[0] || null,
-      createdTime: record.fields["Created Time"] || new Date().toISOString(),
-      attachment: record.fields.Attachment,
-      comments: record.fields.Comments,
-      link: record.fields.Link
-    }));
+    const submissions = records.map(record => {
+      // Get milestone ID from the linked record
+      const milestoneId = record.fields.Milestone && Array.isArray(record.fields.Milestone) && record.fields.Milestone.length > 0
+        ? record.fields.Milestone[0]
+        : null;
+
+      // Get team IDs from linked records - we already know one matches our teamId
+      const teamIds = record.fields.Team && Array.isArray(record.fields.Team)
+        ? record.fields.Team
+        : [teamId];
+
+      return {
+        id: record.id,
+        teamId: teamId,
+        teamIds: teamIds,
+        milestoneId: milestoneId,
+        milestoneName: record.fields["Name (from Milestone)"]?.[0] || null,
+        deliverableId: record.fields.Deliverable?.[0] || null,
+        deliverableName: record.fields["Name (from Deliverable)"]?.[0] || null, 
+        createdTime: record.fields["Created Time"] || new Date().toISOString(),
+        attachment: record.fields.Attachment,
+        comments: record.fields.Comments,
+        link: record.fields.Link
+      };
+    });
     
     // Add diagnostic logging before returning
     if (submissions.length > 0) {
@@ -67,11 +85,17 @@ export default async function handler(req, res) {
         id: submissions[0].id,
         teamId: submissions[0].teamId,
         milestoneId: submissions[0].milestoneId,
+        milestoneName: submissions[0].milestoneName,
         hasAttachment: !!submissions[0].attachment,
         hasComments: !!submissions[0].comments,
         hasLink: !!submissions[0].link
       });
     }
+    
+    // If debugging is needed, uncomment this to see the raw Airtable response
+    // if (records.length > 0) {
+    //   console.log("Raw Airtable record sample:", JSON.stringify(records[0], null, 2));
+    // }
     
     // Return the submissions we found
     return res.status(200).json({
