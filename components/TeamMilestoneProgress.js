@@ -1,12 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Progress } from "@/components/ui/progress"
 import { ArrowRight, TableIcon, AlignLeft, AlertCircle } from "lucide-react"
 import MilestoneTimeline from "./MilestoneTimeline"
 import MilestoneTable from "./MilestoneTable"
+import MilestoneSubmissionChecker from "./MilestoneSubmissionChecker"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { useDashboard } from "@/contexts/DashboardContext"
 
 // Calculate overall progress percentage based on milestone statuses
 const calculateOverallProgress = (milestones) => {
@@ -18,8 +20,46 @@ const calculateOverallProgress = (milestones) => {
   return Math.round((completedCount) / milestones.length * 100)
 }
 
-export default function TeamMilestoneProgress({ milestones, detailed = false, programName, programId, programType = "xperience" }) {
+export default function TeamMilestoneProgress({ milestones: initialMilestones = [], detailed = false, programName, programId, programType = "xperience" }) {
+  const { teamData } = useDashboard()
   const [viewMode, setViewMode] = useState("table") // "table" or "timeline"
+  const [processedMilestones, setProcessedMilestones] = useState([])
+  const [isInitialized, setIsInitialized] = useState(false)
+  
+  // Initialize milestone data
+  useEffect(() => {
+    if (initialMilestones && initialMilestones.length > 0 && !isInitialized) {
+      // Create enhanced initial state
+      const enhanced = initialMilestones.map(milestone => ({
+        ...milestone,
+        hasSubmission: milestone.status === "completed",
+        submissions: [],
+        status: milestone.status || "upcoming"
+      }))
+      
+      setProcessedMilestones(enhanced)
+      setIsInitialized(true)
+    }
+  }, [initialMilestones, isInitialized])
+  
+  // Handler for submission check results
+  const handleSubmissionCheck = (milestoneId, hasSubmission) => {
+    setProcessedMilestones(prev => 
+      prev.map(m => {
+        if (m.id === milestoneId) {
+          return {
+            ...m,
+            hasSubmission,
+            status: hasSubmission ? "completed" : m.status,
+          }
+        }
+        return m
+      })
+    )
+  }
+  
+  // Use processed milestones if initialized, otherwise use initial milestones
+  const milestones = isInitialized ? processedMilestones : initialMilestones;
   
   if (!milestones || milestones.length === 0) {
     return (
@@ -53,6 +93,15 @@ export default function TeamMilestoneProgress({ milestones, detailed = false, pr
   
   return (
     <div>
+      {/* Hidden submission checkers */}
+      {isInitialized && processedMilestones.map(milestone => (
+        <MilestoneSubmissionChecker
+          key={`checker-${milestone.id}`}
+          milestoneId={milestone.id}
+          onSubmissionCheck={(hasSubmission) => handleSubmissionCheck(milestone.id, hasSubmission)}
+        />
+      ))}
+    
       <div className="flex justify-between items-center mb-4">
         <div className="flex-1">
           {!detailed && (

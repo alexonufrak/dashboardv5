@@ -157,6 +157,9 @@ export default function MilestoneSubmissionDialog({
 
   // Handle file upload to Vercel Blob
   const uploadFileToBlob = async (file) => {
+    // Show toast for upload start
+    const toastId = toast.loading(`Preparing to upload ${file.name}...`);
+    
     try {
       // Create a unique folder path for each team/milestone combination
       // Include a timestamp to avoid filename conflicts
@@ -174,9 +177,6 @@ export default function MilestoneSubmissionDialog({
         timestamp: timestamp
       });
 
-      // Show toast for upload start
-      const toastId = toast.loading(`Uploading ${safeFilename}...`);
-
       // Track progress for this file
       setUploadProgress(prev => ({
         ...prev,
@@ -189,12 +189,13 @@ export default function MilestoneSubmissionDialog({
       
       console.log(`Starting upload of ${safeFilename} to Vercel Blob...`);
       
-      // Upload file to Vercel Blob with enhanced error handling
+      // Upload file to Vercel Blob with enhanced error handling and retries
       const blob = await upload(`${folderPath}/${safeFilename}`, file, {
         access: 'public',
         handleUploadUrl: '/api/upload',
         clientPayload,
-        maxRetries: 3,
+        maxRetries: 3, // Retry failed uploads up to 3 times
+        retryDelay: 1000, // Wait 1 second between retries
         onUploadProgress: ({ loaded, total, percentage }) => {
           // Update progress state
           setUploadProgress(prev => ({
@@ -205,14 +206,14 @@ export default function MilestoneSubmissionDialog({
               percentage,
               status: 'uploading'
             }
-          }))
+          }));
           
           // Update toast with progress
           toast.loading(`Uploading ${file.name}... ${Math.round(percentage)}%`, {
             id: toastId
-          })
+          });
         }
-      })
+      });
 
       // Update progress state to complete
       setUploadProgress(prev => ({
@@ -223,12 +224,12 @@ export default function MilestoneSubmissionDialog({
           percentage: 100,
           status: 'completed'
         }
-      }))
+      }));
 
       // Success toast
       toast.success(`Uploaded ${file.name}`, {
         id: toastId
-      })
+      });
 
       // Return the blob URL and metadata
       return {
@@ -236,12 +237,15 @@ export default function MilestoneSubmissionDialog({
         filename: file.name,
         contentType: file.type,
         size: file.size
-      }
+      };
     } catch (error) {
       console.error(`Error uploading ${file.name}:`, error);
       
       // Update toast with error
-      toast.error(`Failed to upload ${file.name}: ${error.message || 'Unknown error'}`);
+      toast.error(`Failed to upload ${file.name}: ${error.message || 'Unknown error'}`, {
+        id: toastId,
+        duration: 5000 // Show error for longer
+      });
       
       // Update progress state to error
       setUploadProgress(prev => ({
@@ -253,20 +257,30 @@ export default function MilestoneSubmissionDialog({
         }
       }));
       
-      // Check for specific error types
+      // Check for specific error types and provide better error messages
       let errorMessage = 'Failed to upload file';
-      if (error.message && error.message.includes('token')) {
-        errorMessage = 'Authentication error during upload. Please try again.';
-      } else if (error.message && error.message.includes('size')) {
-        errorMessage = 'File exceeds maximum size limit (5MB).';
-      } else if (error.message && error.message.includes('type')) {
-        errorMessage = 'File type not supported.';
+      
+      if (error.message) {
+        if (error.message.includes('token') || error.message.includes('Failed to retrieve the client token')) {
+          errorMessage = 'Authentication error during upload. Please try again later.';
+          console.log('Blob token error: Server may be missing BLOB_READ_WRITE_TOKEN environment variable');
+        } else if (error.message.includes('size')) {
+          errorMessage = 'File exceeds maximum size limit (5MB).';
+        } else if (error.message.includes('type')) {
+          errorMessage = 'File type not supported.';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = 'Network error during upload. Please check your connection and try again.';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'Upload timed out. Please try again with a smaller file.';
+        } else if (error.message.includes('aborted')) {
+          errorMessage = 'Upload was cancelled.';
+        }
       }
       
-      // Enhanced error for debugging
-      console.log(`Upload failed with error: ${errorMessage}`);
+      // Log enhanced error for debugging
+      console.log(`Upload failed with error: ${errorMessage}`, error);
       
-      // Throw a more specific error
+      // Throw a more specific error to be handled by the submission process
       throw new Error(errorMessage);
     }
   }
@@ -297,6 +311,7 @@ export default function MilestoneSubmissionDialog({
     try {
       // Step 1: Upload files to Vercel Blob (if any)
       const fileUrls = []
+      let uploadFailed = false
       
       if (files.length > 0) {
         // Clear any previous uploaded files
@@ -311,14 +326,23 @@ export default function MilestoneSubmissionDialog({
             // Track successfully uploaded files
             setUploadedFiles(prev => [...prev, uploadedFile])
           } catch (error) {
-            // Individual file upload errors are already handled by uploadFileToBlob
-            // Continue with other files
+            // Log the specific error but continue with other files
+            console.error(`Error uploading ${file.name}:`, error);
+            uploadFailed = true;
           }
         }
         
-        // Check if any files were uploaded successfully
+        // Check if any files were uploaded successfully when files were provided
         if (fileUrls.length === 0 && files.length > 0) {
-          throw new Error("None of the files could be uploaded. Please try again.")
+          // If we also have a link, we can still proceed with just the link
+          if (!linkUrl) {
+            throw new Error("None of the files could be uploaded. Please try again or provide a link instead.")
+          } else {
+            toast.warning("File uploads failed. Proceeding with link submission only.");
+          }
+        } else if (uploadFailed) {
+          // Some files failed but others succeeded
+          toast.warning(`${files.length - fileUrls.length} of ${files.length} files failed to upload.`);
         }
       }
       
@@ -334,6 +358,9 @@ export default function MilestoneSubmissionDialog({
         submissionData.link = linkUrl
       }
       
+      // Show toast for submission processing
+      const submissionToastId = toast.loading("Processing submission...");
+      
       // Make API request to create the submission
       const response = await fetch("/api/teams/submissions", {
         method: "POST",
@@ -346,17 +373,22 @@ export default function MilestoneSubmissionDialog({
       const responseData = await response.json()
       
       if (!response.ok) {
-        console.error("Submission error response:", responseData)
-        throw new Error(responseData.details || responseData.error || "Failed to submit")
+        console.error("Submission error response:", responseData);
+        toast.error(responseData.details || responseData.error || "Failed to submit", {
+          id: submissionToastId
+        });
+        throw new Error(responseData.details || responseData.error || "Failed to submit");
       }
       
       // Check for warnings in the response
       if (responseData.warning) {
-        toast.warning(responseData.warning)
-        console.warn("Submission warning:", responseData.warning)
+        toast.warning(responseData.warning);
+        console.warn("Submission warning:", responseData.warning);
       }
       
-      toast.success("Milestone submission successful")
+      toast.success("Milestone submission successful", {
+        id: submissionToastId
+      });
       
       // Reset form
       setFiles([])
@@ -368,12 +400,26 @@ export default function MilestoneSubmissionDialog({
       // Close dialog
       onOpenChange(false)
       
-      // Trigger a refetch of milestone data (would happen through context update)
+      // Optional: add a small delay to ensure the success message is seen
+      // before the dialog closes
+      setTimeout(() => {
+        onOpenChange(false);
+      }, 500);
+      
     } catch (error) {
-      console.error("Submission error:", error)
-      toast.error(error.message || "Failed to submit")
+      console.error("Submission error:", error);
+      
+      // Provide better error messaging based on the error
+      let errorMessage = error.message || "Failed to submit";
+      
+      // If the error is related to file upload and we have a link, suggest using link only
+      if (errorMessage.includes("upload") && linkUrl) {
+        errorMessage += " Consider submitting with just the link.";
+      }
+      
+      toast.error(errorMessage);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
 

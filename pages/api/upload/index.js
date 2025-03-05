@@ -15,8 +15,24 @@ export default withApiAuthRequired(async function handler(req, res) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
+    // Check for valid request method
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    // Check if BLOB_READ_WRITE_TOKEN environment variable is set
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      console.error('BLOB_READ_WRITE_TOKEN environment variable is not set');
+      return res.status(500).json({
+        error: 'Server configuration error: Blob storage is not properly configured'
+      });
+    }
+
+    // Handle the upload with detailed error logging
     const response = await handleUpload({
+      body: req.body, // Add this if handling JSON requests
       request: req,
+      token: process.env.BLOB_READ_WRITE_TOKEN, // Explicitly provide the token
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         // Log for debugging
         console.log(`Upload token requested for: ${pathname}`);
@@ -28,6 +44,7 @@ export default withApiAuthRequired(async function handler(req, res) {
           console.log('Upload metadata:', metadata);
         } catch (e) {
           console.error('Error parsing client payload:', e);
+          // Don't throw here, just log and continue with empty metadata
         }
         
         return {
@@ -68,9 +85,23 @@ export default withApiAuthRequired(async function handler(req, res) {
 
     return res.status(200).json(response);
   } catch (error) {
-    console.error('Error in upload handler:', error);
+    console.error('Error in upload handler:', error.message);
+    console.error('Error stack:', error.stack);
+    
+    // Provide more detailed error response
+    let errorMessage = 'Something went wrong with the upload';
+    
+    if (error.message && error.message.includes('token')) {
+      errorMessage = 'Authentication error with blob storage. Please check your environment variables.';
+    } else if (error.message && error.message.includes('exceeded')) {
+      errorMessage = 'File size exceeds the maximum allowed limit.';
+    } else if (error.message && error.message.includes('content type')) {
+      errorMessage = 'File type not allowed.';
+    }
+    
     return res.status(400).json({
-      error: error.message || 'Something went wrong with the upload',
+      error: errorMessage,
+      details: error.message
     });
   }
 });
