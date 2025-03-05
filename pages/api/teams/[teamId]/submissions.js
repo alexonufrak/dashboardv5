@@ -29,33 +29,47 @@ export default async function handler(req, res) {
     // Initialize the submissions table
     const submissionsTable = base(submissionsTableId);
     
-    // Build the filter formula based on the provided parameters
-    // Per Airtable schema, Team and Milestone are multipleRecordLinks fields
-    // We need to check if one of the linked records matches our ID
-    let filterFormula = `FIND("${teamId}", ARRAYJOIN(Team))`;
+    // We'll fetch all submissions for this team and filter on our side
+    // This avoids complex formula issues with Airtable linked records
+    console.log(`Fetching all submissions for team: ${teamId}`);
     
-    // Add milestone filter if provided
-    if (milestoneId) {
-      filterFormula = `AND(${filterFormula}, FIND("${milestoneId}", ARRAYJOIN(Milestone)))`;
-    }
-    
-    console.log(`Using filter formula: ${filterFormula}`);
-    
-    // Query the submissions table
+    // Query all submissions for the team
+    // We use simple formula that should work reliably
+    // We use SEARCH() because it's more reliable than = with linked records
     const records = await submissionsTable
       .select({
-        filterByFormula: filterFormula,
+        filterByFormula: `SEARCH("${teamId}", ARRAYJOIN(Team))`,
         // Sort by created time in descending order to get the most recent first
         sort: [{ field: "Created Time", direction: "desc" }]
       })
       .firstPage();
+      
+    console.log(`Found ${records.length} total submissions for team ID: ${teamId}`);
+    
+    // Log field names from the first record if available
+    if (records.length > 0) {
+      console.log("Available fields in submission records:", Object.keys(records[0].fields));
+    }
     
     console.log(`Found ${records.length} submissions for team ID: ${teamId}${milestoneId ? ` and milestone ID: ${milestoneId}` : ''}`);
     
-    // Process the submissions
-    const submissions = records.map(record => {
+    // Process and filter submissions
+    // If milestoneId is provided, we filter here in code rather than in the Airtable query
+    let filteredRecords = records;
+    if (milestoneId) {
+      filteredRecords = records.filter(record => {
+        if (!record.fields.Milestone || !Array.isArray(record.fields.Milestone)) {
+          return false;
+        }
+        return record.fields.Milestone.includes(milestoneId);
+      });
+      console.log(`Filtered to ${filteredRecords.length} submissions for milestone ID: ${milestoneId}`);
+    }
+    
+    // Process the filtered submissions
+    const submissions = filteredRecords.map(record => {
       // Get milestone ID from the linked record
-      const milestoneId = record.fields.Milestone && Array.isArray(record.fields.Milestone) && record.fields.Milestone.length > 0
+      const recordMilestoneId = record.fields.Milestone && Array.isArray(record.fields.Milestone) && record.fields.Milestone.length > 0
         ? record.fields.Milestone[0]
         : null;
 
@@ -68,7 +82,7 @@ export default async function handler(req, res) {
         id: record.id,
         teamId: teamId,
         teamIds: teamIds,
-        milestoneId: milestoneId,
+        milestoneId: recordMilestoneId,
         milestoneName: record.fields["Name (from Milestone)"]?.[0] || null,
         deliverableId: record.fields.Deliverable?.[0] || null,
         deliverableName: record.fields["Name (from Deliverable)"]?.[0] || null, 
