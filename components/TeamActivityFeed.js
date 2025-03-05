@@ -4,6 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { formatDistanceToNow, isValid, parseISO } from "date-fns"
 import { Trophy, Flag, CheckCircle, Edit3, FileText, MessageSquare } from "lucide-react"
+import { usePointTransactions } from "@/lib/useDataFetching"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const getInitials = (name) => {
   if (!name) return "??"
@@ -24,82 +26,6 @@ const activityIcons = {
   submission_created: <FileText className="h-4 w-4 text-cyan-600" />,
   comment_added: <MessageSquare className="h-4 w-4 text-slate-600" />
 }
-
-// Sample activity data - in production, this would come from the API
-const sampleActivities = [
-  {
-    id: "act1",
-    type: "milestone_completed",
-    title: "Milestone Completed",
-    description: "Ideation Process milestone has been completed",
-    member: {
-      id: "m1",
-      name: "Jane Cooper",
-      avatar: ""
-    },
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2) // 2 hours ago
-  },
-  {
-    id: "act2",
-    type: "points_earned",
-    title: "Points Earned",
-    description: "Team earned 25 points for workshop attendance",
-    member: {
-      id: "m2",
-      name: "John Smith",
-      avatar: ""
-    },
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 12) // 12 hours ago
-  },
-  {
-    id: "act3",
-    type: "document_updated",
-    title: "Document Updated",
-    description: "Project proposal document has been updated",
-    member: {
-      id: "m3",
-      name: "Emily Johnson",
-      avatar: ""
-    },
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24) // 1 day ago
-  },
-  {
-    id: "act4",
-    type: "milestone_started",
-    title: "Milestone Started",
-    description: "Team has started working on the Prototype Development milestone",
-    member: {
-      id: "m1",
-      name: "Jane Cooper",
-      avatar: ""
-    },
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 36) // 1.5 days ago
-  },
-  {
-    id: "act5",
-    type: "submission_created",
-    title: "Submission Created",
-    description: "Milestone submission for Problem Definition has been created",
-    member: {
-      id: "m4",
-      name: "Alex Turner",
-      avatar: ""
-    },
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48) // 2 days ago
-  },
-  {
-    id: "act6",
-    type: "comment_added",
-    title: "Comment Added",
-    description: "New comment added to the team discussion",
-    member: {
-      id: "m5",
-      name: "Sarah Williams",
-      avatar: ""
-    },
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 72) // 3 days ago
-  }
-]
 
 const ActivityItem = ({ activity, detailed = false }) => {
   return (
@@ -162,10 +88,72 @@ const ActivityItem = ({ activity, detailed = false }) => {
 }
 
 export default function TeamActivityFeed({ team, detailed = false }) {
-  // In production, this would fetch real activity data based on team ID
-  // For now, we're using sample data
-  const activities = sampleActivities
+  // Fetch point transactions for this team
+  const { 
+    data: pointTransactions = [], 
+    isLoading: isLoadingPoints
+  } = usePointTransactions(null, team?.id)
   
+  // Generate activity items from point transactions
+  const generateActivities = () => {
+    if (!pointTransactions || pointTransactions.length === 0) return []
+    
+    return pointTransactions.map(transaction => {
+      // Map transaction to activity format
+      let type = "points_earned"
+      let title = "Points Earned"
+      
+      // Try to determine more specific type based on achievement name
+      if (transaction.achievementName) {
+        const name = transaction.achievementName.toLowerCase()
+        if (name.includes("milestone") && name.includes("complet")) {
+          type = "milestone_completed"
+          title = "Milestone Completed"
+        } else if (name.includes("submission") || name.includes("submit")) {
+          type = "submission_created"
+          title = "Submission Created"
+        }
+      }
+      
+      // Create activity object
+      return {
+        id: transaction.id,
+        type,
+        title,
+        description: transaction.achievementName || `Earned ${transaction.pointsValue} points`,
+        points: transaction.pointsValue,
+        member: {
+          id: transaction.contactId || "team",
+          name: transaction.contactName || team?.name || "Team Member",
+          avatar: ""
+        },
+        timestamp: transaction.date ? new Date(transaction.date) : new Date(),
+        details: transaction.description
+      }
+    })
+  }
+  
+  // Get activities
+  const activities = generateActivities()
+  
+  // Loading state
+  if (isLoadingPoints) {
+    return (
+      <div className="space-y-4">
+        {Array(detailed ? 5 : 3).fill(0).map((_, i) => (
+          <div key={i} className="flex gap-3">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+  
+  // Empty state
   if (!activities || activities.length === 0) {
     return (
       <div className="text-center p-4 text-muted-foreground">

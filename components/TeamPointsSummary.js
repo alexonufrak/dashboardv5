@@ -1,30 +1,113 @@
 "use client"
 
-import { Award, TrendingUp, Users } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Award, TrendingUp, Clock, Info } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
+import { Skeleton } from "@/components/ui/skeleton"
+import { usePointTransactions } from "@/lib/useDataFetching"
+import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export default function TeamPointsSummary({ team }) {
   if (!team) return null
   
-  // Get total team points
+  // Get total team points from the team data
   const totalPoints = team.points || 0
   
-  // Calculate member contribution percentages (if available)
-  const memberContributions = team.members?.map(member => {
-    // This is placeholder - real data would come from the API
-    const pointContribution = Math.floor(Math.random() * 200) + 50 // Placeholder random points
-    const percentage = totalPoints > 0 ? Math.round((pointContribution / totalPoints) * 100) : 0
-    
-    return {
-      ...member,
-      points: pointContribution,
-      percentage
+  // Fetch point transactions for this team using React Query
+  const { 
+    data: pointTransactions = [], 
+    isLoading,
+    isError 
+  } = usePointTransactions(null, team.id)
+  
+  // Group transactions by member and calculate totals
+  const [memberPoints, setMemberPoints] = useState([])
+  const [pointsBreakdown, setPointsBreakdown] = useState(null)
+  
+  useEffect(() => {
+    if (!isLoading && pointTransactions?.length > 0 && team?.members?.length > 0) {
+      // Create a map of member IDs to point totals
+      const memberPointsMap = new Map()
+      
+      // Initialize with all team members
+      team.members.forEach(member => {
+        memberPointsMap.set(member.id, {
+          ...member,
+          points: 0,
+          percentage: 0,
+          transactions: []
+        })
+      })
+      
+      // Group transactions by achievement types for breakdown
+      const breakdownMap = {
+        milestone: { label: "Milestone Completion", points: 0 },
+        attendance: { label: "Event Attendance", points: 0 },
+        submission: { label: "Submissions", points: 0 },
+        other: { label: "Other Activities", points: 0 }
+      }
+      
+      // Process each transaction
+      pointTransactions.forEach(transaction => {
+        // Skip if we don't have an achievement name or points value
+        if (!transaction.achievementName || !transaction.pointsValue) return
+        
+        // Determine category from achievement name (simplified)
+        let category = 'other'
+        const achievementName = transaction.achievementName.toLowerCase()
+        
+        if (achievementName.includes('milestone') || achievementName.includes('completion')) {
+          category = 'milestone'
+        } else if (achievementName.includes('attendance') || achievementName.includes('event')) {
+          category = 'attendance'
+        } else if (achievementName.includes('submission') || achievementName.includes('deliverable')) {
+          category = 'submission'
+        }
+        
+        // Add to breakdown
+        breakdownMap[category].points += transaction.pointsValue
+        
+        // If this transaction is associated with a specific member
+        if (transaction.contactId) {
+          // Find the member in our team
+          const memberEntry = team.members.find(m => 
+            // Match by contactId, or email as fallback
+            m.contactId === transaction.contactId || 
+            (m.email && transaction.contactEmail && m.email === transaction.contactEmail)
+          )
+          
+          if (memberEntry && memberPointsMap.has(memberEntry.id)) {
+            const currentMember = memberPointsMap.get(memberEntry.id)
+            currentMember.points += transaction.pointsValue
+            currentMember.transactions.push(transaction)
+            memberPointsMap.set(memberEntry.id, currentMember)
+          }
+        }
+      })
+      
+      // Convert the map to an array and sort by points
+      let memberPointsArray = Array.from(memberPointsMap.values())
+      
+      // Calculate percentages
+      if (totalPoints > 0) {
+        memberPointsArray = memberPointsArray.map(member => ({
+          ...member,
+          percentage: totalPoints > 0 ? Math.round((member.points / totalPoints) * 100) : 0
+        }))
+      }
+      
+      // Sort by points and take top 3
+      const sortedMemberPoints = memberPointsArray
+        .sort((a, b) => b.points - a.points)
+        .filter(member => member.points > 0)
+        .slice(0, 3)
+      
+      setMemberPoints(sortedMemberPoints)
+      setPointsBreakdown(Object.values(breakdownMap))
     }
-  }).sort((a, b) => b.points - a.points).slice(0, 3) || []
-  
-  // Top contributors - in a real implementation, this would be calculated from actual data
-  const topContributors = memberContributions.slice(0, 3)
-  
+  }, [pointTransactions, team, isLoading, totalPoints])
+
   return (
     <div className="space-y-4">
       {/* Total points display */}
@@ -35,11 +118,20 @@ export default function TeamPointsSummary({ team }) {
       </div>
       
       {/* Top contributors */}
-      {topContributors.length > 0 && (
+      {isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-24 mb-2" />
+          <div className="space-y-2">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        </div>
+      ) : memberPoints.length > 0 ? (
         <div>
           <h4 className="text-sm font-medium mb-2 text-muted-foreground">Top Contributors</h4>
           <div className="space-y-3">
-            {topContributors.map((member, index) => (
+            {memberPoints.map((member, index) => (
               <div key={member.id} className="space-y-1">
                 <div className="flex justify-between text-sm">
                   <span className="truncate max-w-[140px]">{member.name}</span>
@@ -61,35 +153,70 @@ export default function TeamPointsSummary({ team }) {
             ))}
           </div>
         </div>
+      ) : (
+        <div className="bg-gray-50 p-3 rounded-md text-sm text-muted-foreground flex items-center">
+          <Info className="h-4 w-4 mr-2 text-blue-500" />
+          No individual point contributions yet
+        </div>
       )}
       
-      {/* Team ranking - this would be real data in production */}
-      <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border">
-        <div className="flex items-center">
-          <TrendingUp className="h-4 w-4 text-green-600 mr-2" />
-          <span className="text-sm font-medium">Team Ranking</span>
+      {/* Last points activity */}
+      {!isLoading && pointTransactions?.length > 0 && (
+        <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border">
+          <div className="flex items-center">
+            <Clock className="h-4 w-4 text-blue-600 mr-2" />
+            <span className="text-sm font-medium">Last Activity</span>
+          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="font-medium text-sm">
+                  {pointTransactions[0]?.achievementName?.length > 15 
+                    ? `${pointTransactions[0]?.achievementName?.substring(0, 15)}...` 
+                    : pointTransactions[0]?.achievementName || "Point Activity"}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{pointTransactions[0]?.achievementName || "Point Activity"}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {pointTransactions[0]?.date 
+                    ? new Date(pointTransactions[0].date).toLocaleDateString() 
+                    : "Date unknown"}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
-        <span className="font-bold">#3 of 12</span>
-      </div>
+      )}
       
-      {/* Points breakdown - this would show real categories in production */}
-      <div>
-        <h4 className="text-sm font-medium mb-2 text-muted-foreground">Points Breakdown</h4>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Milestones</span>
-            <span className="font-medium">240 pts</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Team Activities</span>
-            <span className="font-medium">180 pts</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Individual Contributions</span>
-            <span className="font-medium">{totalPoints - 420} pts</span>
+      {/* Points breakdown */}
+      {isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-32 mb-2" />
+          <div className="space-y-2">
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-full" />
+            <Skeleton className="h-5 w-full" />
           </div>
         </div>
-      </div>
+      ) : pointsBreakdown && pointsBreakdown.some(item => item.points > 0) ? (
+        <div>
+          <h4 className="text-sm font-medium mb-2 text-muted-foreground">Points Breakdown</h4>
+          <div className="space-y-2 text-sm">
+            {pointsBreakdown.filter(item => item.points > 0).map((item, index) => (
+              <div key={index} className="flex justify-between">
+                <span className="text-muted-foreground">{item.label}</span>
+                <span className="font-medium">{item.points} pts</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="bg-gray-50 p-3 rounded-md text-sm text-muted-foreground flex items-center">
+          <Info className="h-4 w-4 mr-2 text-blue-500" />
+          No point breakdown available
+        </div>
+      )}
     </div>
   )
 }

@@ -383,10 +383,12 @@ function ProgramDashboardInner({ onNavigate }) {
                   {isTeamProgram ? (
                     <TeamPointsSummary team={team} />
                   ) : (
-                    <div className="text-center p-2 bg-blue-50 rounded-lg border border-blue-100">
-                      <Award className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                      <div className="text-2xl font-bold text-blue-800">125</div>
-                      <div className="text-sm text-blue-600">Your Total Points</div>
+                    <div className="text-center p-2 bg-gray-50 rounded-lg border border-gray-200">
+                      <Award className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                      <div className="text-xl text-muted-foreground font-medium">Individual Points</div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        Not enabled for this program
+                      </div>
                     </div>
                   )}
                 </CardContent>
