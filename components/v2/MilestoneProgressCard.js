@@ -97,25 +97,57 @@ export function MilestoneProgressCard({
   const activeMilestone = getActiveMilestone();
   const nextMilestone = getNextMilestone();
 
-  // Show skeleton if no milestones
+  // Show empty state message if no milestones
   if (!milestones || milestones.length === 0 || !activeMilestone) {
     return (
       <Card className={className}>
         <CardHeader>
           <div className="flex justify-between items-start">
-            <div className="animate-pulse w-full">
-              <div className="h-6 bg-gray-200 rounded w-1/2 mb-2"></div>
-              <div className="h-4 bg-gray-100 rounded w-1/3"></div>
+            <div>
+              <CardTitle className="text-xl font-bold">
+                {programName || "Program Milestones"}
+              </CardTitle>
+              <CardDescription>
+                No milestones available yet
+              </CardDescription>
             </div>
+            <Badge variant={programType === "xperience" ? "default" : "outline"} className={
+              programType === "xperience" ? "bg-blue-500" :
+              programType === "horizons" ? "bg-purple-500 text-white" :
+              undefined
+            }>
+              {programType === "xperience" ? "Xperience" : 
+               programType === "horizons" ? "Horizons" : 
+               programType}
+            </Badge>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-            <div className="h-16 bg-gray-100 rounded w-full mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+        <CardContent className="space-y-4">
+          {/* Empty state progress bar */}
+          <Progress value={0} className="h-2" />
+          
+          {/* Empty state message */}
+          <div className="p-4 border rounded-lg text-center">
+            <AlertCircle className="h-10 w-10 mx-auto mb-2 text-gray-300" />
+            <h3 className="font-medium text-gray-500">No Milestones Yet</h3>
+            <p className="text-sm text-muted-foreground mt-1">
+              Your program timeline will appear here once milestones are added.
+            </p>
           </div>
         </CardContent>
+        {programId && (
+          <CardFooter>
+            <Button 
+              variant="outline" 
+              className="w-full" 
+              asChild
+            >
+              <Link href={`/dashboard/programs/${programType}/${programId}`}>
+                Program Details <ChevronRight className="h-4 w-4 ml-1" />
+              </Link>
+            </Button>
+          </CardFooter>
+        )}
       </Card>
     );
   }

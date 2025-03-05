@@ -230,8 +230,16 @@ export default function MilestoneSubmissionDialog({
   const renderSubmissions = () => {
     if (!milestone.submissions || milestone.submissions.length === 0) {
       return (
-        <div className="py-4 text-center text-muted-foreground">
-          No submissions found
+        <div className="py-8 text-center">
+          <div className="text-muted-foreground">
+            <AlertCircle className="h-10 w-10 mx-auto mb-3 text-gray-300" />
+            <h3 className="text-lg font-medium mb-2">No Submissions Yet</h3>
+            <p className="text-sm">
+              There are no submissions for this milestone.
+              <br />
+              Use the "Submit" button on the milestone table to make a submission.
+            </p>
+          </div>
         </div>
       )
     }

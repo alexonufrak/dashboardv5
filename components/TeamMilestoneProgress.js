@@ -2,10 +2,11 @@
 
 import { useState } from "react"
 import { Progress } from "@/components/ui/progress"
-import { ArrowRight, TableIcon, AlignLeft } from "lucide-react"
+import { ArrowRight, TableIcon, AlignLeft, AlertCircle } from "lucide-react"
 import MilestoneTimeline from "./MilestoneTimeline"
 import MilestoneTable from "./MilestoneTable"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 // Calculate overall progress percentage based on milestone statuses
 const calculateOverallProgress = (milestones) => {
@@ -21,7 +22,30 @@ export default function TeamMilestoneProgress({ milestones, detailed = false, pr
   const [viewMode, setViewMode] = useState("table") // "table" or "timeline"
   
   if (!milestones || milestones.length === 0) {
-    return <div className="text-muted-foreground">No milestone data available.</div>
+    return (
+      <div className="border rounded-md p-6 text-center">
+        <div className="text-muted-foreground mb-2">
+          <AlertCircle className="h-10 w-10 mx-auto mb-3 text-gray-300" />
+          <h3 className="text-lg font-medium mb-2">No Milestones Available</h3>
+          <p className="text-sm">
+            This team doesn't have any milestones assigned yet.
+            <br />
+            Your program coordinator will add milestones when they are ready.
+          </p>
+        </div>
+        {programId && (
+          <Button 
+            variant="outline" 
+            className="mt-4" 
+            asChild
+          >
+            <Link href={`/dashboard/programs/${programType}/${programId}`}>
+              View Program Details
+            </Link>
+          </Button>
+        )}
+      </div>
+    )
   }
   
   // Get overall progress

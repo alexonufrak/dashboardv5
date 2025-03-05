@@ -283,6 +283,34 @@ export default function MilestoneTable({
       </div>
     )
   }
+  
+  // If no milestones, show empty state message
+  if (!milestones || milestones.length === 0 || enhancedMilestones.length === 0) {
+    return (
+      <div className={`space-y-4 ${className}`}>
+        <div className="flex flex-col mb-4">
+          <h2 className="text-xl font-bold">
+            {programName || "Program Milestones"}
+          </h2>
+          <p className="text-muted-foreground">
+            No milestones have been created yet
+          </p>
+        </div>
+        
+        <div className="border rounded-md p-8 text-center">
+          <div className="text-muted-foreground mb-2">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-medium mb-1">No Milestones Available</h3>
+            <p className="text-sm">
+              The program administrator has not added any milestones to this program yet.
+              <br />
+              Check back later or contact your program coordinator for more information.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // Calculate completeness metrics
   const completedCount = enhancedMilestones.filter(m => m.status === "completed").length
