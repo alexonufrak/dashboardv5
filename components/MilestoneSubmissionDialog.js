@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { useDropzone } from "react-dropzone"
 import { toast } from "sonner"
 import { format, parseISO, isValid } from "date-fns"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import { upload } from "@vercel/blob/client"
 import {
   Dialog,
   DialogContent,
@@ -150,6 +151,101 @@ export default function MilestoneSubmissionDialog({
     }
   }
 
+  // State for tracking upload progress
+  const [uploadProgress, setUploadProgress] = useState({})
+  const [uploadedFiles, setUploadedFiles] = useState([])
+
+  // Handle file upload to Vercel Blob
+  const uploadFileToBlob = async (file) => {
+    try {
+      // Create a unique folder path for each team/milestone combination
+      const folderPath = `team-${teamData.id}/milestone-${milestone.id}`
+
+      // Create a clientPayload with metadata
+      const clientPayload = JSON.stringify({
+        teamId: teamData.id,
+        milestoneId: milestone.id,
+        fileName: file.name
+      })
+
+      // Show toast for upload start
+      const toastId = toast.loading(`Uploading ${file.name}...`)
+
+      // Track progress for this file
+      setUploadProgress(prev => ({
+        ...prev,
+        [file.name]: {
+          progress: 0,
+          total: 100,
+          status: 'uploading'
+        }
+      }))
+      
+      // Upload file to Vercel Blob
+      const blob = await upload(`${folderPath}/${file.name}`, file, {
+        access: 'public',
+        handleUploadUrl: '/api/upload',
+        clientPayload,
+        onUploadProgress: ({ loaded, total, percentage }) => {
+          // Update progress state
+          setUploadProgress(prev => ({
+            ...prev,
+            [file.name]: {
+              progress: loaded,
+              total,
+              percentage,
+              status: 'uploading'
+            }
+          }))
+          
+          // Update toast with progress
+          toast.loading(`Uploading ${file.name}... ${Math.round(percentage)}%`, {
+            id: toastId
+          })
+        }
+      })
+
+      // Update progress state to complete
+      setUploadProgress(prev => ({
+        ...prev,
+        [file.name]: {
+          progress: 100,
+          total: 100,
+          percentage: 100,
+          status: 'completed'
+        }
+      }))
+
+      // Success toast
+      toast.success(`Uploaded ${file.name}`, {
+        id: toastId
+      })
+
+      // Return the blob URL and metadata
+      return {
+        url: blob.url,
+        filename: file.name,
+        contentType: file.type,
+        size: file.size
+      }
+    } catch (error) {
+      console.error(`Error uploading ${file.name}:`, error)
+      toast.error(`Failed to upload ${file.name}: ${error.message || 'Unknown error'}`)
+      
+      // Update progress state to error
+      setUploadProgress(prev => ({
+        ...prev,
+        [file.name]: {
+          ...prev[file.name],
+          status: 'error'
+        }
+      }))
+      
+      // Throw error to be caught by caller
+      throw error
+    }
+  }
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -174,47 +270,73 @@ export default function MilestoneSubmissionDialog({
     setIsSubmitting(true)
     
     try {
-      // Create form data to upload files
-      const formData = new FormData()
-      formData.append("teamId", teamData.id)
-      formData.append("milestoneId", milestone.id)
+      // Step 1: Upload files to Vercel Blob (if any)
+      const fileUrls = []
+      
+      if (files.length > 0) {
+        // Clear any previous uploaded files
+        setUploadedFiles([])
+        
+        // Upload files in sequence
+        for (const file of files) {
+          try {
+            const uploadedFile = await uploadFileToBlob(file)
+            fileUrls.push(uploadedFile)
+            
+            // Track successfully uploaded files
+            setUploadedFiles(prev => [...prev, uploadedFile])
+          } catch (error) {
+            // Individual file upload errors are already handled by uploadFileToBlob
+            // Continue with other files
+          }
+        }
+        
+        // Check if any files were uploaded successfully
+        if (fileUrls.length === 0 && files.length > 0) {
+          throw new Error("None of the files could be uploaded. Please try again.")
+        }
+      }
+      
+      // Step 2: Submit the milestone with file URLs
+      const submissionData = {
+        teamId: teamData.id,
+        milestoneId: milestone.id,
+        fileUrls,
+        comments
+      }
       
       if (linkUrl) {
-        formData.append("link", linkUrl)
+        submissionData.link = linkUrl
       }
       
-      if (comments) {
-        formData.append("comments", comments)
-      }
-      
-      // Append files if any
-      files.forEach((file, index) => {
-        formData.append(`file${index}`, file)
-      })
-      
-      // Make API request
+      // Make API request to create the submission
       const response = await fetch("/api/teams/submissions", {
         method: "POST",
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(submissionData),
       })
       
-      const responseData = await response.json();
+      const responseData = await response.json()
       
       if (!response.ok) {
-        console.error("Submission error response:", responseData);
+        console.error("Submission error response:", responseData)
         throw new Error(responseData.details || responseData.error || "Failed to submit")
       }
       
       // Check for warnings in the response
       if (responseData.warning) {
-        toast.warning(responseData.warning);
-        console.warn("Submission warning:", responseData.warning);
+        toast.warning(responseData.warning)
+        console.warn("Submission warning:", responseData.warning)
       }
       
       toast.success("Milestone submission successful")
       
       // Reset form
       setFiles([])
+      setUploadedFiles([])
+      setUploadProgress({})
       setLinkUrl("")
       setComments("")
       
@@ -240,33 +362,83 @@ export default function MilestoneSubmissionDialog({
     }
   }
 
-  // Render file list with previews
+  // Render file upload progress
+  const renderUploadProgress = (file) => {
+    const fileProgress = uploadProgress[file.name]
+    
+    if (!fileProgress) return null
+    
+    const { percentage, status } = fileProgress
+    
+    return (
+      <div className="mt-1">
+        <div className="relative w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+          <div 
+            className={`absolute top-0 left-0 h-full ${
+              status === 'error' ? 'bg-red-500' : 
+              status === 'completed' ? 'bg-green-500' : 
+              'bg-blue-500'
+            }`}
+            style={{ width: `${percentage || 0}%` }}
+          />
+        </div>
+        <div className="flex justify-between mt-0.5">
+          <span className="text-xs text-muted-foreground">
+            {status === 'error' ? 'Upload failed' : 
+             status === 'completed' ? 'Uploaded' : 
+             `${Math.round(percentage || 0)}%`}
+          </span>
+          {status === 'completed' && (
+            <span className="text-xs text-green-600">Complete</span>
+          )}
+          {status === 'error' && (
+            <span className="text-xs text-red-600">Failed</span>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Render file list with previews and upload progress
   const renderFileList = () => {
     if (files.length === 0) return null
     
     return (
       <div className="mt-2 space-y-2">
-        {files.map((file, index) => (
-          <div key={index} className="flex items-center justify-between p-2 border rounded bg-gray-50">
-            <div className="flex items-center">
-              <FileText className="h-4 w-4 mr-2 text-blue-500" />
-              <span className="text-sm truncate max-w-[200px]">
-                {file.name}
-              </span>
-              <span className="text-xs text-muted-foreground ml-2">
-                {(file.size / 1024).toFixed(0)} KB
-              </span>
+        {files.map((file, index) => {
+          // Check if this file has been uploaded successfully
+          const isUploaded = uploadedFiles.some(u => u.filename === file.name)
+          
+          return (
+            <div key={index} className="p-2 border rounded bg-gray-50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <FileText className={`h-4 w-4 mr-2 ${isUploaded ? 'text-green-500' : 'text-blue-500'}`} />
+                  <span className="text-sm truncate max-w-[200px]">
+                    {file.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground ml-2">
+                    {(file.size / 1024).toFixed(0)} KB
+                  </span>
+                </div>
+                {!isSubmitting && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => removeFile(file)}
+                    className="h-6 w-6 p-0" 
+                    disabled={isSubmitting}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              
+              {/* Render progress bar during upload */}
+              {renderUploadProgress(file)}
             </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => removeFile(file)}
-              className="h-6 w-6 p-0" 
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
+          )
+        })}
       </div>
     )
   }

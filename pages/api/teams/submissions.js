@@ -1,18 +1,18 @@
 import { getSession, withApiAuthRequired } from "@auth0/nextjs-auth0"
 import { base } from "@/lib/airtable"
-import { formidable } from "formidable"
-import fs from "fs"
 
-// Disable the default body parser to handle file uploads
+// Use standard bodyParser for this endpoint since we're no longer handling direct file uploads here
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: {
+      sizeLimit: '1mb', // For JSON only (file URLs and metadata)
+    },
   },
 }
 
 /**
  * API endpoint to create a new milestone submission
- * Accepts file uploads and links
+ * Accepts file URLs (from Vercel Blob) and external links
  */
 export default withApiAuthRequired(async function handler(req, res) {
   // Only allow POST method for submissions
@@ -27,25 +27,8 @@ export default withApiAuthRequired(async function handler(req, res) {
       return res.status(401).json({ error: "Not authenticated" })
     }
 
-    // Parse the multipart form data (files and fields)
-    const formOptions = {
-      keepExtensions: true,
-      maxFileSize: 10 * 1024 * 1024, // 10MB limit
-      multiples: true,
-    }
-
-    const [fields, files] = await new Promise((resolve, reject) => {
-      formidable(formOptions).parse(req, (err, fields, files) => {
-        if (err) reject(err)
-        resolve([fields, files])
-      })
-    })
-
-    // Extract form data
-    const teamId = fields.teamId?.[0]
-    const milestoneId = fields.milestoneId?.[0]
-    const link = fields.link?.[0]
-    const comments = fields.comments?.[0]
+    // Extract data from the request body
+    const { teamId, milestoneId, fileUrls = [], link, comments } = req.body
 
     // Validate required fields
     if (!teamId) {
@@ -54,6 +37,11 @@ export default withApiAuthRequired(async function handler(req, res) {
 
     if (!milestoneId) {
       return res.status(400).json({ error: "Milestone ID is required" })
+    }
+
+    // Make sure we have either files or a link
+    if (fileUrls.length === 0 && !link) {
+      return res.status(400).json({ error: "Please provide either file URLs or a link" })
     }
 
     // Get the Airtable table ID from environment variables
@@ -66,90 +54,28 @@ export default withApiAuthRequired(async function handler(req, res) {
     // Initialize the submissions table
     const submissionsTable = base(submissionsTableId)
 
-    // Process file uploads
+    // Process file attachments (using URLs instead of base64)
     let fileAttachments = []
-    if (files) {
-      // Handle multiple files
-      for (const key in files) {
-        const file = files[key]
-        if (Array.isArray(file)) {
-          for (const f of file) {
-            try {
-              // Validate file
-              if (!f.filepath || !f.originalFilename) {
-                console.warn('Skipping invalid file (missing filepath or name):', f);
-                continue;
-              }
-              
-              // Read the file and prepare for Airtable upload
-              const fileData = fs.readFileSync(f.filepath)
-              
-              // Ensure we have a proper MIME type
-              const mimeType = f.mimetype || 'application/octet-stream';
-              
-              // Create attachment object with ONLY the required fields that Airtable expects
-              // According to https://airtable.com/developers/web/api/model/file-attachment
-              const attachment = {
-                filename: f.originalFilename,
-                content: fileData.toString('base64'),
-                type: mimeType
-              };
-              
-              console.log(`Processing file: ${f.originalFilename}, size: ${fileData.length} bytes, type: ${mimeType}`);
-              fileAttachments.push(attachment);
-            } catch (fileError) {
-              console.error(`Error processing file ${f.originalFilename}:`, fileError);
-              // Continue with other files instead of failing completely
-            }
-          }
-        } else {
-          try {
-            // Validate file
-            if (!file.filepath || !file.originalFilename) {
-              console.warn('Skipping invalid file (missing filepath or name):', file);
-              continue;
-            }
-            
-            // Read the file and prepare for Airtable upload
-            const fileData = fs.readFileSync(file.filepath)
-            
-            // Ensure we have a proper MIME type
-            const mimeType = file.mimetype || 'application/octet-stream';
-            
-            // Create attachment object with ONLY the required fields that Airtable expects
-            // According to https://airtable.com/developers/web/api/model/file-attachment
-            const attachment = {
-              filename: file.originalFilename,
-              content: fileData.toString('base64'),
-              type: mimeType
-            };
-            
-            console.log(`Processing file: ${file.originalFilename}, size: ${fileData.length} bytes, type: ${mimeType}`);
-            fileAttachments.push(attachment);
-          } catch (fileError) {
-            console.error(`Error processing file ${file.originalFilename}:`, fileError);
-            // Continue with other files instead of failing completely
-          }
-        }
+    if (fileUrls && fileUrls.length > 0) {
+      // Convert URLs to Airtable attachment format
+      fileAttachments = fileUrls.map(fileInfo => ({
+        url: fileInfo.url,
+        filename: fileInfo.filename || fileInfo.url.split('/').pop() || 'file'
+      }))
+      
+      console.log(`Processing ${fileAttachments.length} file URLs for submission`);
+      
+      // Log sample attachment for debugging
+      if (fileAttachments.length > 0) {
+        console.log(`Sample attachment: ${JSON.stringify(fileAttachments[0])}`);
       }
-    }
-    
-    console.log(`Total attachments to submit: ${fileAttachments.length}`);
-    
-    // If we couldn't process any files but the user tried to upload some, return an error
-    if (fileAttachments.length === 0 && Object.keys(files).length > 0) {
-      console.error('No valid files could be processed');
-      return res.status(400).json({ 
-        error: "File upload failed",
-        details: "None of the provided files could be processed. Please try different files."
-      });
     }
 
     // Create submission record
     const record = {
       Team: [teamId],
       Comments: comments || "",
-      Milestone: [milestoneId] // Ensure Milestone is always an array with a single ID
+      Milestone: [milestoneId]
     }
     
     // Log the record creation for debugging
@@ -162,44 +88,14 @@ export default withApiAuthRequired(async function handler(req, res) {
 
     // Add attachments if any
     if (fileAttachments.length > 0) {
-      console.log(`Adding ${fileAttachments.length} attachments to the record`);
+      console.log(`Adding ${fileAttachments.length} file URL attachments to the record`);
       
-      // NOTE: We're ensuring the Attachment field follows Airtable's expected format
-      // It needs to be a single array of attachment objects
+      // Airtable accepts an array of objects with URL property
       record.Attachment = fileAttachments;
     }
 
     // Create the submission in Airtable
     try {
-      console.log('Submitting to Airtable:', {
-        teamId,
-        milestoneId,
-        attachmentCount: fileAttachments.length
-      });
-      
-      // If we have many or large attachments, use a different approach
-      if (fileAttachments.length > 0) {
-        console.log(`Preparing ${fileAttachments.length} attachments for submission`);
-        
-        try {
-          // Log the attachment structure for debugging
-          const sampleAttachment = fileAttachments[0];
-          console.log(`Attachment example structure: {
-            filename: "${sampleAttachment.filename}",
-            type: "${sampleAttachment.type}",
-            content: "${sampleAttachment.content.substring(0, 20)}..." (length: ${sampleAttachment.content.length})
-          }`);
-        } catch (e) {
-          console.error("Error logging attachment structure:", e);
-        }
-        
-        // Try with just one attachment at a time if there are multiple
-        if (fileAttachments.length > 1) {
-          console.log("Multiple attachments - submitting with only the first one for this attempt");
-          record.Attachment = [fileAttachments[0]];
-        }
-      }
-      
       // Create the submission in Airtable
       const submission = await submissionsTable.create(record);
       
@@ -217,30 +113,33 @@ export default withApiAuthRequired(async function handler(req, res) {
     } catch (submitError) {
       console.error("Error creating submission in Airtable:", submitError);
       
-      // Check for specific Airtable errors
-      if (submitError.error === 'INVALID_ATTACHMENT_OBJECT') {
-        console.log("Detected INVALID_ATTACHMENT_OBJECT error, attempting alternate submission method");
+      // Fallback approach if there's an issue with attachments
+      if (submitError.error === 'INVALID_ATTACHMENT_OBJECT' || 
+          (submitError.message && submitError.message.includes('attachment'))) {
+        console.log("Detected attachment error, attempting alternate submission method");
         
         try {
           // Remove attachments and just submit with a comment about files
           delete record.Attachment;
           
-          // Add a note to the comments
+          // Add a note to the comments with the file URLs
+          const fileUrlsList = fileAttachments.map(file => `- ${file.filename}: ${file.url}`).join('\n');
           record.Comments = (record.Comments || "") + 
-            "\n\n[Note: Files couldn't be uploaded directly. Please upload files manually through Airtable.]";
+            `\n\n[Note: Files were uploaded but couldn't be attached directly. Access them at the following URLs:]\n${fileUrlsList}`;
           
           // Try again without the attachments
           const submission = await submissionsTable.create(record);
           
           return res.status(201).json({
             success: true,
-            warning: "Files were not uploaded due to technical limitations. Please contact support if you need to attach files.",
+            warning: "Files were uploaded but couldn't be attached directly. URLs have been included in the comments.",
             submission: {
               id: submission.id,
               teamId,
               milestoneId,
               hasAttachments: false,
               attachmentCount: 0,
+              fileUrls: fileAttachments.map(file => file.url),
               hasLink: !!link,
             }
           });
@@ -248,7 +147,7 @@ export default withApiAuthRequired(async function handler(req, res) {
           console.error("Retry submission without attachments also failed:", retryError);
           return res.status(500).json({ 
             error: "Failed to create submission", 
-            details: "Couldn't upload files and fallback method also failed.",
+            details: "Couldn't attach files and fallback method also failed.",
             errorCode: "SUBMISSION_FAILED"
           });
         }
@@ -264,19 +163,9 @@ export default withApiAuthRequired(async function handler(req, res) {
   } catch (error) {
     console.error("Error processing submission request:", error);
     
-    // Sanitize and improve error details
-    let errorDetails = error.message || "Unknown error";
-    let statusCode = 500;
-    
-    // Handle specific error types with better messages
-    if (error.message && error.message.includes('INVALID_ATTACHMENT_OBJECT')) {
-      statusCode = 422;
-      errorDetails = "Invalid attachment format. Please check your file and try again.";
-    }
-    
-    return res.status(statusCode).json({ 
+    return res.status(500).json({ 
       error: "Failed to create submission", 
-      details: errorDetails
+      details: error.message || "Unknown error"
     });
   }
 })
