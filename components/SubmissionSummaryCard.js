@@ -33,28 +33,36 @@ export default function SubmissionSummaryCard({ submissions: initialSubmissions 
   }, [milestones, isInitialized])
   
   // Update when a submission is found
-  const handleSubmissionCheck = (milestoneId, hasSubmission, submissions) => {
-    // Update the processed milestones
-    setProcessedMilestones(prev => 
-      prev.map(m => {
-        if (m.id === milestoneId) {
-          return {
-            ...m,
-            hasSubmission,
-            status: hasSubmission ? "completed" : m.status,
-            submissions: submissions || []
-          }
-        }
-        return m
-      })
-    )
-    
-    // Update the submissions map
+  const handleSubmissionCheck = (hasSubmission, submissions) => {
+    // Only process if we have submissions
     if (hasSubmission && submissions && submissions.length > 0) {
-      setSubmissionsByMilestone(prev => ({
-        ...prev,
-        [milestoneId]: submissions
-      }))
+      console.log(`SubmissionSummaryCard: received ${submissions.length} submissions`);
+      
+      // Extract milestone ID from submissions if available
+      const milestoneId = submissions[0].milestoneId;
+      
+      if (milestoneId) {
+        // Update the processed milestones
+        setProcessedMilestones(prev => 
+          prev.map(m => {
+            if (m.id === milestoneId) {
+              return {
+                ...m,
+                hasSubmission,
+                status: hasSubmission ? "completed" : m.status,
+                submissions: submissions || []
+              }
+            }
+            return m
+          })
+        )
+        
+        // Update the submissions map
+        setSubmissionsByMilestone(prev => ({
+          ...prev,
+          [milestoneId]: submissions
+        }))
+      }
       
       // Add to all submissions list
       setAllSubmissions(prev => {
@@ -96,14 +104,11 @@ export default function SubmissionSummaryCard({ submissions: initialSubmissions 
   const totalSubmissions = validatedSubmissions.length;
   const totalMilestones = milestones.length;
   
-  // Log validation details if there were rejected submissions
-  if (validatedSubmissions.length < submissions.length) {
-    console.log(`Filtered out ${submissions.length - validatedSubmissions.length} invalid submissions`);
-    
-    // If we found any invalid submissions, log the first one for debugging
-    const invalidSub = submissions.find(sub => !validatedSubmissions.includes(sub));
-    if (invalidSub) {
-      console.log(`Example invalid submission: ${JSON.stringify(invalidSub)}`);
+  // Simplified validation logging without referencing any undeclared variables
+  if (combinedSubmissions.length > 0) {
+    const rejectedCount = combinedSubmissions.length - validatedSubmissions.length;
+    if (rejectedCount > 0) {
+      console.log(`Filtered out ${rejectedCount} invalid submissions from ${combinedSubmissions.length} total`);
     }
   }
   
@@ -226,8 +231,8 @@ export default function SubmissionSummaryCard({ submissions: initialSubmissions 
   // Calculate submission rate with validation
   const completedMilestones = milestones.filter(m => m.status === 'completed').length;
   
-  // Only log statistics if there's something interesting to report
-  if (totalSubmissions > 0 || completedMilestones > 0) {
+  // Only log statistics if we have milestones to process
+  if (processedMilestones.length > 0) {
     console.log(`Stats: ${completedMilestones}/${totalMilestones} milestones completed, ${overdueCount} overdue, ${totalSubmissions} submissions`);
   }
   
@@ -247,9 +252,7 @@ export default function SubmissionSummaryCard({ submissions: initialSubmissions 
           <MilestoneSubmissionChecker
             key={`submission-check-${milestone.id}`}
             milestoneId={milestone.id}
-            onSubmissionCheck={(hasSubmission, submissions) => 
-              handleSubmissionCheck(milestone.id, hasSubmission, submissions)
-            }
+            onSubmissionCheck={handleSubmissionCheck}
           />
         ))}
       
