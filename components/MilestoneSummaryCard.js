@@ -201,52 +201,84 @@ export default function MilestoneSummaryCard({ milestones = [], onViewMilestones
           <Progress value={progressPercentage} className="h-2.5" />
         </div>
         
-        {/* Stats grid - completed, late, and upcoming */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-green-50 rounded-lg p-3 border border-green-100">
-            <div className="flex items-center gap-2 mb-1">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <span className="text-sm font-medium text-green-800">Completed</span>
-            </div>
-            <div className="text-2xl font-bold text-green-900">{completedCount}</div>
-          </div>
-          
-          <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-            <div className="flex items-center gap-2 mb-1">
-              <Circle className="h-5 w-5 text-gray-500" />
-              <span className="text-sm font-medium text-gray-800">Upcoming</span>
-            </div>
-            <div className="text-2xl font-bold text-gray-900">{upcomingCount}</div>
-          </div>
-          
-          <div className="bg-red-50 rounded-lg p-3 border border-red-100">
-            <div className="flex items-center gap-2 mb-1">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <span className="text-sm font-medium text-red-800">Late</span>
-            </div>
-            <div className="text-2xl font-bold text-red-900">{lateCount}</div>
-          </div>
-        </div>
-        
-        {/* Next milestone */}
-        {nextMilestone && (
-          <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
-            <h4 className="text-sm font-medium text-indigo-800 mb-1">Next Milestone</h4>
-            <div className="text-lg font-semibold text-indigo-900 mb-1">{nextMilestone.name}</div>
-            <div className="flex justify-between items-center">
-              <Badge 
-                variant={nextMilestone.status === "late" ? "destructive" : "outline"} 
-                className="whitespace-nowrap"
-              >
-                {nextMilestone.status === "late" ? "Late" : "Upcoming"}
-              </Badge>
-              <div className="text-sm text-indigo-700">
-                Due: {nextMilestone.dueDate ? new Date(nextMilestone.dueDate).toLocaleDateString('en-US', {
-                  month: 'short', day: 'numeric', year: 'numeric'
-                }) : "No date"}
+        {isProcessing ? (
+          <>
+            {/* Skeleton loader for stats grid */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                <div className="animate-pulse h-5 bg-gray-200 rounded w-24 mb-2"></div>
+                <div className="animate-pulse h-8 bg-gray-300 rounded w-10"></div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                <div className="animate-pulse h-5 bg-gray-200 rounded w-24 mb-2"></div>
+                <div className="animate-pulse h-8 bg-gray-300 rounded w-10"></div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                <div className="animate-pulse h-5 bg-gray-200 rounded w-24 mb-2"></div>
+                <div className="animate-pulse h-8 bg-gray-300 rounded w-10"></div>
               </div>
             </div>
-          </div>
+            
+            {/* Skeleton loader for next milestone */}
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+              <div className="animate-pulse h-4 bg-gray-200 rounded w-32 mb-2"></div>
+              <div className="animate-pulse h-6 bg-gray-300 rounded w-48 mb-2"></div>
+              <div className="flex justify-between items-center">
+                <div className="animate-pulse h-5 bg-gray-200 rounded w-20"></div>
+                <div className="animate-pulse h-5 bg-gray-200 rounded w-24"></div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Stats grid - completed, late, and upcoming */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+                <div className="flex items-center gap-2 mb-1">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  <span className="text-sm font-medium text-green-800">Completed</span>
+                </div>
+                <div className="text-2xl font-bold text-green-900">{completedCount}</div>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                <div className="flex items-center gap-2 mb-1">
+                  <Circle className="h-5 w-5 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-800">Upcoming</span>
+                </div>
+                <div className="text-2xl font-bold text-gray-900">{upcomingCount}</div>
+              </div>
+              
+              <div className="bg-red-50 rounded-lg p-3 border border-red-100">
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                  <span className="text-sm font-medium text-red-800">Late</span>
+                </div>
+                <div className="text-2xl font-bold text-red-900">{lateCount}</div>
+              </div>
+            </div>
+            
+            {/* Next milestone */}
+            {nextMilestone && (
+              <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
+                <h4 className="text-sm font-medium text-indigo-800 mb-1">Next Milestone</h4>
+                <div className="text-lg font-semibold text-indigo-900 mb-1">{nextMilestone.name}</div>
+                <div className="flex justify-between items-center">
+                  <Badge 
+                    variant={nextMilestone.status === "late" ? "destructive" : "outline"} 
+                    className="whitespace-nowrap"
+                  >
+                    {nextMilestone.status === "late" ? "Late" : "Upcoming"}
+                  </Badge>
+                  <div className="text-sm text-indigo-700">
+                    Due: {nextMilestone.dueDate ? new Date(nextMilestone.dueDate).toLocaleDateString('en-US', {
+                      month: 'short', day: 'numeric', year: 'numeric'
+                    }) : "No date"}
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
         
         {/* View all button removed */}

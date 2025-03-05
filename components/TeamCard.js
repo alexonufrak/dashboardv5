@@ -108,7 +108,13 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
             <h4 className="text-sm font-semibold mb-2">Team Programs:</h4>
             <div className="flex flex-wrap">
               {isLoadingCohorts ? (
-                <p className="text-sm text-muted-foreground">Loading programs...</p>
+                <div className="w-full space-y-2">
+                  <div className="flex animate-pulse space-x-2">
+                    <div className="h-16 w-32 bg-gray-200 rounded"></div>
+                    <div className="h-16 w-32 bg-gray-200 rounded"></div>
+                  </div>
+                  <div className="h-4 w-40 bg-gray-100 rounded animate-pulse"></div>
+                </div>
               ) : cohortsError ? (
                 <p className="text-sm text-red-500">Failed to load programs</p>
               ) : teamCohorts && teamCohorts.length > 0 ? (

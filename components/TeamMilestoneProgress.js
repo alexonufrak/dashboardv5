@@ -104,6 +104,46 @@ export default function TeamMilestoneProgress({ milestones: initialMilestones = 
   // Use processed milestones if initialized, otherwise use initial milestones
   const milestones = isInitialized ? processedMilestones : initialMilestones;
   
+  // Show skeleton loader if still initializing
+  if (!isInitialized && initialMilestones.length > 0) {
+    return (
+      <div>
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex-1">
+            <div className="flex justify-between text-sm mb-1">
+              <div className="h-4 bg-gray-200 animate-pulse rounded w-24"></div>
+              <div className="h-4 bg-gray-200 animate-pulse rounded w-8"></div>
+            </div>
+            <div className="h-2.5 bg-gray-100 animate-pulse rounded"></div>
+          </div>
+          
+          <div className="flex ml-4">
+            <div className="border rounded-md flex bg-muted/20">
+              <div className="h-8 w-20 bg-gray-200 animate-pulse rounded"></div>
+              <div className="h-8 w-20 bg-gray-200 animate-pulse rounded"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="border rounded-md p-4">
+          <div className="space-y-4 animate-pulse">
+            <div className="h-10 bg-gray-200 rounded"></div>
+            {[1, 2, 3].map(i => (
+              <div key={i} className="flex justify-between items-center h-16 border-t pt-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-5 w-5 rounded-full bg-gray-200"></div>
+                  <div className="w-32 h-6 bg-gray-200 rounded"></div>
+                </div>
+                <div className="w-24 h-8 bg-gray-200 rounded"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no milestones
   if (!milestones || milestones.length === 0) {
     return (
       <div className="border rounded-md p-6 text-center">
