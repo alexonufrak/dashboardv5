@@ -92,15 +92,27 @@ export default async function handler(req, res) {
         ? record.fields.Team
         : [teamId];
 
+      // Process attachments from Airtable format
+      let attachments = [];
+      if (record.fields.Attachment && Array.isArray(record.fields.Attachment)) {
+        attachments = record.fields.Attachment.map(file => ({
+          id: file.id,
+          url: file.url,
+          filename: file.filename,
+          size: file.size,
+          type: file.type,
+          thumbnails: file.thumbnails
+        }));
+      }
+
       return {
         id: record.id,
         teamId: teamId,
         teamIds: teamIds,
         milestoneId: recordMilestoneId,
         milestoneName: record.fields["Name (from Milestone)"]?.[0] || null,
-        // Remove deliverable fields that aren't in the schema
         createdTime: record.fields["Created Time"] || new Date().toISOString(),
-        attachment: record.fields.Attachment,
+        attachments: attachments,
         comments: record.fields.Comments,
         link: record.fields.Link
       };
@@ -113,7 +125,7 @@ export default async function handler(req, res) {
         teamId: submissions[0].teamId,
         milestoneId: submissions[0].milestoneId,
         milestoneName: submissions[0].milestoneName,
-        hasAttachment: !!submissions[0].attachment,
+        attachments: submissions[0].attachments.length,
         hasComments: !!submissions[0].comments,
         hasLink: !!submissions[0].link
       });

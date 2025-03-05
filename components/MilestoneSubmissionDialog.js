@@ -656,64 +656,38 @@ export default function MilestoneSubmissionDialog({
                         
                         // Log attachment data for debugging
                         console.log(`Processing ${submission.attachments.length} attachments for submission ${submission.id}`);
+                        console.log("Attachment data sample:", JSON.stringify(submission.attachments[0]));
                         
-                        // Filter to only valid attachments with URLs
-                        const validAttachments = submission.attachments.filter(att => {
-                          // Skip null or undefined attachments
-                          if (!att) {
-                            console.log(`Skipping null attachment`);
-                            return false;
-                          }
-                          
-                          // Check for direct URL
-                          if (att.url) {
-                            return true;
-                          }
-                          
-                          // Check for thumbnail URLs
-                          if (att.thumbnails?.large?.url || att.thumbnails?.small?.url) {
-                            return true;
-                          }
-                          
-                          // Check for filename and type (could be an Airtable attachment format)
-                          if (att.filename && att.type) {
-                            console.log(`Found Airtable attachment: ${att.filename}`);
-                            return true;
-                          }
-                          
-                          console.log(`Invalid attachment format:`, att);
-                          return false;
-                        });
-                        
-                        console.log(`Found ${validAttachments.length} valid attachments of ${submission.attachments.length} total`);
-                        
-                        // Map valid attachments to links
                         return (
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {validAttachments.map((att, i) => {
-                              // Get the best available URL
-                              let fileUrl = '#';
-                              let fileName = `File ${i+1}`;
+                            {submission.attachments.map((att, i) => {
+                              // Skip null or undefined attachments
+                              if (!att) return null;
                               
-                              // Direct URL - best option
-                              if (att.url) {
-                                fileUrl = att.url;
-                                fileName = att.filename || `File ${i+1}`;
-                              } 
-                              // Thumbnail URL from Airtable - second best option
-                              else if (att.thumbnails?.large?.url) {
-                                fileUrl = att.thumbnails.large.url;
-                                fileName = att.filename || `File ${i+1}`;
+                              // Get file information
+                              const fileUrl = att.url || '#';
+                              const fileName = att.filename || `File ${i+1}`;
+                              const fileType = att.type || '';
+                              
+                              // Only render if we have a URL
+                              if (fileUrl === '#') {
+                                console.log("Missing URL for attachment:", att);
+                                return null;
                               }
-                              // Small thumbnail fallback
-                              else if (att.thumbnails?.small?.url) {
-                                fileUrl = att.thumbnails.small.url;
-                                fileName = att.filename || `File ${i+1}`;
-                              }
-                              // Last resort - use the ID as a key
-                              else if (att.id) {
-                                fileUrl = '#'; // No direct URL available
-                                fileName = att.filename || `File ${i+1}`;
+                              
+                              // Icons based on file type
+                              let fileIcon = <FileText className="h-3 w-3 mr-1" />;
+                              let bgColor = "bg-blue-50";
+                              
+                              // Customize appearance based on file type
+                              if (fileType.includes('image/')) {
+                                bgColor = "bg-purple-50";
+                              } else if (fileType.includes('pdf')) {
+                                bgColor = "bg-red-50";
+                              } else if (fileType.includes('spreadsheet') || fileType.includes('excel')) {
+                                bgColor = "bg-green-50";
+                              } else if (fileType.includes('document') || fileType.includes('word')) {
+                                bgColor = "bg-blue-50";
                               }
                               
                               return (
@@ -722,9 +696,10 @@ export default function MilestoneSubmissionDialog({
                                   href={fileUrl}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-blue-600 hover:underline text-xs bg-blue-50 px-2 py-1 rounded-md"
+                                  className={`text-blue-700 hover:underline text-xs ${bgColor} px-2 py-1 rounded-md flex items-center`}
                                   title={fileName}
                                 >
+                                  {fileIcon}
                                   {fileName.length > 15 ? `${fileName.substring(0, 12)}...` : fileName}
                                 </a>
                               );
