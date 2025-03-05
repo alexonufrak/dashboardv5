@@ -349,19 +349,19 @@
     --chart-5: 340 75% 55%;
   }
   
-  /* Added styles for dashboard shell page transitions */
+  /* Removed animations for dashboard shell page transitions for smoother experience */
   .proper-dashboard-layout-content {
-    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+    /* No transitions for main navigation between pages to avoid glitchy behavior */
   }
   
-  /* Dashboard pages transition when switching tabs */
+  /* Removed animations for dashboard pages when switching tabs */
   .dashboard-content,
   .program-dashboard,
   .profile-page {
-    animation: fadeInUp 0.3s ease-in-out;
+    /* No animations for page switches to avoid glitchy behavior */
   }
   
-  /* Animation for all elements that need to fade in with dashboard */
+  /* Only use fadeInUp animation when explicitly requested */
   .animate-fadeInUp {
     animation: fadeInUp 0.3s ease-in-out;
   }
