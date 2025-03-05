@@ -19,10 +19,46 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Team ID is required" });
     }
     
+    // Get the teams table ID
+    const teamsTableId = process.env.AIRTABLE_TEAMS_TABLE_ID;
+    if (!teamsTableId) {
+      console.error("Teams table ID not configured");
+      return res.status(200).json({ submissions: [] });
+    }
+    
+    // First, try to get the team to check for submissions directly
+    const teamsTable = base(teamsTableId);
+    let teamSubmissionIds = [];
+    
+    try {
+      console.log(`Getting team ${teamId} to check for submission IDs`);
+      const team = await teamsTable.find(teamId);
+      if (team && team.fields.Submissions && Array.isArray(team.fields.Submissions)) {
+        teamSubmissionIds = team.fields.Submissions;
+        console.log(`Found ${teamSubmissionIds.length} submission IDs directly on team record`);
+      } else {
+        console.log(`No submission IDs found on team record`);
+      }
+    } catch (error) {
+      console.error(`Error getting team record:`, error);
+    }
+    
     // Get the Submissions table ID from environment variables
     const submissionsTableId = process.env.AIRTABLE_SUBMISSIONS_TABLE_ID;
     if (!submissionsTableId) {
       console.error("Submissions table ID not configured");
+      // Return the submission IDs we found directly on the team, if any
+      if (teamSubmissionIds.length > 0) {
+        const submissions = teamSubmissionIds.map(id => ({
+          id,
+          teamId,
+          createdTime: new Date().toISOString()
+        }));
+        return res.status(200).json({ 
+          submissions,
+          meta: { source: "team-record-only", count: submissions.length }
+        });
+      }
       return res.status(200).json({ submissions: [] });
     }
     
@@ -210,6 +246,45 @@ export default async function handler(req, res) {
       }
     }
     
+    // If we have team submission IDs but found no submissions through our approaches,
+    // use the team submission IDs directly
+    if (submissions.length === 0 && teamSubmissionIds.length > 0) {
+      console.log(`Using ${teamSubmissionIds.length} submission IDs directly from team record`);
+      
+      // For each submission ID, try to fetch the detail from the submissions table
+      for (const submissionId of teamSubmissionIds) {
+        try {
+          const submissionRecord = await submissionsTable.find(submissionId);
+          if (submissionRecord) {
+            submissions.push({
+              id: submissionRecord.id,
+              teamId: teamId,
+              milestoneId: submissionRecord.fields.Milestone?.[0] || milestoneId,
+              createdTime: submissionRecord.fields["Created Time"] || new Date().toISOString(),
+              attachment: submissionRecord.fields.Attachment,
+              comments: submissionRecord.fields.Comments,
+              link: submissionRecord.fields.Link
+            });
+          } else {
+            // If we can't get the detail, just use the ID
+            submissions.push({
+              id: submissionId,
+              teamId: teamId,
+              createdTime: new Date().toISOString()
+            });
+          }
+        } catch (error) {
+          console.error(`Error fetching submission ${submissionId}:`, error);
+          // Still include the ID even if we can't get details
+          submissions.push({
+            id: submissionId,
+            teamId: teamId,
+            createdTime: new Date().toISOString()
+          });
+        }
+      }
+    }
+    
     // Add diagnostic logging before returning
     console.log(`Final result: Returning ${submissions.length} submissions`);
     if (submissions.length > 0) {
@@ -232,9 +307,11 @@ export default async function handler(req, res) {
         queryDetails: {
           teamId,
           milestoneId,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          teamSubmissionIdsCount: teamSubmissionIds.length
         },
-        resultCount: submissions.length
+        resultCount: submissions.length,
+        source: teamSubmissionIds.length > 0 ? "team-record-augmented" : "api-lookup"
       }
     });
   } catch (error) {

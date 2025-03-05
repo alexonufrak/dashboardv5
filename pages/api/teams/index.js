@@ -41,7 +41,9 @@ export default withApiAuthRequired(async function teamsHandler(req, res) {
       name: teams.name,
       description: teams.description,
       members: teams.members,
-      points: teams.points
+      points: teams.points,
+      submissions: teams.submissions,
+      cohortIds: teams.cohortIds
     }]
     
     console.log('Teams API response:', { count: formattedTeams.length, teams: formattedTeams })
