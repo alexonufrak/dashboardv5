@@ -1,21 +1,79 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Upload, FileCheck, FileX, Calendar, BarChart, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { useDashboard } from "@/contexts/DashboardContext"
+import { useTeamSubmissions } from "@/lib/useDataFetching"
+import MilestoneSubmissionChecker from "./MilestoneSubmissionChecker"
 
-export default function SubmissionSummaryCard({ submissions = [], milestones = [] }) {
-  // Minimal initial logging to prevent console flooding
-  console.log(`SubmissionSummaryCard: ${submissions.length} submissions, ${milestones.length} milestones`);
+export default function SubmissionSummaryCard({ submissions: initialSubmissions = [], milestones = [] }) {
+  const { teamData } = useDashboard()
+  const [processedMilestones, setProcessedMilestones] = useState([])
+  const [submissionsByMilestone, setSubmissionsByMilestone] = useState({})
+  const [allSubmissions, setAllSubmissions] = useState([])
+  const [isInitialized, setIsInitialized] = useState(false)
   
-  // Only log detailed submission info if we have actual submissions
-  if (submissions.length > 0) {
-    console.log(`Found ${submissions.length} submissions to display`);
+  // Initialize processed milestones
+  useEffect(() => {
+    if (milestones && milestones.length > 0 && !isInitialized) {
+      // Create enhanced milestones with submission fields
+      const enhanced = milestones.map(milestone => ({
+        ...milestone,
+        hasSubmission: false,
+        submissions: [],
+        status: milestone.status || "upcoming",
+      }))
+      
+      setProcessedMilestones(enhanced)
+      setIsInitialized(true)
+    }
+  }, [milestones, isInitialized])
+  
+  // Update when a submission is found
+  const handleSubmissionCheck = (milestoneId, hasSubmission, submissions) => {
+    // Update the processed milestones
+    setProcessedMilestones(prev => 
+      prev.map(m => {
+        if (m.id === milestoneId) {
+          return {
+            ...m,
+            hasSubmission,
+            status: hasSubmission ? "completed" : m.status,
+            submissions: submissions || []
+          }
+        }
+        return m
+      })
+    )
+    
+    // Update the submissions map
+    if (hasSubmission && submissions && submissions.length > 0) {
+      setSubmissionsByMilestone(prev => ({
+        ...prev,
+        [milestoneId]: submissions
+      }))
+      
+      // Add to all submissions list
+      setAllSubmissions(prev => {
+        const newSubmissions = [...prev]
+        submissions.forEach(sub => {
+          if (!newSubmissions.some(existing => existing.id === sub.id)) {
+            newSubmissions.push(sub)
+          }
+        })
+        return newSubmissions
+      })
+    }
   }
   
+  // Combine all submissions for processing
+  const combinedSubmissions = [...allSubmissions, ...initialSubmissions]
+  
   // Validate submissions and convert formats with improved field detection
-  const validatedSubmissions = submissions.filter(sub => {
+  const validatedSubmissions = combinedSubmissions.filter(sub => {
     // Basic validation to ensure we have at least an ID
     if (!sub || !sub.id) return false;
     
@@ -184,6 +242,17 @@ export default function SubmissionSummaryCard({ submissions = [], milestones = [
         <CardDescription>Track your milestone submissions and deadlines</CardDescription>
       </CardHeader>
       <CardContent>
+        {/* Hidden submission checkers to fetch submission data */}
+        {isInitialized && processedMilestones.map(milestone => (
+          <MilestoneSubmissionChecker
+            key={`submission-check-${milestone.id}`}
+            milestoneId={milestone.id}
+            onSubmissionCheck={(hasSubmission, submissions) => 
+              handleSubmissionCheck(milestone.id, hasSubmission, submissions)
+            }
+          />
+        ))}
+      
         {/* Stats grid */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="bg-violet-50 rounded-lg p-3 border border-violet-100">

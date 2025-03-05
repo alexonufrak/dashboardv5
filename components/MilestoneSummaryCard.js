@@ -1,25 +1,65 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { CheckCircle2, Clock, AlertCircle, Circle, ChevronRight } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { useDashboard } from "@/contexts/DashboardContext"
+import MilestoneSubmissionChecker from "./MilestoneSubmissionChecker"
 
 export default function MilestoneSummaryCard({ milestones = [], onViewMilestones }) {
-  // Calculate milestone statistics
-  const completedCount = milestones.filter(m => m.status === "completed").length
-  const lateCount = milestones.filter(m => m.status === "late").length
-  const upcomingCount = milestones.filter(m => 
+  const { teamData } = useDashboard()
+  const [enhancedMilestones, setEnhancedMilestones] = useState([])
+  const [isProcessing, setIsProcessing] = useState(true)
+  
+  // Initialize enhancedMilestones from the raw milestones prop
+  useEffect(() => {
+    if (milestones && milestones.length > 0) {
+      // Create a copy with submission properties
+      const initialMilestones = milestones.map(milestone => ({
+        ...milestone,
+        hasSubmission: false,
+        submissions: [],
+        status: milestone.status || "upcoming",
+      }))
+      
+      setEnhancedMilestones(initialMilestones)
+      setIsProcessing(false)
+    }
+  }, [milestones])
+  
+  // Update milestone status when submissions are checked
+  const handleSubmissionCheck = (milestoneId, hasSubmission) => {
+    setEnhancedMilestones(prev => 
+      prev.map(m => {
+        if (m.id === milestoneId) {
+          // If there's a submission, mark as completed
+          return {
+            ...m,
+            hasSubmission,
+            status: hasSubmission ? "completed" : m.status
+          }
+        }
+        return m
+      })
+    )
+  }
+  
+  // Calculate milestone statistics using enhanced milestones with submission data
+  const completedCount = enhancedMilestones.filter(m => m.status === "completed").length
+  const lateCount = enhancedMilestones.filter(m => m.status === "late").length
+  const upcomingCount = enhancedMilestones.filter(m => 
     m.status !== "completed" && m.status !== "late").length
   
-  // Calculate overall progress percentage - now just completed / total
-  const progressPercentage = milestones.length > 0 
-    ? Math.round((completedCount) / milestones.length * 100) 
+  // Calculate overall progress percentage
+  const progressPercentage = enhancedMilestones.length > 0 
+    ? Math.round((completedCount) / enhancedMilestones.length * 100) 
     : 0
   
   // Find the next upcoming milestone
-  const upcomingMilestones = milestones
+  const upcomingMilestones = enhancedMilestones
     .filter(m => m.status !== "completed")
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
   
@@ -39,6 +79,15 @@ export default function MilestoneSummaryCard({ milestones = [], onViewMilestones
         </div>
       </CardHeader>
       <CardContent>
+        {/* Submission checker components */}
+        {!isProcessing && enhancedMilestones.map(milestone => (
+          <MilestoneSubmissionChecker
+            key={`submission-check-${milestone.id}`}
+            milestoneId={milestone.id}
+            onSubmissionCheck={(hasSubmission) => handleSubmissionCheck(milestone.id, hasSubmission)}
+          />
+        ))}
+        
         {/* Progress indicator */}
         <div className="mb-6">
           <Progress value={progressPercentage} className="h-2.5" />
