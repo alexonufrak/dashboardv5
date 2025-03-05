@@ -69,15 +69,17 @@ export default withApiAuthRequired(async function handler(req, res) {
       
       // If we couldn't get milestones from the cohort directly, use the cohort ID to find milestones
       if (milestones.length === 0) {
-        // Fetch milestones using the dedicated cohortId field with SEARCH
+        // Fetch milestones using the dedicated cohortId field with exact matching
+        // Use Record ID field (Milestone ID) for reliable filtering
         milestones = await milestonesTable
           .select({
-            filterByFormula: `SEARCH("${cohortId}", {cohortId})`,
+            // Use FIND for more reliable matching with record IDs
+            filterByFormula: `FIND("${cohortId}", {cohortId})`,
             sort: [{ field: 'Number', direction: 'asc' }]
           })
           .firstPage()
         
-        console.log(`Found ${milestones.length} milestones using Cohort field lookup`)
+        console.log(`Found ${milestones.length} milestones using exact Cohort field lookup`)
       }
     } catch (error) {
       console.error("Error fetching milestones:", error)

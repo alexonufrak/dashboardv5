@@ -102,11 +102,11 @@ export default withApiAuthRequired(async function handler(req, res) {
     // Enhanced debugging for participation lookup
     console.log(`Looking for participation records with contactId="${profile.contactId}"`)
     
-    // Try both approaches for robustness: dedicated field and linked record search
-    // OR condition to find matches with either method
+    // Use FIND for exact matching with record IDs
+    // This works reliably for finding record IDs in linked record fields
     const formula = `OR(
-      SEARCH("${profile.contactId}", {contactId}),
-      SEARCH("${profile.contactId}", ARRAYJOIN(Contacts))
+      FIND("${profile.contactId}", {contactId}),
+      FIND("${profile.contactId}", {Contacts})
     )`
     
     console.log(`Using formula: ${formula}`)
@@ -126,12 +126,12 @@ export default withApiAuthRequired(async function handler(req, res) {
       console.error("Error using primary formula:", err)
     }
     
-    // If no records found, try an alternative approach with SEARCH
+    // If no records found, try an alternative approach with FIND
     if (participationRecords.length === 0) {
       try {
-        console.log("Trying alternative SEARCH approach...")
+        console.log("Trying alternative FIND approach...")
         // Try even simpler formula as a fallback
-        // Use basic condition on Contacts field
+        // Use FIND for reliable record ID matching
         const directFormula = `FIND("${profile.contactId}", {Contacts})`
         
         let records = await participationTable.select({
@@ -280,10 +280,10 @@ export default withApiAuthRequired(async function handler(req, res) {
               // Initialize the members table
               const membersTable = base(membersTableId)
               
-              // First find the member records for this user using the dedicated contactId field with SEARCH
+              // First find the member records for this user using the dedicated contactId field with FIND
               const memberRecords = await membersTable
                 .select({
-                  filterByFormula: `SEARCH("${profile.contactId}", {contactId})`,
+                  filterByFormula: `FIND("${profile.contactId}", {contactId})`,
                   fields: ["Team", "Status"]
                 })
                 .firstPage()
@@ -299,16 +299,25 @@ export default withApiAuthRequired(async function handler(req, res) {
                       // Check if this team is associated with the cohort
                       // First check the dedicated cohortId field if it exists
                       const hasCohortIdField = team.fields.cohortId !== undefined;
+                      // Improved checking for record IDs in fields
+                      // Using indexOf for more reliable string checking
                       const cohortIdMatch = hasCohortIdField && 
                                           team.fields.cohortId && 
-                                          team.fields.cohortId.includes(cohortId);
+                                          (typeof team.fields.cohortId === 'string' ?
+                                            team.fields.cohortId.indexOf(cohortId) >= 0 :
+                                            (Array.isArray(team.fields.cohortId) && 
+                                             team.fields.cohortId.some(id => id === cohortId)));
                       
                       if (cohortIdMatch) {
                         teamId = team.id;
                         break;
                       }
                       // Fall back to the linked Cohorts field if needed
-                      else if (team.fields.Cohorts && team.fields.Cohorts.includes(cohortId)) {
+                      else if (team.fields.Cohorts && (
+                        // Check both array-based includes and string-based FIND logic
+                        (Array.isArray(team.fields.Cohorts) && team.fields.Cohorts.includes(cohortId)) ||
+                        (typeof team.fields.Cohorts === 'string' && team.fields.Cohorts.indexOf(cohortId) >= 0)
+                      )) {
                         teamId = team.id;
                         break;
                       }

@@ -40,14 +40,15 @@ export default async function handler(req, res) {
     let formula;
     
     if (milestoneId) {
-      // If we have both team and milestone IDs, check both fields using SEARCH
+      // If we have both team and milestone IDs, use FIND which is more reliable
+      // for finding record IDs in linked record fields
       formula = `AND(
-        SEARCH("${teamId}", {teamId}),
-        SEARCH("${milestoneId}", {milestoneId})
+        FIND("${teamId}", {teamId}),
+        FIND("${milestoneId}", {milestoneId})
       )`;
     } else {
-      // If we only have team ID, just check that field using SEARCH
-      formula = `SEARCH("${teamId}", {teamId})`;
+      // If we only have team ID, just check that field with FIND
+      formula = `FIND("${teamId}", {teamId})`;
     }
     
     console.log(`Using advanced Airtable formula: ${formula}`);

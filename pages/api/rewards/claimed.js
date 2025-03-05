@@ -33,17 +33,17 @@ export default withApiAuthRequired(async function handler(req, res) {
     let filterFormula = ""
     
     if (contactId && teamId) {
-      // Filter by both contact and team using dedicated ID fields with SEARCH
+      // Filter by both contact and team using dedicated ID fields with FIND
       filterFormula = `OR(
-        SEARCH("${contactId}", {contactId}),
-        SEARCH("${teamId}", {teamId})
+        FIND("${contactId}", {contactId}),
+        FIND("${teamId}", {teamId})
       )`
     } else if (contactId) {
-      // Filter by contact only using dedicated ID field with SEARCH
-      filterFormula = `SEARCH("${contactId}", {contactId})`
+      // Filter by contact only using dedicated ID field with FIND
+      filterFormula = `FIND("${contactId}", {contactId})`
     } else if (teamId) {
-      // Filter by team only using dedicated ID field with SEARCH
-      filterFormula = `SEARCH("${teamId}", {teamId})`
+      // Filter by team only using dedicated ID field with FIND
+      filterFormula = `FIND("${teamId}", {teamId})`
     } else {
       // If no filters provided, just return a limited number of recent claims
       filterFormula = "TRUE()"
