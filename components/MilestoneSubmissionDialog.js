@@ -159,17 +159,23 @@ export default function MilestoneSubmissionDialog({
   const uploadFileToBlob = async (file) => {
     try {
       // Create a unique folder path for each team/milestone combination
-      const folderPath = `team-${teamData.id}/milestone-${milestone.id}`
+      // Include a timestamp to avoid filename conflicts
+      const timestamp = Date.now();
+      const folderPath = `team-${teamData.id}/milestone-${milestone.id}/${timestamp}`;
+      
+      // Clean up the file name to avoid path issues
+      const safeFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
 
       // Create a clientPayload with metadata
       const clientPayload = JSON.stringify({
         teamId: teamData.id,
         milestoneId: milestone.id,
-        fileName: file.name
-      })
+        fileName: safeFilename,
+        timestamp: timestamp
+      });
 
       // Show toast for upload start
-      const toastId = toast.loading(`Uploading ${file.name}...`)
+      const toastId = toast.loading(`Uploading ${safeFilename}...`);
 
       // Track progress for this file
       setUploadProgress(prev => ({
@@ -179,14 +185,16 @@ export default function MilestoneSubmissionDialog({
           total: 100,
           status: 'uploading'
         }
-      }))
+      }));
       
-      // Upload file to Vercel Blob
-      const blob = await upload(`${folderPath}/${file.name}`, file, {
+      console.log(`Starting upload of ${safeFilename} to Vercel Blob...`);
+      
+      // Upload file to Vercel Blob with enhanced error handling
+      const blob = await upload(`${folderPath}/${safeFilename}`, file, {
         access: 'public',
         handleUploadUrl: '/api/upload',
         clientPayload,
-        maxRetries: 3, // Add retries for reliability
+        maxRetries: 3,
         onUploadProgress: ({ loaded, total, percentage }) => {
           // Update progress state
           setUploadProgress(prev => ({
@@ -230,20 +238,36 @@ export default function MilestoneSubmissionDialog({
         size: file.size
       }
     } catch (error) {
-      console.error(`Error uploading ${file.name}:`, error)
-      toast.error(`Failed to upload ${file.name}: ${error.message || 'Unknown error'}`)
+      console.error(`Error uploading ${file.name}:`, error);
+      
+      // Update toast with error
+      toast.error(`Failed to upload ${file.name}: ${error.message || 'Unknown error'}`);
       
       // Update progress state to error
       setUploadProgress(prev => ({
         ...prev,
         [file.name]: {
-          ...prev[file.name],
-          status: 'error'
+          ...(prev[file.name] || {}),
+          status: 'error',
+          error: error.message || 'Upload failed'
         }
-      }))
+      }));
       
-      // Throw error to be caught by caller
-      throw error
+      // Check for specific error types
+      let errorMessage = 'Failed to upload file';
+      if (error.message && error.message.includes('token')) {
+        errorMessage = 'Authentication error during upload. Please try again.';
+      } else if (error.message && error.message.includes('size')) {
+        errorMessage = 'File exceeds maximum size limit (5MB).';
+      } else if (error.message && error.message.includes('type')) {
+        errorMessage = 'File type not supported.';
+      }
+      
+      // Enhanced error for debugging
+      console.log(`Upload failed with error: ${errorMessage}`);
+      
+      // Throw a more specific error
+      throw new Error(errorMessage);
     }
   }
 
