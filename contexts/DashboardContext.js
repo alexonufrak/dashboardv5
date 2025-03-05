@@ -21,6 +21,11 @@ import {
  * @returns {Array} Array of milestone objects
  */
 function generateFallbackMilestones(programName) {
+  // Return empty array instead of generating fallback milestones
+  console.log("No real milestone data available, returning empty array instead of fallbacks");
+  return [];
+  
+  /* Disabling fallback milestone generation to prevent API confusion
   const now = new Date()
   const oneMonthAgo = new Date()
   oneMonthAgo.setMonth(now.getMonth() - 1)
@@ -90,6 +95,7 @@ function generateFallbackMilestones(programName) {
       score: null
     }
   ]
+  */
 }
 
 // Create context
