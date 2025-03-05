@@ -116,11 +116,19 @@ const ProgramApplicationHandler = ({
   // Check if a user is already part of a team program when trying to join another team program
   const checkInitiativeRestrictions = async () => {
     try {
-      // Get the current cohort's initiative
+      // Get the current cohort's initiative and participation type
       const currentInitiativeName = cohort?.initiativeDetails?.name || "";
-      const currentInitiativeId = cohort?.initiativeDetails?.id;
+      const currentParticipationType = participationType; // From the component props
       
-      console.log("Checking initiative restrictions for:", currentInitiativeName);
+      console.log("Checking team program restrictions for:", currentInitiativeName);
+      console.log("Participation type from cohort:", currentParticipationType);
+      
+      // Log more details about the cohort's participation type
+      console.log("Cohort details - Participation Type:", {
+        "From cohort.participationType": cohort?.participationType || "Not available",
+        "From cohort.initiativeDetails": cohort?.initiativeDetails?.["Participation Type"] || "Not available",
+        "Normalized value": currentParticipationType
+      });
       
       // Skip check for Xperiment initiative (which has no restrictions)
       if (currentInitiativeName.includes("Xperiment")) {
@@ -128,13 +136,16 @@ const ProgramApplicationHandler = ({
         return { allowed: true };
       }
       
-      // Check if this is a team program
-      const isTeamProgram = participationType.toLowerCase() === "team" || 
-                         participationType.toLowerCase().includes("team");
+      // Thoroughly check if this is a team program by examining the participation type
+      const isTeamProgram = 
+        currentParticipationType.toLowerCase() === "team" || 
+        currentParticipationType.toLowerCase().includes("team");
+      
+      console.log(`Is this a team program? ${isTeamProgram ? 'YES' : 'NO'} (${currentParticipationType})`);
       
       // Only check team program conflicts for team programs
       if (!isTeamProgram) {
-        console.log(`Not a team program (${participationType}), skipping team program conflict check`);
+        console.log(`Not a team program (${currentParticipationType}), skipping team program conflict check`);
         return { allowed: true };
       }
       
@@ -142,6 +153,14 @@ const ProgramApplicationHandler = ({
       if (!profile) {
         console.warn("Profile data not available for team program conflict check");
         return { allowed: true }; // Allow if profile is not available
+      }
+      
+      // Log the teams from the profile for debugging
+      console.log(`User has ${profile.teams?.length || 0} teams in their profile`);
+      if (profile.teams && profile.teams.length > 0) {
+        profile.teams.forEach(team => {
+          console.log(`Team: ${team.name}, CohortIds: ${team.cohortIds?.length || 0}`);
+        });
       }
       
       // Check if the user is already in a team program
@@ -152,7 +171,7 @@ const ProgramApplicationHandler = ({
         for (const team of userTeams) {
           if (team.cohortIds && team.cohortIds.length > 0) {
             // The user is already in a team that has cohorts
-            console.log(`User is already in team program: ${team.name}`);
+            console.log(`Team program conflict detected: User is already in team program ${team.name}`);
             return {
               allowed: false,
               reason: "team_program_conflict",

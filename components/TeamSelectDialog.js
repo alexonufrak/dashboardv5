@@ -122,9 +122,26 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
         return { allowed: true }
       }
       
-      // Get current cohort's initiative
-      const currentInitiative = cohort.initiativeDetails?.name || ""
-      console.log(`Current cohort initiative: "${currentInitiative}"`);
+      // Get current cohort's initiative and participation type
+      const currentInitiative = cohort.initiativeDetails?.name || "";
+      const participationType = cohort.participationType || 
+                              cohort.initiativeDetails?.["Participation Type"] || 
+                              "Individual";
+                              
+      console.log(`Current cohort initiative: "${currentInitiative}", Participation Type: "${participationType}"`);
+      
+      // Verify if this is a team program
+      const isTeamProgram = 
+        participationType.toLowerCase() === "team" || 
+        participationType.toLowerCase().includes("team");
+        
+      console.log(`Is this a team program? ${isTeamProgram ? 'YES' : 'NO'} (${participationType})`);
+      
+      // Skip team program check if not a team program
+      if (!isTeamProgram) {
+        console.log(`Current cohort is not a team program (${participationType}), no team conflicts possible`);
+        return { allowed: true };
+      }
       
       // Skip check for Xperiment initiative
       if (currentInitiative.toLowerCase().includes("xperiment")) {
@@ -167,7 +184,7 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
         console.log(`Team program conflict: team "${teamId}" is already in cohort "${teamCohort.name}"`);
         return {
           allowed: false,
-          reason: "team_program_conflict", // Change conflict type to team_program_conflict
+          reason: "team_program_conflict",
           details: {
             currentProgram: teamCohort.name || teamCohort.initiativeDetails?.name || "Current Program",
             appliedProgram: currentInitiative
