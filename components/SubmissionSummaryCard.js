@@ -15,6 +15,68 @@ export default function SubmissionSummaryCard({ submissions: initialSubmissions 
   const [submissionsByMilestone, setSubmissionsByMilestone] = useState({})
   const [allSubmissions, setAllSubmissions] = useState([])
   const [isInitialized, setIsInitialized] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+  
+  // Listen for submission updates
+  useEffect(() => {
+    // Event handler for submission updates
+    const handleSubmissionUpdate = (event) => {
+      const { milestoneId, teamId, submissions } = event.detail;
+      
+      // Make sure this event is for our team
+      if (teamData?.id && teamId && teamData.id !== teamId) {
+        return;
+      }
+      
+      console.log(`SubmissionSummaryCard received update for milestone: ${milestoneId}`);
+      
+      // Update our submissions list
+      if (submissions && submissions.length > 0) {
+        // Add the new submissions to our tracking
+        setAllSubmissions(prev => {
+          // Filter out any existing submissions for this milestone
+          const filtered = prev.filter(s => 
+            !submissions.some(newSub => newSub.id === s.id)
+          );
+          
+          // Add the new submissions
+          return [...filtered, ...submissions];
+        });
+        
+        // Update the submissions by milestone mapping
+        setSubmissionsByMilestone(prev => ({
+          ...prev,
+          [milestoneId]: submissions
+        }));
+        
+        // Update the milestone in our processed list
+        setProcessedMilestones(prev => 
+          prev.map(m => {
+            if (m.id === milestoneId) {
+              return {
+                ...m,
+                hasSubmission: true,
+                status: "completed",
+                submissions: submissions
+              };
+            }
+            return m;
+          })
+        );
+        
+        // Trigger a refresh
+        setRefreshTrigger(prev => prev + 1);
+      }
+    };
+    
+    // Add event listener
+    window.addEventListener('milestoneSubmissionUpdated', handleSubmissionUpdate);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('milestoneSubmissionUpdated', handleSubmissionUpdate);
+    };
+  }, [teamData?.id]);
   
   // Initialize processed milestones
   useEffect(() => {
@@ -30,7 +92,7 @@ export default function SubmissionSummaryCard({ submissions: initialSubmissions 
       setProcessedMilestones(enhanced)
       setIsInitialized(true)
     }
-  }, [milestones, isInitialized])
+  }, [milestones, isInitialized, refreshTrigger])
   
   // Update when a submission is found
   const handleSubmissionCheck = (hasSubmission, submissions) => {
@@ -315,12 +377,7 @@ export default function SubmissionSummaryCard({ submissions: initialSubmissions 
         )}
         
         {/* Submit button */}
-        <div className="text-center">
-          <Button>
-            Create New Submission
-            <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
+        {/* Create New Submission button removed */}
       </CardContent>
     </Card>
   )
