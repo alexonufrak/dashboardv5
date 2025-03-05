@@ -69,10 +69,10 @@ export default withApiAuthRequired(async function handler(req, res) {
       
       // If we couldn't get milestones from the cohort directly, use the cohort ID to find milestones
       if (milestones.length === 0) {
-        // Fetch milestones where Cohort field contains the cohortId
+        // Fetch milestones using the dedicated cohortId field for direct matching
         milestones = await milestonesTable
           .select({
-            filterByFormula: `FIND("${cohortId}", ARRAYJOIN(Cohort))`,
+            filterByFormula: `{cohortId} = "${cohortId}"`,
             sort: [{ field: 'Number', direction: 'asc' }]
           })
           .firstPage()

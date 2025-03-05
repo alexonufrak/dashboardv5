@@ -99,12 +99,9 @@ export default withApiAuthRequired(async function handler(req, res) {
     // and it's a multipleRecordLinks field, so we need to check if it contains
     // the contact ID as a record reference
     
-    // Simple formula that checks if the contact ID is in the Contacts field
-    // Using standard Airtable FIND function which is more reliable
-    const formula = `AND(
-      FIND("${profile.contactId}", ARRAYJOIN({Contacts}, ",")),
-      NOT({Contacts} = "")
-    )`
+    // Use the dedicated contactId field for direct matching
+    // This is much more reliable than searching in linked records
+    const formula = `{contactId} = "${profile.contactId}"`
     
     console.log(`Using formula: ${formula}`)
 
@@ -127,7 +124,8 @@ export default withApiAuthRequired(async function handler(req, res) {
     if (participationRecords.length === 0) {
       try {
         console.log("Trying alternative SEARCH approach...")
-        const directFormula = `SEARCH("${profile.contactId}", ARRAYJOIN({Contacts}))`
+        // Use the same dedicated contactId field as a fallback
+        const directFormula = `{contactId} = "${profile.contactId}"`
         
         let records = await participationTable.select({
           filterByFormula: directFormula,
@@ -275,10 +273,10 @@ export default withApiAuthRequired(async function handler(req, res) {
               // Initialize the members table
               const membersTable = base(membersTableId)
               
-              // First find the member records for this user
+              // First find the member records for this user using the dedicated contactId field
               const memberRecords = await membersTable
                 .select({
-                  filterByFormula: `FIND("${profile.contactId}", {Contact})`,
+                  filterByFormula: `{contactId} = "${profile.contactId}"`,
                   fields: ["Team", "Status"]
                 })
                 .firstPage()
@@ -292,7 +290,13 @@ export default withApiAuthRequired(async function handler(req, res) {
                       const team = await teamsTable.find(possibleTeamId)
                       
                       // Check if this team is associated with the cohort
-                      if (team.fields.Cohorts && team.fields.Cohorts.includes(cohortId)) {
+                      // First check the dedicated cohortId field if it exists
+                      if (team.fields.cohortId === cohortId) {
+                        teamId = team.id
+                        break
+                      }
+                      // Fall back to the linked Cohorts field if needed
+                      else if (team.fields.Cohorts && team.fields.Cohorts.includes(cohortId)) {
                         teamId = team.id
                         break
                       }

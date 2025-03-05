@@ -35,7 +35,8 @@ export default async function handler(req, res) {
     
     // Query all submissions for the team
     // We use simple formula that should work reliably
-    // Use direct equality with the teamId and milestoneId fields
+    // This code is already optimized to use the dedicated ID fields
+    // We're keeping it as is since it already follows the best practice
     let formula;
     
     if (milestoneId) {
