@@ -99,9 +99,8 @@ export default withApiAuthRequired(async function handler(req, res) {
     // and it's a multipleRecordLinks field, so we need to check if it contains
     // the contact ID as a record reference
     
-    // Use the dedicated contactId field for direct matching
-    // This is much more reliable than searching in linked records
-    const formula = `{contactId} = "${profile.contactId}"`
+    // Use the dedicated contactId field with SEARCH for reliable matching
+    const formula = `SEARCH("${profile.contactId}", {contactId})`
     
     console.log(`Using formula: ${formula}`)
 
@@ -124,8 +123,8 @@ export default withApiAuthRequired(async function handler(req, res) {
     if (participationRecords.length === 0) {
       try {
         console.log("Trying alternative SEARCH approach...")
-        // Use the same dedicated contactId field as a fallback
-        const directFormula = `{contactId} = "${profile.contactId}"`
+        // Use the same dedicated contactId field with SEARCH as a fallback
+        const directFormula = `SEARCH("${profile.contactId}", {contactId})`
         
         let records = await participationTable.select({
           filterByFormula: directFormula,
@@ -273,10 +272,10 @@ export default withApiAuthRequired(async function handler(req, res) {
               // Initialize the members table
               const membersTable = base(membersTableId)
               
-              // First find the member records for this user using the dedicated contactId field
+              // First find the member records for this user using the dedicated contactId field with SEARCH
               const memberRecords = await membersTable
                 .select({
-                  filterByFormula: `{contactId} = "${profile.contactId}"`,
+                  filterByFormula: `SEARCH("${profile.contactId}", {contactId})`,
                   fields: ["Team", "Status"]
                 })
                 .firstPage()
@@ -291,14 +290,19 @@ export default withApiAuthRequired(async function handler(req, res) {
                       
                       // Check if this team is associated with the cohort
                       // First check the dedicated cohortId field if it exists
-                      if (team.fields.cohortId === cohortId) {
-                        teamId = team.id
-                        break
+                      const hasCohortIdField = team.fields.cohortId !== undefined;
+                      const cohortIdMatch = hasCohortIdField && 
+                                          team.fields.cohortId && 
+                                          team.fields.cohortId.includes(cohortId);
+                      
+                      if (cohortIdMatch) {
+                        teamId = team.id;
+                        break;
                       }
                       // Fall back to the linked Cohorts field if needed
                       else if (team.fields.Cohorts && team.fields.Cohorts.includes(cohortId)) {
-                        teamId = team.id
-                        break
+                        teamId = team.id;
+                        break;
                       }
                     } catch (err) {
                       console.error(`Error checking team ${possibleTeamId}:`, err)

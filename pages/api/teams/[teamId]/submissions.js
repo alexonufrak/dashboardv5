@@ -40,14 +40,14 @@ export default async function handler(req, res) {
     let formula;
     
     if (milestoneId) {
-      // If we have both team and milestone IDs, check both fields
+      // If we have both team and milestone IDs, check both fields using SEARCH
       formula = `AND(
-        {teamId} = "${teamId}",
-        {milestoneId} = "${milestoneId}"
+        SEARCH("${teamId}", {teamId}),
+        SEARCH("${milestoneId}", {milestoneId})
       )`;
     } else {
-      // If we only have team ID, just check that field
-      formula = `{teamId} = "${teamId}"`;
+      // If we only have team ID, just check that field using SEARCH
+      formula = `SEARCH("${teamId}", {teamId})`;
     }
     
     console.log(`Using advanced Airtable formula: ${formula}`);
