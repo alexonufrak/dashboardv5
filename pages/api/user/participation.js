@@ -68,7 +68,7 @@ export default withApiAuthRequired(async function handler(req, res) {
       
       // Use SEARCH instead of FIND for more reliable record matching
       // Focus on the 'Contacts' field which is confirmed to exist in Airtable
-      const formula = `SEARCH("${safeContactId}", {Contacts})`;
+      const formula = `SEARCH("${safeContactId}", {contactId})`;
       
       console.log(`Using formula: ${formula}`);
       
@@ -218,7 +218,7 @@ export default withApiAuthRequired(async function handler(req, res) {
               try {
                 const memberRecords = await membersTable
                   .select({
-                    filterByFormula: `{contact_ids} = "${safeContactId}"`,
+                    filterByFormula: `{contactId} = "${safeContactId}"`,
                     fields: ["Team", "Status"]
                   })
                   .firstPage();
