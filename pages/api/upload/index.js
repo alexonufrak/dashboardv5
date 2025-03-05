@@ -3,9 +3,7 @@ import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
 
 export const config = {
   api: {
-    bodyParser: {
-      sizeLimit: '10mb',
-    },
+    bodyParser: false, // Required for handleUpload to work properly
   },
 };
 
@@ -22,19 +20,19 @@ export default withApiAuthRequired(async function handler(req, res) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    // Parse the request body
-    const body = await req.json();
-
-    // Handle the upload request
+    // Following Vercel's exact pattern for handleUpload
     const jsonResponse = await handleUpload({
-      body,
       request: req,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
+        // Log the request for debugging
+        console.log(`Token request for ${pathname}`);
+        
         // Validate client payload if provided (contains teamId and milestoneId)
         let parsedPayload = {};
         if (clientPayload) {
           try {
             parsedPayload = JSON.parse(clientPayload);
+            console.log('Client payload:', parsedPayload);
           } catch (e) {
             console.error("Invalid client payload:", e);
           }
@@ -42,8 +40,7 @@ export default withApiAuthRequired(async function handler(req, res) {
 
         // Here you can add additional validation based on the user or payload
         // For example, check if user has permission to upload to specific milestone
-
-        console.log(`Generating token for ${pathname} with payload:`, parsedPayload);
+        console.log(`User ${session.user.email} uploading to ${pathname}`);
         
         return {
           // Allow common document and image formats
@@ -58,7 +55,8 @@ export default withApiAuthRequired(async function handler(req, res) {
             'image/jpeg',
             'image/png',
             'application/zip',
-            'text/plain'
+            'text/plain',
+            // Add more as needed
           ],
           // Set max file size (5MB)
           maximumSizeInBytes: 5 * 1024 * 1024,

@@ -186,6 +186,7 @@ export default function MilestoneSubmissionDialog({
         access: 'public',
         handleUploadUrl: '/api/upload',
         clientPayload,
+        maxRetries: 3, // Add retries for reliability
         onUploadProgress: ({ loaded, total, percentage }) => {
           // Update progress state
           setUploadProgress(prev => ({
