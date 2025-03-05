@@ -20,111 +20,68 @@ export default withApiAuthRequired(async function handler(req, res) {
       return res.status(400).json({ error: "Cohort ID is required" })
     }
     
-    // Get the Milestone table ID from environment variables
+    // Get the Milestone and Cohort table IDs from environment variables
     const milestonesTableId = process.env.AIRTABLE_MILESTONES_TABLE_ID
+    const cohortsTableId = process.env.AIRTABLE_COHORTS_TABLE_ID
     if (!milestonesTableId) {
       return res.status(500).json({ error: "Milestones table not configured" })
     }
     
-    // Initialize the milestones table
+    // Initialize the tables
     const milestonesTable = base(milestonesTableId)
+    const cohortsTable = cohortsTableId ? base(cohortsTableId) : null
     
     console.log(`Fetching milestones for cohort: ${cohortId}`)
     
-    // Based on the Airtable schema, the Milestones table has a Cohort field that links to Cohorts
-    // We'll use simple approaches that are compatible with all Airtable API versions
+    // Simplified approach: Get milestone IDs from the cohort, then fetch those milestones
     let milestones = []
     
-    // First, try a direct approach to match Cohort field records
     try {
-      console.log("Trying direct approach - check if Cohort field contains cohortId...")
-      // This works when Cohort is a multipleRecordLinks field (array of IDs)
-      milestones = await milestonesTable
-        .select({
-          // We're checking if the cohortId is in the Cohort field
-          // No fancy functions, just using plain vanilla Airtable formula functions
-          filterByFormula: `OR(
-            FIND("${cohortId}", ARRAYJOIN(Cohort, ",")),
-            FIND("${cohortId}", ARRAYJOIN(Cohort))
-          )`,
-          sort: [{ field: 'Number', direction: 'asc' }]
-        })
-        .firstPage()
-      
-      console.log(`Direct approach found ${milestones.length} milestones`)
-    } catch (error) {
-      console.error("Error with direct approach:", error)
-    }
-    
-    // If first approach failed, try another formula
-    if (milestones.length === 0) {
-      try {
-        console.log("Trying alternative formula...")
-        
-        // Get all milestones for diagnostic output
-        const allMilestones = await milestonesTable
-          .select({
-            maxRecords: 5
-          })
-          .firstPage()
-        
-        if (allMilestones.length > 0) {
-          // Log sample milestone records to understand their structure
-          console.log(`Sample milestone has fields:`, Object.keys(allMilestones[0].fields))
-          if (allMilestones[0].fields.Cohort) {
-            console.log(`Sample milestone Cohort field:`, allMilestones[0].fields.Cohort)
-            console.log(`Cohort field type:`, typeof allMilestones[0].fields.Cohort)
-            console.log(`Is array:`, Array.isArray(allMilestones[0].fields.Cohort))
+      // First check if we can get the Milestones field from the cohort directly
+      if (cohortsTable) {
+        try {
+          const cohort = await cohortsTable.find(cohortId)
+          if (cohort && cohort.fields.Milestones && Array.isArray(cohort.fields.Milestones)) {
+            // The cohort has a Milestones field with milestone IDs, use them directly
+            const milestoneIds = cohort.fields.Milestones
+            
+            // Fetch all those milestone records
+            if (milestoneIds.length > 0) {
+              const milestoneRecords = await Promise.all(
+                milestoneIds.map(id => milestonesTable.find(id).catch(() => null))
+              )
+              
+              // Filter out null results (in case any weren't found)
+              milestones = milestoneRecords.filter(Boolean)
+              
+              console.log(`Found ${milestones.length} milestones from cohort's Milestones field`)
+              
+              // Sort milestones by number
+              milestones.sort((a, b) => 
+                (a.fields.Number || 999) - (b.fields.Number || 999)
+              )
+            }
           }
+        } catch (error) {
+          console.error("Error fetching milestones from cohort record:", error)
         }
-        
-        // Try again with a basic formula that looks for the cohortId within the Cohort field
+      }
+      
+      // If we couldn't get milestones from the cohort directly, use the cohort ID to find milestones
+      if (milestones.length === 0) {
+        // Fetch milestones where Cohort field contains the cohortId
         milestones = await milestonesTable
           .select({
-            filterByFormula: `SEARCH("${cohortId}", ARRAYJOIN(Cohort))`,
+            filterByFormula: `FIND("${cohortId}", ARRAYJOIN(Cohort))`,
             sort: [{ field: 'Number', direction: 'asc' }]
           })
           .firstPage()
         
-        console.log(`Alternative approach found ${milestones.length} milestones`)
-      } catch (error) {
-        console.error("Error with alternative approach:", error)
+        console.log(`Found ${milestones.length} milestones using Cohort field lookup`)
       }
-    }
-    
-    // Last resort: Get all milestones and filter manually
-    if (milestones.length === 0) {
-      try {
-        console.log("Trying manual filtering approach - getting all milestones...")
-        const allMilestones = await milestonesTable
-          .select({
-            sort: [{ field: 'Number', direction: 'asc' }]
-          })
-          .firstPage()
-        
-        console.log(`Retrieved ${allMilestones.length} total milestones for manual filtering`)
-        
-        // Filter milestones manually by checking if the Cohort field includes the cohortId
-        milestones = allMilestones.filter(record => {
-          if (!record.fields.Cohort) return false
-          
-          // If Cohort is an array (which it should be for a linked record)
-          if (Array.isArray(record.fields.Cohort)) {
-            return record.fields.Cohort.includes(cohortId)
-          }
-          
-          // If Cohort is a string (unexpected but handle just in case)
-          if (typeof record.fields.Cohort === 'string') {
-            return record.fields.Cohort.includes(cohortId)
-          }
-          
-          return false
-        })
-        
-        console.log(`Manual filtering approach found ${milestones.length} milestones`)
-      } catch (error) {
-        console.error("Error with manual filtering approach:", error)
-      }
+    } catch (error) {
+      console.error("Error fetching milestones:", error)
+      // Continue with empty milestones array
     }
     
     // Log the milestones found
