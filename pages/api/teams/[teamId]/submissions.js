@@ -35,33 +35,34 @@ export default async function handler(req, res) {
     
     // Query all submissions for the team
     // We use simple formula that should work reliably
-    // Use FIND with concatenation for more reliable linked record filtering
-    // This creates a pattern like ",teamId," and looks for it in ",ARRAYJOIN(Team),"
-    // This ensures we match exactly the team ID without partial matches
+    // Use simple equality checks for linked record filtering
     let formula;
     
     if (milestoneId) {
       // If we have both team and milestone IDs, filter for both directly in Airtable
       formula = `AND(
-        FIND(CONCATENATE(",", "${teamId}", ","), CONCATENATE(",", ARRAYJOIN(Team), ",")),
-        FIND(CONCATENATE(",", "${milestoneId}", ","), CONCATENATE(",", ARRAYJOIN(Milestone), ","))
+        SEARCH("${teamId}", ARRAYJOIN(Team)),
+        SEARCH("${milestoneId}", ARRAYJOIN(Milestone))
       )`;
     } else {
       // If we only have team ID, just filter for that
-      formula = `FIND(CONCATENATE(",", "${teamId}", ","), CONCATENATE(",", ARRAYJOIN(Team), ","))`;
+      formula = `SEARCH("${teamId}", ARRAYJOIN(Team))`;
     }
     
     console.log(`Using advanced Airtable formula: ${formula}`);
     
     // Select only the fields we need to reduce data transfer
     // Remove fields that don't exist in the Airtable schema
+    // Added returnFieldsByFieldId parameter
     const records = await submissionsTable
       .select({
         filterByFormula: formula,
         fields: ['Team', 'Milestone', 'Comments', 'Link', 'Attachment', 'Created Time', 
                 'Name (from Milestone)'],
         // Sort by created time in descending order to get the most recent first
-        sort: [{ field: "Created Time", direction: "desc" }]
+        sort: [{ field: "Created Time", direction: "desc" }],
+        // Return fields identified by field ID instead of field name
+        returnFieldsByFieldId: true
       })
       .firstPage();
       
@@ -69,57 +70,32 @@ export default async function handler(req, res) {
     
     // Log field names from the first record if available
     if (records.length > 0) {
-      console.log("Available fields in submission records:", Object.keys(records[0].fields));
+      console.log("Available field IDs in submission records:", Object.keys(records[0].fields));
       
-      // Safely log team and milestone fields
-      const team = records[0].fields.Team ? JSON.stringify(records[0].fields.Team) : "undefined";
-      const milestone = records[0].fields.Milestone ? JSON.stringify(records[0].fields.Milestone) : "undefined";
-      console.log(`First record - Team: ${team}, Milestone: ${milestone}`);
+      // With returnFieldsByFieldId, we need to adapt our code to work with field IDs
+      // Log all fields to help identify the correct field IDs
+      console.log("First record fields:", records[0].fields);
     }
     
     // For optimization, we're directly using the records from Airtable's filtered results
     const filteredRecords = records;
     
-    // Process the filtered submissions
-    const submissions = filteredRecords.map(record => {
-      // Get milestone ID from the linked record
-      const recordMilestoneId = record.fields.Milestone && Array.isArray(record.fields.Milestone) && record.fields.Milestone.length > 0
-        ? record.fields.Milestone[0]
-        : null;
-
-      // Get team IDs from linked records - we already know one matches our teamId
-      const teamIds = record.fields.Team && Array.isArray(record.fields.Team)
-        ? record.fields.Team
-        : [teamId];
-
-      return {
-        id: record.id,
-        teamId: teamId,
-        teamIds: teamIds,
-        milestoneId: recordMilestoneId,
-        milestoneName: record.fields["Name (from Milestone)"]?.[0] || null,
-        // Remove deliverable fields that aren't in the schema
-        createdTime: record.fields["Created Time"] || new Date().toISOString(),
-        attachment: record.fields.Attachment,
-        comments: record.fields.Comments,
-        link: record.fields.Link
-      };
-    });
+    // For the first test, we'll just return the raw records
+    // so we can see the field IDs in the logs
+    // Then we'll update the mapping in the next iteration
     
-    // Add diagnostic logging before returning
-    if (submissions.length > 0) {
-      console.log("First submission details:", {
-        id: submissions[0].id,
-        teamId: submissions[0].teamId,
-        milestoneId: submissions[0].milestoneId,
-        milestoneName: submissions[0].milestoneName,
-        hasAttachment: !!submissions[0].attachment,
-        hasComments: !!submissions[0].comments,
-        hasLink: !!submissions[0].link
-      });
+    // Return empty submissions for now - we'll update after seeing the field IDs
+    const submissions = [];
+    
+    // Log raw record for debugging
+    if (filteredRecords.length > 0) {
+      console.log("Raw first record:", JSON.stringify(filteredRecords[0], null, 2));
     }
     
-    // Show the raw Airtable response for debugging
+    // We're returning empty submissions for the initial test
+    // to discover the field IDs
+    
+    // Keep the raw Airtable response for debugging
     if (records.length > 0) {
       console.log("Raw Airtable record sample:", JSON.stringify(records[0], null, 2));
     }
