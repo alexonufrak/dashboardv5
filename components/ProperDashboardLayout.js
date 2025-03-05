@@ -21,7 +21,10 @@ const ProperDashboardLayout = ({
   const { user } = useUser()
   const isDashboard = router.pathname === "/dashboard" || router.pathname === "/profile" || router.pathname === "/program-dashboard"
   const showSidebar = isDashboard && user
-  const showBreadcrumbs = router.pathname !== "/dashboard" && showSidebar
+  // Don't show breadcrumbs on main dashboard pages
+  const showBreadcrumbs = router.pathname !== "/dashboard" && 
+                          router.pathname !== "/program-dashboard" && 
+                          showSidebar
 
   useEffect(() => {
     setCurrentYear(new Date().getFullYear())
