@@ -162,43 +162,7 @@ function ProgramDashboardInner({ onNavigate }) {
   
   console.log("Cleaned Team Data:", team);
   
-  // Placeholder milestones data if we don't have real data
-  const placeholderMilestones = [
-    {
-      id: "m1",
-      name: "Problem Definition",
-      status: "completed",
-      dueDate: "2025-03-20",
-      completedDate: "2025-03-15",
-      score: 92
-    },
-    {
-      id: "m2",
-      name: "Ideation Process",
-      status: "completed",
-      dueDate: "2025-04-10",
-      completedDate: "2025-04-08",
-      score: 88
-    },
-    {
-      id: "m3",
-      name: "Prototype Development",
-      status: "upcoming",
-      dueDate: "2025-04-25"
-    },
-    {
-      id: "m4",
-      name: "User Testing",
-      status: "upcoming",
-      dueDate: "2025-05-15"
-    },
-    {
-      id: "m5",
-      name: "Final Presentation",
-      status: "upcoming",
-      dueDate: "2025-06-07"
-    }
-  ]
+  // No placeholder milestones - use real data only
   
   return (
     <div className="program-dashboard space-y-6">
@@ -251,11 +215,10 @@ function ProgramDashboardInner({ onNavigate }) {
                 <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
                   <BarChart3 className="h-3.5 w-3.5 mr-1" />
                   {(() => {
-                    // Calculate progress using the same function as TeamMilestoneProgress
-                    const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
-                    const completedCount = milestonesData.filter(m => m.status === "completed").length;
-                    const progressPercentage = milestonesData.length > 0 
-                      ? Math.round((completedCount) / milestonesData.length * 100) 
+                    const completedCount = milestones?.filter(m => m.status === "completed").length || 0;
+                    const totalCount = milestones?.length || 0;
+                    const progressPercentage = totalCount > 0 
+                      ? Math.round((completedCount) / totalCount * 100) 
                       : 0;
                     return `${progressPercentage}% Complete`;
                   })()}
@@ -263,9 +226,9 @@ function ProgramDashboardInner({ onNavigate }) {
                 <Badge variant="outline" className="bg-purple-50 text-purple-800 border-purple-200">
                   <Flag className="h-3.5 w-3.5 mr-1" />
                   {(() => {
-                    const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
-                    const completedCount = milestonesData.filter(m => m.status === "completed").length;
-                    return `${completedCount} of ${milestonesData.length} Milestones`;
+                    const completedCount = milestones?.filter(m => m.status === "completed").length || 0;
+                    const totalCount = milestones?.length || 0;
+                    return `${completedCount} of ${totalCount} Milestones`;
                   })()}
                 </Badge>
               </div>
@@ -347,7 +310,7 @@ function ProgramDashboardInner({ onNavigate }) {
             <div className="md:col-span-5 space-y-4">
               {/* Milestone Summary Card */}
               <MilestoneSummaryCard 
-                milestones={milestones.length > 0 ? milestones : placeholderMilestones}
+                milestones={milestones || []}
                 onViewMilestones={() => {
                   // Find the milestones tab element and click it programmatically
                   const milestonesTab = document.querySelector('[value="milestones"]')
@@ -357,7 +320,7 @@ function ProgramDashboardInner({ onNavigate }) {
 
               {/* Submission Summary Card with enhanced submission data */}
               <SubmissionSummaryCard 
-                milestones={milestones.length > 0 ? milestones : placeholderMilestones}
+                milestones={milestones || []}
                 submissions={(() => {
                   // Skip lengthy processing if team data isn't available
                   if (!teamData?.id) return [];
@@ -470,10 +433,9 @@ function ProgramDashboardInner({ onNavigate }) {
                     <h2 className="text-xl font-semibold mb-2">Program Milestones</h2>
                     <div className="text-sm text-muted-foreground">
                       {(() => {
-                        const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
-                        const completedCount = milestonesData.filter(m => m.status === "completed").length;
-                        const lateCount = milestonesData.filter(m => m.status === "late").length;
-                        const upcomingCount = milestonesData.filter(m => m.status !== "completed" && m.status !== "late").length;
+                        const completedCount = milestones?.filter(m => m.status === "completed").length || 0;
+                        const lateCount = milestones?.filter(m => m.status === "late").length || 0;
+                        const upcomingCount = milestones?.filter(m => m.status !== "completed" && m.status !== "late").length || 0;
                         
                         return (
                           <>
@@ -503,19 +465,20 @@ function ProgramDashboardInner({ onNavigate }) {
                       <span className="text-sm font-medium">Overall Progress:</span>
                       <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
                         {(() => {
-                          const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
-                          const completedCount = milestonesData.filter(m => m.status === "completed").length;
-                          return `${Math.round((completedCount) / milestonesData.length * 100)}%`;
+                          const completedCount = milestones?.filter(m => m.status === "completed").length || 0;
+                          const totalCount = milestones?.length || 0;
+                          return totalCount > 0 ? `${Math.round((completedCount) / totalCount * 100)}%` : '0%';
                         })()}
                       </Badge>
                     </div>
-                    <Progress value={(() => {
-                      const milestonesData = milestones.length > 0 ? milestones : placeholderMilestones;
-                      const completedCount = milestonesData.filter(m => m.status === "completed").length;
-                      return milestonesData.length > 0 
-                        ? Math.round((completedCount) / milestonesData.length * 100) 
-                        : 0;
-                    })()} className="h-2 w-[200px]" />
+                    <Progress 
+                      value={(() => {
+                        const completedCount = milestones?.filter(m => m.status === "completed").length || 0;
+                        const totalCount = milestones?.length || 0;
+                        return totalCount > 0 ? Math.round((completedCount) / totalCount * 100) : 0;
+                      })()} 
+                      className="h-2 w-[200px]" 
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -529,7 +492,7 @@ function ProgramDashboardInner({ onNavigate }) {
               </CardHeader>
               <CardContent>
                 <TeamMilestoneProgress 
-                  milestones={milestones.length > 0 ? milestones : placeholderMilestones} 
+                  milestones={milestones || []} 
                   detailed={true}
                   programName="Program Milestones"
                 />
