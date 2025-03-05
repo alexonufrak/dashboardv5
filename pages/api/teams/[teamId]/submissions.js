@@ -54,11 +54,12 @@ export default async function handler(req, res) {
     console.log(`Using advanced Airtable formula: ${formula}`);
     
     // Select only the fields we need to reduce data transfer
+    // Remove fields that don't exist in the Airtable schema
     const records = await submissionsTable
       .select({
         filterByFormula: formula,
         fields: ['Team', 'Milestone', 'Comments', 'Link', 'Attachment', 'Created Time', 
-                'Name (from Milestone)', 'deliverableId', 'deliverableName', 'Name (from Deliverable)'],
+                'Name (from Milestone)'],
         // Sort by created time in descending order to get the most recent first
         sort: [{ field: "Created Time", direction: "desc" }]
       })
@@ -69,8 +70,11 @@ export default async function handler(req, res) {
     // Log field names from the first record if available
     if (records.length > 0) {
       console.log("Available fields in submission records:", Object.keys(records[0].fields));
-      // Log the first record's team and milestone fields for verification
-      console.log(`First record - Team: ${JSON.stringify(records[0].fields.Team)}, Milestone: ${JSON.stringify(records[0].fields.Milestone)}`);
+      
+      // Safely log team and milestone fields
+      const team = records[0].fields.Team ? JSON.stringify(records[0].fields.Team) : "undefined";
+      const milestone = records[0].fields.Milestone ? JSON.stringify(records[0].fields.Milestone) : "undefined";
+      console.log(`First record - Team: ${team}, Milestone: ${milestone}`);
     }
     
     // For optimization, we're directly using the records from Airtable's filtered results
@@ -94,8 +98,7 @@ export default async function handler(req, res) {
         teamIds: teamIds,
         milestoneId: recordMilestoneId,
         milestoneName: record.fields["Name (from Milestone)"]?.[0] || null,
-        deliverableId: record.fields.Deliverable?.[0] || null,
-        deliverableName: record.fields["Name (from Deliverable)"]?.[0] || null, 
+        // Remove deliverable fields that aren't in the schema
         createdTime: record.fields["Created Time"] || new Date().toISOString(),
         attachment: record.fields.Attachment,
         comments: record.fields.Comments,
