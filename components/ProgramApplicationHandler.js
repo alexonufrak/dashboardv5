@@ -136,10 +136,16 @@ const ProgramApplicationHandler = ({
         return { allowed: true };
       }
       
-      // Thoroughly check if this is a team program by examining the participation type
+      // Thoroughly check if this is a team program by examining the participation type - using standardized detection
+      const normalizedType = currentParticipationType.trim().toLowerCase();
       const isTeamProgram = 
-        currentParticipationType.toLowerCase() === "team" || 
-        currentParticipationType.toLowerCase().includes("team");
+        normalizedType === "team" || 
+        normalizedType.includes("team") ||
+        normalizedType === "teams" ||
+        normalizedType === "group" ||
+        normalizedType.includes("group") ||
+        normalizedType === "collaborative" ||
+        normalizedType.includes("collaborative");
       
       console.log(`Is this a team program? ${isTeamProgram ? 'YES' : 'NO'} (${currentParticipationType})`);
       
@@ -149,6 +155,31 @@ const ProgramApplicationHandler = ({
         return { allowed: true };
       }
       
+      // For team programs, first check via the API which uses Airtable participation
+      try {
+        const response = await fetch(`/api/user/check-initiative-conflicts?initiative=${encodeURIComponent(currentInitiativeName)}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.hasConflict) {
+            console.log(`API conflict check found conflict with initiative: ${data.conflictingInitiative}`);
+            return {
+              allowed: false,
+              reason: "team_program_conflict",
+              details: {
+                currentProgram: data.conflictingInitiative || "Current Team Program",
+                appliedProgram: currentInitiativeName
+              }
+            };
+          }
+          console.log("API conflict check passed, no conflicts found in Airtable participation records");
+        } else {
+          console.error("Error checking initiative conflicts via API:", await response.text());
+        }
+      } catch (error) {
+        console.error("Error in API conflict check:", error);
+      }
+      
+      // Fallback to checking profile data (teams-based check)
       // Check if we have profile data
       if (!profile) {
         console.warn("Profile data not available for team program conflict check");

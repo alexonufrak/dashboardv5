@@ -130,10 +130,16 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
                               
       console.log(`Current cohort initiative: "${currentInitiative}", Participation Type: "${participationType}"`);
       
-      // Verify if this is a team program
+      // Verify if this is a team program - using standardized detection
+      const normalizedType = participationType.trim().toLowerCase();
       const isTeamProgram = 
-        participationType.toLowerCase() === "team" || 
-        participationType.toLowerCase().includes("team");
+        normalizedType === "team" || 
+        normalizedType.includes("team") ||
+        normalizedType === "teams" ||
+        normalizedType === "group" ||
+        normalizedType.includes("group") ||
+        normalizedType === "collaborative" ||
+        normalizedType.includes("collaborative");
         
       console.log(`Is this a team program? ${isTeamProgram ? 'YES' : 'NO'} (${participationType})`);
       
