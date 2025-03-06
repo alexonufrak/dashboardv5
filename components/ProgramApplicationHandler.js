@@ -208,14 +208,21 @@ const ProgramApplicationHandler = ({
           if (team.cohortIds && team.cohortIds.length > 0) {
             // The user is already in a team that has cohorts
             console.log(`Team program conflict detected: User is already in team program ${team.name}`);
+            
+            // Make sure we have valid teamId and teamName values
+            const teamId = team.id || "unknown";
+            const teamName = team.name || "Your Current Team";
+            
+            console.log(`Using team ID: ${teamId}, team name: ${teamName}`);
+            
             return {
               allowed: false,
               reason: "initiative_conflict", // Use initiative_conflict for consistent handling
               details: {
                 conflictingInitiative: team.name || "Current Team Program",
                 currentInitiative: currentInitiativeName,
-                teamId: team.id,
-                teamName: team.name
+                teamId: teamId,
+                teamName: teamName
               }
             };
           }

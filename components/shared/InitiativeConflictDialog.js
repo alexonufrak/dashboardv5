@@ -84,7 +84,7 @@ const InitiativeConflictDialog = ({
       // Show success toast
       toast({
         title: "Team Left Successfully",
-        description: `You have left ${teamName}.`,
+        description: `You have left ${details.teamName || "the team"}.`,
         variant: "default",
       });
       

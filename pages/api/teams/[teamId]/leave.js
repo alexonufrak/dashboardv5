@@ -47,10 +47,38 @@ export default withApiAuthRequired(async function leaveTeamHandler(req, res) {
 
     // Get the member record ID from Airtable
     // This is the linking record between the team and the user
-    const memberRecordId = memberRecord.memberRecordId
+    let memberRecordId = memberRecord.memberRecordId
 
     if (!memberRecordId) {
-      return res.status(500).json({ error: 'Could not find member record ID' })
+      console.error('Member record found but missing memberRecordId:', memberRecord);
+      
+      // Fallback: Try to find the member record directly from the Members table
+      try {
+        const membersTableId = process.env.AIRTABLE_MEMBERS_TABLE_ID;
+        if (!membersTableId) {
+          return res.status(500).json({ error: 'Members table ID not configured' });
+        }
+        
+        const membersTable = base(membersTableId);
+        
+        // Look up the member record using contactId and teamId
+        const memberRecords = await membersTable.select({
+          filterByFormula: `AND({Contact}="${userProfile.contactId}", {Team}="${teamId}", {Status}="Active")`,
+          maxRecords: 1
+        }).firstPage();
+        
+        if (memberRecords && memberRecords.length > 0) {
+          const directMemberRecordId = memberRecords[0].id;
+          console.log(`Found member record ID directly: ${directMemberRecordId}`);
+          // Use this member record ID going forward
+          memberRecordId = directMemberRecordId;
+        } else {
+          return res.status(500).json({ error: 'Could not find member record ID' });
+        }
+      } catch (error) {
+        console.error('Error finding member record directly:', error);
+        return res.status(500).json({ error: 'Could not find member record ID' });
+      }
     }
 
     // Update the member record to set status to "Inactive"
