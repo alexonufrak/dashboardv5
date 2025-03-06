@@ -33,18 +33,18 @@ export default withApiAuthRequired(async function leaveTeamHandler(req, res) {
     let memberRecord;
     let updatedMember;
     
-    // Special handling for "unknown" teamId
+    // Get the Members table ID from environment variables  
+    const membersTableId = process.env.AIRTABLE_MEMBERS_TABLE_ID;
+    if (!membersTableId) {
+      return res.status(500).json({ error: 'Members table ID not configured' });
+    }
+    
+    // Initialize the members table
+    const membersTable = base(membersTableId);
+      
+    // Handle the "unknown" teamId case - update all active member records
     if (teamId === 'unknown') {
       console.log('Processing unknown teamId case - will update all active member records for the user');
-      
-      // Get the Members table ID from environment variables  
-      const membersTableId = process.env.AIRTABLE_MEMBERS_TABLE_ID;
-      if (!membersTableId) {
-        return res.status(500).json({ error: 'Members table ID not configured' });
-      }
-      
-      // Initialize the members table
-      const membersTable = base(membersTableId);
       
       // Find all active member records for this user
       const activeMembers = await membersTable.select({
@@ -61,10 +61,11 @@ export default withApiAuthRequired(async function leaveTeamHandler(req, res) {
         console.log(`Updated member record ${record.id} to inactive`);
       }
       
-      // We've updated all the relevant records directly, no need for further member updates
+      // Set a placeholder updatedMember for consistency with the normal flow
       updatedMember = { id: 'multiple-records' };
-    } else {
-      // Normal flow when we have a specific teamId
+    } 
+    // Handle specific teamId - find and update just that member record
+    else {
       // Get team details to verify membership
       const team = await getTeamById(teamId, userProfile.contactId)
       
@@ -78,59 +79,47 @@ export default withApiAuthRequired(async function leaveTeamHandler(req, res) {
       )
       
       if (!memberRecord) {
-        return res.status(403).json({ error: 'You are not an active member of this team' })
-      }
-      
-      // Get the member record ID from Airtable
-      // This is the linking record between the team and the user
-      let memberRecordId = memberRecord.memberRecordId
-      
-      if (!memberRecordId) {
-        console.error('Member record found but missing memberRecordId:', memberRecord);
+        // Instead of failing, try to find the member record directly
+        console.log('Active member record not found in team details, trying direct lookup');
         
-        // Fallback: Try to find the member record directly from the Members table
-        try {
-          const membersTableId = process.env.AIRTABLE_MEMBERS_TABLE_ID;
-          if (!membersTableId) {
-            return res.status(500).json({ error: 'Members table ID not configured' });
-          }
+        // Look up the member record directly using contactId and teamId
+        const memberRecords = await membersTable.select({
+          filterByFormula: `AND({Contact}="${userProfile.contactId}", {Team}="${teamId}")`,
+          maxRecords: 1
+        }).firstPage();
+        
+        if (memberRecords && memberRecords.length > 0) {
+          const directMemberRecordId = memberRecords[0].id;
+          console.log(`Found member record directly: ${directMemberRecordId}`);
           
-          const membersTable = base(membersTableId);
+          // Update member status
+          updatedMember = await membersTable.update(directMemberRecordId, {
+            'Status': 'Inactive',
+          });
           
-          // Look up the member record using contactId and teamId
-          const memberRecords = await membersTable.select({
-            filterByFormula: `AND({Contact}="${userProfile.contactId}", {Team}="${teamId}", {Status}="Active")`,
-            maxRecords: 1
-          }).firstPage();
-          
-          if (memberRecords && memberRecords.length > 0) {
-            const directMemberRecordId = memberRecords[0].id;
-            console.log(`Found member record ID directly: ${directMemberRecordId}`);
-            // Use this member record ID going forward
-            memberRecordId = directMemberRecordId;
-          } else {
-            return res.status(500).json({ error: 'Could not find member record ID' });
-          }
-        } catch (error) {
-          console.error('Error finding member record directly:', error);
+          console.log(`Updated member record ${directMemberRecordId} to inactive`);
+        } else {
+          return res.status(403).json({ error: 'You are not a member of this team' });
+        }
+      } else {
+        // Normal flow - use the member record from team details
+        const memberRecordId = memberRecord.memberRecordId;
+        
+        if (!memberRecordId) {
+          console.error('Member record found but missing memberRecordId:', memberRecord);
           return res.status(500).json({ error: 'Could not find member record ID' });
         }
-      }
-      
-      // Update the member record to set status to "Inactive"
-      const membersTableId = process.env.AIRTABLE_MEMBERS_TABLE_ID;
-      const membersTable = base(membersTableId);
-      
-      if (!membersTable) {
-        return res.status(500).json({ error: 'Members table not configured' });
-      }
-      
-      updatedMember = await membersTable.update(memberRecordId, {
-        'Status': 'Inactive',
-      })
-      
-      if (!updatedMember) {
-        return res.status(500).json({ error: 'Failed to update member status' })
+        
+        // Update the member record to set status to "Inactive"
+        updatedMember = await membersTable.update(memberRecordId, {
+          'Status': 'Inactive',
+        });
+        
+        console.log(`Updated member record ${memberRecordId} to inactive`);
+        
+        if (!updatedMember) {
+          return res.status(500).json({ error: 'Failed to update member status' });
+        }
       }
     }
     
@@ -140,33 +129,44 @@ export default withApiAuthRequired(async function leaveTeamHandler(req, res) {
       if (participationTableId) {
         const participationTable = base(participationTableId);
         
-        // Find participation records associated with this contact
-        // Note: Participation doesn't directly link to Team, so we can only query by contact
-        const participationRecords = await participationTable.select({
-          filterByFormula: `{Contacts}="${userProfile.contactId}"`,
-        }).firstPage();
-        
-        // Update each participation record that has a status and is active
-        if (participationRecords && participationRecords.length > 0) {
-          console.log(`Found ${participationRecords.length} participation records to check`);
+        // Use the participation IDs directly from the user profile
+        // This is more reliable than querying since it uses the cached data
+        if (userProfile.Participation && Array.isArray(userProfile.Participation)) {
+          console.log(`Found ${userProfile.Participation.length} participation IDs in user profile:`, userProfile.Participation);
           
-          for (const record of participationRecords) {
-            // Only update records that have a Status field
-            if (record.fields.Status === 'Active') {
+          // Update each participation record
+          for (const participationId of userProfile.Participation) {
+            try {
+              await participationTable.update(participationId, {
+                'Status': 'Inactive'
+              });
+              console.log(`Updated participation record ${participationId} to inactive`);
+            } catch (updateError) {
+              console.error(`Error updating participation record ${participationId}:`, updateError);
+            }
+          }
+        } else {
+          console.log(`No participation records found in user profile for contact ${userProfile.contactId}`);
+          
+          // Fallback: Try to find participation records directly
+          console.log("Trying to find participation records directly from Airtable");
+          const participationRecords = await participationTable.select({
+            filterByFormula: `{Contacts}="${userProfile.contactId}"`,
+          }).firstPage();
+          
+          if (participationRecords && participationRecords.length > 0) {
+            console.log(`Found ${participationRecords.length} participation records directly`);
+            
+            // Update each participation record
+            for (const record of participationRecords) {
               await participationTable.update(record.id, {
                 'Status': 'Inactive'
               });
               console.log(`Updated participation record ${record.id} to inactive`);
-            } else if (!record.fields.Status) {
-              // If the record doesn't have a Status field yet, add it
-              await participationTable.update(record.id, {
-                'Status': 'Inactive'
-              });
-              console.log(`Added inactive status to participation record ${record.id}`);
             }
+          } else {
+            console.log(`No participation records found directly for contact ${userProfile.contactId}`);
           }
-        } else {
-          console.log(`No participation records found for contact ${userProfile.contactId}`);
         }
       }
     } catch (error) {

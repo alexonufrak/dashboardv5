@@ -48,13 +48,15 @@ const InitiativeConflictDialog = ({
   // Handle leave team confirmation
   const handleLeaveTeam = async () => {
     try {
-      const teamId = details.teamId;
+      // Use let instead of const so we can reassign if needed
+      let teamId = details.teamId;
       
       if (!teamId) {
         console.error('No teamId found in details:', details);
         
-        // We'll try to continue even without a teamId - the backend may still be able to handle this
-        console.warn('Continuing leave team process without a specific teamId');
+        // Set teamId to 'unknown' to trigger the special case handling in the API
+        teamId = 'unknown';
+        console.warn('Using "unknown" as teamId to leave all teams');
       }
       
       console.log(`Attempting to leave team with ID: ${teamId}`);
