@@ -435,9 +435,34 @@ function ProgramDashboardInner({ onNavigate }) {
                     <h2 className="text-xl font-semibold mb-2">Program Milestones</h2>
                     <div className="text-sm text-muted-foreground">
                       {(() => {
-                        const completedCount = milestones?.filter(m => m.status === "completed").length || 0;
-                        const lateCount = milestones?.filter(m => m.status === "late").length || 0;
-                        const upcomingCount = milestones?.filter(m => m.status !== "completed" && m.status !== "late").length || 0;
+                        // Use MilestoneSubmissionChecker's logic for more accurate status
+                        // Count milestones that are actually completed based on submission data
+                        const completedCount = milestones?.filter(m => 
+                          m.status === "completed" || m.hasSubmission
+                        ).length || 0;
+                        
+                        // Check if milestones are late based on due date
+                        const lateCount = milestones?.filter(m => {
+                          // If already marked as late or has a past due date without submission
+                          if (m.status === "late") return true;
+                          if (m.status === "completed" || m.hasSubmission) return false;
+                          
+                          // Check if past due date
+                          if (m.dueDate) {
+                            try {
+                              const dueDate = new Date(m.dueDate);
+                              const now = new Date();
+                              return dueDate < now;
+                            } catch (e) {
+                              console.warn(`Invalid due date for milestone: ${m.dueDate}`);
+                              return false;
+                            }
+                          }
+                          return false;
+                        }).length || 0;
+                        
+                        // Anything not completed or late is upcoming
+                        const upcomingCount = milestones?.length - completedCount - lateCount || 0;
                         
                         return (
                           <>
@@ -467,7 +492,10 @@ function ProgramDashboardInner({ onNavigate }) {
                       <span className="text-sm font-medium">Overall Progress:</span>
                       <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
                         {(() => {
-                          const completedCount = milestones?.filter(m => m.status === "completed").length || 0;
+                          // Calculate percentage based on completed milestones with submissions
+                          const completedCount = milestones?.filter(m => 
+                            m.status === "completed" || m.hasSubmission
+                          ).length || 0;
                           const totalCount = milestones?.length || 0;
                           return totalCount > 0 ? `${Math.round((completedCount) / totalCount * 100)}%` : '0%';
                         })()}
@@ -475,7 +503,10 @@ function ProgramDashboardInner({ onNavigate }) {
                     </div>
                     <Progress 
                       value={(() => {
-                        const completedCount = milestones?.filter(m => m.status === "completed").length || 0;
+                        // Ensure progress matches the badge percentage
+                        const completedCount = milestones?.filter(m => 
+                          m.status === "completed" || m.hasSubmission
+                        ).length || 0;
                         const totalCount = milestones?.length || 0;
                         return totalCount > 0 ? Math.round((completedCount) / totalCount * 100) : 0;
                       })()} 

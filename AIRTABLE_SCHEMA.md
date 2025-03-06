@@ -1044,6 +1044,11 @@ Base Schema
           "name": "Topics (from Cohorts)",
           "type": "multipleLookupValues",
           "options": {}
+        },
+        {
+          "name": "contactid",
+          "type": "multipleLookupValues",
+          "options": {}
         }
       ]
     },
@@ -2774,6 +2779,16 @@ Base Schema
             "relationshipType": "-> Submissions",
             "allowsMultipleRecords": true
           }
+        },
+        {
+          "name": "Record ID",
+          "type": "formula",
+          "options": {}
+        },
+        {
+          "name": "cohortId",
+          "type": "multipleLookupValues",
+          "options": {}
         }
       ]
     },
@@ -2892,6 +2907,16 @@ Base Schema
         },
         {
           "name": "Name (from Milestone)",
+          "type": "multipleLookupValues",
+          "options": {}
+        },
+        {
+          "name": "teamId",
+          "type": "multipleLookupValues",
+          "options": {}
+        },
+        {
+          "name": "milestoneId",
           "type": "multipleLookupValues",
           "options": {}
         }
@@ -3546,6 +3571,21 @@ Base Schema
         },
         {
           "name": "Name (from Achievements)",
+          "type": "multipleLookupValues",
+          "options": {}
+        },
+        {
+          "name": "Type (from Achievements)",
+          "type": "multipleLookupValues",
+          "options": {}
+        },
+        {
+          "name": "teamid",
+          "type": "multipleLookupValues",
+          "options": {}
+        },
+        {
+          "name": "contactId",
           "type": "multipleLookupValues",
           "options": {}
         }
