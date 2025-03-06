@@ -174,7 +174,9 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
               reason: "topic_mismatch",
               details: {
                 currentTopic: currentTopic,
-                teamTopic: teamCohortTopic
+                teamTopic: teamCohortTopic,
+                teamId: teamId,
+                teamName: userTeams.find(t => t.id === teamId)?.name || "Current Team"
               }
             };
           }
@@ -193,7 +195,9 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
           reason: "initiative_conflict", // Change to initiative_conflict for consistent handling
           details: {
             conflictingInitiative: teamCohort.name || teamCohort.initiativeDetails?.name || "Current Program",
-            currentInitiative: currentInitiative
+            currentInitiative: currentInitiative,
+            teamId: teamId,
+            teamName: userTeams.find(t => t.id === teamId)?.name || "Current Team"
           }
         };
       }

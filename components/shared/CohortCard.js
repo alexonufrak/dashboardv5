@@ -177,7 +177,9 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
           reason: "initiative_conflict",
           details: {
             currentInitiative: currentInitiativeName,
-            conflictingInitiative: data.conflictingInitiative
+            conflictingInitiative: data.conflictingInitiative,
+            teamId: data.teamId,
+            teamName: data.teamName
           }
         };
       }

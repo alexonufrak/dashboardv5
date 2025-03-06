@@ -170,7 +170,9 @@ const ProgramApplicationHandler = ({
               reason: "initiative_conflict",
               details: {
                 conflictingInitiative: data.conflictingInitiative || "Current Team Program",
-                currentInitiative: currentInitiativeName
+                currentInitiative: currentInitiativeName,
+                teamId: data.teamId, // Add team ID from API response
+                teamName: data.teamName // Add team name from API response
               }
             };
           }
@@ -211,7 +213,9 @@ const ProgramApplicationHandler = ({
               reason: "initiative_conflict", // Use initiative_conflict for consistent handling
               details: {
                 conflictingInitiative: team.name || "Current Team Program",
-                currentInitiative: currentInitiativeName
+                currentInitiative: currentInitiativeName,
+                teamId: team.id,
+                teamName: team.name
               }
             };
           }
