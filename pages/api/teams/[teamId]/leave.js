@@ -1,6 +1,5 @@
 import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0'
-import { getUserProfile, getTeamById } from '@/lib/airtable'
-import { Airtable } from '@/lib/airtable'
+import { getUserProfile, getTeamById, base } from '@/lib/airtable'
 
 /**
  * API handler for leaving a team
@@ -55,7 +54,14 @@ export default withApiAuthRequired(async function leaveTeamHandler(req, res) {
     }
 
     // Update the member record to set status to "Inactive"
-    const updatedMember = await Airtable('Team Members').update(memberRecordId, {
+    const membersTableId = process.env.AIRTABLE_MEMBERS_TABLE_ID;
+    const membersTable = base(membersTableId);
+    
+    if (!membersTable) {
+      return res.status(500).json({ error: 'Members table not configured' });
+    }
+    
+    const updatedMember = await membersTable.update(memberRecordId, {
       'Status': 'Inactive',
     })
 
