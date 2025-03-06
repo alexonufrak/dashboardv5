@@ -157,14 +157,17 @@ const ProgramApplicationHandler = ({
       
       // For team programs, first check via the API which uses Airtable participation
       try {
+        console.log(`Calling API to check participation records for contact ${profile?.contactId}`);
         const response = await fetch(`/api/user/check-initiative-conflicts?initiative=${encodeURIComponent(currentInitiativeName)}`);
         if (response.ok) {
           const data = await response.json();
+          console.log("API conflict check response:", data);
+          
           if (data.hasConflict) {
-            console.log(`API conflict check found conflict with initiative: ${data.conflictingInitiative}`);
+            console.log(`API found conflicting initiative: ${data.conflictingInitiative}`);
             return {
               allowed: false,
-              reason: "team_program_conflict",
+              reason: "initiative_conflict",
               details: {
                 currentProgram: data.conflictingInitiative || "Current Team Program",
                 appliedProgram: currentInitiativeName
