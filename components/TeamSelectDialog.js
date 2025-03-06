@@ -190,10 +190,10 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
         console.log(`Team program conflict: team "${teamId}" is already in cohort "${teamCohort.name}"`);
         return {
           allowed: false,
-          reason: "team_program_conflict",
+          reason: "initiative_conflict", // Change to initiative_conflict for consistent handling
           details: {
-            currentProgram: teamCohort.name || teamCohort.initiativeDetails?.name || "Current Program",
-            appliedProgram: currentInitiative
+            conflictingInitiative: teamCohort.name || teamCohort.initiativeDetails?.name || "Current Program",
+            currentInitiative: currentInitiative
           }
         };
       }

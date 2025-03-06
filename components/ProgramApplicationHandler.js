@@ -169,8 +169,8 @@ const ProgramApplicationHandler = ({
               allowed: false,
               reason: "initiative_conflict",
               details: {
-                currentProgram: data.conflictingInitiative || "Current Team Program",
-                appliedProgram: currentInitiativeName
+                conflictingInitiative: data.conflictingInitiative || "Current Team Program",
+                currentInitiative: currentInitiativeName
               }
             };
           }
@@ -208,10 +208,10 @@ const ProgramApplicationHandler = ({
             console.log(`Team program conflict detected: User is already in team program ${team.name}`);
             return {
               allowed: false,
-              reason: "team_program_conflict",
+              reason: "initiative_conflict", // Use initiative_conflict for consistent handling
               details: {
-                currentProgram: team.name || "Current Team Program",
-                appliedProgram: currentInitiativeName
+                conflictingInitiative: team.name || "Current Team Program",
+                currentInitiative: currentInitiativeName
               }
             };
           }

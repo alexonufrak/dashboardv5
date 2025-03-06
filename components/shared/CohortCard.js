@@ -130,13 +130,28 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
         return { allowed: true };
       }
       
-      // Check if current initiative is Xperience or Xtrapreneurs
-      const isXperience = currentInitiativeName.toLowerCase().includes("xperience");
-      const isXtrapreneurs = currentInitiativeName.toLowerCase().includes("xtrapreneurs");
+      // Check if this is a team-based initiative
+      const currentParticipationType = cohort.participationType || 
+                                     cohort.initiativeDetails?.["Participation Type"] || 
+                                     "Individual";
+                                     
+      // Standardized team participation detection
+      const normalizedType = currentParticipationType.trim().toLowerCase();
+      const isTeamProgram = 
+        normalizedType === "team" || 
+        normalizedType.includes("team") ||
+        normalizedType === "teams" ||
+        normalizedType === "group" ||
+        normalizedType.includes("group") ||
+        normalizedType === "collaborative" ||
+        normalizedType.includes("collaborative");
       
-      if (!isXperience && !isXtrapreneurs) {
-        console.log("No restrictions for initiative:", currentInitiativeName);
-        return { allowed: true }; // No restrictions for other initiatives
+      console.log(`Is this a team program? ${isTeamProgram ? 'YES' : 'NO'} (${currentParticipationType})`);
+      
+      // Only check conflicts for team programs
+      if (!isTeamProgram) {
+        console.log(`Not a team program (${currentParticipationType}), skipping conflict check`);
+        return { allowed: true };
       }
       
       // We need to make an API call to check if the user has participation records with conflicting initiatives
