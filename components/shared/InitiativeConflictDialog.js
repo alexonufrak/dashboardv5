@@ -52,7 +52,9 @@ const InitiativeConflictDialog = ({
       
       if (!teamId) {
         console.error('No teamId found in details:', details);
-        throw new Error('Team ID not found');
+        
+        // We'll try to continue even without a teamId - the backend may still be able to handle this
+        console.warn('Continuing leave team process without a specific teamId');
       }
       
       console.log(`Attempting to leave team with ID: ${teamId}`);
@@ -82,9 +84,14 @@ const InitiativeConflictDialog = ({
       }
       
       // Show success toast
+      // Get team name for the success message
+      const teamNameForMessage = details.teamName || 
+                                details.conflictingInitiative || 
+                                "your team";
+      
       toast({
         title: "Team Left Successfully",
-        description: `You have left ${details.teamName || "the team"}.`,
+        description: `You have left ${teamNameForMessage}.`,
         variant: "default",
       });
       
