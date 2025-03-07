@@ -72,8 +72,21 @@ export default function DashboardShell() {
       return;
     }
     
+    // Handle program in query parameter
+    if (path === "/dashboard" && query.program) {
+      // This is a specific program page using the new query param approach
+      const programId = query.program;
+      console.log(`Found program in query: ${programId}`);
+      setActivePage("program");
+      
+      // Set the active program in the state
+      setActiveProgramId(programId);
+      
+      // Set a generic title first - we'll update it later
+      setTitle("Program Dashboard");
+    }
     // Handle program-dashboard with ID
-    if (path === "/program-dashboard/[programId]" && query.programId) {
+    else if (path === "/program-dashboard/[programId]" && query.programId) {
       // This is a specific program page
       const programId = query.programId;
       setActivePage("program");

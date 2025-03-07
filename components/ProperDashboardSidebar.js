@@ -64,6 +64,14 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
   console.log("Profile has active participations:", dashboardProfile?.hasActiveParticipation);
   console.log("Profile participations:", dashboardProfile?.participations?.length);
   
+  // Debug router state
+  console.log("Current router state:", { 
+    pathname: router.pathname,
+    query: router.query,
+    asPath: router.asPath,
+    currentPage: currentPage 
+  });
+  
   // Create base navigation links with dashboard
   const baseLinks = [
     {
@@ -238,11 +246,26 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
                   return (
                     <SidebarMenuItem key={link.id || link.label}>
                       <SidebarMenuButton
-                        isActive={currentPage === link.id || 
-                                  (link.programId && currentPage === "program" && router.query.program === link.programId) ||
-                                  (link.id === "dashboard" && router.pathname === "/dashboard" && !router.query.program) ||
-                                  router.pathname === link.href || 
-                                 (link.href.startsWith('#') && router.asPath.includes(link.href))}
+                        isActive={
+                          // Debug active state checks
+                          (() => {
+                            const isIdMatch = currentPage === link.id;
+                            const isProgramIdMatch = link.programId && currentPage === "program" && router.query.program === link.programId;
+                            const isDashboardNoProgram = link.id === "dashboard" && router.pathname === "/dashboard" && !router.query.program;
+                            const isPathMatch = router.pathname === link.href;
+                            
+                            console.log(`Link ${link.label} active check:`, {
+                              isIdMatch,
+                              isProgramIdMatch,
+                              isDashboardNoProgram,
+                              isPathMatch,
+                              result: isIdMatch || isProgramIdMatch || isDashboardNoProgram || isPathMatch
+                            });
+                            
+                            return isIdMatch || isProgramIdMatch || isDashboardNoProgram || isPathMatch || 
+                                  (link.href.startsWith('#') && router.asPath.includes(link.href));
+                          })()
+                        }
                         onClick={(e) => handleNavClick(e, link)}
                       >
                         <a href={link.href} className="flex items-center gap-3">
