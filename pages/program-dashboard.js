@@ -12,13 +12,16 @@ function ProgramDashboard() {
   const router = useRouter()
   
   return (
-    <DashboardProvider>
+    <>
       <ProgramDashboardContent />
       {/* Render the ProfileEditModal at the top level */}
       <ProfileModalWrapper />
-    </DashboardProvider>
+    </>
   )
 }
+
+// Set a static property to flag that this component needs DashboardContext
+ProgramDashboard.needsDashboardContext = true;
 
 // Helper component to render ProfileEditModal with the right context
 function ProfileModalWrapper() {

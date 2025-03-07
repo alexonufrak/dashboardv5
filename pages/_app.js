@@ -3,6 +3,7 @@ import "../styles/globals.css"
 import "@fillout/react/style.css" // Import Fillout styles
 import { Toaster } from 'sonner';
 import { OnboardingProvider } from '@/contexts/OnboardingContext'
+import { DashboardProvider } from '@/contexts/DashboardContext'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Analytics } from "@vercel/analytics/react"
@@ -20,13 +21,34 @@ function MyApp({ Component, pageProps }) {
     },
   }))
 
+  // Determine if this page needs dashboard context
+  const needsDashboardContext = 
+    Component.needsDashboardContext || 
+    pageProps.needsDashboardContext ||
+    Component.displayName === 'ProgramDashboardPage' || 
+    Component.name === 'ProgramDashboardPage' ||
+    Component.displayName === 'Dashboard' || 
+    Component.name === 'Dashboard';
+
+  // Create a new render function that conditionally wraps in DashboardProvider
+  const renderWithDashboardProvider = (component) => {
+    if (needsDashboardContext) {
+      return <DashboardProvider>{component}</DashboardProvider>;
+    }
+    return component;
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <UserProvider>
         <OnboardingProvider>
-          <Component {...pageProps} />
-          <Toaster position="top-right" richColors closeButton />
-          <Analytics />
+          {renderWithDashboardProvider(
+            <>
+              <Component {...pageProps} />
+              <Toaster position="top-right" richColors closeButton />
+              <Analytics />
+            </>
+          )}
         </OnboardingProvider>
       </UserProvider>
       {/* Add React Query DevTools - only in development mode */}

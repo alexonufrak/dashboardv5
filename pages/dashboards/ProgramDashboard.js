@@ -27,7 +27,7 @@ const ProgramDashboardContent = dynamic(() => Promise.resolve(ProgramDashboardIn
 })
 
 // Inner component that uses dashboard context
-function ProgramDashboardInner({ onNavigate }) {
+function ProgramDashboardInner({ onNavigate, programId }) {
   // Get query client for cache access
   const queryClient = useQueryClient();
   
@@ -54,8 +54,11 @@ function ProgramDashboardInner({ onNavigate }) {
     getActiveProgramData
   } = useDashboard()
   
+  // Use the programId prop if provided, otherwise use the context's activeProgramId
+  const currentProgramId = programId || activeProgramId;
+  
   // Get the active program data
-  const activeProgramData = getActiveProgramData(activeProgramId)
+  const activeProgramData = getActiveProgramData(currentProgramId)
   
   // Use the program-specific data if available
   const programCohort = activeProgramData?.cohort || cohort

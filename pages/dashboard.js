@@ -8,12 +8,15 @@ import { Toaster } from "sonner"
 
 function Dashboard() {
   return (
-    <DashboardProvider>
+    <>
       <DashboardContent />
       <ProfileModalWrapper />
-    </DashboardProvider>
+    </>
   )
 }
+
+// Set a static property to flag that this component needs DashboardContext
+Dashboard.needsDashboardContext = true;
 
 // Helper component to render ProfileEditModal with the right context
 function ProfileModalWrapper() {

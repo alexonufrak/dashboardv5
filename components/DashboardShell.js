@@ -212,11 +212,15 @@ export default function DashboardShell() {
   
   // Return appropriate page component based on active page
   const getPageComponent = () => {
+    // Add the program ID to the ProgramDashboard props if available
+    const programProps = activePage === "program" && activeProgramId ? 
+      { programId: activeProgramId } : {};
+    
     switch (activePage) {
       case "dashboard":
         return <DashboardHome onNavigate={handleNavigation} />
       case "program":
-        return <ProgramDashboard onNavigate={handleNavigation} />
+        return <ProgramDashboard onNavigate={handleNavigation} {...programProps} />
       case "profile":
         return <ProfilePage onNavigate={handleNavigation} />
       default:
