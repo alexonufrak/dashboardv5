@@ -61,6 +61,25 @@ export default withApiAuthRequired(async function leaveTeamHandler(req, res) {
         console.log(`Updated member record ${record.id} to inactive`);
       }
       
+      // If we found no active member records, do another search without the Status filter
+      // This handles legacy records that might not have a Status field
+      if (activeMembers.length === 0) {
+        console.log("No active member records found, checking for records without Status field");
+        const allMembers = await membersTable.select({
+          filterByFormula: `{Contact}="${userProfile.contactId}"`,
+        }).firstPage();
+        
+        console.log(`Found ${allMembers.length} total member records`);
+        
+        // Update all member records to inactive
+        for (const record of allMembers) {
+          await membersTable.update(record.id, {
+            'Status': 'Inactive'
+          });
+          console.log(`Updated member record ${record.id} to inactive (legacy record)`);
+        }
+      }
+      
       // Set a placeholder updatedMember for consistency with the normal flow
       updatedMember = { id: 'multiple-records' };
     } 
@@ -83,10 +102,20 @@ export default withApiAuthRequired(async function leaveTeamHandler(req, res) {
         console.log('Active member record not found in team details, trying direct lookup');
         
         // Look up the member record directly using contactId and teamId
-        const memberRecords = await membersTable.select({
-          filterByFormula: `AND({Contact}="${userProfile.contactId}", {Team}="${teamId}")`,
+        // First try with Status filter for active members
+        let memberRecords = await membersTable.select({
+          filterByFormula: `AND({Contact}="${userProfile.contactId}", {Team}="${teamId}", {Status}="Active")`,
           maxRecords: 1
         }).firstPage();
+        
+        // If no active members found, try without Status filter to catch legacy records
+        if (!memberRecords || memberRecords.length === 0) {
+          console.log("No active member records found with team filter, checking for records without Status field");
+          memberRecords = await membersTable.select({
+            filterByFormula: `AND({Contact}="${userProfile.contactId}", {Team}="${teamId}")`,
+            maxRecords: 1
+          }).firstPage();
+        }
         
         if (memberRecords && memberRecords.length > 0) {
           const directMemberRecordId = memberRecords[0].id;
