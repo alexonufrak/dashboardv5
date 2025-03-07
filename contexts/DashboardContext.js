@@ -438,6 +438,48 @@ export function DashboardProvider({ children }) {
     };
   }, [profile, participationData]);
   
+  // Track active program ID
+  const [activeProgramId, setActiveProgramId] = useState(null);
+  
+  // Get the active program data
+  const getActiveProgramData = (programId) => {
+    if (!enhancedProfile) return null;
+    
+    const initiatives = enhancedProfile.getActiveParticipationInitiatives?.() || [];
+    
+    // If no program ID specified, use the currently active one or the first available
+    const activeId = programId || activeProgramId || (initiatives.length > 0 ? initiatives[0].id : null);
+    
+    if (!activeId) return programDataProcessed;
+    
+    // Find the active initiative
+    const initiative = initiatives.find(init => init.id === activeId);
+    if (!initiative) return programDataProcessed;
+    
+    // Get the participation for this initiative
+    const participation = enhancedProfile.findParticipationsByInitiativeId?.(activeId)?.[0];
+    if (!participation) return programDataProcessed;
+    
+    return {
+      programId: activeId,
+      cohort: participation.cohort,
+      initiativeName: initiative.name,
+      participationType: initiative.participationType,
+      isTeamBased: initiative.isTeamBased,
+      teamId: initiative.teamId
+    };
+  };
+  
+  // Get all program initiatives
+  const getAllProgramInitiatives = () => {
+    return enhancedProfile?.getActiveParticipationInitiatives?.() || [];
+  };
+  
+  // Set the active program
+  const setActiveProgram = (programId) => {
+    setActiveProgramId(programId);
+  };
+
   // Create context value
   const value = {
     // User & profile data
@@ -473,7 +515,13 @@ export function DashboardProvider({ children }) {
     handleProfileUpdate,
     
     // Helper methods for navigation
-    hasProgramData: Boolean(programDataProcessed.cohort) || Boolean(teamData?.cohortIds?.length)
+    hasProgramData: Boolean(programDataProcessed.cohort) || Boolean(teamData?.cohortIds?.length),
+    
+    // Multiple program management
+    activeProgramId,
+    setActiveProgram,
+    getActiveProgramData,
+    getAllProgramInitiatives
   }
 
   return (

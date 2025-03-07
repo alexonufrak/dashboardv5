@@ -34,21 +34,43 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
   const { user } = useUser()
   const { initiativeName, setIsEditModalOpen } = useDashboard()
   
-  // Navigation links with dynamic program link
-  const links = [
+  // Get active initiatives from context
+  const { getAllProgramInitiatives, hasProgramData } = useDashboard();
+  
+  // Get all active program initiatives
+  const programInitiatives = getAllProgramInitiatives() || [];
+  
+  // Create base navigation links with dashboard
+  const baseLinks = [
     {
       id: "dashboard",
       href: "/dashboard",
       label: "Dashboard",
       icon: <Home className="h-4 w-4" />
-    },
-    {
-      id: "program",
-      href: "/program-dashboard",
-      label: initiativeName || "Program",
-      icon: <Compass className="h-4 w-4" />
     }
-  ]
+  ];
+  
+  // Generate program links dynamically based on active participations
+  const programLinks = programInitiatives.map(initiative => ({
+    id: `program-${initiative.id}`,
+    href: `/program-dashboard/${initiative.id}`,
+    label: initiative.name || "Program",
+    icon: <Compass className="h-4 w-4" />,
+    programId: initiative.id
+  }));
+  
+  // If no active participations, show default program link (will show "No active program" screen)
+  const links = programLinks.length > 0 
+    ? [...baseLinks, ...programLinks] 
+    : [
+        ...baseLinks,
+        {
+          id: "program",
+          href: "/program-dashboard",
+          label: initiativeName || "Program",
+          icon: <Compass className="h-4 w-4" />
+        }
+      ]
   
   // External links
   const externalLinks = [

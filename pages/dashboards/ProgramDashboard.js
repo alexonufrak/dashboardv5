@@ -42,24 +42,41 @@ function ProgramDashboardInner({ onNavigate }) {
   const { 
     profile, 
     teamData, 
+    teamsData,
     cohort, 
     milestones, 
     initiativeName, 
     participationType, 
     programLoading, 
     programError,
-    refreshData 
+    refreshData,
+    activeProgramId,
+    getActiveProgramData
   } = useDashboard()
   
-  // Update local team data when context teamData changes
+  // Get the active program data
+  const activeProgramData = getActiveProgramData(activeProgramId)
+  
+  // Use the program-specific data if available
+  const programCohort = activeProgramData?.cohort || cohort
+  const programInitiativeName = activeProgramData?.initiativeName || initiativeName
+  const programParticipationType = activeProgramData?.participationType || participationType
+  
+  // Get team data for this specific program
+  const programTeamId = activeProgramData?.teamId
+  const programTeamData = programTeamId ? 
+    teamsData.find(t => t.id === programTeamId) || teamData : 
+    teamData
+  
+  // Update local team data when program-specific team data changes
   useEffect(() => {
-    if (teamData) {
-      setLocalTeamData(teamData);
+    if (programTeamData) {
+      setLocalTeamData(programTeamData);
     }
-  }, [teamData]);
+  }, [programTeamData, activeProgramId]);
   
   // Only show loading indicator if this is first load, not navigation
-  if (programLoading && !cohort && !teamData) {
+  if (programLoading && !programCohort && !programTeamData) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="text-center">
@@ -116,8 +133,8 @@ function ProgramDashboardInner({ onNavigate }) {
     )
   }
   
-  // Handle case where we don't have cohort or team data
-  if (!cohort && !teamData) {
+  // Handle case where we don't have cohort or team data for the selected program
+  if (!programCohort && !programTeamData) {
     console.log("No cohort or team data available, showing placeholder screen");
     return (
       <div className="program-dashboard space-y-6">
@@ -142,7 +159,9 @@ function ProgramDashboardInner({ onNavigate }) {
   }
   
   // Handle if this is a team-based or individual program
-  const isTeamProgram = participationType === "Team" || teamData !== null
+  const isTeamProgram = activeProgramData?.isTeamBased || 
+                       programParticipationType === "Team" || 
+                       programTeamData !== null
   
   // Add debugging to inspect team data structure
   console.log("Original Team Data:", teamData);
@@ -175,35 +194,35 @@ function ProgramDashboardInner({ onNavigate }) {
               <div>
                 <div className="flex gap-2 mb-2">
                   <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
-                    {cohort?.initiativeDetails?.name || initiativeName}
+                    {programCohort?.initiativeDetails?.name || programInitiativeName}
                   </Badge>
                   
-                  {(cohort?.['Current Cohort'] === true || 
-                   cohort?.['Current Cohort'] === 'true' || 
-                   cohort?.['Is Current'] === true ||
-                   cohort?.['Is Current'] === 'true') && (
+                  {(programCohort?.['Current Cohort'] === true || 
+                   programCohort?.['Current Cohort'] === 'true' || 
+                   programCohort?.['Is Current'] === true ||
+                   programCohort?.['Is Current'] === 'true') && (
                     <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">
                       Active Cohort
                     </Badge>
                   )}
                 </div>
                 <h2 className="text-xl font-semibold mb-1">
-                  {cohort?.topicNames?.[0] || "Active Program"} 
-                  {cohort?.Short_Name && ` - ${cohort.Short_Name}`}
+                  {programCohort?.topicNames?.[0] || "Active Program"} 
+                  {programCohort?.Short_Name && ` - ${programCohort.Short_Name}`}
                 </h2>
                 <div className="text-sm text-muted-foreground flex items-center">
                   <CalendarIcon className="h-3.5 w-3.5 mr-1" />
-                  {cohort?.['Start Date'] && cohort?.['End Date'] ? (
+                  {programCohort?.['Start Date'] && programCohort?.['End Date'] ? (
                     <span>
-                      {new Date(cohort['Start Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
+                      {new Date(programCohort['Start Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
                       {' - '}
-                      {new Date(cohort['End Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
+                      {new Date(programCohort['End Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
                     </span>
-                  ) : cohort?.['Start_Date'] && cohort?.['End_Date'] ? (
+                  ) : programCohort?.['Start_Date'] && programCohort?.['End_Date'] ? (
                     <span>
-                      {new Date(cohort['Start_Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
+                      {new Date(programCohort['Start_Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
                       {' - '}
-                      {new Date(cohort['End_Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
+                      {new Date(programCohort['End_Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
                     </span>
                   ) : (
                     <span>Active Program • {new Date().toLocaleDateString('en-US', {year: 'numeric', month: 'long'})}</span>

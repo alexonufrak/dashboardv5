@@ -56,35 +56,59 @@ export default function DashboardShell() {
   
   // Set active page based on URL path
   useEffect(() => {
-    const path = router.pathname
-    const query = router.query
+    const path = router.pathname;
+    const query = router.query;
     
-    console.log(`Setting active page based on URL path: ${path}`)
+    console.log(`Setting active page based on URL path: ${path}`, query);
     
     // Handle redirect for dashboard-shell legacy path
     if (path === "/dashboard-shell") {
-      router.replace("/dashboard", undefined, { shallow: true })
-      return
+      router.replace("/dashboard", undefined, { shallow: true });
+      return;
     }
     
-    if (path === "/program-dashboard") {
-      setActivePage("program")
-      setTitle("Program Dashboard")
+    // Handle program-dashboard with ID
+    if (path === "/program-dashboard/[programId]" && query.programId) {
+      // This is a specific program page
+      const programId = query.programId;
+      setActivePage("program");
+      
+      // Set the active program in context
+      const { setActiveProgram, getAllProgramInitiatives } = useDashboard();
+      setActiveProgram(programId);
+      
+      // Get the program name for the title from initiatives list
+      const initiatives = getAllProgramInitiatives();
+      const initiative = initiatives.find(init => init.id === programId);
+      
+      if (initiative) {
+        setTitle(`${initiative.name} Dashboard`);
+      } else {
+        setTitle("Program Dashboard");
+      }
+    }
+    // Standard routes
+    else if (path === "/program-dashboard") {
+      setActivePage("program");
+      setTitle("Program Dashboard");
     } else if (path === "/profile") {
-      setActivePage("profile")
-      setTitle("Your Profile")
+      setActivePage("profile");
+      setTitle("Your Profile");
     } else if (path === "/dashboard") {
-      setActivePage("dashboard")
-      setTitle("xFoundry Hub")
+      setActivePage("dashboard");
+      setTitle("xFoundry Hub");
     }
     
     // Simulate client-side redirect for nested dashboard paths
-    if (path !== "/dashboard" && path !== "/program-dashboard" && path !== "/profile") {
+    if (path !== "/dashboard" && 
+        path !== "/program-dashboard" && 
+        path !== "/program-dashboard/[programId]" && 
+        path !== "/profile") {
       if (path.startsWith("/dashboard")) {
-        setActivePage("dashboard")
+        setActivePage("dashboard");
       }
     }
-  }, [router.pathname])
+  }, [router.pathname, router.query])
   
   // Handle profile edit - set modal state directly
   const handleEditProfileClick = () => {
@@ -98,28 +122,51 @@ export default function DashboardShell() {
   const handleNavigation = (page) => {
     console.log(`Navigation requested to page: ${page}`);
     
-    // If we're already on this page, don't do anything
-    if (page === activePage) {
+    // Extract program ID if this is a program-specific page
+    let programId = null;
+    if (page.startsWith('program-')) {
+      programId = page.replace('program-', '');
+      page = 'program'; // Set base page to program
+    }
+    
+    // If we're already on this page and it's not a program page with ID, don't do anything
+    if (page === activePage && !programId) {
       console.log('Already on this page, skipping navigation');
       return;
     }
     
     // Update active page immediately without waiting for router change
-    setActivePage(page)
+    setActivePage(page);
     
-    // Set the title based on the page
-    switch (page) {
-      case "dashboard":
-        setTitle("xFoundry Hub")
-        break
-      case "program": 
-        setTitle("Program Dashboard")
-        break
-      case "profile":
-        setTitle("Your Profile")
-        break
-      default:
-        setTitle("xFoundry Hub")
+    // Set the active program in context if this is a program page
+    if (programId) {
+      const { setActiveProgram, getAllProgramInitiatives } = useDashboard();
+      setActiveProgram(programId);
+      
+      // Get the program name for the title from initiatives list
+      const initiatives = getAllProgramInitiatives();
+      const initiative = initiatives.find(init => init.id === programId);
+      
+      if (initiative) {
+        setTitle(`${initiative.name} Dashboard`);
+      } else {
+        setTitle("Program Dashboard");
+      }
+    } else {
+      // Set the title based on the page
+      switch (page) {
+        case "dashboard":
+          setTitle("xFoundry Hub")
+          break
+        case "program": 
+          setTitle("Program Dashboard")
+          break
+        case "profile":
+          setTitle("Your Profile")
+          break
+        default:
+          setTitle("xFoundry Hub")
+      }
     }
     
     // Update the URL using shallow routing to avoid full page reload
@@ -130,18 +177,24 @@ export default function DashboardShell() {
         scroll: false 
       };
       
-      switch (page) {
-        case "dashboard":
-          router.push("/dashboard", undefined, options)
-          break
-        case "program":
-          router.push("/program-dashboard", undefined, options)
-          break
-        case "profile":
-          router.push("/profile", undefined, options)
-          break
-        default:
-          router.push("/dashboard", undefined, options)
+      if (programId) {
+        // Navigate to program with ID
+        router.push(`/program-dashboard/${programId}`, undefined, options)
+      } else {
+        // Regular navigation
+        switch (page) {
+          case "dashboard":
+            router.push("/dashboard", undefined, options)
+            break
+          case "program":
+            router.push("/program-dashboard", undefined, options)
+            break
+          case "profile":
+            router.push("/profile", undefined, options)
+            break
+          default:
+            router.push("/dashboard", undefined, options)
+        }
       }
     }, 10) // Slight delay to ensure UI updates first
   }
