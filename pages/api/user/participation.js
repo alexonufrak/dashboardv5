@@ -59,77 +59,40 @@ export default withApiAuthRequired(async function handler(req, res) {
     // Initialize the topics table
     const topicsTable = base(topicsTableId)
     
-    // Get the user's active participation records
+    // Get the user's active participation records - simplified approach with a single reliable method
     let participationRecords = []
     
     try {
       // Sanitize the contact ID to prevent formula injection
       const safeContactId = profile.contactId.replace(/['"\\]/g, '');
       
-      // Use SEARCH instead of FIND for more reliable record matching
-      // Focus on the 'Contacts' field which is confirmed to exist in Airtable
-      // Only include records with Status="Active" or empty Status
-      const formula = `AND(SEARCH("${safeContactId}", {contactId}), OR({Status}="Active", {Status}=""))`;
+      // Define a standardized formula that works reliably
+      // Use OR with multiple approaches to maximize chances of finding matching records
+      // Only include records with Status="Active" or empty Status (for backward compatibility)
+      const formula = `AND(
+        OR(
+          {Contacts} = "${safeContactId}",
+          SEARCH("${safeContactId}", {contactId})
+        ), 
+        OR({Status}="Active", {Status}="")
+      )`;
       
-      console.log(`Using formula: ${formula}`);
+      console.log(`Using consolidated formula for participation lookup: ${formula.replace(/\s+/g, ' ')}`);
       
       const records = await participationTable.select({
         filterByFormula: formula,
         sort: [{ field: "Last Modified", direction: "desc" }]
       }).firstPage();
       
-      console.log(`Formula found ${records.length} records`);
+      console.log(`Found ${records.length} active participation records for contact ${profile.contactId}`);
       participationRecords = [...records];
+      
+      // If no records found with the formula, log a clear message
+      if (participationRecords.length === 0) {
+        console.log(`No active participation records found for contact ${profile.contactId}`);
+      }
     } catch (err) {
       console.error("Error querying participation records:", err);
-    }
-    
-    // If no records found with SEARCH formula, try direct equality matching
-    if (participationRecords.length === 0) {
-      try {
-        console.log("Trying direct equality matching...");
-        const safeContactId = profile.contactId.replace(/['"\\]/g, '');
-        
-        // Try direct equality with Contacts field (most reliable for record IDs)
-        // Only include records with Status="Active" or empty Status
-        const directFormula = `AND({Contacts} = "${safeContactId}", OR({Status}="Active", {Status}=""))`;
-        
-        const records = await participationTable.select({
-          filterByFormula: directFormula,
-          sort: [{ field: "Last Modified", direction: "desc" }]
-        }).firstPage();
-        
-        console.log(`Direct equality formula found ${records.length} records`);
-        participationRecords = [...records];
-      } catch (err) {
-        console.error("Error using direct equality formula:", err);
-      }
-    }
-    
-    // If still no records, use client-side filtering as fallback
-    if (participationRecords.length === 0) {
-      console.log("No records found with formulas. Using client-side filtering as fallback...");
-      
-      // Get a limited set of records (for performance)
-      const allParticipationRecords = await participationTable.select({
-        maxRecords: 100,
-        sort: [{ field: "Last Modified", direction: "desc" }]
-      }).firstPage();
-      
-      // Client-side filtering focusing on the Contacts field (array of record IDs)
-      // Also filter for Status="Active" or empty Status
-      participationRecords = allParticipationRecords.filter(record => {
-        // If Contacts is an array and it includes the contact ID
-        if (record.fields.Contacts && Array.isArray(record.fields.Contacts) && 
-            record.fields.Contacts.includes(profile.contactId)) {
-          // Check Status field - only include Active or empty
-          const status = record.fields.Status || "";
-          return status === "Active" || status === "";
-        }
-        return false;
-      });
-      
-      console.log(`Client-side filtering found ${participationRecords.length} matching records`);
     }
     
     // Check if we found any participation records

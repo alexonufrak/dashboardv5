@@ -53,14 +53,9 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
     app.cohortId === cohort.id
   )
   
-  // Check if user has a participation record for this cohort in their profile
-  // First try using the optimized lookup method if available
-  const hasActiveParticipation = profile?.findParticipationByCohortId ? 
-                                !!profile.findParticipationByCohortId(cohort.id) : 
-                                // Fallback to array iteration if the helper isn't available
-                                profile?.participations?.some(participation => 
-                                  participation.cohort?.id === cohort.id
-                                )
+  // Check if user has a participation record for this cohort using the optimized lookup
+  // The enhanced profile provides a direct, optimized lookup method
+  const hasActiveParticipation = !!profile?.findParticipationByCohortId?.(cohort.id)
   
   // User has applied if either they have an application or an active participation record
   const hasApplied = hasAppliedViaApplication || hasActiveParticipation

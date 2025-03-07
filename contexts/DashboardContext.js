@@ -311,33 +311,20 @@ export function DashboardProvider({ children }) {
   }
   
   // Enhance profile with participations data and add useful derived properties
+  // Simplified implementation with less redundancy and standardized checks
   const enhancedProfile = useMemo(() => {
     if (!profile) return null;
     
-    // Get participations data
+    // Get participations data - these are already filtered for active records at the API level
     const participations = participationData?.participation || [];
     console.log(`Enhancing profile with ${participations.length} participation records`);
     
-    // Create a mapping of cohort IDs to participation records for easy lookup
-    const participationByCohortId = {};
-    participations.forEach(p => {
-      if (p.cohort && p.cohort.id) {
-        participationByCohortId[p.cohort.id] = p;
-      }
-    });
-    
-    // Add derived property: hasActiveTeamParticipation
-    // This tells us if the user is currently participating in any team-based program
-    const hasActiveTeamParticipation = participations.some(p => {
-      // Check participation type
-      const participationType = p.cohort?.participationType || 
-                             p.cohort?.initiativeDetails?.["Participation Type"] || 
-                             "Individual";
+    // Helper function to normalize and check participation type consistently
+    // This centralizes the logic for determining team-based participation
+    const isTeamBasedParticipation = (participationType) => {
+      if (!participationType) return false;
       
-      // Normalize the participation type for consistent checking
-      const normalizedType = participationType.trim().toLowerCase();
-      
-      // Consider it a team participation if it contains team-related keywords
+      const normalizedType = String(participationType).trim().toLowerCase();
       return normalizedType === "team" || 
              normalizedType.includes("team") ||
              normalizedType === "teams" ||
@@ -345,42 +332,108 @@ export function DashboardProvider({ children }) {
              normalizedType.includes("group") ||
              normalizedType === "collaborative" ||
              normalizedType.includes("collaborative");
+    };
+    
+    // Get participation type from a participation record consistently
+    const getParticipationType = (p) => {
+      return p.cohort?.participationType || 
+             p.cohort?.initiativeDetails?.["Participation Type"] || 
+             "Individual";
+    };
+    
+    // Create a mapping of cohort IDs to participation records for easy lookup
+    const participationByCohortId = {};
+    // Create a mapping of initiative IDs to participation records
+    const participationByInitiativeId = {};
+    
+    // Build lookup maps in a single pass
+    participations.forEach(p => {
+      // Map by cohort ID
+      if (p.cohort && p.cohort.id) {
+        participationByCohortId[p.cohort.id] = p;
+      }
+      
+      // Map by initiative ID if available
+      if (p.cohort?.initiativeDetails?.id) {
+        const initiativeId = p.cohort.initiativeDetails.id;
+        if (!participationByInitiativeId[initiativeId]) {
+          participationByInitiativeId[initiativeId] = [];
+        }
+        participationByInitiativeId[initiativeId].push(p);
+      }
     });
     
-    // Add derived property: hasActiveParticipation
-    // This tells us if the user is currently participating in any program
+    // Calculate derived properties efficiently:
+    
+    // 1. Team-based participation - calculated once
+    const teamParticipations = participations.filter(p => 
+      isTeamBasedParticipation(getParticipationType(p))
+    );
+    
+    // Add derived property: hasActiveTeamParticipation
+    const hasActiveTeamParticipation = teamParticipations.length > 0;
+    
+    // Add derived property: hasActiveParticipation - simple check since we already filter at API level
     const hasActiveParticipation = participations.length > 0;
     
-    // Add derived property: findParticipationByCohortId
-    // This function allows easy lookup of participation records by cohort ID
+    // Create optimized lookup functions
+    
+    // Lookup participation by cohort ID
     const findParticipationByCohortId = (cohortId) => {
       return participationByCohortId[cohortId] || null;
     };
     
-    // Add derived property: getActiveParticipationInitiatives
-    // This returns a list of all initiatives the user is currently participating in
-    const getActiveParticipationInitiatives = () => {
-      return participations
-        .filter(p => p.cohort && p.cohort.initiativeDetails)
-        .map(p => ({
-          name: p.cohort.initiativeDetails.name,
-          participationType: p.cohort.participationType || p.cohort.initiativeDetails["Participation Type"] || "Individual",
-          teamId: p.teamId || null,
-          cohortId: p.cohort.id
-        }));
+    // Lookup participations by initiative ID
+    const findParticipationsByInitiativeId = (initiativeId) => {
+      return participationByInitiativeId[initiativeId] || [];
     };
     
-    // Return the enhanced profile with participation data and derived properties
+    // Get all active participation initiatives in a structured format
+    const getActiveParticipationInitiatives = () => {
+      // Use a Set to avoid duplicate initiatives
+      const initiatives = new Set();
+      const result = [];
+      
+      participations.forEach(p => {
+        if (p.cohort?.initiativeDetails?.id) {
+          const initiativeId = p.cohort.initiativeDetails.id;
+          
+          // Skip if we've already processed this initiative
+          if (initiatives.has(initiativeId)) return;
+          initiatives.add(initiativeId);
+          
+          result.push({
+            id: initiativeId,
+            name: p.cohort.initiativeDetails.name || "Unknown Initiative",
+            participationType: getParticipationType(p),
+            isTeamBased: isTeamBasedParticipation(getParticipationType(p)),
+            teamId: p.teamId || null,
+            cohortId: p.cohort.id
+          });
+        }
+      });
+      
+      return result;
+    };
+    
+    // Return the enhanced profile with participation data and optimized helpers
     return {
       ...profile,
-      // Include participation data in profile for use by components
+      // Include participation data
       participations,
-      // Add derived properties
+      // Include team-specific participation subset
+      teamParticipations,
+      // Add derived properties - calculated once for efficiency
       hasActiveTeamParticipation,
       hasActiveParticipation,
+      // Add helper functions - reuse the normalized helpers
+      isTeamBasedParticipation, // Expose the helper for components to use
+      getParticipationType,     // Expose the helper for components to use
+      // Add lookup functions
       findParticipationByCohortId,
+      findParticipationsByInitiativeId,
       getActiveParticipationInitiatives,
-      // Add direct access to participationByCohortId for convenient lookups
+      // Add direct access to lookup maps
       participationByCohortId
     };
   }, [profile, participationData]);
