@@ -50,9 +50,10 @@ export default function DashboardShell() {
     setIsEditModalOpen
   } = useDashboard()
   
-  // Track current page
+  // Track current page and active program
   const [activePage, setActivePage] = useState("dashboard")
   const [title, setTitle] = useState("xFoundry Hub")
+  const [activeProgramId, setActiveProgramId] = useState(null)
   
   // Set active page based on URL path
   useEffect(() => {
@@ -73,19 +74,12 @@ export default function DashboardShell() {
       const programId = query.programId;
       setActivePage("program");
       
-      // Set the active program in context
-      const { setActiveProgram, getAllProgramInitiatives } = useDashboard();
-      setActiveProgram(programId);
+      // Set the active program in the state
+      // We'll update context after component mount
+      setActiveProgramId(programId);
       
-      // Get the program name for the title from initiatives list
-      const initiatives = getAllProgramInitiatives();
-      const initiative = initiatives.find(init => init.id === programId);
-      
-      if (initiative) {
-        setTitle(`${initiative.name} Dashboard`);
-      } else {
-        setTitle("Program Dashboard");
-      }
+      // Set a generic title first - we'll update it later
+      setTitle("Program Dashboard");
     }
     // Standard routes
     else if (path === "/program-dashboard") {
@@ -138,20 +132,11 @@ export default function DashboardShell() {
     // Update active page immediately without waiting for router change
     setActivePage(page);
     
-    // Set the active program in context if this is a program page
+    // Set the active program ID if this is a program page
     if (programId) {
-      const { setActiveProgram, getAllProgramInitiatives } = useDashboard();
-      setActiveProgram(programId);
-      
-      // Get the program name for the title from initiatives list
-      const initiatives = getAllProgramInitiatives();
-      const initiative = initiatives.find(init => init.id === programId);
-      
-      if (initiative) {
-        setTitle(`${initiative.name} Dashboard`);
-      } else {
-        setTitle("Program Dashboard");
-      }
+      // Store the ID in component state
+      setActiveProgramId(programId);
+      setTitle("Program Dashboard");
     } else {
       // Set the title based on the page
       switch (page) {
@@ -229,6 +214,28 @@ export default function DashboardShell() {
       }
     }
   }, [profile, cohort, activePage, initialLoadComplete, refreshData]);
+  
+  // Effect to sync activeProgramId with context and update the title
+  useEffect(() => {
+    if (activeProgramId && profile) {
+      // Set the active program in context
+      const { setActiveProgram, getAllProgramInitiatives } = useDashboard();
+      
+      if (setActiveProgram) {
+        console.log(`Setting active program in context: ${activeProgramId}`);
+        setActiveProgram(activeProgramId);
+        
+        // Update title with initiative name
+        const initiatives = getAllProgramInitiatives();
+        if (initiatives && initiatives.length > 0) {
+          const initiative = initiatives.find(init => init.id === activeProgramId);
+          if (initiative) {
+            setTitle(`${initiative.name} Dashboard`);
+          }
+        }
+      }
+    }
+  }, [activeProgramId, profile]);
   
   // Only show full loader on initial app load, never between page navigations
   const showFullLoader = isLoading && !initialLoadComplete;
