@@ -46,38 +46,138 @@ export default withApiAuthRequired(async function leaveTeamHandler(req, res) {
     // This ensures we don't miss any member records
     console.log(`Updating all member records for contact ${userProfile.contactId} to inactive`);
     
-    // First find all active member records for this user
-    const activeMembers = await membersTable.select({
-      filterByFormula: `AND({Contact}="${userProfile.contactId}", {Status}="Active")`,
-    }).firstPage();
+    // First check if the contact record has Members links
+    const contactsTable = base(process.env.AIRTABLE_CONTACTS_TABLE_ID);
+    let memberRecordsUpdated = false;
     
-    console.log(`Found ${activeMembers.length} active member records to update`);
-    
-    // Update all active member records to inactive
-    for (const record of activeMembers) {
-      await membersTable.update(record.id, {
-        'Status': 'Inactive'
-      });
-      console.log(`Updated member record ${record.id} to inactive`);
+    try {
+      console.log(`Fetching contact record to check for linked Members`);
+      const contactRecord = await contactsTable.find(userProfile.contactId);
+      
+      if (contactRecord && contactRecord.fields.Members && contactRecord.fields.Members.length > 0) {
+        const memberIds = contactRecord.fields.Members;
+        console.log(`Contact has ${memberIds.length} linked member records:`, memberIds);
+        
+        // Direct update of each member record from the contact
+        for (const memberId of memberIds) {
+          try {
+            await membersTable.update(memberId, {
+              'Status': 'Inactive'
+            });
+            console.log(`Updated member record ${memberId} to inactive (from contact links)`);
+            memberRecordsUpdated = true;
+          } catch (memberUpdateError) {
+            console.error(`Error updating member record ${memberId}:`, memberUpdateError);
+          }
+        }
+      } else {
+        console.log(`Contact record has no linked member records`);
+      }
+    } catch (contactError) {
+      console.error(`Error fetching contact record:`, contactError);
     }
     
-    // If we found no active member records, do another search without the Status filter
-    // This handles legacy records that might not have a Status field
-    if (activeMembers.length === 0) {
-      console.log("No active member records found, checking for records without Status field");
-      const allMembers = await membersTable.select({
-        filterByFormula: `{Contact}="${userProfile.contactId}"`,
+    // If we haven't updated any records through direct links, try the query approach
+    if (!memberRecordsUpdated) {
+      // Find all active member records for this user
+      const activeMembers = await membersTable.select({
+        filterByFormula: `AND({Contact}="${userProfile.contactId}", {Status}="Active")`,
       }).firstPage();
       
-      console.log(`Found ${allMembers.length} total member records`);
+      console.log(`Found ${activeMembers.length} active member records to update`);
       
-      // Update all member records to inactive
-      for (const record of allMembers) {
+      // Update all active member records to inactive
+      for (const record of activeMembers) {
         await membersTable.update(record.id, {
           'Status': 'Inactive'
         });
-        console.log(`Updated member record ${record.id} to inactive (legacy record)`);
+        console.log(`Updated member record ${record.id} to inactive`);
+        memberRecordsUpdated = true;
       }
+      
+      // If we found no active member records, do another search without the Status filter
+      // This handles legacy records that might not have a Status field
+      if (activeMembers.length === 0) {
+        console.log("No active member records found, checking for records without Status field");
+        const allMembers = await membersTable.select({
+          filterByFormula: `{Contact}="${userProfile.contactId}"`,
+        }).firstPage();
+        
+        console.log(`Found ${allMembers.length} total member records`);
+        
+        // Update all member records to inactive
+        for (const record of allMembers) {
+          await membersTable.update(record.id, {
+            'Status': 'Inactive'
+          });
+          console.log(`Updated member record ${record.id} to inactive (legacy record)`);
+          memberRecordsUpdated = true;
+        }
+      }
+    }
+    
+    // If we still haven't updated any member records, try a broader search approach
+    if (!memberRecordsUpdated) {
+      console.log("No member records found through regular methods, trying broader search");
+      
+      // Check teams table to find teams the user might be in
+      try {
+        const teamsTableId = process.env.AIRTABLE_TEAMS_TABLE_ID;
+        if (teamsTableId) {
+          const teamsTable = base(teamsTableId);
+          // Get all teams to check manually
+          const teams = await teamsTable.select().firstPage();
+          
+          console.log(`Checking ${teams.length} teams for hidden member records`);
+          
+          let hiddenMemberCount = 0;
+          
+          // For each team, check its Members field for records to update
+          for (const team of teams) {
+            const teamMembers = team.fields.Members || [];
+            
+            if (teamMembers.length > 0) {
+              for (const memberId of teamMembers) {
+                try {
+                  // Get the member record to check if it's for this contact
+                  const memberRecord = await membersTable.find(memberId);
+                  
+                  if (memberRecord && 
+                      memberRecord.fields.Contact && 
+                      memberRecord.fields.Contact.length > 0 &&
+                      memberRecord.fields.Contact[0] === userProfile.contactId) {
+                    
+                    // Found a member record for this contact
+                    console.log(`Found hidden member record ${memberId} in team ${team.id}`);
+                    
+                    // Update it to inactive
+                    await membersTable.update(memberId, {
+                      'Status': 'Inactive'
+                    });
+                    console.log(`Updated hidden member record ${memberId} to inactive`);
+                    hiddenMemberCount++;
+                    memberRecordsUpdated = true;
+                  }
+                } catch (error) {
+                  // Continue checking other members if one fails
+                  console.error(`Error checking member ${memberId}:`, error);
+                }
+              }
+            }
+          }
+          
+          console.log(`Updated ${hiddenMemberCount} hidden member records from team search`);
+        }
+      } catch (error) {
+        console.error("Error searching for hidden member records:", error);
+      }
+    }
+    
+    // Log whether we were able to update any member records
+    if (memberRecordsUpdated) {
+      console.log("Successfully updated one or more member records to inactive");
+    } else {
+      console.log("WARNING: No member records found to update. User may need manual cleanup in Airtable.");
     }
     
     // For the "unknown" teamId case, we don't need to do anything else for member records
