@@ -64,7 +64,9 @@ export default function DashboardShell() {
     
     // Handle redirect for dashboard-shell legacy path
     if (path === "/dashboard-shell") {
-      router.replace("/dashboard", undefined, { shallow: true });
+      window.history.pushState({}, '', "/dashboard");
+      setActivePage("dashboard");
+      setTitle("xFoundry Hub");
       return;
     }
     
@@ -93,15 +95,37 @@ export default function DashboardShell() {
       setTitle("xFoundry Hub");
     }
     
-    // Simulate client-side redirect for nested dashboard paths
-    if (path !== "/dashboard" && 
-        path !== "/program-dashboard" && 
-        path !== "/program-dashboard/[programId]" && 
-        path !== "/profile") {
-      if (path.startsWith("/dashboard")) {
+    // Add handler for popstate (browser back/forward)
+    const handlePopState = () => {
+      // Get the current path from window.location
+      const currentPath = window.location.pathname;
+      
+      // Update the active page based on the path
+      if (currentPath === "/dashboard") {
         setActivePage("dashboard");
+        setTitle("xFoundry Hub");
+      } else if (currentPath === "/profile") {
+        setActivePage("profile");
+        setTitle("Your Profile");
+      } else if (currentPath === "/program-dashboard") {
+        setActivePage("program");
+        setTitle("Program Dashboard");
+      } else if (currentPath.startsWith("/program-dashboard/")) {
+        // Extract program ID from URL
+        const programId = currentPath.replace("/program-dashboard/", "");
+        setActivePage("program");
+        setActiveProgramId(programId);
+        setTitle("Program Dashboard");
       }
-    }
+    };
+    
+    // Add listener for browser navigation
+    window.addEventListener("popstate", handlePopState);
+    
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, [router.pathname, router.query])
   
   // Handle profile edit - set modal state directly
@@ -162,24 +186,26 @@ export default function DashboardShell() {
         scroll: false 
       };
       
+      // When using client-side navigation, update the URL but DON'T navigate to a new page
+      // This keeps our context intact
       if (programId) {
-        // Navigate to program with ID
-        router.push(`/program-dashboard/${programId}`, undefined, options)
+        // Just update the URL to reflect the current program, but don't actually navigate
+        window.history.pushState({}, '', `/program-dashboard/${programId}`);
       } else {
-        // Regular navigation
+        // Regular navigation - update URL without changing page
+        let targetUrl = "/dashboard";
         switch (page) {
           case "dashboard":
-            router.push("/dashboard", undefined, options)
-            break
+            targetUrl = "/dashboard";
+            break;
           case "program":
-            router.push("/program-dashboard", undefined, options)
-            break
+            targetUrl = "/program-dashboard";
+            break;
           case "profile":
-            router.push("/profile", undefined, options)
-            break
-          default:
-            router.push("/dashboard", undefined, options)
+            targetUrl = "/profile";
+            break;
         }
+        window.history.pushState({}, '', targetUrl);
       }
     }, 10) // Slight delay to ensure UI updates first
   }
