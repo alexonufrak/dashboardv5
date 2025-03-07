@@ -12,6 +12,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell
+} from "@/components/ui/table"
 import { Calendar, MapPin, Clock, Users, BookOpen, ExternalLink } from "lucide-react"
 import ProgramApplicationHandler from "./ProgramApplicationHandler"
 
@@ -29,10 +37,21 @@ const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply, profile, applica
   const filloutFormId = cohort["Application Form ID (Fillout)"]
   const isOpen24 = status === "Applications Open"
   
-  // Check if user has already applied to this cohort
-  const hasApplied = Array.isArray(applications) && applications.some(app => 
-    app.cohortId === cohort.id
-  )
+  // Find any application for this cohort
+  const cohortApplication = Array.isArray(applications) ? 
+    applications.find(app => app.cohortId === cohort.id) : null
+  
+  // Check if user has a pending application - used to disable the Apply button
+  const hasAnyApplication = !!cohortApplication
+  
+  // Check if user has an approved application - only show Connexions for approved applications
+  const hasApprovedApplication = cohortApplication?.status === "Approved"
+  
+  // Check if user has an active participation record for this cohort
+  const hasActiveParticipation = profile?.findParticipationByCohortId?.(cohort.id)
+  
+  // Show Connexions button only if they have active participation OR approved application
+  const showConnexions = hasActiveParticipation || hasApprovedApplication
   
   // Set Connexions URL - always use the same URL
   const connexionsUrl = "https://connexion.xfoundry.org"
@@ -127,6 +146,59 @@ const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply, profile, applica
             </div>
             
             <Separator />
+            
+            {/* Application Status (if any) */}
+            {hasAnyApplication && (
+              <div>
+                <h4 className="text-sm font-semibold mb-2">Your Application Status</h4>
+                <div className="rounded-lg border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date Applied</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Last Updated</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        <TableCell>
+                          {cohortApplication?.appliedDate ? 
+                            new Date(cohortApplication.appliedDate).toLocaleDateString() : 
+                            "Unknown date"}
+                        </TableCell>
+                        <TableCell>
+                          <div className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                            cohortApplication?.status === "Approved" ? 
+                              "bg-green-100 text-green-800" : 
+                            cohortApplication?.status === "Pending" ?
+                              "bg-amber-100 text-amber-800" :
+                            cohortApplication?.status === "Rejected" ?
+                              "bg-red-100 text-red-800" :
+                              "bg-slate-100 text-slate-800"
+                          }`}>
+                            {cohortApplication?.status || "Pending Review"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {cohortApplication?.updatedDate ? 
+                            new Date(cohortApplication.updatedDate).toLocaleDateString() : 
+                            "Pending"}
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+                {cohortApplication?.status === "Rejected" && cohortApplication?.notes && (
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    <span className="font-medium">Feedback: </span>
+                    {cohortApplication.notes}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {hasAnyApplication && <Separator />}
             
             {/* Program Details */}
             <div className="grid gap-3">
@@ -224,8 +296,8 @@ const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply, profile, applica
               Close
             </Button>
             
-            {hasApplied ? (
-              // Show Connexions button if user has already applied
+            {showConnexions ? (
+              // Show Connexions button if user has active participation or approved application
               <Button 
                 variant="secondary"
                 onClick={() => window.open(connexionsUrl, '_blank')}
@@ -234,10 +306,15 @@ const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply, profile, applica
                 Go to Connexions
               </Button>
             ) : (
-              // Show apply button if user hasn't applied yet
+              // Show apply button if user doesn't have active participation or approved application
               <Button 
                 variant={isOpen24 ? "default" : "secondary"}
-                disabled={!isOpen24 || (!filloutFormId && !participationType?.toLowerCase().includes('team')) || isApplying}
+                // Disable if: 
+                // 1. Cohort isn't open for applications
+                // 2. Missing form ID for individual applications
+                // 3. Currently applying
+                // 4. User already has a pending application (any status)
+                disabled={!isOpen24 || (!filloutFormId && !participationType?.toLowerCase().includes('team')) || isApplying || hasAnyApplication}
                 onClick={handleApplyClick}
               >
                 {isApplying ? (
@@ -247,6 +324,11 @@ const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply, profile, applica
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     Applying...
+                  </span>
+                ) : hasAnyApplication ? (
+                  // Show application status for existing applications that aren't approved
+                  <span>
+                    {cohortApplication?.status || "Applied"}
                   </span>
                 ) : (
                   actionButtonText
