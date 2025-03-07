@@ -394,7 +394,15 @@ export function DashboardProvider({ children }) {
       const initiatives = new Set();
       const result = [];
       
+      console.log("Getting active participation initiatives from", participations?.length || 0, "participations");
+      
       participations.forEach(p => {
+        console.log("Checking participation:", {
+          cohortName: p.cohort?.name,
+          initiativeId: p.cohort?.initiativeDetails?.id,
+          initiativeName: p.cohort?.initiativeDetails?.name,
+        });
+        
         if (p.cohort?.initiativeDetails?.id) {
           const initiativeId = p.cohort.initiativeDetails.id;
           
@@ -413,6 +421,7 @@ export function DashboardProvider({ children }) {
         }
       });
       
+      console.log("Found", result.length, "unique initiatives:", result);
       return result;
     };
     

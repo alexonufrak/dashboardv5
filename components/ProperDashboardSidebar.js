@@ -35,10 +35,15 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
   const { initiativeName, setIsEditModalOpen } = useDashboard()
   
   // Get active initiatives from context
-  const { getAllProgramInitiatives, hasProgramData } = useDashboard();
+  const { getAllProgramInitiatives, hasProgramData, profile: dashboardProfile } = useDashboard();
   
   // Get all active program initiatives
   const programInitiatives = getAllProgramInitiatives() || [];
+  
+  // Debug logs
+  console.log("Program Initiatives:", programInitiatives);
+  console.log("Profile has active participations:", dashboardProfile?.hasActiveParticipation);
+  console.log("Profile participations:", dashboardProfile?.participations?.length);
   
   // Create base navigation links with dashboard
   const baseLinks = [
@@ -96,6 +101,7 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
   // Handle navigation click
   const handleNavClick = (e, link) => {
     e.preventDefault()
+    console.log("Navigation clicked:", link);
     
     if (link.href.startsWith('#')) {
       // Handle anchor links
@@ -110,6 +116,19 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
     if (link.href === "/profile") {
       console.log("Profile link clicked - opening modal directly");
       setIsEditModalOpen(true);
+      return;
+    }
+    
+    // Handle program-specific navigation
+    if (link.programId) {
+      console.log(`Navigating to program ${link.programId}`);
+      if (onNavigate) {
+        // Pass the program ID in the navigation ID
+        onNavigate(`program-${link.programId}`);
+      } else {
+        // Fallback to direct navigation
+        router.push(link.href);
+      }
       return;
     }
     
@@ -169,21 +188,26 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
             <SidebarGroupLabel>NAVIGATION</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {links.map((link) => (
-                  <SidebarMenuItem key={link.label}>
-                    <SidebarMenuButton
-                      isActive={currentPage === link.id || 
-                                router.pathname === link.href || 
-                               (link.href.startsWith('#') && router.asPath.includes(link.href))}
-                      onClick={(e) => handleNavClick(e, link)}
-                    >
-                      <a href={link.href} className="flex items-center gap-3">
-                        {link.icon}
-                        <span>{link.label}</span>
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {console.log("Rendering links:", links)}
+                {links.map((link) => {
+                  console.log("Rendering link:", link);
+                  return (
+                    <SidebarMenuItem key={link.id || link.label}>
+                      <SidebarMenuButton
+                        isActive={currentPage === link.id || 
+                                  (link.programId && currentPage === "program" && router.query.programId === link.programId) ||
+                                  router.pathname === link.href || 
+                                 (link.href.startsWith('#') && router.asPath.includes(link.href))}
+                        onClick={(e) => handleNavClick(e, link)}
+                      >
+                        <a href={link.href} className="flex items-center gap-3">
+                          {link.icon}
+                          <span>{link.label}</span>
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
