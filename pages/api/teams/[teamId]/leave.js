@@ -42,113 +42,62 @@ export default withApiAuthRequired(async function leaveTeamHandler(req, res) {
     // Initialize the members table
     const membersTable = base(membersTableId);
       
-    // Handle the "unknown" teamId case - update all active member records
-    if (teamId === 'unknown') {
-      console.log('Processing unknown teamId case - will update all active member records for the user');
-      
-      // Find all active member records for this user
-      const activeMembers = await membersTable.select({
-        filterByFormula: `AND({Contact}="${userProfile.contactId}", {Status}="Active")`,
+    // ALWAYS update ALL member records for the contact to inactive, regardless of teamId
+    // This ensures we don't miss any member records
+    console.log(`Updating all member records for contact ${userProfile.contactId} to inactive`);
+    
+    // First find all active member records for this user
+    const activeMembers = await membersTable.select({
+      filterByFormula: `AND({Contact}="${userProfile.contactId}", {Status}="Active")`,
+    }).firstPage();
+    
+    console.log(`Found ${activeMembers.length} active member records to update`);
+    
+    // Update all active member records to inactive
+    for (const record of activeMembers) {
+      await membersTable.update(record.id, {
+        'Status': 'Inactive'
+      });
+      console.log(`Updated member record ${record.id} to inactive`);
+    }
+    
+    // If we found no active member records, do another search without the Status filter
+    // This handles legacy records that might not have a Status field
+    if (activeMembers.length === 0) {
+      console.log("No active member records found, checking for records without Status field");
+      const allMembers = await membersTable.select({
+        filterByFormula: `{Contact}="${userProfile.contactId}"`,
       }).firstPage();
       
-      console.log(`Found ${activeMembers.length} active member records to update`);
+      console.log(`Found ${allMembers.length} total member records`);
       
-      // Update all active member records to inactive
-      for (const record of activeMembers) {
+      // Update all member records to inactive
+      for (const record of allMembers) {
         await membersTable.update(record.id, {
           'Status': 'Inactive'
         });
-        console.log(`Updated member record ${record.id} to inactive`);
+        console.log(`Updated member record ${record.id} to inactive (legacy record)`);
       }
-      
-      // If we found no active member records, do another search without the Status filter
-      // This handles legacy records that might not have a Status field
-      if (activeMembers.length === 0) {
-        console.log("No active member records found, checking for records without Status field");
-        const allMembers = await membersTable.select({
-          filterByFormula: `{Contact}="${userProfile.contactId}"`,
-        }).firstPage();
-        
-        console.log(`Found ${allMembers.length} total member records`);
-        
-        // Update all member records to inactive
-        for (const record of allMembers) {
-          await membersTable.update(record.id, {
-            'Status': 'Inactive'
-          });
-          console.log(`Updated member record ${record.id} to inactive (legacy record)`);
-        }
-      }
-      
+    }
+    
+    // For the "unknown" teamId case, we don't need to do anything else for member records
+    // since we've already updated all of them
+    if (teamId === 'unknown') {
       // Set a placeholder updatedMember for consistency with the normal flow
       updatedMember = { id: 'multiple-records' };
     } 
-    // Handle specific teamId - find and update just that member record
+    // For specific teamId, verify the team exists but we've already updated all member records
     else {
-      // Get team details to verify membership
+      // Get team details to verify the team exists
       const team = await getTeamById(teamId, userProfile.contactId)
       
       if (!team) {
-        return res.status(404).json({ error: 'Team not found' })
-      }
-      
-      // Find the member record for the current user
-      memberRecord = team.members.find(
-        member => member.id === userProfile.contactId && member.status === 'Active'
-      )
-      
-      if (!memberRecord) {
-        // Instead of failing, try to find the member record directly
-        console.log('Active member record not found in team details, trying direct lookup');
-        
-        // Look up the member record directly using contactId and teamId
-        // First try with Status filter for active members
-        let memberRecords = await membersTable.select({
-          filterByFormula: `AND({Contact}="${userProfile.contactId}", {Team}="${teamId}", {Status}="Active")`,
-          maxRecords: 1
-        }).firstPage();
-        
-        // If no active members found, try without Status filter to catch legacy records
-        if (!memberRecords || memberRecords.length === 0) {
-          console.log("No active member records found with team filter, checking for records without Status field");
-          memberRecords = await membersTable.select({
-            filterByFormula: `AND({Contact}="${userProfile.contactId}", {Team}="${teamId}")`,
-            maxRecords: 1
-          }).firstPage();
-        }
-        
-        if (memberRecords && memberRecords.length > 0) {
-          const directMemberRecordId = memberRecords[0].id;
-          console.log(`Found member record directly: ${directMemberRecordId}`);
-          
-          // Update member status
-          updatedMember = await membersTable.update(directMemberRecordId, {
-            'Status': 'Inactive',
-          });
-          
-          console.log(`Updated member record ${directMemberRecordId} to inactive`);
-        } else {
-          return res.status(403).json({ error: 'You are not a member of this team' });
-        }
+        console.log(`Team ${teamId} not found, but continuing since we've already updated all member records`);
       } else {
-        // Normal flow - use the member record from team details
-        const memberRecordId = memberRecord.memberRecordId;
+        console.log(`Team ${teamId} found, member records were already updated globally`);
         
-        if (!memberRecordId) {
-          console.error('Member record found but missing memberRecordId:', memberRecord);
-          return res.status(500).json({ error: 'Could not find member record ID' });
-        }
-        
-        // Update the member record to set status to "Inactive"
-        updatedMember = await membersTable.update(memberRecordId, {
-          'Status': 'Inactive',
-        });
-        
-        console.log(`Updated member record ${memberRecordId} to inactive`);
-        
-        if (!updatedMember) {
-          return res.status(500).json({ error: 'Failed to update member status' });
-        }
+        // Keep track of the updatedMember value for consistency with original code
+        updatedMember = { id: 'global-updates-applied' };
       }
     }
     
