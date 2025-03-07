@@ -47,7 +47,9 @@ export default function DashboardShell() {
     programError, // Track program errors specifically
     cohort, // Add cohort from context
     isEditModalOpen,
-    setIsEditModalOpen
+    setIsEditModalOpen,
+    setActiveProgram,
+    getAllProgramInitiatives
   } = useDashboard()
   
   // Track current page and active program
@@ -242,24 +244,19 @@ export default function DashboardShell() {
   // Effect to sync activeProgramId with context and update the title
   useEffect(() => {
     if (activeProgramId && profile) {
-      // Set the active program in context
-      const { setActiveProgram, getAllProgramInitiatives } = useDashboard();
+      console.log(`Setting active program in context: ${activeProgramId}`);
+      setActiveProgram(activeProgramId);
       
-      if (setActiveProgram) {
-        console.log(`Setting active program in context: ${activeProgramId}`);
-        setActiveProgram(activeProgramId);
-        
-        // Update title with initiative name
-        const initiatives = getAllProgramInitiatives();
-        if (initiatives && initiatives.length > 0) {
-          const initiative = initiatives.find(init => init.id === activeProgramId);
-          if (initiative) {
-            setTitle(`${initiative.name} Dashboard`);
-          }
+      // Update title with initiative name
+      const initiatives = getAllProgramInitiatives();
+      if (initiatives && initiatives.length > 0) {
+        const initiative = initiatives.find(init => init.id === activeProgramId);
+        if (initiative) {
+          setTitle(`${initiative.name} Dashboard`);
         }
       }
     }
-  }, [activeProgramId, profile]);
+  }, [activeProgramId, profile, setActiveProgram, getAllProgramInitiatives]);
   
   // Handler for browser back/forward navigation
   useEffect(() => {
