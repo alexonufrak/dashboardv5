@@ -17,9 +17,6 @@ function Dashboard() {
   )
 }
 
-// Set a static property to flag that this component needs DashboardContext
-Dashboard.needsDashboardContext = true;
-
 // Helper component to render ProfileEditModal with the right context
 function ProfileModalWrapper() {
   const { profile, isEditModalOpen, setIsEditModalOpen, handleProfileUpdate } = useDashboard()

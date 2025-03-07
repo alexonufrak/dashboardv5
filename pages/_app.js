@@ -8,6 +8,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Analytics } from "@vercel/analytics/react"
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
+
+// Dynamically import error boundary to avoid SSR issues
+const DashboardErrorBoundary = dynamic(() => import('@/components/DashboardErrorBoundary'), {
+  ssr: false
+})
 
 function MyApp({ Component, pageProps }) {
   // Create a client for React Query with persistent cache
@@ -21,34 +27,19 @@ function MyApp({ Component, pageProps }) {
     },
   }))
 
-  // Determine if this page needs dashboard context
-  const needsDashboardContext = 
-    Component.needsDashboardContext || 
-    pageProps.needsDashboardContext ||
-    Component.displayName === 'ProgramDashboardPage' || 
-    Component.name === 'ProgramDashboardPage' ||
-    Component.displayName === 'Dashboard' || 
-    Component.name === 'Dashboard';
-
-  // Create a new render function that conditionally wraps in DashboardProvider
-  const renderWithDashboardProvider = (component) => {
-    if (needsDashboardContext) {
-      return <DashboardProvider>{component}</DashboardProvider>;
-    }
-    return component;
-  };
-
+  // IMPORTANT: Always wrap every page with DashboardProvider
+  // This ensures context is available everywhere, even if not needed
   return (
     <QueryClientProvider client={queryClient}>
       <UserProvider>
         <OnboardingProvider>
-          {renderWithDashboardProvider(
-            <>
+          <DashboardProvider>
+            <DashboardErrorBoundary>
               <Component {...pageProps} />
               <Toaster position="top-right" richColors closeButton />
               <Analytics />
-            </>
-          )}
+            </DashboardErrorBoundary>
+          </DashboardProvider>
         </OnboardingProvider>
       </UserProvider>
       {/* Add React Query DevTools - only in development mode */}

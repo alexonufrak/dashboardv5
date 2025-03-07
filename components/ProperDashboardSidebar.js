@@ -32,10 +32,29 @@ import {
 const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate }) => {
   const router = useRouter()
   const { user } = useUser()
-  const { initiativeName, setIsEditModalOpen } = useDashboard()
+  // Use conditional initialization for dashboard context values
+  // This prevents errors if context isn't available yet
+  let initiativeName = "Program";
+  let setIsEditModalOpen = () => {};
+  let getAllProgramInitiatives = () => [];
+  let hasProgramData = false;
+  let dashboardProfile = null;
   
-  // Get active initiatives from context
-  const { getAllProgramInitiatives, hasProgramData, profile: dashboardProfile } = useDashboard();
+  try {
+    // Try to access the dashboard context
+    const dashboardContext = useDashboard();
+    if (dashboardContext) {
+      // If context exists, extract the values we need
+      initiativeName = dashboardContext.initiativeName || "Program";
+      setIsEditModalOpen = dashboardContext.setIsEditModalOpen || (() => {});
+      getAllProgramInitiatives = dashboardContext.getAllProgramInitiatives || (() => []);
+      hasProgramData = dashboardContext.hasProgramData || false;
+      dashboardProfile = dashboardContext.profile;
+    }
+  } catch (error) {
+    // If we can't access context, log the error but continue with defaults
+    console.error('Error accessing dashboard context in sidebar:', error);
+  }
   
   // Get all active program initiatives
   const programInitiatives = getAllProgramInitiatives() || [];
