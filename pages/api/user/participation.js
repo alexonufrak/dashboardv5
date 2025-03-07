@@ -66,6 +66,53 @@ export default withApiAuthRequired(async function handler(req, res) {
       // Sanitize the contact ID to prevent formula injection
       const safeContactId = profile.contactId.replace(/['"\\]/g, '');
       
+      // Debug: Log the tables and fields to better understand the data structure
+      console.log("Debugging participation lookup:");
+      try {
+        // Get a sample record to see field names
+        const sampleRecords = await participationTable.select({
+          maxRecords: 1
+        }).firstPage();
+        
+        if (sampleRecords.length > 0) {
+          console.log("Sample participation record fields:", Object.keys(sampleRecords[0].fields));
+        }
+      } catch (err) {
+        console.error("Error getting sample record:", err);
+      }
+      
+      // Try a simpler approach first - fetch without filtering and log all records
+      console.log("Fetching all records to manually check for matches:");
+      const allRecords = await participationTable.select({
+        sort: [{ field: "Last Modified", direction: "desc" }],
+        maxRecords: 100
+      }).firstPage();
+      
+      console.log(`Found ${allRecords.length} total participation records to examine`);
+      
+      // Log details about each record to find matches
+      allRecords.forEach(record => {
+        const hasStatus = record.fields.Status !== undefined;
+        const status = record.fields.Status || "(empty)";
+        const contacts = record.fields.Contacts || "(none)";
+        const contactId = record.fields.contactId || "(none)";
+        
+        console.log(`Record ${record.id}: Status=${status}, Contacts=${JSON.stringify(contacts)}, contactId=${contactId}`);
+        
+        // Check if this record should match our criteria
+        const shouldMatch = (
+          (Array.isArray(contacts) && contacts.includes(safeContactId)) ||
+          (typeof contacts === 'string' && contacts === safeContactId) ||
+          (typeof contactId === 'string' && contactId.includes(safeContactId))
+        ) && (
+          !hasStatus || status === "Active" || status === ""
+        );
+        
+        if (shouldMatch) {
+          console.log(`Record ${record.id} SHOULD MATCH our criteria`);
+        }
+      });
+      
       // Define a standardized formula that works reliably
       // Use OR with multiple approaches to maximize chances of finding matching records
       // Only include records with Status="Active" or empty Status (for backward compatibility)
@@ -87,9 +134,35 @@ export default withApiAuthRequired(async function handler(req, res) {
       console.log(`Found ${records.length} active participation records for contact ${profile.contactId}`);
       participationRecords = [...records];
       
-      // If no records found with the formula, log a clear message
+      // If no records found with the formula, implement a fallback by manually filtering
       if (participationRecords.length === 0) {
-        console.log(`No active participation records found for contact ${profile.contactId}`);
+        console.log(`No active participation records found with formula - using manual filter fallback`);
+        
+        // Find matching records by manually examining all records we fetched above
+        const matchingRecords = allRecords.filter(record => {
+          const status = record.fields.Status || "";
+          const contacts = record.fields.Contacts || [];
+          const contactId = record.fields.contactId || "";
+          
+          // Check if the record is related to this user
+          const isUserRecord = (
+            (Array.isArray(contacts) && contacts.includes(safeContactId)) ||
+            (typeof contacts === 'string' && contacts === safeContactId) ||
+            (typeof contactId === 'string' && contactId.includes(safeContactId))
+          );
+          
+          // Check if status is active or unset
+          const isActive = status === "Active" || status === "";
+          
+          return isUserRecord && isActive;
+        });
+        
+        if (matchingRecords.length > 0) {
+          console.log(`Found ${matchingRecords.length} matching records using manual filter`);
+          participationRecords = matchingRecords;
+        } else {
+          console.log(`No active participation records found for contact ${profile.contactId} even with manual filter`);
+        }
       }
     } catch (err) {
       console.error("Error querying participation records:", err);
