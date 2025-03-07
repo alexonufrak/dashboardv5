@@ -68,7 +68,8 @@ export default withApiAuthRequired(async function handler(req, res) {
       
       // Use SEARCH instead of FIND for more reliable record matching
       // Focus on the 'Contacts' field which is confirmed to exist in Airtable
-      const formula = `SEARCH("${safeContactId}", {contactId})`;
+      // Only include records with Status="Active" or empty Status
+      const formula = `AND(SEARCH("${safeContactId}", {contactId}), OR({Status}="Active", {Status}=""))`;
       
       console.log(`Using formula: ${formula}`);
       
@@ -90,7 +91,8 @@ export default withApiAuthRequired(async function handler(req, res) {
         const safeContactId = profile.contactId.replace(/['"\\]/g, '');
         
         // Try direct equality with Contacts field (most reliable for record IDs)
-        const directFormula = `{Contacts} = "${safeContactId}"`;
+        // Only include records with Status="Active" or empty Status
+        const directFormula = `AND({Contacts} = "${safeContactId}", OR({Status}="Active", {Status}=""))`;
         
         const records = await participationTable.select({
           filterByFormula: directFormula,
@@ -115,10 +117,14 @@ export default withApiAuthRequired(async function handler(req, res) {
       }).firstPage();
       
       // Client-side filtering focusing on the Contacts field (array of record IDs)
+      // Also filter for Status="Active" or empty Status
       participationRecords = allParticipationRecords.filter(record => {
         // If Contacts is an array and it includes the contact ID
-        if (record.fields.Contacts && Array.isArray(record.fields.Contacts)) {
-          return record.fields.Contacts.includes(profile.contactId);
+        if (record.fields.Contacts && Array.isArray(record.fields.Contacts) && 
+            record.fields.Contacts.includes(profile.contactId)) {
+          // Check Status field - only include Active or empty
+          const status = record.fields.Status || "";
+          return status === "Active" || status === "";
         }
         return false;
       });
