@@ -239,7 +239,8 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
                     <SidebarMenuItem key={link.id || link.label}>
                       <SidebarMenuButton
                         isActive={currentPage === link.id || 
-                                  (link.programId && currentPage === "program" && router.query.programId === link.programId) ||
+                                  (link.programId && currentPage === "program" && router.query.program === link.programId) ||
+                                  (link.id === "dashboard" && router.pathname === "/dashboard" && !router.query.program) ||
                                   router.pathname === link.href || 
                                  (link.href.startsWith('#') && router.asPath.includes(link.href))}
                         onClick={(e) => handleNavClick(e, link)}

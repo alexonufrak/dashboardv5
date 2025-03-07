@@ -37,11 +37,11 @@ function ProfileModalWrapper() {
 // Also check URL for program-specific navigation - but with more robust error handling
 function DashboardContent() {
   // Try to safely access the dashboard context
-  let selectActiveProgram = null;
+  let setActiveProgram = null;
   
   try {
     const dashboardContext = useDashboard();
-    selectActiveProgram = dashboardContext?.selectActiveProgram;
+    setActiveProgram = dashboardContext?.setActiveProgram;
   } catch (error) {
     console.error("Error accessing dashboard context:", error);
   }
@@ -58,14 +58,14 @@ function DashboardContent() {
         console.log(`Program specified in URL: ${program}`);
         
         // Update the context with the program ID, but only if context is available
-        if (typeof selectActiveProgram === 'function') {
+        if (typeof setActiveProgram === 'function') {
           try {
-            selectActiveProgram(program);
+            setActiveProgram(program);
           } catch (error) {
             console.error("Error setting active program:", error);
           }
         } else {
-          console.warn("selectActiveProgram function not available");
+          console.warn("setActiveProgram function not available");
         }
       } else {
         // Check URL hash for program ID as another fallback
@@ -75,9 +75,9 @@ function DashboardContent() {
             const programId = hash.replace('program-', '');
             console.log(`Hash-based program detected: ${programId}`);
             
-            if (typeof selectActiveProgram === 'function' && programId) {
+            if (typeof setActiveProgram === 'function' && programId) {
               try {
-                selectActiveProgram(programId);
+                setActiveProgram(programId);
               } catch (error) {
                 console.error("Error setting active program from hash:", error);
               }
@@ -88,7 +88,7 @@ function DashboardContent() {
     } catch (error) {
       console.error("Error handling URL parameters:", error);
     }
-  }, [router.query, selectActiveProgram, router]);
+  }, [router.query, setActiveProgram, router]);
   
   return (
     <>
