@@ -155,7 +155,60 @@ const ProgramApplicationHandler = ({
         return { allowed: true };
       }
       
-      // For team programs, first check via the API which uses Airtable participation
+      // First check using the enhanced profile data (which includes participation records)
+      if (profile?.participations && profile.participations.length > 0) {
+        console.log(`Found ${profile.participations.length} participation records in enhanced profile`);
+        
+        // Filter for active team-based programs
+        const teamBasedParticipations = profile.participations.filter(p => {
+          // Check if this is a team-based program by examining the participation type
+          const participationType = p.cohort?.participationType || 
+                                    p.cohort?.initiativeDetails?.["Participation Type"] || 
+                                    "Individual";
+          
+          const normalizedType = participationType.trim().toLowerCase();
+          const isTeamBased = normalizedType === "team" || 
+                            normalizedType.includes("team") ||
+                            normalizedType === "teams" ||
+                            normalizedType === "group" ||
+                            normalizedType === "collaborative";
+          
+          return isTeamBased;
+        });
+        
+        if (teamBasedParticipations.length > 0) {
+          console.log(`Found ${teamBasedParticipations.length} team-based participations`);
+          
+          // Use the first team-based participation as the conflicting one
+          const conflictParticipation = teamBasedParticipations[0];
+          
+          // Get initiative name from participation
+          const conflictingInitiative = conflictParticipation.cohort?.initiativeDetails?.name || 
+                                      "Current Team Program";
+                                      
+          // Get team ID and name from participation (if available)
+          const teamId = conflictParticipation.teamId || "unknown";
+          const teamName = conflictingInitiative; // Use initiative name as fallback
+          
+          console.log(`Found conflicting initiative in profile: ${conflictingInitiative}`);
+          return {
+            allowed: false,
+            reason: "initiative_conflict",
+            details: {
+              conflictingInitiative: conflictingInitiative,
+              currentInitiative: currentInitiativeName,
+              teamId: teamId,
+              teamName: teamName
+            }
+          };
+        } else {
+          console.log("No team-based participations found in enhanced profile");
+        }
+      } else {
+        console.log("No participation records found in enhanced profile, falling back to API check");
+      }
+      
+      // Fallback: Call the API for conflict check which uses Airtable participation
       try {
         console.log(`Calling API to check participation records for contact ${profile?.contactId}`);
         const response = await fetch(`/api/user/check-initiative-conflicts?initiative=${encodeURIComponent(currentInitiativeName)}`);

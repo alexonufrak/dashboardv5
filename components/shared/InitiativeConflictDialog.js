@@ -85,6 +85,22 @@ const InitiativeConflictDialog = ({
         details.onLeaveTeam(teamId);
       }
       
+      // Invalidate all relevant caches to ensure UI updates correctly
+      try {
+        // Invalidate the participation data cache
+        await fetch('/api/cache-invalidate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            cacheKeys: ['teams', 'participation']
+          })
+        });
+        console.log('Cache invalidated successfully');
+      } catch (cacheError) {
+        console.error('Error invalidating cache:', cacheError);
+        // Non-blocking error - we'll still proceed with page reload
+      }
+      
       // Show success toast
       // Get team name for the success message
       const teamNameForMessage = details.teamName || 

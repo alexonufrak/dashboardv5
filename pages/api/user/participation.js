@@ -298,23 +298,43 @@ export default withApiAuthRequired(async function handler(req, res) {
           }
           
           // Add to processed participation with all required fields
-          processedParticipation.push({
-            id: participationRecord.id,
-            capacity: participationRecord.fields.Capacity || "Participant",
-            cohort: {
-              id: cohort.id,
-              name: cohort.fields.Name || "Unnamed Cohort",
-              Short_Name: cohort.fields["Short Name"] || "",
-              Status: cohort.fields.Status || "Unknown",
-              "Start Date": startDate,
-              "End Date": endDate,
-              "Current Cohort": isCurrent,
-              initiativeDetails,
-              topicNames,
-              participationType: initiativeDetails ? initiativeDetails["Participation Type"] : "Individual"
-            },
-            teamId
-          });
+          // Extract all useful fields from the participation record
+          const pStatus = participationRecord.fields.Status || 'Active';
+          const pCapacity = participationRecord.fields.Capacity || "Participant";
+          
+          // Only include active participation records - important for filtering
+          if (pStatus.toLowerCase() === 'active') {
+            processedParticipation.push({
+              id: participationRecord.id,
+              recordId: participationRecord.id, // Duplicate for consistency
+              status: pStatus,
+              capacity: pCapacity,
+              cohort: {
+                id: cohort.id,
+                name: cohort.fields.Name || "Unnamed Cohort",
+                Short_Name: cohort.fields["Short Name"] || "",
+                Status: cohort.fields.Status || "Unknown",
+                "Start Date": startDate,
+                "End Date": endDate,
+                "Current Cohort": isCurrent,
+                initiativeDetails,
+                topicNames,
+                participationType: initiativeDetails ? initiativeDetails["Participation Type"] : "Individual"
+              },
+              teamId,
+              recordFields: {
+                // Include other important participation record fields
+                created: participationRecord.fields['Created'] || null,
+                modified: participationRecord.fields['Modified'] || null,
+                notes: participationRecord.fields['Notes'] || null,
+                // Normalize important fields
+                Status: pStatus,
+                Capacity: pCapacity
+              }
+            });
+          } else {
+            console.log(`Skipping inactive participation record ${participationRecord.id} with Status=${pStatus}`);
+          }
         } catch (err) {
           console.error(`Error processing cohort ${cohortId}:`, err);
           // Continue with other cohorts rather than failing the entire request

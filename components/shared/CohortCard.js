@@ -47,10 +47,23 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   // Check if cohort is open for applications
   const isOpen = status === "Applications Open"
   
-  // Check if user has already applied to this cohort
-  const hasApplied = Array.isArray(applications) && applications.some(app => 
+  // Check if user has already applied to this cohort or has an inactive participation record
+  // We check applications array first (from the applications endpoint)
+  const hasAppliedViaApplication = Array.isArray(applications) && applications.some(app => 
     app.cohortId === cohort.id
   )
+  
+  // Check if user has a participation record for this cohort in their profile
+  // First try using the optimized lookup method if available
+  const hasActiveParticipation = profile?.findParticipationByCohortId ? 
+                                !!profile.findParticipationByCohortId(cohort.id) : 
+                                // Fallback to array iteration if the helper isn't available
+                                profile?.participations?.some(participation => 
+                                  participation.cohort?.id === cohort.id
+                                )
+  
+  // User has applied if either they have an application or an active participation record
+  const hasApplied = hasAppliedViaApplication || hasActiveParticipation
   
   // Set Connexions URL - always use the same URL
   const connexionsUrl = "https://connexion.xfoundry.org"
