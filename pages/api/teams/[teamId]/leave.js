@@ -158,45 +158,99 @@ export default withApiAuthRequired(async function leaveTeamHandler(req, res) {
       if (participationTableId) {
         const participationTable = base(participationTableId);
         
-        // Use the participation IDs directly from the user profile
-        // This is more reliable than querying since it uses the cached data
-        if (userProfile.Participation && Array.isArray(userProfile.Participation)) {
-          console.log(`Found ${userProfile.Participation.length} participation IDs in user profile:`, userProfile.Participation);
-          
-          // Update each participation record
-          for (const participationId of userProfile.Participation) {
-            try {
-              await participationTable.update(participationId, {
-                'Status': 'Inactive'
-              });
-              console.log(`Updated participation record ${participationId} to inactive`);
-            } catch (updateError) {
-              console.error(`Error updating participation record ${participationId}:`, updateError);
-            }
-          }
-        } else {
-          console.log(`No participation records found in user profile for contact ${userProfile.contactId}`);
-          
-          // Fallback: Try to find participation records directly
-          console.log("Trying to find participation records directly from Airtable");
-          const participationRecords = await participationTable.select({
-            filterByFormula: `{Contacts}="${userProfile.contactId}"`,
-          }).firstPage();
-          
-          if (participationRecords && participationRecords.length > 0) {
-            console.log(`Found ${participationRecords.length} participation records directly`);
+        // Fetch active cohorts first to filter participation records
+        const cohortsTableId = process.env.AIRTABLE_COHORTS_TABLE_ID;
+        let activeCohortIds = [];
+        
+        if (cohortsTableId) {
+          try {
+            const cohortsTable = base(cohortsTableId);
+            const activeCohorts = await cohortsTable.select({
+              filterByFormula: `{Status}="Active"`,
+              fields: ["Record ID"]
+            }).firstPage();
             
-            // Update each participation record
-            for (const record of participationRecords) {
-              await participationTable.update(record.id, {
-                'Status': 'Inactive'
-              });
-              console.log(`Updated participation record ${record.id} to inactive`);
-            }
-          } else {
-            console.log(`No participation records found directly for contact ${userProfile.contactId}`);
+            activeCohortIds = activeCohorts.map(cohort => cohort.id);
+            console.log(`Found ${activeCohortIds.length} active cohorts`);
+          } catch (cohortError) {
+            console.error("Error fetching active cohorts:", cohortError);
           }
         }
+        
+        // Get the participation records directly from Airtable
+        // We need to query them directly to check for Capacity="Participant" and active cohorts
+        console.log("Finding participation records for contact:", userProfile.contactId);
+        
+        // First try to find records with Status="Active" and Capacity="Participant"
+        const participationRecords = await participationTable.select({
+          filterByFormula: `AND({Contacts}="${userProfile.contactId}", {Capacity}="Participant", OR({Status}="Active", {Status}=""))`,
+        }).firstPage();
+        
+        console.log(`Found ${participationRecords.length} active participation records with Capacity="Participant"`);
+        
+        // Filter for active cohorts and update each eligible participation record
+        let updatedCount = 0;
+        
+        for (const record of participationRecords) {
+          // Check if this participation record is linked to an active cohort
+          const recordCohorts = record.fields.Cohorts || [];
+          const hasActiveCohort = recordCohorts.some(cohortId => activeCohortIds.includes(cohortId));
+          
+          // If we have active cohort IDs and this record doesn't link to any, skip it
+          if (activeCohortIds.length > 0 && !hasActiveCohort) {
+            console.log(`Skipping participation record ${record.id} - not linked to any active cohorts`);
+            continue;
+          }
+          
+          // Update the record to inactive
+          try {
+            await participationTable.update(record.id, {
+              'Status': 'Inactive'
+            });
+            updatedCount++;
+            console.log(`Updated participation record ${record.id} to inactive`);
+          } catch (updateError) {
+            console.error(`Error updating participation record ${record.id}:`, updateError);
+          }
+        }
+        
+        console.log(`Updated ${updatedCount} participation records to inactive status`);
+        
+        // If no records were updated through direct query, try using the IDs from user profile as a fallback
+        if (updatedCount === 0 && userProfile.Participation && Array.isArray(userProfile.Participation) && userProfile.Participation.length > 0) {
+          console.log(`No records updated via direct query, using user profile Participation IDs as fallback`);
+          
+          for (const participationId of userProfile.Participation) {
+            try {
+              // First get the record to check its details
+              const record = await participationTable.find(participationId);
+              
+              // Only update if it's a Participant record
+              if (record.fields.Capacity === "Participant") {
+                // Check if linked to any active cohorts, if we have active cohort data
+                const recordCohorts = record.fields.Cohorts || [];
+                const hasActiveCohort = activeCohortIds.length === 0 || 
+                                        recordCohorts.some(cohortId => activeCohortIds.includes(cohortId));
+                
+                if (hasActiveCohort) {
+                  await participationTable.update(participationId, {
+                    'Status': 'Inactive'
+                  });
+                  console.log(`Updated participation record ${participationId} to inactive (from profile)`);
+                  updatedCount++;
+                } else {
+                  console.log(`Skipping participation record ${participationId} - not linked to active cohorts`);
+                }
+              } else {
+                console.log(`Skipping participation record ${participationId} - not a Participant record`);
+              }
+            } catch (updateError) {
+              console.error(`Error handling participation record ${participationId}:`, updateError);
+            }
+          }
+        }
+        
+        console.log(`Total participation records updated: ${updatedCount}`);
       }
     } catch (error) {
       console.error("Error updating participation records:", error);
