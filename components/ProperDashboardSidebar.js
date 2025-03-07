@@ -98,7 +98,7 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
 
   // Modal state is now imported at the top of the component
   
-  // Handle navigation click
+  // Handle navigation click - simplified version that never causes full page loads
   const handleNavClick = (e, link) => {
     e.preventDefault()
     console.log("Navigation clicked:", link);
@@ -119,23 +119,32 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
       return;
     }
     
+    // IMPORTANT: We NEVER use router.push - only handle navigation via the onNavigate callback
+    // or use window.history.pushState to update the URL without page reload
+    
     // Handle program-specific navigation
     if (link.programId) {
       console.log(`Navigating to program ${link.programId}`);
+      
+      // Update URL without page reload
+      window.history.pushState({}, '', link.href);
+      
+      // Update component state via callback
       if (onNavigate) {
-        // Pass the program ID in the navigation ID
         onNavigate(`program-${link.programId}`);
-      } else {
-        // Fallback to direct navigation
-        router.push(link.href);
       }
       return;
     }
     
-    // Always use client-side navigation when possible
+    // Handle internal navigation
     if (link.id && onNavigate) {
       console.log(`Navigating to ${link.id} using client-side navigation`);
-      onNavigate(link.id)
+      
+      // Update URL without page reload
+      window.history.pushState({}, '', link.href);
+      
+      // Update component state via callback
+      onNavigate(link.id);
     } else if (link.href === "/dashboard" || link.href === "/program-dashboard") {
       // Map standard URLs to navigable pages
       const pageMap = {
@@ -143,18 +152,21 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
         "/program-dashboard": "program",
       };
       
+      // Update URL without page reload
+      window.history.pushState({}, '', link.href);
+      
       if (onNavigate && pageMap[link.href]) {
         console.log(`Mapped ${link.href} to ${pageMap[link.href]} for client-side navigation`);
         onNavigate(pageMap[link.href]);
-      } else {
-        // Last resort fallback
-        console.log(`Falling back to router push for ${link.href}`);
-        router.push(link.href);
       }
-    } else {
-      // External or other links use normal navigation
-      console.log(`Using normal navigation for ${link.href}`);
-      router.push(link.href);
+    } else if (link.href.startsWith('http')) {
+      // External links - open in new tab
+      console.log(`Opening external link in new tab: ${link.href}`);
+      window.open(link.href, '_blank');
+    } else if (link.href.startsWith('/api/auth/logout')) {
+      // Special case for logout - use direct navigation
+      console.log(`Navigating to logout: ${link.href}`);
+      window.location.href = link.href;
     }
   }
 

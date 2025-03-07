@@ -186,26 +186,12 @@ export default function DashboardShell() {
         scroll: false 
       };
       
-      // When using client-side navigation, update the URL but DON'T navigate to a new page
-      // This keeps our context intact
+      // The pushState happens in the sidebar component now, not here
+      // We just need to update the states for the dashboard UI
       if (programId) {
-        // Just update the URL to reflect the current program, but don't actually navigate
-        window.history.pushState({}, '', `/program-dashboard/${programId}`);
-      } else {
-        // Regular navigation - update URL without changing page
-        let targetUrl = "/dashboard";
-        switch (page) {
-          case "dashboard":
-            targetUrl = "/dashboard";
-            break;
-          case "program":
-            targetUrl = "/program-dashboard";
-            break;
-          case "profile":
-            targetUrl = "/profile";
-            break;
-        }
-        window.history.pushState({}, '', targetUrl);
+        // Set active program ID
+        console.log(`Setting active program ID: ${programId}`);
+        setActiveProgramId(programId);
       }
     }, 10) // Slight delay to ensure UI updates first
   }
@@ -266,6 +252,40 @@ export default function DashboardShell() {
       }
     }
   }, [activeProgramId, profile]);
+  
+  // Handler for browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = (event) => {
+      // Get the current URL path
+      const path = window.location.pathname;
+      console.log(`PopState event detected: ${path}`);
+      
+      // Handle program-specific URLs
+      if (path.startsWith('/program-dashboard/')) {
+        const programId = path.replace('/program-dashboard/', '');
+        setActivePage('program');
+        setActiveProgramId(programId);
+      } 
+      // Handle standard URLs
+      else if (path === '/dashboard') {
+        setActivePage('dashboard');
+      }
+      else if (path === '/program-dashboard') {
+        setActivePage('program');
+      }
+      else if (path === '/profile') {
+        setActivePage('profile');
+      }
+    };
+    
+    // Add event listener for popstate events
+    window.addEventListener('popstate', handlePopState);
+    
+    // Remove event listener on cleanup
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
   
   // Only show full loader on initial app load, never between page navigations
   const showFullLoader = isLoading && !initialLoadComplete;
