@@ -47,18 +47,21 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   // Check if cohort is open for applications
   const isOpen = status === "Applications Open"
   
-  // Check if user has already applied to this cohort or has an inactive participation record
-  // We check applications array first (from the applications endpoint)
-  const hasAppliedViaApplication = Array.isArray(applications) && applications.some(app => 
-    app.cohortId === cohort.id
-  )
+  // Find any application for this cohort
+  const cohortApplication = Array.isArray(applications) ? 
+    applications.find(app => app.cohortId === cohort.id) : null
   
-  // Check if user has a participation record for this cohort using the optimized lookup
-  // The enhanced profile provides a direct, optimized lookup method
+  // Check if user has a pending application - used to disable the Apply button
+  const hasAnyApplication = !!cohortApplication
+  
+  // Check if user has an approved application - only show Connexions for approved applications
+  const hasApprovedApplication = cohortApplication?.status === "Approved"
+  
+  // Check if user has an active participation record for this cohort using the optimized lookup
   const hasActiveParticipation = !!profile?.findParticipationByCohortId?.(cohort.id)
   
-  // User has applied if either they have an application or an active participation record
-  const hasApplied = hasAppliedViaApplication || hasActiveParticipation
+  // Show Connexions button only if they have active participation OR approved application
+  const showConnexions = hasActiveParticipation || hasApprovedApplication
   
   // Set Connexions URL - always use the same URL
   const connexionsUrl = "https://connexion.xfoundry.org"
@@ -397,8 +400,8 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
             <span className="truncate pointer-events-none">View Details</span>
           </Button>
           
-          {hasApplied ? (
-            // Show Connexions button if user has already applied
+          {showConnexions ? (
+            // Show Connexions button if user has active participation or approved application
             <Button 
               size="sm"
               className="flex-1 h-9 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis cursor-pointer" 
@@ -409,12 +412,17 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
               <span className="truncate pointer-events-none">Connexions</span>
             </Button>
           ) : (
-            // Show apply button if user hasn't applied yet
+            // Show apply button if user doesn't have active participation or approved application
             <Button 
               size="sm"
               className="flex-1 h-9 min-w-0 whitespace-nowrap overflow-hidden text-ellipsis cursor-pointer" 
               variant={isOpen ? "default" : "secondary"}
-              disabled={!isOpen || (!filloutFormId && !participationType.toLowerCase().includes('team')) || isApplying}
+              // Disable if: 
+              // 1. Cohort isn't open for applications
+              // 2. Missing form ID for individual applications
+              // 3. Currently applying
+              // 4. User already has a pending application (any status)
+              disabled={!isOpen || (!filloutFormId && !participationType.toLowerCase().includes('team')) || isApplying || hasAnyApplication}
               onClick={handleApply}
             >
               {isApplying ? (
@@ -424,6 +432,11 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                   Applying...
+                </span>
+              ) : hasAnyApplication ? (
+                // Show application status for existing applications that aren't approved
+                <span className="truncate pointer-events-none">
+                  {cohortApplication?.status || "Applied"}
                 </span>
               ) : (
                 <span className="truncate pointer-events-none">{actionButtonText}</span>
