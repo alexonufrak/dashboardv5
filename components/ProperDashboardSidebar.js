@@ -88,7 +88,7 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
     .filter(initiative => initiative && initiative.id) // Only include valid initiatives
     .map(initiative => ({
       id: `program-${initiative.id}`,
-      href: `/dashboard?program=${initiative.id}`, // Use query parameter instead of path
+      href: `/program/${initiative.id}`, // Use new URL structure
       label: initiative.name || "Program",
       icon: <Compass className="h-4 w-4" />,
       programId: initiative.id
