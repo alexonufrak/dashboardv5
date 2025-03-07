@@ -56,13 +56,16 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
   ];
   
   // Generate program links dynamically based on active participations
-  const programLinks = programInitiatives.map(initiative => ({
-    id: `program-${initiative.id}`,
-    href: `/program-dashboard/${initiative.id}`,
-    label: initiative.name || "Program",
-    icon: <Compass className="h-4 w-4" />,
-    programId: initiative.id
-  }));
+  // Ensure we only create links for valid initiatives
+  const programLinks = programInitiatives
+    .filter(initiative => initiative && initiative.id) // Only include valid initiatives
+    .map(initiative => ({
+      id: `program-${initiative.id}`,
+      href: `/dashboard?program=${initiative.id}`, // Use query parameter instead of path
+      label: initiative.name || "Program",
+      icon: <Compass className="h-4 w-4" />,
+      programId: initiative.id
+    }));
   
   // If no active participations, show default program link (will show "No active program" screen)
   const links = programLinks.length > 0 
