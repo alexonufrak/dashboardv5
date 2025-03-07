@@ -120,75 +120,85 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
 
   // Modal state is now imported at the top of the component
   
-  // Handle navigation click - simplified version that never causes full page loads
+  // Simplified and safer navigation handler
   const handleNavClick = (e, link) => {
-    e.preventDefault()
+    e.preventDefault();
     console.log("Navigation clicked:", link);
     
-    if (link.href.startsWith('#')) {
-      // Handle anchor links
-      const element = document.getElementById(link.href.substring(1))
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' })
-      }
-      return
-    }
+    // Always use full page navigation for everything
+    // This is less optimal but much more stable and reliable
     
-    // Special handling for profile page - open modal instead of navigating
+    // Special handling for profile page
     if (link.href === "/profile") {
       console.log("Profile link clicked - opening modal directly");
-      setIsEditModalOpen(true);
+      try {
+        setIsEditModalOpen(true);
+      } catch (error) {
+        console.error("Error opening profile modal:", error);
+      }
       return;
     }
     
-    // IMPORTANT: We NEVER use router.push - only handle navigation via the onNavigate callback
-    // or use window.history.pushState to update the URL without page reload
-    
-    // Handle program-specific navigation
+    // For program-specific navigation, use a safe approach
     if (link.programId) {
       console.log(`Navigating to program ${link.programId}`);
       
-      // Update URL without page reload
-      window.history.pushState({}, '', link.href);
-      
-      // Update component state via callback
-      if (onNavigate) {
-        onNavigate(`program-${link.programId}`);
+      try {
+        // First try to update state if possible (client-side navigation)
+        if (onNavigate) {
+          onNavigate(`program-${link.programId}`);
+        }
+        
+        // Update URL query parameter
+        try {
+          if (router && typeof router.push === 'function') {
+            // Try Next.js routing first
+            router.push({
+              pathname: '/dashboard',
+              query: { program: link.programId },
+            },
+            undefined,
+            { shallow: true });
+          } else if (typeof window !== "undefined") {
+            // Fallback to direct URL change
+            window.location.href = `/dashboard?program=${encodeURIComponent(link.programId)}`;
+          }
+        } catch (error) {
+          console.error("Error updating URL:", error);
+          if (typeof window !== "undefined") {
+            // Final fallback
+            window.location.href = `/dashboard?program=${encodeURIComponent(link.programId)}`;
+          }
+        }
+      } catch (error) {
+        console.error("Error handling program navigation:", error);
+        // Fallback to simple navigation
+        window.location.href = `/dashboard?program=${encodeURIComponent(link.programId)}`;
       }
       return;
     }
     
-    // Handle internal navigation
-    if (link.id && onNavigate) {
-      console.log(`Navigating to ${link.id} using client-side navigation`);
-      
-      // Update URL without page reload
-      window.history.pushState({}, '', link.href);
-      
-      // Update component state via callback
-      onNavigate(link.id);
-    } else if (link.href === "/dashboard" || link.href === "/program-dashboard") {
-      // Map standard URLs to navigable pages
-      const pageMap = {
-        "/dashboard": "dashboard",
-        "/program-dashboard": "program",
-      };
-      
-      // Update URL without page reload
-      window.history.pushState({}, '', link.href);
-      
-      if (onNavigate && pageMap[link.href]) {
-        console.log(`Mapped ${link.href} to ${pageMap[link.href]} for client-side navigation`);
-        onNavigate(pageMap[link.href]);
+    // For all other links, use normal navigation for maximum stability
+    try {
+      if (link.href.startsWith('#')) {
+        // Handle anchor links
+        const element = document.getElementById(link.href.substring(1));
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      } else if (link.href.startsWith('http')) {
+        // External links - open in new tab
+        window.open(link.href, '_blank');
+      } else {
+        // Standard navigation
+        window.location.href = link.href;
       }
-    } else if (link.href.startsWith('http')) {
-      // External links - open in new tab
-      console.log(`Opening external link in new tab: ${link.href}`);
-      window.open(link.href, '_blank');
-    } else if (link.href.startsWith('/api/auth/logout')) {
-      // Special case for logout - use direct navigation
-      console.log(`Navigating to logout: ${link.href}`);
-      window.location.href = link.href;
+    } catch (error) {
+      console.error("Error handling navigation:", error);
+      // Ultimate fallback - direct href navigation
+      if (typeof window !== "undefined") {
+        window.location.href = link.href;
+      }
     }
   }
 

@@ -34,43 +34,59 @@ function ProfileModalWrapper() {
 }
 
 // Separate the content to ensure context is available
-// Also check URL for program-specific navigation
+// Also check URL for program-specific navigation - but with more robust error handling
 function DashboardContent() {
-  const { selectActiveProgram } = useDashboard();
+  // Try to safely access the dashboard context
+  let selectActiveProgram = null;
+  
+  try {
+    const dashboardContext = useDashboard();
+    selectActiveProgram = dashboardContext?.selectActiveProgram;
+  } catch (error) {
+    console.error("Error accessing dashboard context:", error);
+  }
+  
   const router = useRouter();
   
   // Check URL parameters for program info
   useEffect(() => {
-    // Get program ID from query parameters
-    const { program } = router.query;
-    
-    if (program) {
-      console.log(`Program specified in URL: ${program}`);
+    try {
+      // Get program ID from query parameters
+      const { program } = router.query;
       
-      // Update the context with the program ID
-      if (selectActiveProgram) {
-        selectActiveProgram(program);
-      }
-    } else {
-      // Check path-based program URL as fallback
-      // Only run on client side
-      if (typeof window !== 'undefined') {
-        const path = window.location.pathname;
+      if (program) {
+        console.log(`Program specified in URL: ${program}`);
         
-        // If we're on a program-specific URL, extract the program ID
-        if (path.startsWith('/program-dashboard/')) {
-          const programId = path.replace('/program-dashboard/', '');
-          console.log(`Path-based program detected: ${programId}`);
-          
-          // Update the context
-          if (selectActiveProgram && programId) {
-            selectActiveProgram(programId);
+        // Update the context with the program ID, but only if context is available
+        if (typeof selectActiveProgram === 'function') {
+          try {
+            selectActiveProgram(program);
+          } catch (error) {
+            console.error("Error setting active program:", error);
           }
-          
-          // Update URL to query-based format (cleaner)
-          router.replace(`/dashboard?program=${programId}`, undefined, { shallow: true });
+        } else {
+          console.warn("selectActiveProgram function not available");
+        }
+      } else {
+        // Check URL hash for program ID as another fallback
+        if (typeof window !== 'undefined' && window.location.hash) {
+          const hash = window.location.hash.substring(1);
+          if (hash.startsWith('program-')) {
+            const programId = hash.replace('program-', '');
+            console.log(`Hash-based program detected: ${programId}`);
+            
+            if (typeof selectActiveProgram === 'function' && programId) {
+              try {
+                selectActiveProgram(programId);
+              } catch (error) {
+                console.error("Error setting active program from hash:", error);
+              }
+            }
+          }
         }
       }
+    } catch (error) {
+      console.error("Error handling URL parameters:", error);
     }
   }, [router.query, selectActiveProgram, router]);
   
