@@ -1,60 +1,40 @@
 "use client"
 
 import { withPageAuthRequired } from "@auth0/nextjs-auth0"
-import { DashboardProvider, useDashboard } from "@/contexts/DashboardContext"
-import DashboardShell from "@/components/DashboardShell"
-import ProfileEditModal from "@/components/ProfileEditModal"
+import { useDashboard } from "@/contexts/DashboardContext"
 import { Toaster } from "sonner"
 import { useEffect } from "react"
 import { useRouter } from "next/router"
 
-function ProgramDashboard() {
+function ProgramDashboardLegacy() {
   const router = useRouter()
+  const { getAllProgramInitiatives } = useDashboard()
   
-  return (
-    <>
-      <ProgramDashboardContent />
-      {/* Render the ProfileEditModal at the top level */}
-      <ProfileModalWrapper />
-    </>
-  )
-}
-
-// Helper component to render ProfileEditModal with the right context
-function ProfileModalWrapper() {
-  const { profile, isEditModalOpen, setIsEditModalOpen, handleProfileUpdate } = useDashboard()
-  
-  return (
-    profile && (
-      <ProfileEditModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        profile={profile}
-        onSave={handleProfileUpdate}
-      />
-    )
-  )
-}
-
-// Separate the content to ensure context is available
-function ProgramDashboardContent() {
-  const router = useRouter()
-  
-  // Set program dashboard as the initial view
+  // Redirect to the new URL structure
   useEffect(() => {
-    // Just ensure the activePage is set to program in the DashboardShell
-    // We don't need to change the URL as we're already on /program-dashboard
-  }, [])
+    const initiatives = getAllProgramInitiatives()
+    // If user has active initiatives, redirect to the first one
+    if (initiatives && initiatives.length > 0) {
+      router.replace(`/program/${initiatives[0].id}`)
+    } else {
+      // Otherwise redirect to the dashboard
+      router.replace('/dashboard')
+    }
+  }, [router, getAllProgramInitiatives])
   
   return (
-    <>
-      <DashboardShell />
+    <div className="flex items-center justify-center min-h-[300px]">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+        <h3 className="text-lg font-medium mb-2">Redirecting...</h3>
+        <p className="text-muted-foreground">Taking you to your program dashboard</p>
+      </div>
       <Toaster position="top-right" />
-    </>
+    </div>
   )
 }
 
 // Wrap with auth protection
 export const getServerSideProps = withPageAuthRequired()
 
-export default ProgramDashboard
+export default ProgramDashboardLegacy

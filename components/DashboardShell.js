@@ -85,23 +85,34 @@ export default function DashboardShell() {
       // Set a generic title first - we'll update it later
       setTitle("Program Dashboard");
     }
-    // Handle program-dashboard with ID
-    else if (path === "/program-dashboard/[programId]" && query.programId) {
+    // Handle program with ID (new route)
+    else if (path === "/program/[programId]" && query.programId) {
       // This is a specific program page
       const programId = query.programId;
       setActivePage("program");
       
       // Set the active program in the state
-      // We'll update context after component mount
       setActiveProgramId(programId);
       
       // Set a generic title first - we'll update it later
       setTitle("Program Dashboard");
     }
-    // Standard routes
-    else if (path === "/program-dashboard") {
+    // Handle program with ID subdirectories (like bounties, team)
+    else if (path.startsWith("/program/[programId]/") && query.programId) {
+      const programId = query.programId;
       setActivePage("program");
+      setActiveProgramId(programId);
       setTitle("Program Dashboard");
+    }
+    // Handle legacy program-dashboard route (redirect to new structure)
+    else if (path === "/program-dashboard") {
+      // If we have a programId in context, redirect to that program page
+      if (activeProgramId) {
+        router.replace(`/program/${activeProgramId}`, undefined, { shallow: true });
+      } else {
+        setActivePage("program");
+        setTitle("Program Dashboard");
+      }
     } else if (path === "/profile") {
       setActivePage("profile");
       setTitle("Your Profile");
@@ -183,7 +194,18 @@ export default function DashboardShell() {
           setTitle("xFoundry Hub")
           break
         case "program": 
-          setTitle("Program Dashboard")
+          // Check if we have a program ID, if so, try to get its name
+          if (activeProgramId) {
+            const initiatives = getAllProgramInitiatives();
+            const initiative = initiatives.find(init => init.id === activeProgramId);
+            if (initiative) {
+              setTitle(`${initiative.name} Dashboard`);
+            } else {
+              setTitle("Program Dashboard");
+            }
+          } else {
+            setTitle("Program Dashboard");
+          }
           break
         case "profile":
           setTitle("Your Profile")
@@ -278,11 +300,26 @@ export default function DashboardShell() {
       const path = window.location.pathname;
       console.log(`PopState event detected: ${path}`);
       
-      // Handle program-specific URLs
-      if (path.startsWith('/program-dashboard/')) {
+      // Handle new program-specific URLs
+      if (path.startsWith('/program/')) {
+        // Extract the program ID from the path
+        const match = path.match(/\/program\/([^\/]+)(?:\/|$)/);
+        if (match && match[1]) {
+          const programId = match[1];
+          setActivePage('program');
+          setActiveProgramId(programId);
+        }
+      }
+      // Handle legacy program-specific URLs
+      else if (path.startsWith('/program-dashboard/')) {
         const programId = path.replace('/program-dashboard/', '');
         setActivePage('program');
         setActiveProgramId(programId);
+        
+        // Redirect to the new URL structure
+        if (typeof window !== 'undefined') {
+          window.history.replaceState({}, '', `/program/${programId}`);
+        }
       } 
       // Handle standard URLs
       else if (path === '/dashboard') {
@@ -290,6 +327,11 @@ export default function DashboardShell() {
       }
       else if (path === '/program-dashboard') {
         setActivePage('program');
+        
+        // If we have an active program ID, redirect to the program page
+        if (activeProgramId && typeof window !== 'undefined') {
+          window.history.replaceState({}, '', `/program/${activeProgramId}`);
+        }
       }
       else if (path === '/profile') {
         setActivePage('profile');

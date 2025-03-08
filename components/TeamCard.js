@@ -57,8 +57,19 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
   };
   
   // Handle program dashboard navigation
-  const handleProgramDashboardClick = () => {
-    router.push("/program-dashboard", undefined, { shallow: true });
+  const handleProgramDashboardClick = (cohort) => {
+    if (cohort && cohort.initiativeDetails && cohort.initiativeDetails.id) {
+      router.push(`/program/${cohort.initiativeDetails.id}`, undefined, { shallow: true });
+    } else {
+      // Fallback to first cohort's initiative if available
+      const firstCohort = teamCohorts && teamCohorts.length > 0 ? teamCohorts[0] : null;
+      if (firstCohort && firstCohort.initiativeDetails && firstCohort.initiativeDetails.id) {
+        router.push(`/program/${firstCohort.initiativeDetails.id}`, undefined, { shallow: true });
+      } else {
+        // No specific program found, redirect to dashboard
+        router.push("/dashboard", undefined, { shallow: true });
+      }
+    }
   };
   
   // If no team data is provided, show a not found message

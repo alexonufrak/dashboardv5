@@ -305,9 +305,12 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   
   // Handle view details click
   const handleViewDetails = () => {
-    // This would usually involve a modal but for this component we assume the parent will handle this
+    // First check if cohort has custom handler
     if (cohort.onViewDetails) {
       cohort.onViewDetails(cohort)
+    } else if (cohort.initiativeDetails?.id) {
+      // Navigate to program dashboard using new URL structure
+      window.location.href = `/program/${cohort.initiativeDetails.id}`
     }
   }
   
