@@ -19,11 +19,23 @@ const ProperDashboardLayout = ({
   const [currentYear, setCurrentYear] = useState("")
   const router = useRouter()
   const { user } = useUser()
-  const isDashboard = router.pathname === "/dashboard" || router.pathname === "/profile" || router.pathname === "/program-dashboard"
+  
+  // Import routing utilities
+  const { isProgramRoute } = require('@/lib/routing')
+  
+  // Check if current route is a dashboard route - include dynamic program routes
+  const isDashboard = router.pathname === "/dashboard" || 
+                      router.pathname === "/profile" || 
+                      router.pathname === "/program-dashboard" ||
+                      isProgramRoute(router) ||
+                      router.pathname.startsWith("/program/")
+                      
   const showSidebar = isDashboard && user
-  // Don't show breadcrumbs on main dashboard pages
+  
+  // Don't show breadcrumbs on main dashboard pages but show on program pages
   const showBreadcrumbs = router.pathname !== "/dashboard" && 
                           router.pathname !== "/program-dashboard" && 
+                          !router.pathname.startsWith("/program/[programId]") &&
                           showSidebar
 
   useEffect(() => {
