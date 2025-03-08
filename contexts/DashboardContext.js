@@ -498,10 +498,16 @@ export function DashboardProvider({ children }) {
     return enhancedProfile?.getActiveParticipationInitiatives?.() || [];
   };
   
-  // Set the active program
-  const setActiveProgram = (programId) => {
-    setActiveProgramId(programId);
-  };
+  // Set the active program - use useCallback to prevent recreation on each render
+  const setActiveProgram = useMemo(() => {
+    return (programId) => {
+      console.log(`Setting active program: ${programId} (current: ${activeProgramId})`);
+      // Only update state if it's actually changing
+      if (programId !== activeProgramId) {
+        setActiveProgramId(programId);
+      }
+    };
+  }, [activeProgramId]);
 
   // Store active team for each program
   const [programTeams, setProgramTeams] = useState({})

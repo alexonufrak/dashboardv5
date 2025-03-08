@@ -57,18 +57,27 @@ function ProgramPageContent({ programId }) {
   useEffect(() => {
     if (programId) {
       console.log(`Setting active program from URL: ${programId}`)
+      
+      // Only set active program if it's different from the current one
       setActiveProgram(programId)
       
       // Set page title based on program name if available
-      const initiatives = getAllProgramInitiatives();
-      if (initiatives && initiatives.length > 0) {
-        const initiative = initiatives.find(init => init.id === programId);
-        if (initiative) {
-          setPageTitle(`${initiative.name} Dashboard`);
+      try {
+        const initiatives = getAllProgramInitiatives();
+        if (initiatives && initiatives.length > 0) {
+          const initiative = initiatives.find(init => init.id === programId);
+          if (initiative) {
+            setPageTitle(`${initiative.name} Dashboard`);
+          }
         }
+      } catch (error) {
+        console.error("Error setting page title:", error);
       }
     }
-  }, [programId, setActiveProgram, getAllProgramInitiatives])
+    // Note: we're intentionally omitting setActiveProgram and getAllProgramInitiatives 
+    // from the dependency array to avoid infinite re-renders
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [programId])
   
   // Handle profile edit click
   const handleEditProfileClick = () => {
