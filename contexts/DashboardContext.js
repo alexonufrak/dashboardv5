@@ -471,9 +471,6 @@ export function DashboardProvider({ children }) {
     };
   }, [profile, participationData]);
   
-  // Track active program ID
-  const [activeProgramId, setActiveProgramId] = useState(null);
-  
   // Get the active program data
   const getActiveProgramData = (programId) => {
     if (!enhancedProfile) return null;
@@ -547,6 +544,9 @@ export function DashboardProvider({ children }) {
     
     return programData;
   };
+  
+  // Track active program ID
+  const [activeProgramId, setActiveProgramId] = useState(null);
   
   // Get all program initiatives
   const getAllProgramInitiatives = () => {
