@@ -202,15 +202,12 @@ export default function DashboardShell() {
             } else {
               setTitle("Program Dashboard");
             }
-            // Get the initiative name for the slug
-      const initiatives = getAllProgramInitiatives();
-      const initiative = initiatives.find(init => init.id === activeProgramId);
-      
-      // Navigate with initiative name if available
-      navigateToProgram(router, activeProgramId, { 
-        shallow: true,
-        initiativeName: initiative?.name 
-      });
+            
+            // Navigate with initiative name if available
+            navigateToProgram(router, activeProgramId, { 
+              shallow: true,
+              initiativeName: initiative?.name 
+            });
           } else {
             setTitle("Program Dashboard");
             // No program ID, navigate to program index
