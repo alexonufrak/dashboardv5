@@ -1,6 +1,6 @@
 import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0'
-import { getBaseTable, findRecordsByIdList, getSingleRecord } from '@/lib/airtable'
-import { getUserProfile } from '@/lib/userProfile'
+import { base } from '@/lib/airtable'
+import { getCompleteUserProfile } from '@/lib/userProfile'
 
 /**
  * API endpoint to fetch bounties from Airtable
@@ -15,7 +15,7 @@ export default withApiAuthRequired(async function handler(req, res) {
     }
 
     // Get user profile data
-    const userProfile = await getUserProfile(session.user)
+    const userProfile = await getCompleteUserProfile(session.user)
     if (!userProfile) {
       return res.status(400).json({ error: 'User profile not found' })
     }
@@ -26,15 +26,15 @@ export default withApiAuthRequired(async function handler(req, res) {
       return res.status(400).json({ error: 'Program ID is required' })
     }
 
-    // Initialize Airtable base
-    const baseTable = getBaseTable('Bounties')
+    // Initialize Airtable base and get bounties table
+    const bountiesTable = base(process.env.AIRTABLE_BOUNTIES_TABLE_ID || 'Bounties')
     
     // Construct filter based on programId and visibility
     // For now, just return all bounties for testing - in production this should filter by program
     const formula = `OR(Visibility = 'Public', Visibility = 'Published')`
 
     // Fetch bounties from Airtable
-    const records = await baseTable.select({
+    const records = await bountiesTable.select({
       view: 'Grid view',
       filterByFormula: formula,
       sort: [{ field: 'Last Modified', direction: 'desc' }],
