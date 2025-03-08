@@ -34,6 +34,7 @@ const ConneXionsPage = () => {
   
   return (
     <ProgramLayout 
+      programId={programId}
       title="ConneXions Community" 
       description="Connect with other program participants and the broader community"
       activeSection="connexions"

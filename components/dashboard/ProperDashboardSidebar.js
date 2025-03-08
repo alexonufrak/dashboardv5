@@ -158,19 +158,22 @@ const baseLinks = [
 const ProgramInitiativesSkeleton = () => {
   return (
     <>
-      {Array.from({ length: 3 }).map((_, index) => (
+      {Array.from({ length: 2 }).map((_, index) => (
         <SidebarGroup key={`program-skeleton-${index}`}>
-          <Collapsible className="group/collapsible w-full">
-            <SidebarGroupLabel asChild>
-              <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 rounded-md py-2 hover:bg-sidebar-accent cursor-pointer">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-4 w-4 rounded-md" />
-                  <Skeleton className="h-4 w-24 rounded-md" />
-                </div>
-                <ChevronDown className="ml-auto h-4 w-4 text-sidebar-accent-foreground/50" />
-              </CollapsibleTrigger>
-            </SidebarGroupLabel>
-          </Collapsible>
+          <SidebarGroupLabel className="flex items-center gap-2">
+            <Skeleton className="h-4 w-4 rounded-md" />
+            <Skeleton className="h-4 w-24 rounded-md" />
+          </SidebarGroupLabel>
+          
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {Array.from({ length: 3 }).map((_, menuIndex) => (
+                <SidebarMenuItem key={`program-menu-skeleton-${index}-${menuIndex}`}>
+                  <SidebarMenuSkeleton showIcon />
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
         </SidebarGroup>
       ))}
     </>
@@ -319,57 +322,55 @@ const programGroups = programInitiatives
                 {programLoading ? (
                   <ProgramInitiativesSkeleton />
                 ) : (
-                  /* Render program groups */
-                  programGroups.map((group) => (
+                  /* Render program groups - only show the active program or all if none active */
+                  programGroups
+                    .filter(group => !router.query.programId || group.programId === router.query.programId)
+                    .map((group) => (
                     <SidebarGroup key={group.id}>
-                      <Collapsible defaultOpen={router.query.programId === group.programId} className="w-full">
-                        <SidebarGroupLabel asChild>
-                          <CollapsibleTrigger className="w-full flex items-center justify-between rounded-md py-2 px-2 hover:bg-sidebar-accent cursor-pointer">
-                            <div className="flex items-center gap-2">
-                              {group.icon}
-                              <span className="font-medium">{group.label}</span>
-                            </div>
-                            <ChevronDown className="h-4 w-4 transition-transform group-data-[state=closed]/collapsible:rotate-180" />
-                          </CollapsibleTrigger>
-                        </SidebarGroupLabel>
-                        
-                        <CollapsibleContent>
-                          <SidebarMenuSub>
-                            {group.links.map((link) => (
-                              <SidebarMenuSubItem key={link.id}>
-                                <Link
-                                  href={link.href}
-                                  className="w-full"
-                                  shallow={true}
-                                  scroll={false}
-                                  onClick={() => {
-                                    if (onNavigate && link.programId) {
-                                      onNavigate(`program-${link.programId}`);
-                                    }
-                                  }}
-                                  passHref
+                      {/* Program Group Label - just like the LINKS section in footer */}
+                      <SidebarGroupLabel className="flex items-center gap-2">
+                        {group.icon}
+                        <span className="font-medium">{group.label}</span>
+                      </SidebarGroupLabel>
+                      
+                      {/* Program Group Content */}
+                      <SidebarGroupContent>
+                        <SidebarMenu>
+                          {/* Render program links */}
+                          {group.links.map((link) => (
+                            <SidebarMenuItem key={link.id}>
+                              <Link
+                                href={link.href}
+                                className="w-full"
+                                shallow={true}
+                                scroll={false}
+                                onClick={() => {
+                                  if (onNavigate && link.programId) {
+                                    onNavigate(`program-${link.programId}`);
+                                  }
+                                }}
+                                passHref
+                              >
+                                <SidebarMenuButton
+                                  isActive={
+                                    (router.pathname === link.href) ||
+                                    (router.query.programId === link.programId && (
+                                      (link.label === "Home" && router.pathname === `/program/${link.programId}`) ||
+                                      (link.label === "Bounties" && router.pathname === `/program/${link.programId}/bounties`) ||
+                                      (link.label === "ConneXions" && router.pathname === `/program/${link.programId}/connexions`)
+                                    ))
+                                  }
                                 >
-                                  <SidebarMenuSubButton
-                                    isActive={
-                                      (router.pathname === link.href) ||
-                                      (router.query.programId === link.programId && (
-                                        (link.label === "Home" && router.pathname === `/program/${link.programId}`) ||
-                                        (link.label === "Bounties" && router.pathname === `/program/${link.programId}/bounties`) ||
-                                        (link.label === "ConneXions" && router.pathname === `/program/${link.programId}/connexions`)
-                                      ))
-                                    }
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      {link.icon}
-                                      <span>{link.label}</span>
-                                    </div>
-                                  </SidebarMenuSubButton>
-                                </Link>
-                              </SidebarMenuSubItem>
-                            ))}
-                          </SidebarMenuSub>
-                        </CollapsibleContent>
-                      </Collapsible>
+                                  <div className="flex items-center gap-2">
+                                    {link.icon}
+                                    <span>{link.label}</span>
+                                  </div>
+                                </SidebarMenuButton>
+                              </Link>
+                            </SidebarMenuItem>
+                          ))}
+                        </SidebarMenu>
+                      </SidebarGroupContent>
                     </SidebarGroup>
                   ))
                 )}
