@@ -196,6 +196,18 @@ export function DashboardProvider({ children }) {
     isLoading: isMilestonesLoading 
   } = useMilestoneData(cohortId)
   
+  // Helper function to get cohort IDs for a program without calling getActiveProgramData
+  // This breaks the circular dependency
+  const getProgramCohortIds = (programId) => {
+    if (!enhancedProfile) return [];
+    
+    // Get all cohort IDs related to this program initiative directly from participations
+    return enhancedProfile.participations
+      .filter(p => p.cohort?.initiativeDetails?.id === programId)
+      .map(p => p.cohort?.id)
+      .filter(Boolean);
+  };
+  
   // Process milestones data with fallbacks and filtering by active program
   const milestones = useMemo(() => {
     // Get all milestones
@@ -207,18 +219,20 @@ export function DashboardProvider({ children }) {
         
     // Filter milestones based on active program's cohort if activeProgramId is set
     let processedMilestones = allMilestones;
-    if (activeProgramId) {
+    if (activeProgramId && enhancedProfile) {
       console.log(`Filtering milestones for active program: ${activeProgramId}`);
-      const programData = getActiveProgramData(activeProgramId);
       
-      if (programData && programData.cohort?.id) {
-        // Filter milestones to only include ones for this program's cohort
+      // Get cohort IDs for the active program directly - avoid circular dependency with getActiveProgramData
+      const programCohorts = getProgramCohortIds(activeProgramId);
+      
+      if (programCohorts.length > 0) {
+        // Filter milestones to only include ones for this program's cohorts
         processedMilestones = allMilestones.filter(milestone => {
-          // Check if milestone has cohortId that matches the active program's cohort
-          const matchesCohort = milestone.cohortId === programData.cohort.id;
+          // Check if milestone has cohortId that matches any of the active program's cohorts
+          const matchesCohort = programCohorts.includes(milestone.cohortId);
           
           if (!matchesCohort) {
-            console.log(`Excluding milestone ${milestone.name} (${milestone.id}) - does not match active cohort ${programData.cohort.id}`);
+            console.log(`Excluding milestone ${milestone.name} (${milestone.id}) - does not match any program cohorts`);
           }
           
           return matchesCohort;
@@ -287,7 +301,7 @@ export function DashboardProvider({ children }) {
     }
     
     return processedMilestones;
-  }, [milestonesData, programDataProcessed.cohort, teamData?.id, queryClient, activeProgramId])
+  }, [milestonesData, programDataProcessed.cohort, teamData?.id, queryClient, activeProgramId, enhancedProfile])
   
   // Combine loading states
   const isLoading = isUserLoading || isProfileLoading
@@ -471,7 +485,7 @@ export function DashboardProvider({ children }) {
     };
   }, [profile, participationData]);
   
-  // Track active program ID
+  // Track active program ID - moved higher in file to avoid initialization error
   const [activeProgramId, setActiveProgramId] = useState(null);
   
   // Get all program initiatives
@@ -565,19 +579,7 @@ export function DashboardProvider({ children }) {
   }, [activeProgramId]);
 
   // Store active team for each program
-  const [programTeams, setProgramTeams] = useState({})
-
-  // Helper function to get cohort IDs for a program without calling getActiveProgramData
-  // This breaks the circular dependency
-  const getProgramCohortIds = (programId) => {
-    if (!enhancedProfile) return [];
-    
-    // Get all cohort IDs related to this program initiative directly from participations
-    return enhancedProfile.participations
-      .filter(p => p.cohort?.initiativeDetails?.id === programId)
-      .map(p => p.cohort?.id)
-      .filter(Boolean);
-  };
+  const [programTeams, setProgramTeams] = useState({});
   
   // Get teams for a specific program
   const getTeamsForProgram = (programId) => {
