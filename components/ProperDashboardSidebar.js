@@ -132,71 +132,8 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
 
   // Modal state is now imported at the top of the component
   
-  // Simplified and safer navigation handler
-  const handleNavClick = (e, link) => {
-    e.preventDefault();
-    console.log("Navigation clicked:", link);
-    
-    // Always use full page navigation for everything
-    // This is less optimal but much more stable and reliable
-    
-    // Special handling for profile page
-    if (link.href === "/profile") {
-      console.log("Profile link clicked - opening modal directly");
-      try {
-        setIsEditModalOpen(true);
-      } catch (error) {
-        console.error("Error opening profile modal:", error);
-      }
-      return;
-    }
-    
-    // For program-specific navigation, use the routing utility
-    if (link.programId) {
-      console.log(`Navigating to program ${link.programId}`);
-      
-      try {
-        // First try to update state if possible (client-side navigation)
-        if (onNavigate) {
-          onNavigate(`program-${link.programId}`);
-        }
-        
-        // Use the ROUTES constant to get the proper URL
-        const { ROUTES } = require('@/lib/routing');
-        const programUrl = ROUTES.PROGRAM.DETAIL(link.programId);
-        
-        // Let the Link component handle the navigation
-        // We don't call router.push directly - this just updates the internal state
-        // The actual navigation happens through the Link component's click handler
-      } catch (error) {
-        console.error("Error preparing program navigation:", error);
-      }
-      return;
-    }
-    
-    // For all other links, use normal navigation for maximum stability
-    try {
-      if (link.href.startsWith('#')) {
-        // Handle anchor links
-        const element = document.getElementById(link.href.substring(1));
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
-      } else if (link.href.startsWith('http')) {
-        // External links - open in new tab
-        window.open(link.href, '_blank');
-      } else {
-        // Standard navigation
-        window.location.href = link.href;
-      }
-    } catch (error) {
-      console.error("Error handling navigation:", error);
-      // Ultimate fallback - direct href navigation
-      if (typeof window !== "undefined") {
-        window.location.href = link.href;
-      }
-    }
-  }
+  // Log a message when navigation is being prepared
+  console.log("Sidebar initialized with links:", links);
 
   return (
     <>
@@ -233,40 +170,55 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
                   console.log("Rendering link:", link);
                   return (
                     <SidebarMenuItem key={link.id || link.label}>
-                      <SidebarMenuButton
-                        isActive={
-                          // Debug active state checks
-                          (() => {
-                            const isIdMatch = currentPage === link.id;
-                            const isProgramIdMatch = link.programId && currentPage === "program" && router.query.program === link.programId;
-                            const isDashboardNoProgram = link.id === "dashboard" && router.pathname === "/dashboard" && !router.query.program;
-                            const isPathMatch = router.pathname === link.href;
-                            
-                            console.log(`Link ${link.label} active check:`, {
-                              isIdMatch,
-                              isProgramIdMatch,
-                              isDashboardNoProgram,
-                              isPathMatch,
-                              result: isIdMatch || isProgramIdMatch || isDashboardNoProgram || isPathMatch
-                            });
-                            
-                            return isIdMatch || isProgramIdMatch || isDashboardNoProgram || isPathMatch || 
-                                  (link.href.startsWith('#') && router.asPath.includes(link.href));
-                          })()
-                        }
-                        onClick={(e) => handleNavClick(e, link)}
+                      <Link 
+                        href={link.programId ? `/program/${link.programId}` : link.href}
+                        className="w-full"
+                        shallow={true}
+                        scroll={false}
+                        onClick={(e) => {
+                          // Special case for profile - open modal instead of navigation
+                          if (link.href === "/profile") {
+                            e.preventDefault();
+                            setIsEditModalOpen(true);
+                            return;
+                          }
+                          
+                          // For program links, update internal state
+                          if (link.programId && onNavigate) {
+                            onNavigate(`program-${link.programId}`);
+                          }
+                        }}
+                        passHref
                       >
-                        <Link 
-                          href={link.programId ? `/program/${link.programId}` : link.href}
-                          className="flex items-center gap-3"
-                          shallow={true}
-                          scroll={false}
-                          passHref
+                        <SidebarMenuButton
+                          isActive={
+                            // Debug active state checks
+                            (() => {
+                              const isIdMatch = currentPage === link.id;
+                              const isProgramIdMatch = link.programId && currentPage === "program" && router.query.program === link.programId;
+                              const isDashboardNoProgram = link.id === "dashboard" && router.pathname === "/dashboard" && !router.query.program;
+                              const isPathMatch = router.pathname === link.href;
+                              
+                              console.log(`Link ${link.label} active check:`, {
+                                isIdMatch,
+                                isProgramIdMatch,
+                                isDashboardNoProgram,
+                                isPathMatch,
+                                result: isIdMatch || isProgramIdMatch || isDashboardNoProgram || isPathMatch
+                              });
+                              
+                              return isIdMatch || isProgramIdMatch || isDashboardNoProgram || isPathMatch || 
+                                    (link.href.startsWith('#') && router.asPath.includes(link.href));
+                            })()
+                          }
+                          className="w-full"
                         >
-                          {link.icon}
-                          <span>{link.label}</span>
-                        </Link>
-                      </SidebarMenuButton>
+                          <div className="flex items-center gap-3">
+                            {link.icon}
+                            <span>{link.label}</span>
+                          </div>
+                        </SidebarMenuButton>
+                      </Link>
                     </SidebarMenuItem>
                   );
                 })}
@@ -282,26 +234,30 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
               <SidebarMenu>
                 {externalLinks.map((link) => (
                   <SidebarMenuItem key={link.label}>
-                    <SidebarMenuButton
-                      asChild
-                    >
-                      {link.label === "Sign Out" ? (
-                        <Link href={link.href} className="flex justify-between w-full">
-                          <span>{link.label}</span>
-                          {link.icon}
-                        </Link>
-                      ) : (
-                        <a 
-                          href={link.href} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="flex justify-between w-full"
-                        >
-                          <span>{link.label}</span>
-                          {link.icon}
-                        </a>
-                      )}
-                    </SidebarMenuButton>
+                    {link.label === "Sign Out" ? (
+                      <Link href={link.href} className="w-full">
+                        <SidebarMenuButton className="w-full">
+                          <div className="flex justify-between w-full">
+                            <span>{link.label}</span>
+                            {link.icon}
+                          </div>
+                        </SidebarMenuButton>
+                      </Link>
+                    ) : (
+                      <a 
+                        href={link.href} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="w-full"
+                      >
+                        <SidebarMenuButton className="w-full">
+                          <div className="flex justify-between w-full">
+                            <span>{link.label}</span>
+                            {link.icon}
+                          </div>
+                        </SidebarMenuButton>
+                      </a>
+                    )}
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
