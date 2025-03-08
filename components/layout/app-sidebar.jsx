@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Suspense } from "react"
 import {
   BookOpen,
   Bot,
@@ -9,10 +10,11 @@ import {
   PieChart,
   Settings2,
   SquareTerminal,
+  Send
 } from "lucide-react"
 
 import { NavMain } from "@/components/layout/nav-main"
-import { NavProjects } from "@/components/layout/nav-projects"
+import { NavProjects, NavProjectsSkeleton } from "@/components/layout/nav-projects"
 import { NavSecondary } from "@/components/layout/nav-secondary"
 import { NavUser } from "@/components/layout/nav-user"
 import {
@@ -176,7 +178,9 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <Suspense fallback={<NavProjectsSkeleton />}>
+          <NavProjects projects={data.projects} />
+        </Suspense>
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>

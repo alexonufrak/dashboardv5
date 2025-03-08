@@ -3,7 +3,7 @@
 import { useRouter } from "next/router"
 import Link from "next/link" 
 import { useUser } from "@auth0/nextjs-auth0/client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import ProfileMenuButton from "@/components/profile/ProfileMenuButton"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { ROUTES } from '@/lib/routing'
@@ -17,7 +17,8 @@ import {
   Menu,
   ChevronDown,
   ChevronRight,
-  LayoutDashboard
+  LayoutDashboard,
+  Award
 } from "lucide-react"
 
 import {
@@ -34,7 +35,8 @@ import {
   SidebarTrigger,
   SidebarMenuSub,
   SidebarMenuSubButton,
-  SidebarMenuSubItem
+  SidebarMenuSubItem,
+  SidebarMenuSkeleton
 } from "@/components/ui/sidebar"
 
 import {
@@ -42,6 +44,8 @@ import {
   CollapsibleTrigger,
   CollapsibleContent
 } from "@/components/ui/collapsible"
+
+import { Skeleton } from "@/components/ui/skeleton"
 
 const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate }) => {
   const router = useRouter()
@@ -53,6 +57,8 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
   let getAllProgramInitiatives = () => [];
   let hasProgramData = false;
   let dashboardProfile = null;
+  let isLoading = false;
+  let programLoading = false;
   
   try {
     // Try to access the dashboard context
@@ -64,6 +70,8 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
       getAllProgramInitiatives = dashboardContext.getAllProgramInitiatives || (() => []);
       hasProgramData = dashboardContext.hasProgramData || false;
       dashboardProfile = dashboardContext.profile;
+      isLoading = dashboardContext.isLoading || false;
+      programLoading = dashboardContext.programLoading || false;
     }
   } catch (error) {
     // If we can't access context, log the error but continue with defaults
@@ -121,65 +129,101 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
     currentPage: currentPage 
   });
   
-  // Create base navigation links with dashboard
-  const baseLinks = [
-    {
-      id: "dashboard",
-      href: "/dashboard",
-      label: "Dashboard",
-      icon: <Home className="h-4 w-4" />
-    }
-  ];
+  // Navigation links skeleton
+const NavigationLinksSkeleton = () => {
+  return (
+    <>
+      {Array.from({ length: 2 }).map((_, index) => (
+        <SidebarMenuItem key={`nav-skeleton-${index}`}>
+          <SidebarMenuSkeleton showIcon />
+        </SidebarMenuItem>
+      ))}
+    </>
+  );
+};
+
+// Create base navigation links with dashboard
+const baseLinks = [
+  {
+    id: "dashboard",
+    href: "/dashboard",
+    label: "Dashboard",
+    icon: <Home className="h-4 w-4" />
+  }
+];
   
   // ROUTES is now imported at the top of the file
   
-  // Create program groups with nested links for each initiative
-  const programGroups = programInitiatives
-    .filter(initiative => initiative && initiative.id) // Only include valid initiatives
-    .map(initiative => {
-      const isXtrapreneurs = initiative.name?.toLowerCase().includes('xtrapreneur');
-      
-      return {
-        id: `program-group-${initiative.id}`,
-        label: initiative.name || "Program",
-        icon: <Compass className="h-4 w-4" />,
-        programId: initiative.id,
-        // Define sublinks for this program group
-        links: [
+  // Program initiatives skeleton component to show during loading
+const ProgramInitiativesSkeleton = () => {
+  return (
+    <>
+      {Array.from({ length: 3 }).map((_, index) => (
+        <SidebarGroup key={`program-skeleton-${index}`}>
+          <Collapsible className="group/collapsible w-full">
+            <SidebarGroupLabel asChild>
+              <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 rounded-md py-2 hover:bg-sidebar-accent cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4 rounded-md" />
+                  <Skeleton className="h-4 w-24 rounded-md" />
+                </div>
+                <ChevronDown className="ml-auto h-4 w-4 text-sidebar-accent-foreground/50" />
+              </CollapsibleTrigger>
+            </SidebarGroupLabel>
+          </Collapsible>
+        </SidebarGroup>
+      ))}
+    </>
+  );
+};
+
+// Create program groups with nested links for each initiative
+const programGroups = programInitiatives
+  .filter(initiative => initiative && initiative.id) // Only include valid initiatives
+  .map(initiative => {
+    const isXtrapreneurs = initiative.name?.toLowerCase().includes('xtrapreneur');
+    
+    return {
+      id: `program-group-${initiative.id}`,
+      label: initiative.name || "Program",
+      icon: <Compass className="h-4 w-4" />,
+      programId: initiative.id,
+      // Define sublinks for this program group
+      links: [
+        {
+          id: `program-home-${initiative.id}`,
+          href: ROUTES.PROGRAM.DETAIL(initiative.id),
+          label: "Home",
+          icon: <LayoutDashboard className="h-4 w-4" />,
+          programId: initiative.id
+        },
+        {
+          id: `program-milestones-${initiative.id}`,
+          href: ROUTES.PROGRAM.MILESTONES(initiative.id),
+          label: "Milestones",
+          icon: <Users className="h-4 w-4" />,
+          programId: initiative.id
+        },
+        {
+          id: `program-team-${initiative.id}`,
+          href: ROUTES.PROGRAM.TEAM(initiative.id),
+          label: "Team",
+          icon: <Users className="h-4 w-4" />,
+          programId: initiative.id
+        },
+        // Add Bounties tab only for Xtrapreneurs programs
+        ...(isXtrapreneurs ? [
           {
-            id: `program-home-${initiative.id}`,
-            href: ROUTES.PROGRAM.DETAIL(initiative.id),
-            label: "Home",
-            icon: <LayoutDashboard className="h-4 w-4" />,
+            id: `program-bounties-${initiative.id}`,
+            href: ROUTES.PROGRAM.BOUNTIES(initiative.id),
+            label: "Bounties",
+            icon: <Award className="h-4 w-4" />,
             programId: initiative.id
-          },
-          {
-            id: `program-milestones-${initiative.id}`,
-            href: ROUTES.PROGRAM.MILESTONES(initiative.id),
-            label: "Milestones",
-            icon: <Users className="h-4 w-4" />,
-            programId: initiative.id
-          },
-          {
-            id: `program-team-${initiative.id}`,
-            href: ROUTES.PROGRAM.TEAM(initiative.id),
-            label: "Team",
-            icon: <Users className="h-4 w-4" />,
-            programId: initiative.id
-          },
-          // Add Bounties tab only for Xtrapreneurs programs
-          ...(isXtrapreneurs ? [
-            {
-              id: `program-bounties-${initiative.id}`,
-              href: ROUTES.PROGRAM.BOUNTIES(initiative.id),
-              label: "Bounties",
-              icon: <Award className="h-4 w-4" />,
-              programId: initiative.id
-            }
-          ] : [])
-        ]
-      };
-    });
+          }
+        ] : [])
+      ]
+    };
+  });
   
   // Combine base links with program groups
   const links = [...baseLinks];
@@ -238,84 +282,94 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
             <SidebarGroupLabel>NAVIGATION</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {/* Render base links */}
-                {links.map((link) => (
-                  <SidebarMenuItem key={link.id || link.label}>
-                    <Link 
-                      href={link.href}
-                      className="w-full"
-                      shallow={true}
-                      scroll={false}
-                      passHref
-                    >
-                      <SidebarMenuButton
-                        isActive={
-                          currentPage === link.id || 
-                          router.pathname === link.href ||
-                          (link.id === "dashboard" && router.pathname === "/dashboard" && !router.query.programId)
-                        }
+                {/* Check if data is loading */}
+                {isLoading ? (
+                  <NavigationLinksSkeleton />
+                ) : (
+                  /* Render base links */
+                  links.map((link) => (
+                    <SidebarMenuItem key={link.id || link.label}>
+                      <Link 
+                        href={link.href}
                         className="w-full"
+                        shallow={true}
+                        scroll={false}
+                        passHref
                       >
-                        <div className="flex items-center gap-3">
-                          {link.icon}
-                          <span>{link.label}</span>
-                        </div>
-                      </SidebarMenuButton>
-                    </Link>
-                  </SidebarMenuItem>
-                ))}
-                
-                {/* Render program groups */}
-                {programGroups.map((group) => (
-                  <SidebarGroup key={group.id}>
-                    <Collapsible defaultOpen className="group/collapsible w-full">
-                      <SidebarGroupLabel asChild>
-                        <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 rounded-md py-2 hover:bg-sidebar-accent cursor-pointer">
-                          <div className="flex items-center gap-2">
-                            {group.icon}
-                            <span className="font-medium">{group.label}</span>
+                        <SidebarMenuButton
+                          isActive={
+                            currentPage === link.id || 
+                            router.pathname === link.href ||
+                            (link.id === "dashboard" && router.pathname === "/dashboard" && !router.query.programId)
+                          }
+                          className="w-full"
+                        >
+                          <div className="flex items-center gap-3">
+                            {link.icon}
+                            <span>{link.label}</span>
                           </div>
-                          <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=closed]/collapsible:rotate-180" />
-                        </CollapsibleTrigger>
-                      </SidebarGroupLabel>
-                      
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {group.links.map((link) => (
-                            <SidebarMenuSubItem key={link.id}>
-                              <Link
-                                href={link.href}
-                                className="w-full"
-                                shallow={true}
-                                scroll={false}
-                                onClick={() => {
-                                  if (onNavigate && link.programId) {
-                                    onNavigate(`program-${link.programId}`);
-                                  }
-                                }}
-                                passHref
-                              >
-                                <SidebarMenuSubButton
-                                  isActive={
-                                    (router.pathname === link.href) ||
-                                    (router.pathname.includes(link.href) && link.href !== ROUTES.PROGRAM.DETAIL(link.programId)) ||
-                                    (router.query.programId === link.programId && link.label === "Home" && 
-                                     router.pathname === ROUTES.PROGRAM.DETAIL(link.programId))
-                                  }
+                        </SidebarMenuButton>
+                      </Link>
+                    </SidebarMenuItem>
+                  ))
+                )}
+                
+                {/* Program Groups - Check if loading */}
+                {programLoading ? (
+                  <ProgramInitiativesSkeleton />
+                ) : (
+                  /* Render program groups */
+                  programGroups.map((group) => (
+                    <SidebarGroup key={group.id}>
+                      <Collapsible defaultOpen className="group/collapsible w-full">
+                        <SidebarGroupLabel asChild>
+                          <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 rounded-md py-2 hover:bg-sidebar-accent cursor-pointer">
+                            <div className="flex items-center gap-2">
+                              {group.icon}
+                              <span className="font-medium">{group.label}</span>
+                            </div>
+                            <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=closed]/collapsible:rotate-180" />
+                          </CollapsibleTrigger>
+                        </SidebarGroupLabel>
+                        
+                        <CollapsibleContent>
+                          <SidebarMenuSub>
+                            {group.links.map((link) => (
+                              <SidebarMenuSubItem key={link.id}>
+                                <Link
+                                  href={link.href}
+                                  className="w-full"
+                                  shallow={true}
+                                  scroll={false}
+                                  onClick={() => {
+                                    if (onNavigate && link.programId) {
+                                      onNavigate(`program-${link.programId}`);
+                                    }
+                                  }}
+                                  passHref
                                 >
-                                  <div className="flex items-center gap-2">
-                                    {link.icon}
-                                    <span>{link.label}</span>
-                                  </div>
-                                </SidebarMenuSubButton>
-                              </Link>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  </SidebarGroup>
-                ))}
+                                  <SidebarMenuSubButton
+                                    isActive={
+                                      (router.pathname === link.href) ||
+                                      (router.pathname.includes(link.href) && link.href !== ROUTES.PROGRAM.DETAIL(link.programId)) ||
+                                      (router.query.programId === link.programId && link.label === "Home" && 
+                                       router.pathname === ROUTES.PROGRAM.DETAIL(link.programId))
+                                    }
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      {link.icon}
+                                      <span>{link.label}</span>
+                                    </div>
+                                  </SidebarMenuSubButton>
+                                </Link>
+                              </SidebarMenuSubItem>
+                            ))}
+                          </SidebarMenuSub>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </SidebarGroup>
+                  ))
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -326,34 +380,44 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
             <SidebarGroupLabel>LINKS</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {externalLinks.map((link) => (
-                  <SidebarMenuItem key={link.label}>
-                    {link.label === "Sign Out" ? (
-                      <Link href={link.href} className="w-full">
-                        <SidebarMenuButton className="w-full">
-                          <div className="flex justify-between w-full">
-                            <span>{link.label}</span>
-                            {link.icon}
-                          </div>
-                        </SidebarMenuButton>
-                      </Link>
-                    ) : (
-                      <a 
-                        href={link.href} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="w-full"
-                      >
-                        <SidebarMenuButton className="w-full">
-                          <div className="flex justify-between w-full">
-                            <span>{link.label}</span>
-                            {link.icon}
-                          </div>
-                        </SidebarMenuButton>
-                      </a>
-                    )}
-                  </SidebarMenuItem>
-                ))}
+                {isLoading ? (
+                  // External links skeleton
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <SidebarMenuItem key={`external-link-skeleton-${index}`}>
+                      <SidebarMenuSkeleton showIcon />
+                    </SidebarMenuItem>
+                  ))
+                ) : (
+                  // Render external links
+                  externalLinks.map((link) => (
+                    <SidebarMenuItem key={link.label}>
+                      {link.label === "Sign Out" ? (
+                        <Link href={link.href} className="w-full">
+                          <SidebarMenuButton className="w-full">
+                            <div className="flex justify-between w-full">
+                              <span>{link.label}</span>
+                              {link.icon}
+                            </div>
+                          </SidebarMenuButton>
+                        </Link>
+                      ) : (
+                        <a 
+                          href={link.href} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="w-full"
+                        >
+                          <SidebarMenuButton className="w-full">
+                            <div className="flex justify-between w-full">
+                              <span>{link.label}</span>
+                              {link.icon}
+                            </div>
+                          </SidebarMenuButton>
+                        </a>
+                      )}
+                    </SidebarMenuItem>
+                  ))
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
