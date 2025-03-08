@@ -323,8 +323,8 @@ const programGroups = programInitiatives
                     <SidebarGroup key={group.id}>
                       <Collapsible defaultOpen className="group/collapsible w-full">
                         <SidebarGroupLabel asChild>
-                          <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 rounded-md py-2 hover:bg-sidebar-accent cursor-pointer">
-                            <div className="flex items-center gap-2">
+                          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md p-2 hover:bg-sidebar-accent cursor-pointer">
+                            <div className="flex items-center gap-3">
                               {group.icon}
                               <span className="font-medium">{group.label}</span>
                             </div>
@@ -333,7 +333,7 @@ const programGroups = programInitiatives
                         </SidebarGroupLabel>
                         
                         <CollapsibleContent>
-                          <SidebarMenuSub>
+                          <SidebarMenuSub className="ml-6 pl-2">
                             {group.links.map((link) => (
                               <SidebarMenuSubItem key={link.id}>
                                 <Link
@@ -355,8 +355,9 @@ const programGroups = programInitiatives
                                       (router.query.programId === link.programId && link.label === "Home" && 
                                        router.pathname === ROUTES.PROGRAM.DETAIL(link.programId))
                                     }
+                                    className="ml-0.5"
                                   >
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-3">
                                       {link.icon}
                                       <span>{link.label}</span>
                                     </div>
