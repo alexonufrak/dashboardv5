@@ -9,6 +9,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Analytics } from "@vercel/analytics/react"
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
+import LoadingScreen from '@/components/LoadingScreen'
 
 // Simple class-based error boundary component defined inline to avoid import issues
 class ErrorBoundary extends React.Component {
@@ -46,11 +47,34 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// React is already imported at the top
+// Special AppContent component to handle non-dashboard pages
+function AppContent({ Component, pageProps, router }) {
+  // Check if this is a dashboard-related page to keep app state
+  const isDashboardRoute = 
+    router.pathname === '/dashboard' || 
+    router.pathname === '/profile' || 
+    router.pathname.startsWith('/program/') ||
+    router.pathname.startsWith('/dashboard/') ||
+    router.pathname === '/program-dashboard';
+
+  // If not a dashboard route, render Component directly
+  if (!isDashboardRoute) {
+    return <Component {...pageProps} />;
+  }
+
+  // For dashboard routes, we use DashboardProvider to maintain shared state
+  return (
+    <DashboardProvider>
+      <Component {...pageProps} />
+      <Toaster position="top-right" richColors closeButton />
+    </DashboardProvider>
+  );
+}
 
 function MyApp({ Component, pageProps }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [pageLoading, setPageLoading] = useState(false);
   
   // Create a client for React Query with persistent cache
   const [queryClient] = useState(() => new QueryClient({
@@ -66,7 +90,29 @@ function MyApp({ Component, pageProps }) {
   // Only show the application after mounted on client side
   useEffect(() => {
     setMounted(true);
-  }, []);
+
+    // Setup router events to handle loading state
+    const handleStart = (url) => {
+      // Only show loading state for dashboard-related routes
+      if (url.includes('/dashboard') || 
+          url.includes('/profile') || 
+          url.includes('/program/')) {
+        setPageLoading(true);
+      }
+    };
+    
+    const handleComplete = () => setPageLoading(false);
+    
+    router.events.on('routeChangeStart', handleStart);
+    router.events.on('routeChangeComplete', handleComplete);
+    router.events.on('routeChangeError', handleComplete);
+    
+    return () => {
+      router.events.off('routeChangeStart', handleStart);
+      router.events.off('routeChangeComplete', handleComplete);
+      router.events.off('routeChangeError', handleComplete);
+    };
+  }, [router]);
 
   // Basic app shell when not mounted yet (server-side rendering)
   if (!mounted) {
@@ -80,17 +126,22 @@ function MyApp({ Component, pageProps }) {
     );
   }
 
+  // Show loading overlay during page transitions
+  const showLoadingOverlay = pageLoading;
+
   // Client-side rendered app with all providers
   return (
     <QueryClientProvider client={queryClient}>
       <UserProvider>
         <OnboardingProvider>
           <ErrorBoundary>
-            <DashboardProvider>
-              <Component {...pageProps} />
-              <Toaster position="top-right" richColors closeButton />
-              <Analytics />
-            </DashboardProvider>
+            <AppContent Component={Component} pageProps={pageProps} router={router} />
+            {showLoadingOverlay && (
+              <div className="fixed inset-0 bg-white bg-opacity-70 z-50 flex items-center justify-center pointer-events-none">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              </div>
+            )}
+            <Analytics />
           </ErrorBoundary>
         </OnboardingProvider>
       </UserProvider>
@@ -100,4 +151,3 @@ function MyApp({ Component, pageProps }) {
 }
 
 export default MyApp
-

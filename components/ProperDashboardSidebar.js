@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/router"
+import Link from "next/link" 
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { useState, useEffect } from "react"
 import ProfileMenuButton from "./ProfileMenuButton"
@@ -160,31 +161,15 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
           onNavigate(`program-${link.programId}`);
         }
         
-        // Use routing utility for navigation
-        const { navigateToProgram } = require('@/lib/routing');
-        
-        try {
-          if (router && typeof router.push === 'function') {
-            // Use the routing utility
-            navigateToProgram(router, link.programId, { shallow: true });
-          } else if (typeof window !== "undefined") {
-            // Fallback to direct URL change using ROUTES
-            const { ROUTES } = require('@/lib/routing');
-            window.location.href = ROUTES.PROGRAM.DETAIL(link.programId);
-          }
-        } catch (error) {
-          console.error("Error updating URL:", error);
-          if (typeof window !== "undefined") {
-            // Final fallback using ROUTES
-            const { ROUTES } = require('@/lib/routing');
-            window.location.href = ROUTES.PROGRAM.DETAIL(link.programId);
-          }
-        }
-      } catch (error) {
-        console.error("Error handling program navigation:", error);
-        // Fallback to simple navigation using ROUTES
+        // Use the ROUTES constant to get the proper URL
         const { ROUTES } = require('@/lib/routing');
-        window.location.href = ROUTES.PROGRAM.DETAIL(link.programId);
+        const programUrl = ROUTES.PROGRAM.DETAIL(link.programId);
+        
+        // Let the Link component handle the navigation
+        // We don't call router.push directly - this just updates the internal state
+        // The actual navigation happens through the Link component's click handler
+      } catch (error) {
+        console.error("Error preparing program navigation:", error);
       }
       return;
     }
@@ -271,10 +256,16 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
                         }
                         onClick={(e) => handleNavClick(e, link)}
                       >
-                        <a href={link.href} className="flex items-center gap-3">
+                        <Link 
+                          href={link.programId ? `/program/${link.programId}` : link.href}
+                          className="flex items-center gap-3"
+                          shallow={true}
+                          scroll={false}
+                          passHref
+                        >
                           {link.icon}
                           <span>{link.label}</span>
-                        </a>
+                        </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
@@ -295,10 +286,10 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
                       asChild
                     >
                       {link.label === "Sign Out" ? (
-                        <a href={link.href} className="flex justify-between w-full">
+                        <Link href={link.href} className="flex justify-between w-full">
                           <span>{link.label}</span>
                           {link.icon}
-                        </a>
+                        </Link>
                       ) : (
                         <a 
                           href={link.href} 
