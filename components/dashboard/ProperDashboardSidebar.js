@@ -133,18 +133,10 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
       programId: initiative.id
     }));
   
-  // If no active participations, show default program link (will show "No active program" screen)
+  // Only include program links if there are active participations
   const links = programLinks.length > 0 
     ? [...baseLinks, ...programLinks] 
-    : [
-        ...baseLinks,
-        {
-          id: "program",
-          href: ROUTES.PROGRAM.INDEX, // Use routing utility
-          label: initiativeName || "Program",
-          icon: <Compass className="h-4 w-4" />
-        }
-      ]
+    : [...baseLinks] // Only include base links if no program participations
   
   // External links
   const externalLinks = [
