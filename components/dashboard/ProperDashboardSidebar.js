@@ -11,14 +11,10 @@ import { ROUTES } from '@/lib/routing'
 import { 
   Home,
   Compass,
-  Users, 
   ExternalLink,
   LogOut,
   Menu,
-  ChevronDown,
-  ChevronRight,
-  LayoutDashboard,
-  Award
+  LayoutDashboard
 } from "lucide-react"
 
 import {
@@ -33,17 +29,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarMenuSkeleton
 } from "@/components/ui/sidebar"
-
-import {
-  Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent
-} from "@/components/ui/collapsible"
 
 import { Skeleton } from "@/components/ui/skeleton"
 
@@ -154,79 +141,32 @@ const baseLinks = [
   
   // ROUTES is now imported at the top of the file
   
-  // Program initiatives skeleton component to show during loading
-const ProgramInitiativesSkeleton = () => {
+  // Navigation links skeleton
+const NavigationLinksSkeleton = () => {
   return (
     <>
-      {Array.from({ length: 3 }).map((_, index) => (
-        <SidebarGroup key={`program-skeleton-${index}`}>
-          <Collapsible className="group/collapsible w-full">
-            <SidebarGroupLabel asChild>
-              <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 rounded-md py-2 hover:bg-sidebar-accent cursor-pointer">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-4 w-4 rounded-md" />
-                  <Skeleton className="h-4 w-24 rounded-md" />
-                </div>
-                <ChevronDown className="ml-auto h-4 w-4 text-sidebar-accent-foreground/50" />
-              </CollapsibleTrigger>
-            </SidebarGroupLabel>
-          </Collapsible>
-        </SidebarGroup>
+      {Array.from({ length: 4 }).map((_, index) => (
+        <SidebarMenuItem key={`nav-skeleton-${index}`}>
+          <SidebarMenuSkeleton showIcon />
+        </SidebarMenuItem>
       ))}
     </>
   );
 };
 
-// Create program groups with nested links for each initiative
-const programGroups = programInitiatives
+// Create program links directly from initiatives
+const programLinks = programInitiatives
   .filter(initiative => initiative && initiative.id) // Only include valid initiatives
-  .map(initiative => {
-    const isXtrapreneurs = initiative.name?.toLowerCase().includes('xtrapreneur');
-    
-    return {
-      id: `program-group-${initiative.id}`,
-      label: initiative.name || "Program",
-      icon: <Compass className="h-4 w-4" />,
-      programId: initiative.id,
-      // Define sublinks for this program group
-      links: [
-        {
-          id: `program-home-${initiative.id}`,
-          href: ROUTES.PROGRAM.DETAIL(initiative.id),
-          label: "Home",
-          icon: <LayoutDashboard className="h-4 w-4" />,
-          programId: initiative.id
-        },
-        {
-          id: `program-milestones-${initiative.id}`,
-          href: ROUTES.PROGRAM.MILESTONES(initiative.id),
-          label: "Milestones",
-          icon: <Users className="h-4 w-4" />,
-          programId: initiative.id
-        },
-        {
-          id: `program-team-${initiative.id}`,
-          href: ROUTES.PROGRAM.TEAM(initiative.id),
-          label: "Team",
-          icon: <Users className="h-4 w-4" />,
-          programId: initiative.id
-        },
-        // Add Bounties tab only for Xtrapreneurs programs
-        ...(isXtrapreneurs ? [
-          {
-            id: `program-bounties-${initiative.id}`,
-            href: ROUTES.PROGRAM.BOUNTIES(initiative.id),
-            label: "Bounties",
-            icon: <Award className="h-4 w-4" />,
-            programId: initiative.id
-          }
-        ] : [])
-      ]
-    };
-  });
-  
-  // Combine base links with program groups
-  const links = [...baseLinks];
+  .map(initiative => ({
+    id: `program-${initiative.id}`,
+    href: ROUTES.PROGRAM.DETAIL(initiative.id),
+    label: initiative.name || "Program",
+    icon: <Compass className="h-4 w-4" />,
+    programId: initiative.id
+  }));
+
+// Combine base links (Dashboard) with program links
+const links = [...baseLinks, ...programLinks];
   
   // External links
   const externalLinks = [
@@ -283,10 +223,10 @@ const programGroups = programInitiatives
             <SidebarGroupContent>
               <SidebarMenu>
                 {/* Check if data is loading */}
-                {isLoading ? (
+                {isLoading || programLoading ? (
                   <NavigationLinksSkeleton />
                 ) : (
-                  /* Render base links */
+                  /* Render all links (dashboard + program links) */
                   links.map((link) => (
                     <SidebarMenuItem key={link.id || link.label}>
                       <Link 
@@ -294,13 +234,19 @@ const programGroups = programInitiatives
                         className="w-full"
                         shallow={true}
                         scroll={false}
+                        onClick={() => {
+                          if (onNavigate && link.programId) {
+                            onNavigate(`program-${link.programId}`);
+                          }
+                        }}
                         passHref
                       >
                         <SidebarMenuButton
                           isActive={
                             currentPage === link.id || 
                             router.pathname === link.href ||
-                            (link.id === "dashboard" && router.pathname === "/dashboard" && !router.query.programId)
+                            (link.id === "dashboard" && router.pathname === "/dashboard" && !router.query.programId) ||
+                            (link.programId && router.query.programId === link.programId)
                           }
                         >
                           <div className="flex items-center gap-2">
@@ -313,63 +259,7 @@ const programGroups = programInitiatives
                   ))
                 )}
                 
-                {/* Program Groups - Check if loading */}
-                {programLoading ? (
-                  <ProgramInitiativesSkeleton />
-                ) : (
-                  /* Render program groups */
-                  programGroups.map((group) => (
-                    <SidebarGroup key={group.id}>
-                      <Collapsible defaultOpen={router.query.programId === group.programId} className="w-full">
-                        <SidebarGroupLabel asChild>
-                          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md py-2 px-2 hover:bg-sidebar-accent cursor-pointer">
-                            <div className="flex items-center gap-2">
-                              {group.icon}
-                              <span className="font-medium">{group.label}</span>
-                            </div>
-                            <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=closed]/collapsible:rotate-180" />
-                          </CollapsibleTrigger>
-                        </SidebarGroupLabel>
-                        
-                        <CollapsibleContent>
-                          <SidebarMenuSub>
-                            {group.links.map((link) => (
-                              <SidebarMenuSubItem key={link.id}>
-                                <Link
-                                  href={link.href}
-                                  className="w-full"
-                                  shallow={true}
-                                  scroll={false}
-                                  onClick={() => {
-                                    if (onNavigate && link.programId) {
-                                      onNavigate(`program-${link.programId}`);
-                                    }
-                                  }}
-                                  passHref
-                                >
-                                  <SidebarMenuSubButton
-                                    isActive={
-                                      (router.pathname === link.href) ||
-                                      (router.pathname.includes(link.href) && link.href !== ROUTES.PROGRAM.DETAIL(link.programId)) ||
-                                      (router.query.programId === link.programId && 
-                                        ((link.label === "Home" && router.pathname === `/program/${link.programId}`) ||
-                                         (link.label === "Bounties" && router.pathname === `/program/${link.programId}/bounties`)))
-                                    }
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      {link.icon}
-                                      <span>{link.label}</span>
-                                    </div>
-                                  </SidebarMenuSubButton>
-                                </Link>
-                              </SidebarMenuSubItem>
-                            ))}
-                          </SidebarMenuSub>
-                        </CollapsibleContent>
-                      </Collapsible>
-                    </SidebarGroup>
-                  ))
-                )}
+                {/* All links are now rendered together */}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
