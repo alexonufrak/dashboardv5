@@ -97,40 +97,53 @@ export default function DashboardShell() {
       setActivePage("dashboard");
       setTitle("xFoundry Hub");
     }
-  }
-    
-    // Add handler for popstate (browser back/forward)
-    const handlePopState = () => {
-      // Get the current path from window.location
-      const currentPath = window.location.pathname;
+  }, [router.pathname, router.query, router, setActivePage, setActiveProgramId, setTitle, isProgramRoute]);
+  
+  // Handler for browser back/forward navigation - simplified with routing utilities
+  useEffect(() => {
+    // Define the handler function for popstate events
+    const handlePopState = (event) => {
+      // Import routing utilities
+      const { isProgramRoute } = require('@/lib/routing');
       
-      // Update the active page based on the path
-      if (currentPath === "/dashboard") {
-        setActivePage("dashboard");
-        setTitle("xFoundry Hub");
-      } else if (currentPath === "/profile") {
-        setActivePage("profile");
-        setTitle("Your Profile");
-      } else if (currentPath === "/program-dashboard") {
-        setActivePage("program");
-        setTitle("Program Dashboard");
-      } else if (currentPath.startsWith("/program-dashboard/")) {
-        // Extract program ID from URL
-        const programId = currentPath.replace("/program-dashboard/", "");
-        setActivePage("program");
-        setActiveProgramId(programId);
-        setTitle("Program Dashboard");
+      // Use router to get current state
+      // This ensures we're using the real URL, not stale state
+      const currentRouter = { 
+        pathname: window.location.pathname,
+        query: Object.fromEntries(new URLSearchParams(window.location.search))
+      };
+      
+      console.log(`PopState event detected: ${currentRouter.pathname}`);
+      
+      // Handle program routes
+      if (isProgramRoute(currentRouter)) {
+        // Extract the program ID from the path
+        const match = currentRouter.pathname.match(/\/program\/([^\/]+)(?:\/|$)/);
+        if (match && match[1]) {
+          const programId = match[1];
+          console.log(`PopState detected program ID: ${programId}`);
+          setActivePage('program');
+          setActiveProgramId(programId);
+        }
+      }
+      // Handle profile page
+      else if (currentRouter.pathname === '/profile') {
+        setActivePage('profile');
+      }
+      // Handle main dashboard
+      else if (currentRouter.pathname === '/dashboard') {
+        setActivePage('dashboard');
       }
     };
     
-    // Add listener for browser navigation
-    window.addEventListener("popstate", handlePopState);
+    // Add event listener for popstate events
+    window.addEventListener('popstate', handlePopState);
     
-    // Cleanup on unmount
+    // Remove event listener on cleanup
     return () => {
-      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener('popstate', handlePopState);
     };
-  }, [router.pathname, router.query])
+  }, [setActivePage, setActiveProgramId]);
   
   // Handle profile edit - set modal state directly
   const handleEditProfileClick = () => {
