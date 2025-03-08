@@ -10,15 +10,17 @@ function ProgramDashboardLegacy() {
   const router = useRouter()
   const { getAllProgramInitiatives } = useDashboard()
   
-  // Redirect to the new URL structure
+  // Redirect to the new URL structure using routing utilities
   useEffect(() => {
+    const { navigateToProgram, navigateToDashboard } = require('@/lib/routing');
     const initiatives = getAllProgramInitiatives()
+    
     // If user has active initiatives, redirect to the first one
     if (initiatives && initiatives.length > 0) {
-      router.replace(`/program/${initiatives[0].id}`)
+      navigateToProgram(router, initiatives[0].id, { replace: true })
     } else {
       // Otherwise redirect to the dashboard
-      router.replace('/dashboard')
+      navigateToDashboard(router, { replace: true })
     }
   }, [router, getAllProgramInitiatives])
   

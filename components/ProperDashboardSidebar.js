@@ -82,13 +82,16 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
     }
   ];
   
+  // Import ROUTES from routing utilities
+  const { ROUTES } = require('@/lib/routing');
+  
   // Generate program links dynamically based on active participations
   // Ensure we only create links for valid initiatives
   const programLinks = programInitiatives
     .filter(initiative => initiative && initiative.id) // Only include valid initiatives
     .map(initiative => ({
       id: `program-${initiative.id}`,
-      href: `/program/${initiative.id}`, // Use new URL structure
+      href: ROUTES.PROGRAM.DETAIL(initiative.id), // Use routing utility
       label: initiative.name || "Program",
       icon: <Compass className="h-4 w-4" />,
       programId: initiative.id
@@ -101,7 +104,7 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
         ...baseLinks,
         {
           id: "program",
-          href: "/program-dashboard",
+          href: ROUTES.PROGRAM.INDEX, // Use routing utility
           label: initiativeName || "Program",
           icon: <Compass className="h-4 w-4" />
         }
@@ -147,7 +150,7 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
       return;
     }
     
-    // For program-specific navigation, use the new URL structure
+    // For program-specific navigation, use the routing utility
     if (link.programId) {
       console.log(`Navigating to program ${link.programId}`);
       
@@ -157,26 +160,31 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
           onNavigate(`program-${link.programId}`);
         }
         
-        // Update URL to use path-based routing
+        // Use routing utility for navigation
+        const { navigateToProgram } = require('@/lib/routing');
+        
         try {
           if (router && typeof router.push === 'function') {
-            // Use the new path-based URL structure
-            router.push(`/program/${encodeURIComponent(link.programId)}`, undefined, { shallow: true });
+            // Use the routing utility
+            navigateToProgram(router, link.programId, { shallow: true });
           } else if (typeof window !== "undefined") {
-            // Fallback to direct URL change
-            window.location.href = `/program/${encodeURIComponent(link.programId)}`;
+            // Fallback to direct URL change using ROUTES
+            const { ROUTES } = require('@/lib/routing');
+            window.location.href = ROUTES.PROGRAM.DETAIL(link.programId);
           }
         } catch (error) {
           console.error("Error updating URL:", error);
           if (typeof window !== "undefined") {
-            // Final fallback
-            window.location.href = `/program/${encodeURIComponent(link.programId)}`;
+            // Final fallback using ROUTES
+            const { ROUTES } = require('@/lib/routing');
+            window.location.href = ROUTES.PROGRAM.DETAIL(link.programId);
           }
         }
       } catch (error) {
         console.error("Error handling program navigation:", error);
-        // Fallback to simple navigation
-        window.location.href = `/program/${encodeURIComponent(link.programId)}`;
+        // Fallback to simple navigation using ROUTES
+        const { ROUTES } = require('@/lib/routing');
+        window.location.href = ROUTES.PROGRAM.DETAIL(link.programId);
       }
       return;
     }

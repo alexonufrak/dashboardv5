@@ -57,6 +57,14 @@ export default function DashboardShell() {
   const [title, setTitle] = useState("xFoundry Hub")
   const [activeProgramId, setActiveProgramId] = useState(null)
   
+  // Import routing utilities
+  const { 
+    getProgramIdFromUrl, 
+    navigateToProgram, 
+    isProgramRoute,
+    ROUTES 
+  } = require('@/lib/routing');
+  
   // Set active page based on URL path
   useEffect(() => {
     const path = router.pathname;
@@ -64,58 +72,32 @@ export default function DashboardShell() {
     
     console.log(`Setting active page based on URL path: ${path}`, query);
     
-    // Handle redirect for dashboard-shell legacy path
-    if (path === "/dashboard-shell") {
-      window.history.pushState({}, '', "/dashboard");
-      setActivePage("dashboard");
-      setTitle("xFoundry Hub");
-      return;
-    }
+    // All legacy path redirects are now handled by middleware.js
+    // Just update the local state based on current URL
     
-    // Handle program in query parameter - LEGACY: redirect to new path structure
-    if (path === "/dashboard" && query.program) {
-      // Redirect to the new URL structure
-      const programId = query.program;
-      console.log(`Found program in query: ${programId} - redirecting to new URL structure`);
-      router.replace(`/program/${programId}`);
-      return;
-    }
-    // Handle program with ID (new dynamic route)
-    else if ((path === "/program/[programId]" || path.startsWith("/program/")) && query.programId) {
-      // This is a specific program page (dynamic route)
+    // Check if this is a program route (either main program page or subpages)
+    if (isProgramRoute(router)) {
+      // Get the program ID from the URL
       const programId = query.programId;
-      console.log(`Program dynamic route with ID: ${programId}`);
-      setActivePage("program");
       
-      // Set the active program in the state
-      setActiveProgramId(programId);
-      
-      // Set a generic title first - we'll update it later
-      setTitle("Program Dashboard");
-    }
-    // Handle program with ID subdirectories (like bounties, team)
-    else if (path.startsWith("/program/[programId]/") && query.programId) {
-      const programId = query.programId;
-      setActivePage("program");
-      setActiveProgramId(programId);
-      setTitle("Program Dashboard");
-    }
-    // Handle legacy program-dashboard route (redirect to new structure)
-    else if (path === "/program-dashboard") {
-      // If we have a programId in context, redirect to that program page
-      if (activeProgramId) {
-        router.replace(`/program/${activeProgramId}`);
-      } else {
+      if (programId) {
+        console.log(`Program route with ID: ${programId}`);
         setActivePage("program");
-        setTitle("Program Dashboard");
+        setActiveProgramId(programId);
+        setTitle("Program Dashboard"); // Generic title, will be updated later
       }
-    } else if (path === "/profile") {
+    } 
+    // Handle profile page
+    else if (path === "/profile") {
       setActivePage("profile");
       setTitle("Your Profile");
-    } else if (path === "/dashboard") {
+    } 
+    // Handle main dashboard
+    else if (path === "/dashboard") {
       setActivePage("dashboard");
       setTitle("xFoundry Hub");
     }
+  }
     
     // Add handler for popstate (browser back/forward)
     const handlePopState = () => {
@@ -158,9 +140,17 @@ export default function DashboardShell() {
     setIsEditModalOpen(true);
   }
   
-  // Handle client-side navigation
+  // Handle client-side navigation using routing utilities
   const handleNavigation = (page) => {
     console.log(`Navigation requested to page: ${page}`);
+    
+    // Import routing utilities
+    const { 
+      navigateToProgram, 
+      navigateToDashboard, 
+      navigateToProfile, 
+      ROUTES 
+    } = require('@/lib/routing');
     
     // Extract program ID if this is a program-specific page
     let programId = null;
@@ -183,14 +173,18 @@ export default function DashboardShell() {
       // Store the ID in component state
       setActiveProgramId(programId);
       setTitle("Program Dashboard");
+      
+      // Use routing utility to update URL
+      navigateToProgram(router, programId, { shallow: true });
     } else {
-      // Set the title based on the page
+      // Set the title based on the page and navigate appropriately
       switch (page) {
         case "dashboard":
-          setTitle("xFoundry Hub")
-          break
+          setTitle("xFoundry Hub");
+          navigateToDashboard(router, { shallow: true });
+          break;
         case "program": 
-          // Check if we have a program ID, if so, try to get its name
+          // If we have an active program ID, navigate to that program
           if (activeProgramId) {
             const initiatives = getAllProgramInitiatives();
             const initiative = initiatives.find(init => init.id === activeProgramId);
@@ -199,34 +193,22 @@ export default function DashboardShell() {
             } else {
               setTitle("Program Dashboard");
             }
+            navigateToProgram(router, activeProgramId, { shallow: true });
           } else {
             setTitle("Program Dashboard");
+            // No program ID, navigate to program index
+            router.push(ROUTES.PROGRAM.INDEX, undefined, { shallow: true });
           }
-          break
+          break;
         case "profile":
-          setTitle("Your Profile")
-          break
+          setTitle("Your Profile");
+          navigateToProfile(router, { shallow: true });
+          break;
         default:
-          setTitle("xFoundry Hub")
+          setTitle("xFoundry Hub");
+          navigateToDashboard(router, { shallow: true });
       }
     }
-    
-    // Update the URL using shallow routing to avoid full page reload
-    // Use shallow routing to prevent getServerSideProps execution
-    setTimeout(() => {
-      const options = { 
-        shallow: true,
-        scroll: false 
-      };
-      
-      // The pushState happens in the sidebar component now, not here
-      // We just need to update the states for the dashboard UI
-      if (programId) {
-        // Set active program ID
-        console.log(`Setting active program ID: ${programId}`);
-        setActiveProgramId(programId);
-      }
-    }, 10) // Slight delay to ensure UI updates first
   }
   
   // Return appropriate page component based on active page
@@ -289,17 +271,25 @@ export default function DashboardShell() {
     }
   }, [activeProgramId, profile, setActiveProgram, getAllProgramInitiatives]);
   
-  // Handler for browser back/forward navigation
+  // Handler for browser back/forward navigation - simplified with routing utilities
   useEffect(() => {
     const handlePopState = (event) => {
-      // Get the current URL path
-      const path = window.location.pathname;
-      console.log(`PopState event detected: ${path}`);
+      // Import routing utilities
+      const { isProgramRoute, isProgramSection, ROUTES } = require('@/lib/routing');
       
-      // Handle dynamic program routes
-      if (path.match(/^\/program\/[^\/]+$/)) {
+      // Use router to get current state
+      // This ensures we're using the real URL, not stale state
+      const currentRouter = { 
+        pathname: window.location.pathname,
+        query: Object.fromEntries(new URLSearchParams(window.location.search))
+      };
+      
+      console.log(`PopState event detected: ${currentRouter.pathname}`);
+      
+      // Handle program routes
+      if (isProgramRoute(currentRouter)) {
         // Extract the program ID from the path
-        const match = path.match(/\/program\/([^\/]+)(?:\/|$)/);
+        const match = currentRouter.pathname.match(/\/program\/([^\/]+)(?:\/|$)/);
         if (match && match[1]) {
           const programId = match[1];
           console.log(`PopState detected program ID: ${programId}`);
@@ -307,57 +297,13 @@ export default function DashboardShell() {
           setActiveProgramId(programId);
         }
       }
-      // Handle program subdirectory pages
-      else if (path.match(/^\/program\/[^\/]+\/[^\/]+$/)) {
-        // Extract the program ID from the path
-        const match = path.match(/\/program\/([^\/]+)\//);
-        if (match && match[1]) {
-          const programId = match[1];
-          console.log(`PopState detected program ID with subpath: ${programId}`);
-          setActivePage('program');
-          setActiveProgramId(programId);
-        }
-      }
-      // Handle legacy program-specific URLs
-      else if (path.startsWith('/program-dashboard/')) {
-        const programId = path.replace('/program-dashboard/', '');
-        setActivePage('program');
-        setActiveProgramId(programId);
-        
-        // Redirect to the new URL structure
-        if (typeof window !== 'undefined') {
-          window.history.replaceState({}, '', `/program/${programId}`);
-        }
-      } 
-      // Handle legacy URL with query parameter
-      else if (path === '/dashboard' && window.location.search.includes('program=')) {
-        const params = new URLSearchParams(window.location.search);
-        const programId = params.get('program');
-        if (programId) {
-          // Redirect to the new URL structure
-          if (typeof window !== 'undefined') {
-            window.history.replaceState({}, '', `/program/${programId}`);
-          }
-          setActivePage('program');
-          setActiveProgramId(programId);
-        } else {
-          setActivePage('dashboard');
-        }
-      }
-      // Handle standard URLs
-      else if (path === '/dashboard') {
-        setActivePage('dashboard');
-      }
-      else if (path === '/program-dashboard') {
-        setActivePage('program');
-        
-        // If we have an active program ID, redirect to the program page
-        if (activeProgramId && typeof window !== 'undefined') {
-          window.history.replaceState({}, '', `/program/${activeProgramId}`);
-        }
-      }
-      else if (path === '/profile') {
+      // Handle profile page
+      else if (currentRouter.pathname === '/profile') {
         setActivePage('profile');
+      }
+      // Handle main dashboard
+      else if (currentRouter.pathname === '/dashboard') {
+        setActivePage('dashboard');
       }
     };
     

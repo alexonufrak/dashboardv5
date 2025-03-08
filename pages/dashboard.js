@@ -51,25 +51,26 @@ function DashboardContent() {
   // Check URL parameters for program info and redirect to new URL structure if needed
   useEffect(() => {
     try {
-      // Get program ID from query parameters
-      const { program } = router.query;
+      // Use routing utility to get program ID from URL
+      const { getProgramIdFromUrl, navigateToProgram } = require('@/lib/routing');
+      const programId = getProgramIdFromUrl(router);
       
-      if (program) {
-        console.log(`Program specified in URL: ${program}`);
+      if (programId) {
+        console.log(`Program specified in URL: ${programId}`);
         
-        // Redirect to the new URL structure
-        router.replace(`/program/${encodeURIComponent(program)}`);
+        // Use routing utility to navigate to program
+        navigateToProgram(router, programId, { replace: true });
       } else {
         // Check URL hash for program ID as another fallback
         if (typeof window !== 'undefined' && window.location.hash) {
           const hash = window.location.hash.substring(1);
           if (hash.startsWith('program-')) {
-            const programId = hash.replace('program-', '');
-            console.log(`Hash-based program detected: ${programId}`);
+            const hashProgramId = hash.replace('program-', '');
+            console.log(`Hash-based program detected: ${hashProgramId}`);
             
-            // Redirect to the new URL structure
-            if (programId) {
-              router.replace(`/program/${encodeURIComponent(programId)}`);
+            // Use routing utility to navigate to program
+            if (hashProgramId) {
+              navigateToProgram(router, hashProgramId, { replace: true });
             }
           }
         }
@@ -77,7 +78,7 @@ function DashboardContent() {
     } catch (error) {
       console.error("Error handling URL parameters:", error);
     }
-  }, [router.query, router]);
+  }, [router]);
   
   return (
     <>
