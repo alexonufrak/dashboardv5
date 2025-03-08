@@ -15,6 +15,8 @@ import {
   ExternalLink,
   LogOut,
   Menu,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react"
 
 import {
@@ -121,22 +123,58 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
   
   // ROUTES is now imported at the top of the file
   
-  // Generate program links dynamically based on active participations
-  // Ensure we only create links for valid initiatives
-  const programLinks = programInitiatives
+  // Create program groups with nested links for each initiative
+  const programGroups = programInitiatives
     .filter(initiative => initiative && initiative.id) // Only include valid initiatives
     .map(initiative => ({
-      id: `program-${initiative.id}`,
-      href: ROUTES.PROGRAM.DETAIL(initiative.id), // Use routing utility
+      id: `program-group-${initiative.id}`,
       label: initiative.name || "Program",
       icon: <Compass className="h-4 w-4" />,
-      programId: initiative.id
+      programId: initiative.id,
+      // Add default expanded state
+      expanded: true,
+      // Define sublinks for this program group
+      links: [
+        {
+          id: `program-home-${initiative.id}`,
+          href: ROUTES.PROGRAM.DETAIL(initiative.id), // Use routing utility
+          label: "Home",
+          programId: initiative.id
+        },
+        // Add more program tabs as needed
+        {
+          id: `program-milestones-${initiative.id}`,
+          href: ROUTES.PROGRAM.MILESTONES(initiative.id),
+          label: "Milestones",
+          programId: initiative.id
+        },
+        {
+          id: `program-team-${initiative.id}`,
+          href: ROUTES.PROGRAM.TEAM(initiative.id),
+          label: "Team",
+          programId: initiative.id
+        }
+      ]
     }));
   
-  // Only include program links if there are active participations
-  const links = programLinks.length > 0 
-    ? [...baseLinks, ...programLinks] 
-    : [...baseLinks] // Only include base links if no program participations
+  // Initialize state for program group expansion
+  const [expandedGroups, setExpandedGroups] = useState(
+    programGroups.reduce((acc, group) => {
+      acc[group.id] = true; // Start with all groups expanded
+      return acc;
+    }, {})
+  );
+
+  // Toggle expansion for a program group
+  const toggleGroupExpansion = (groupId) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
+  };
+  
+  // Combine base links with program groups
+  const links = [...baseLinks];
   
   // External links
   const externalLinks = [
@@ -192,63 +230,83 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
             <SidebarGroupLabel>NAVIGATION</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {console.log("Rendering links:", links)}
-                {links.map((link) => {
-                  console.log("Rendering link:", link);
-                  return (
-                    <SidebarMenuItem key={link.id || link.label}>
-                      <Link 
-                        href={link.programId ? `/program/${link.programId}` : link.href}
+                {/* Render base links */}
+                {links.map((link) => (
+                  <SidebarMenuItem key={link.id || link.label}>
+                    <Link 
+                      href={link.href}
+                      className="w-full"
+                      shallow={true}
+                      scroll={false}
+                      passHref
+                    >
+                      <SidebarMenuButton
+                        isActive={
+                          currentPage === link.id || 
+                          router.pathname === link.href ||
+                          (link.id === "dashboard" && router.pathname === "/dashboard" && !router.query.programId)
+                        }
                         className="w-full"
-                        shallow={true}
-                        scroll={false}
-                        onClick={(e) => {
-                          // Special case for profile - open modal instead of navigation
-                          if (link.href === "/profile") {
-                            e.preventDefault();
-                            setIsEditModalOpen(true);
-                            return;
-                          }
-                          
-                          // For program links, update internal state
-                          if (link.programId && onNavigate) {
-                            onNavigate(`program-${link.programId}`);
-                          }
-                        }}
-                        passHref
                       >
-                        <SidebarMenuButton
-                          isActive={
-                            // Debug active state checks
-                            (() => {
-                              const isIdMatch = currentPage === link.id;
-                              const isProgramIdMatch = link.programId && currentPage === "program" && router.query.program === link.programId;
-                              const isDashboardNoProgram = link.id === "dashboard" && router.pathname === "/dashboard" && !router.query.program;
-                              const isPathMatch = router.pathname === link.href;
-                              
-                              console.log(`Link ${link.label} active check:`, {
-                                isIdMatch,
-                                isProgramIdMatch,
-                                isDashboardNoProgram,
-                                isPathMatch,
-                                result: isIdMatch || isProgramIdMatch || isDashboardNoProgram || isPathMatch
-                              });
-                              
-                              return isIdMatch || isProgramIdMatch || isDashboardNoProgram || isPathMatch || 
-                                    (link.href.startsWith('#') && router.asPath.includes(link.href));
-                            })()
-                          }
-                          className="w-full"
-                        >
-                          <div className="flex items-center gap-3">
-                            {link.icon}
-                            <span>{link.label}</span>
-                          </div>
-                        </SidebarMenuButton>
-                      </Link>
-                    </SidebarMenuItem>
-                  );
-                })}
+                        <div className="flex items-center gap-3">
+                          {link.icon}
+                          <span>{link.label}</span>
+                        </div>
+                      </SidebarMenuButton>
+                    </Link>
+                  </SidebarMenuItem>
+                ))}
+                
+                {/* Render program groups */}
+                {programGroups.map((group) => (
+                  <SidebarGroup key={group.id}>
+                    {/* Program group header with collapsible toggle */}
+                    <div className="flex items-center justify-between rounded-md py-2 px-2 hover:bg-sidebar-accent cursor-pointer"
+                         onClick={() => toggleGroupExpansion(group.id)}>
+                      <div className="flex items-center gap-3">
+                        {group.icon}
+                        <span className="font-medium">{group.label}</span>
+                      </div>
+                      {expandedGroups[group.id] ? 
+                        <ChevronDown className="h-4 w-4" /> : 
+                        <ChevronRight className="h-4 w-4" />
+                      }
+                    </div>
+                    
+                    {/* Program sub-links */}
+                    {expandedGroups[group.id] && (
+                      <SidebarMenuSub>
+                        {group.links.map((link) => (
+                          <SidebarMenuSubItem key={link.id}>
+                            <Link
+                              href={link.href}
+                              className="w-full"
+                              shallow={true}
+                              scroll={false}
+                              onClick={() => {
+                                if (onNavigate && link.programId) {
+                                  onNavigate(`program-${link.programId}`);
+                                }
+                              }}
+                              passHref
+                            >
+                              <SidebarMenuSubButton
+                                isActive={
+                                  (router.pathname === link.href) ||
+                                  (router.pathname.includes(link.href) && link.href !== ROUTES.PROGRAM.DETAIL(link.programId)) ||
+                                  (router.query.programId === link.programId && link.label === "Home" && 
+                                   router.pathname === ROUTES.PROGRAM.DETAIL(link.programId))
+                                }
+                              >
+                                <span>{link.label}</span>
+                              </SidebarMenuSubButton>
+                            </Link>
+                          </SidebarMenuSubItem>
+                        ))}
+                      </SidebarMenuSub>
+                    )}
+                  </SidebarGroup>
+                ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

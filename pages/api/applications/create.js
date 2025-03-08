@@ -72,11 +72,40 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     // Create the application record
     console.log(`Creating application for contact ${userProfile.contactId}, cohort ${cohortId}, team ${teamId}`)
     
+    // First, check if the cohort's initiative has "Immediate" enrollment
+    let applicationStatus = 'Submitted';
+    try {
+      // Get the cohort record
+      const cohortsTable = base(process.env.AIRTABLE_COHORTS_TABLE_ID);
+      const initiativesTable = base(process.env.AIRTABLE_INITIATIVES_TABLE_ID);
+      
+      const cohort = await cohortsTable.find(cohortId);
+      
+      if (cohort && cohort.fields.Initiative && cohort.fields.Initiative.length > 0) {
+        const initiativeId = cohort.fields.Initiative[0];
+        const initiative = await initiativesTable.find(initiativeId);
+        
+        if (initiative) {
+          const enrollmentType = initiative.fields["Enrollment Type"] || "Review";
+          console.log(`Initiative ${initiative.fields.Name} has enrollment type: ${enrollmentType}`);
+          
+          // Set application status to "Accepted" if enrollment type is "Immediate"
+          if (enrollmentType === "Immediate") {
+            applicationStatus = 'Accepted';
+            console.log(`Setting application status to "Accepted" for immediate enrollment`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error checking enrollment type:", error);
+      // Continue with default 'Submitted' status if there's an error
+    }
+    
     // Prepare application data - using only the current field names
     const applicationData = {
       'Contact': [userProfile.contactId],
       'Cohort': [cohortId],
-      'Status': 'Submitted'
+      'Status': applicationStatus
       // Removed 'Submission Date' as it doesn't exist in the Airtable schema
       // The 'Created' field is automatically handled by Airtable
     }
@@ -171,7 +200,7 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     // Return success response
     return res.status(201).json({
       id: applicationRecord.id,
-      status: 'Submitted',
+      status: applicationStatus, // Use the actual status that was set
       contactId: userProfile.contactId,
       cohortId: cohortId,
       teamId: teamId,
