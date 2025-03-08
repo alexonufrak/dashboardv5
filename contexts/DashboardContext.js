@@ -287,7 +287,7 @@ export function DashboardProvider({ children }) {
     }
     
     return processedMilestones;
-  }, [milestonesData, programDataProcessed.cohort, teamData?.id, queryClient, activeProgramId, getActiveProgramData])
+  }, [milestonesData, programDataProcessed.cohort, teamData?.id, queryClient, activeProgramId])
   
   // Combine loading states
   const isLoading = isUserLoading || isProfileLoading
@@ -471,6 +471,14 @@ export function DashboardProvider({ children }) {
     };
   }, [profile, participationData]);
   
+  // Track active program ID
+  const [activeProgramId, setActiveProgramId] = useState(null);
+  
+  // Get all program initiatives
+  const getAllProgramInitiatives = () => {
+    return enhancedProfile?.getActiveParticipationInitiatives?.() || [];
+  };
+  
   // Get the active program data
   const getActiveProgramData = (programId) => {
     if (!enhancedProfile) return null;
@@ -545,14 +553,6 @@ export function DashboardProvider({ children }) {
     return programData;
   };
   
-  // Track active program ID
-  const [activeProgramId, setActiveProgramId] = useState(null);
-  
-  // Get all program initiatives
-  const getAllProgramInitiatives = () => {
-    return enhancedProfile?.getActiveParticipationInitiatives?.() || [];
-  };
-  
   // Set the active program - use useCallback to prevent recreation on each render
   const setActiveProgram = useMemo(() => {
     return (programId) => {
@@ -566,7 +566,7 @@ export function DashboardProvider({ children }) {
 
   // Store active team for each program
   const [programTeams, setProgramTeams] = useState({})
-  
+
   // Helper function to get cohort IDs for a program without calling getActiveProgramData
   // This breaks the circular dependency
   const getProgramCohortIds = (programId) => {
