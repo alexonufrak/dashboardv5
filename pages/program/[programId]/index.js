@@ -49,7 +49,8 @@ function ProgramPageContent({ programId }) {
     profile, 
     isEditModalOpen, 
     setIsEditModalOpen, 
-    getAllProgramInitiatives
+    getAllProgramInitiatives,
+    getActiveProgramData
   } = useDashboard()
   const [pageTitle, setPageTitle] = useState("Program Dashboard")
   
