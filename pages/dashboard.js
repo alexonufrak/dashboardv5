@@ -48,11 +48,12 @@ function DashboardContent() {
   
   const router = useRouter();
   
+  // Import routing utilities at the top level, not inside effects
+  const { getProgramIdFromUrl, navigateToProgram } = require('@/lib/routing');
+  
   // Check URL parameters for program info and redirect to new URL structure if needed
   useEffect(() => {
     try {
-      // Use routing utility to get program ID from URL
-      const { getProgramIdFromUrl, navigateToProgram } = require('@/lib/routing');
       const programId = getProgramIdFromUrl(router);
       
       if (programId) {
@@ -78,7 +79,7 @@ function DashboardContent() {
     } catch (error) {
       console.error("Error handling URL parameters:", error);
     }
-  }, [router]);
+  }, [router, getProgramIdFromUrl, navigateToProgram]);
   
   return (
     <>

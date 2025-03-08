@@ -8,6 +8,14 @@ import { useDashboard } from "@/contexts/DashboardContext"
 import ProperDashboardLayout from "./ProperDashboardLayout"
 import LoadingScreen from "./LoadingScreen"
 import { Skeleton } from "./ui/skeleton"
+import { 
+  getProgramIdFromUrl, 
+  navigateToProgram, 
+  navigateToDashboard,
+  navigateToProfile,
+  isProgramRoute,
+  ROUTES 
+} from '@/lib/routing'
 
 // Dynamically import dashboard pages
 const DashboardHome = dynamic(() => import("@/pages/dashboards/DashboardHome"), {
@@ -57,13 +65,7 @@ export default function DashboardShell() {
   const [title, setTitle] = useState("xFoundry Hub")
   const [activeProgramId, setActiveProgramId] = useState(null)
   
-  // Import routing utilities
-  const { 
-    getProgramIdFromUrl, 
-    navigateToProgram, 
-    isProgramRoute,
-    ROUTES 
-  } = require('@/lib/routing');
+  // Routing utilities are now imported at the top of the file
   
   // Set active page based on URL path
   useEffect(() => {
@@ -157,13 +159,7 @@ export default function DashboardShell() {
   const handleNavigation = (page) => {
     console.log(`Navigation requested to page: ${page}`);
     
-    // Import routing utilities
-    const { 
-      navigateToProgram, 
-      navigateToDashboard, 
-      navigateToProfile, 
-      ROUTES 
-    } = require('@/lib/routing');
+    // Using routing utilities imported at the top of the file
     
     // Extract program ID if this is a program-specific page
     let programId = null;

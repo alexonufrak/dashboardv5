@@ -6,6 +6,7 @@ import { useUser } from "@auth0/nextjs-auth0/client"
 import { useState, useEffect } from "react"
 import ProfileMenuButton from "./ProfileMenuButton"
 import { useDashboard } from "@/contexts/DashboardContext"
+import { ROUTES } from '@/lib/routing'
 
 import { 
   Home,
@@ -83,8 +84,7 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
     }
   ];
   
-  // Import ROUTES from routing utilities
-  const { ROUTES } = require('@/lib/routing');
+  // ROUTES is now imported at the top of the file
   
   // Generate program links dynamically based on active participations
   // Ensure we only create links for valid initiatives

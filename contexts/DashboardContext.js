@@ -567,40 +567,36 @@ export function DashboardProvider({ children }) {
   // Store active team for each program
   const [programTeams, setProgramTeams] = useState({})
   
+  // Helper function to get cohort IDs for a program without calling getActiveProgramData
+  // This breaks the circular dependency
+  const getProgramCohortIds = (programId) => {
+    if (!enhancedProfile) return [];
+    
+    // Get all cohort IDs related to this program initiative directly from participations
+    return enhancedProfile.participations
+      .filter(p => p.cohort?.initiativeDetails?.id === programId)
+      .map(p => p.cohort?.id)
+      .filter(Boolean);
+  };
+  
   // Get teams for a specific program
   const getTeamsForProgram = (programId) => {
-    if (!enhancedProfile || !teams) return []
+    if (!enhancedProfile || !teams) return [];
     
-    // Get the specific program data
-    const programData = programId ? getActiveProgramData(programId) : null;
-    const programCohortId = programData?.cohort?.id;
+    console.log(`Getting teams for program ${programId}`);
     
-    console.log(`Getting teams for program ${programId} with cohort ID: ${programCohortId}`);
+    // Get cohort IDs for this program directly - avoid circular dependency with getActiveProgramData
+    const programCohorts = getProgramCohortIds(programId);
     
     // Get teams for the specific program based on cohort
     const filteredTeams = teams.filter(team => {
-      // If team has cohortIds array, check if it contains the cohort for this program
+      // If team has cohortIds array, check if it contains any cohort related to this program
       if (team.cohortIds && Array.isArray(team.cohortIds)) {
-        // If we have a specific cohort ID from the program data, use that for direct comparison
-        if (programCohortId) {
-          const includesCohort = team.cohortIds.includes(programCohortId);
-          if (!includesCohort) {
-            console.log(`Excluding team ${team.name} (${team.id}) - does not include cohort ${programCohortId}`);
-          }
-          return includesCohort;
-        }
-        
-        // Fallback: Get all cohort IDs related to this program initiative
-        const programCohorts = enhancedProfile.participations
-          .filter(p => p.cohort?.initiativeDetails?.id === programId)
-          .map(p => p.cohort?.id)
-          .filter(Boolean)
-        
         // Check if any of the team's cohorts match the program cohorts
         const matchesCohort = team.cohortIds.some(cohortId => programCohorts.includes(cohortId));
         
-        if (!matchesCohort) {
-          console.log(`Excluding team ${team.name} (${team.id}) - cohorts don't match program: ${team.cohortIds.join(',')} vs ${programCohorts.join(',')}`);
+        if (!matchesCohort && team.name) {
+          console.log(`Excluding team ${team.name} (${team.id}) - cohorts don't match program`);
         }
         
         return matchesCohort;

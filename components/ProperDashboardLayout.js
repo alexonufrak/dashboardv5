@@ -7,6 +7,7 @@ import Head from "next/head"
 import ProperDashboardSidebar from "./ProperDashboardSidebar"
 import Breadcrumbs from "./Breadcrumbs"
 import { SidebarProvider, SidebarInset } from "./ui/sidebar"
+import { isProgramRoute } from '@/lib/routing'
 
 const ProperDashboardLayout = ({ 
   children, 
@@ -20,8 +21,7 @@ const ProperDashboardLayout = ({
   const router = useRouter()
   const { user } = useUser()
   
-  // Import routing utilities
-  const { isProgramRoute } = require('@/lib/routing')
+  // isProgramRoute is now imported at the top of the file
   
   // Check if current route is a dashboard route - include dynamic program routes
   const isDashboard = router.pathname === "/dashboard" || 
