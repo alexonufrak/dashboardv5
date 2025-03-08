@@ -7,33 +7,18 @@ import { useEffect } from "react"
 import { Toaster } from "sonner"
 import ProgramLayout from "@/components/program/ProgramLayout"
 import BountyList from "@/components/program/xtrapreneurs/BountyList"
-import ProfileEditModal from "@/components/profile/ProfileEditModal"
+import DashboardShell from "@/components/dashboard/DashboardShell"
+import { DashboardProvider } from "@/contexts/DashboardContext"
 
 function XtrapreneursBountiesPage() {
   const router = useRouter()
-  const { programId } = router.query
   
   return (
-    <>
-      <BountiesPageContent />
-      <ProfileModalWrapper />
-    </>
-  )
-}
-
-// Helper component to render ProfileEditModal with the right context
-function ProfileModalWrapper() {
-  const { profile, isEditModalOpen, setIsEditModalOpen, handleProfileUpdate } = useDashboard()
-  
-  return (
-    profile && (
-      <ProfileEditModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        profile={profile}
-        onSave={handleProfileUpdate}
-      />
-    )
+    <DashboardProvider>
+      <DashboardShell>
+        <BountiesPageContent />
+      </DashboardShell>
+    </DashboardProvider>
   )
 }
 

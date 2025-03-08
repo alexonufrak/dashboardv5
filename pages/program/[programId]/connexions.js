@@ -1,8 +1,10 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState } from 'react';
-import { useDashboard } from '@/contexts/DashboardContext';
+import { useDashboard, DashboardProvider } from '@/contexts/DashboardContext';
 import { getProgramIdFromUrl } from '@/lib/routing';
 import ProgramLayout from '@/components/program/ProgramLayout';
+import DashboardShell from '@/components/dashboard/DashboardShell';
+import { withPageAuthRequired } from '@auth0/nextjs-auth0';
 
 /**
  * ConneXions iframe embed page
@@ -10,6 +12,16 @@ import ProgramLayout from '@/components/program/ProgramLayout';
  * for seamless integration with the dashboard
  */
 const ConneXionsPage = () => {
+  return (
+    <DashboardProvider>
+      <DashboardShell>
+        <ConneXionsContent />
+      </DashboardShell>
+    </DashboardProvider>
+  );
+};
+
+const ConneXionsContent = () => {
   const router = useRouter();
   const { participationData, setActiveProgram } = useDashboard();
   const [isLoading, setIsLoading] = useState(true);
@@ -32,12 +44,17 @@ const ConneXionsPage = () => {
     return () => clearTimeout(timer);
   }, []);
   
+  if (!programId) {
+    return <div>Loading...</div>;
+  }
+  
   return (
     <ProgramLayout 
       programId={programId}
       title="ConneXions Community" 
       description="Connect with other program participants and the broader community"
       activeSection="connexions"
+      activeTab="connexions"
     >
       <div className="relative h-full w-full min-h-[calc(100vh-160px)]">
         {isLoading && (
@@ -62,5 +79,8 @@ const ConneXionsPage = () => {
     </ProgramLayout>
   );
 };
+
+// Wrap with auth protection
+export const getServerSideProps = withPageAuthRequired();
 
 export default ConneXionsPage;
