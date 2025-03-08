@@ -66,7 +66,7 @@ function BountiesPageContent() {
   
   return (
     <>
-      <ProgramLayout programId={programId} activeTab="bounties">
+      <ProgramLayout programId={programId} activeTab="bounties" activeSection="bounties">
         <BountyList programId={programId} />
       </ProgramLayout>
       <Toaster position="top-right" />

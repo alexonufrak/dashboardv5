@@ -182,37 +182,31 @@ const programGroups = programInitiatives
   .filter(initiative => initiative && initiative.id) // Only include valid initiatives
   .map(initiative => {
     const isXtrapreneurs = initiative.name?.toLowerCase().includes('xtrapreneur');
+    const isXperience = initiative.name?.toLowerCase().includes('xperience');
+    const isHorizons = initiative.name?.toLowerCase().includes('horizons');
     
-    return {
-      id: `program-group-${initiative.id}`,
-      label: initiative.name || "Program",
-      icon: <Compass className="h-4 w-4" />,
-      programId: initiative.id,
-      // Define sublinks for this program group
-      links: [
-        {
-          id: `program-home-${initiative.id}`,
-          href: ROUTES.PROGRAM.DETAIL(initiative.id),
-          label: "Home",
-          icon: <LayoutDashboard className="h-4 w-4" />,
-          programId: initiative.id
-        },
-        {
-          id: `program-milestones-${initiative.id}`,
-          href: ROUTES.PROGRAM.MILESTONES(initiative.id),
-          label: "Milestones",
-          icon: <Users className="h-4 w-4" />,
-          programId: initiative.id
-        },
-        {
-          id: `program-team-${initiative.id}`,
-          href: ROUTES.PROGRAM.TEAM(initiative.id),
-          label: "Team",
-          icon: <Users className="h-4 w-4" />,
-          programId: initiative.id
-        },
-        // Add Bounties tab only for Xtrapreneurs programs
-        ...(isXtrapreneurs ? [
+    // Define common links across all program types
+    const commonLinks = [
+      {
+        id: `program-home-${initiative.id}`,
+        href: ROUTES.PROGRAM.DETAIL(initiative.id),
+        label: "Home",
+        icon: <LayoutDashboard className="h-4 w-4" />,
+        programId: initiative.id
+      },
+      {
+        id: `program-connexions-${initiative.id}`,
+        href: ROUTES.PROGRAM.CONNEXIONS(initiative.id),
+        label: "ConneXions",
+        icon: <ExternalLink className="h-4 w-4" />,
+        programId: initiative.id
+      }
+    ];
+    
+    // Add Bounties tab only for Xtrapreneurs programs
+    const programLinks = isXtrapreneurs 
+      ? [
+          ...commonLinks,
           {
             id: `program-bounties-${initiative.id}`,
             href: ROUTES.PROGRAM.BOUNTIES(initiative.id),
@@ -220,8 +214,16 @@ const programGroups = programInitiatives
             icon: <Award className="h-4 w-4" />,
             programId: initiative.id
           }
-        ] : [])
-      ]
+        ] 
+      : commonLinks;
+    
+    return {
+      id: `program-group-${initiative.id}`,
+      label: initiative.name || "Program",
+      icon: <Compass className="h-4 w-4" />,
+      programId: initiative.id,
+      // Define sublinks for this program group
+      links: programLinks
     };
   });
   
@@ -352,8 +354,10 @@ const programGroups = programInitiatives
                                     isActive={
                                       (router.pathname === link.href) ||
                                       (router.pathname.includes(link.href) && link.href !== ROUTES.PROGRAM.DETAIL(link.programId)) ||
-                                      (router.query.programId === link.programId && link.label === "Home" && 
-                                       router.pathname === ROUTES.PROGRAM.DETAIL(link.programId))
+                                      (router.query.programId === link.programId && 
+                                        ((link.label === "Home" && router.pathname === ROUTES.PROGRAM.DETAIL(link.programId)) ||
+                                         (link.label === "Bounties" && router.pathname === ROUTES.PROGRAM.BOUNTIES(link.programId)) ||
+                                         (link.label === "ConneXions" && router.pathname === ROUTES.PROGRAM.CONNEXIONS(link.programId))))
                                     }
                                     className="ml-0.5"
                                   >
