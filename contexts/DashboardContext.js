@@ -106,6 +106,16 @@ export function DashboardProvider({ children }) {
   const { user, isLoading: isUserLoading } = useUser()
   const queryClient = useQueryClient()
   
+  // UI state management
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  
+  // Track active program ID - defined early to avoid initialization error
+  const [activeProgramId, setActiveProgramId] = useState(null)
+  
+  // Store active team for each program - defined early to avoid initialization errors
+  const [programTeams, setProgramTeams] = useState({})
+  
   // Use React Query hooks for data fetching
   const { 
     data: profile, 
@@ -129,10 +139,6 @@ export function DashboardProvider({ children }) {
     isLoading: isProgramLoading,
     error: programError
   } = useProgramData()
-  
-  // UI state management
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [isUpdating, setIsUpdating] = useState(false)
   
   // Process teams data
   const teamData = useMemo(() => {
@@ -189,24 +195,23 @@ export function DashboardProvider({ children }) {
   // Fetch milestones data using the cohort ID
   // Add enhanced logging to debug milestone fetching
   const cohortId = programDataProcessed.cohort?.id;
-  console.log(`Using cohortId for milestone fetching: ${cohortId}`);
+  
+  // Provide more context in the log about where the cohortId comes from
+  if (cohortId) {
+    console.log(`Using cohortId for milestone fetching: ${cohortId} from ${programDataProcessed.cohort?.name || 'unknown cohort'}`);
+  } else {
+    console.log(`No cohortId available for milestone fetching. Using programDataProcessed: ${JSON.stringify({
+      hasCohort: !!programDataProcessed.cohort,
+      initiativeName: programDataProcessed.initiativeName,
+      participationType: programDataProcessed.participationType
+    })}`);
+  }
   
   const { 
     data: milestonesData,
     isLoading: isMilestonesLoading 
   } = useMilestoneData(cohortId)
   
-  // Helper function to get cohort IDs for a program without calling getActiveProgramData
-  // This breaks the circular dependency
-  const getProgramCohortIds = (programId) => {
-    if (!enhancedProfile) return [];
-    
-    // Get all cohort IDs related to this program initiative directly from participations
-    return enhancedProfile.participations
-      .filter(p => p.cohort?.initiativeDetails?.id === programId)
-      .map(p => p.cohort?.id)
-      .filter(Boolean);
-  };
   
   // Process milestones data with fallbacks and filtering by active program
   const milestones = useMemo(() => {
@@ -219,11 +224,11 @@ export function DashboardProvider({ children }) {
         
     // Filter milestones based on active program's cohort if activeProgramId is set
     let processedMilestones = allMilestones;
-    if (activeProgramId && enhancedProfile) {
+    if (activeProgramId && profile) {
       console.log(`Filtering milestones for active program: ${activeProgramId}`);
       
       // Get cohort IDs for the active program directly - avoid circular dependency with getActiveProgramData
-      const programCohorts = getProgramCohortIds(activeProgramId);
+      const programCohorts = getProgramCohortIds(activeProgramId, profile);
       
       if (programCohorts.length > 0) {
         // Filter milestones to only include ones for this program's cohorts
@@ -301,7 +306,7 @@ export function DashboardProvider({ children }) {
     }
     
     return processedMilestones;
-  }, [milestonesData, programDataProcessed.cohort, teamData?.id, queryClient, activeProgramId, enhancedProfile])
+  }, [milestonesData, programDataProcessed.cohort, teamData?.id, queryClient, activeProgramId, profile])
   
   // Combine loading states
   const isLoading = isUserLoading || isProfileLoading
@@ -485,8 +490,16 @@ export function DashboardProvider({ children }) {
     };
   }, [profile, participationData]);
   
-  // Track active program ID - moved higher in file to avoid initialization error
-  const [activeProgramId, setActiveProgramId] = useState(null);
+  // Helper functions for getting teams for a program - defined before they're used
+  const getProgramCohortIds = (programId, userProfile) => {
+    if (!userProfile || !userProfile.participations) return [];
+    
+    // Get all cohort IDs related to this program initiative directly from participations
+    return userProfile.participations
+      .filter(p => p.cohort?.initiativeDetails?.id === programId)
+      .map(p => p.cohort?.id)
+      .filter(Boolean);
+  };
   
   // Get all program initiatives
   const getAllProgramInitiatives = () => {
@@ -578,9 +591,6 @@ export function DashboardProvider({ children }) {
     };
   }, [activeProgramId]);
 
-  // Store active team for each program
-  const [programTeams, setProgramTeams] = useState({});
-  
   // Get teams for a specific program
   const getTeamsForProgram = (programId) => {
     if (!enhancedProfile || !teams) return [];
@@ -588,7 +598,7 @@ export function DashboardProvider({ children }) {
     console.log(`Getting teams for program ${programId}`);
     
     // Get cohort IDs for this program directly - avoid circular dependency with getActiveProgramData
-    const programCohorts = getProgramCohortIds(programId);
+    const programCohorts = getProgramCohortIds(programId, enhancedProfile);
     
     // Get teams for the specific program based on cohort
     const filteredTeams = teams.filter(team => {
