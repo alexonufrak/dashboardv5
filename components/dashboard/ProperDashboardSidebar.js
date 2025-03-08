@@ -323,68 +323,75 @@ const programGroups = programInitiatives
                   /* Render program groups */
                   programGroups.map((group) => (
                     <SidebarGroup key={group.id}>
-                      <Collapsible open={router.query.programId === group.programId} defaultOpen className="group/collapsible w-full">
-                        <SidebarGroupLabel asChild>
-                          <CollapsibleTrigger className={`flex w-full items-center justify-between rounded-md px-2 py-2 hover:bg-sidebar-accent cursor-pointer ${
-                            router.query.programId === group.programId ? 'bg-sidebar-accent/10' : ''
-                          }`}>
-                            <div className="flex items-center gap-3 pl-[2px]">
-                              {group.icon}
-                              <span className={`font-medium ${
-                                router.query.programId === group.programId ? 'text-sidebar-accent-foreground' : ''
-                              }`}>{group.label}</span>
-                            </div>
-                            <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=closed]/collapsible:rotate-180" />
-                          </CollapsibleTrigger>
-                        </SidebarGroupLabel>
+                      <SidebarMenuItem className="flex flex-col gap-1">
+                        {/* Program Group Header */}
+                        <button 
+                          onClick={() => {
+                            const el = document.getElementById(`sublinks-${group.id}`);
+                            if (el) {
+                              el.classList.toggle('hidden');
+                              el.classList.toggle('flex');
+                            }
+                          }}
+                          className={`flex w-full items-center justify-between rounded-md p-2 hover:bg-sidebar-accent ${
+                            router.query.programId === group.programId ? 'bg-sidebar-accent/20' : ''
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            {group.icon}
+                            <span className="font-medium">{group.label}</span>
+                          </div>
+                          <ChevronDown className="ml-auto h-4 w-4" />
+                        </button>
                         
-                        <CollapsibleContent>
-                          <SidebarMenuSub className="ml-6 pl-2 pt-1">
-                            {group.links.map((link) => (
-                              <SidebarMenuSubItem key={link.id}>
-                                <Link
-                                  href={link.href}
-                                  className="w-full"
-                                  shallow={true}
-                                  scroll={false}
-                                  onClick={() => {
-                                    if (onNavigate && link.programId) {
-                                      onNavigate(`program-${link.programId}`);
-                                    }
-                                  }}
-                                  passHref
-                                >
-                                  <SidebarMenuSubButton
-                                    isActive={
-                                      // Direct path match
-                                      (router.pathname === link.href) ||
-                                      
-                                      // Handle exact matches for special sections
-                                      (router.query.programId === link.programId && (
-                                        // Home/program detail page
-                                        (link.label === "Home" && router.pathname === `/program/${link.programId}`) ||
-                                        
-                                        // Bounties page
-                                        (link.label === "Bounties" && router.pathname === `/program/${link.programId}/bounties`) ||
-                                        
-                                        // ConneXions page
-                                        (link.label === "ConneXions" && router.pathname === `/program/${link.programId}/connexions`)
-                                      ))
-                                    }
-                                    size="default"
-                                    className="pl-[2px] ml-0 h-8"
-                                  >
-                                    <div className="flex items-center gap-3">
-                                      {link.icon}
-                                      <span>{link.label}</span>
-                                    </div>
-                                  </SidebarMenuSubButton>
-                                </Link>
-                              </SidebarMenuSubItem>
-                            ))}
-                          </SidebarMenuSub>
-                        </CollapsibleContent>
-                      </Collapsible>
+                        {/* Program Sub-links */}
+                        <div 
+                          id={`sublinks-${group.id}`}
+                          className={`pl-6 ml-1 border-l border-sidebar-border space-y-1 py-1 flex flex-col ${
+                            router.query.programId === group.programId ? 'flex' : 'hidden'
+                          }`}
+                        >
+                          {group.links.map((link) => (
+                            <Link
+                              key={link.id}
+                              href={link.href}
+                              className="w-full block"
+                              shallow={true}
+                              scroll={false}
+                              onClick={() => {
+                                if (onNavigate && link.programId) {
+                                  onNavigate(`program-${link.programId}`);
+                                }
+                              }}
+                            >
+                              <SidebarMenuButton
+                                isActive={
+                                  // Direct path match
+                                  (router.pathname === link.href) ||
+                                  
+                                  // Handle exact matches for special sections
+                                  (router.query.programId === link.programId && (
+                                    // Home/program detail page
+                                    (link.label === "Home" && router.pathname === `/program/${link.programId}`) ||
+                                    
+                                    // Bounties page
+                                    (link.label === "Bounties" && router.pathname === `/program/${link.programId}/bounties`) ||
+                                    
+                                    // ConneXions page
+                                    (link.label === "ConneXions" && router.pathname === `/program/${link.programId}/connexions`)
+                                  ))
+                                }
+                                className="w-full"
+                              >
+                                <div className="flex items-center gap-3">
+                                  {link.icon}
+                                  <span>{link.label}</span>
+                                </div>
+                              </SidebarMenuButton>
+                            </Link>
+                          ))}
+                        </div>
+                      </SidebarMenuItem>
                     </SidebarGroup>
                   ))
                 )}
