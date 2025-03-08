@@ -213,6 +213,21 @@ export function DashboardProvider({ children }) {
   } = useMilestoneData(cohortId)
   
   
+  // Function to get program cohort IDs - Define the function before using it
+  const getProgramCohortIds = useMemo(() => {
+    return (programId) => {
+      // Use participationData directly without requiring a userProfile parameter  
+      const participations = participationData?.participation || [];
+      if (!participations.length) return [];
+      
+      // Get all cohort IDs related to this program initiative directly from participations
+      return participations
+        .filter(p => p.cohort?.initiativeDetails?.id === programId)
+        .map(p => p.cohort?.id)
+        .filter(Boolean);
+    };
+  }, [participationData]);
+
   // Process milestones data with fallbacks and filtering by active program
   const milestones = useMemo(() => {
     // Get all milestones
@@ -490,20 +505,7 @@ export function DashboardProvider({ children }) {
     };
   }, [profile, participationData]);
   
-  // Helper functions for getting program data - defined with useCallback to avoid rendering issues
-  const getProgramCohortIds = useMemo(() => {
-    return (programId) => {
-      // Use participationData directly without requiring a userProfile parameter  
-      const participations = participationData?.participation || [];
-      if (!participations.length) return [];
-      
-      // Get all cohort IDs related to this program initiative directly from participations
-      return participations
-        .filter(p => p.cohort?.initiativeDetails?.id === programId)
-        .map(p => p.cohort?.id)
-        .filter(Boolean);
-    };
-  }, [participationData]);
+  // This function is a duplicate of the one defined earlier, removing it
   
   // Get all program initiatives - defined as early function to avoid circular dependencies
   const getAllProgramInitiatives = () => {
@@ -565,7 +567,7 @@ export function DashboardProvider({ children }) {
     console.log(`Getting teams for program ${programId}`);
     
     // Get cohort IDs for this program directly from profile data to avoid circular dependency
-    const programCohorts = getProgramCohortIds(programId, profile);
+    const programCohorts = getProgramCohortIds(programId);
     
     // Get teams for the specific program based on cohort
     const filteredTeams = teams.filter(team => {
