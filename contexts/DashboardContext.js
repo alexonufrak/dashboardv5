@@ -227,8 +227,8 @@ export function DashboardProvider({ children }) {
     if (activeProgramId && profile) {
       console.log(`Filtering milestones for active program: ${activeProgramId}`);
       
-      // Get cohort IDs for the active program directly - avoid circular dependency with getActiveProgramData
-      const programCohorts = getProgramCohortIds(activeProgramId, profile);
+      // Get cohort IDs for the active program directly - use updated version that doesn't require profile
+      const programCohorts = getProgramCohortIds(activeProgramId);
       
       if (programCohorts.length > 0) {
         // Filter milestones to only include ones for this program's cohorts
@@ -491,11 +491,13 @@ export function DashboardProvider({ children }) {
   }, [profile, participationData]);
   
   // Helper functions for getting program data - defined before they're used
-  const getProgramCohortIds = (programId, userProfile) => {
-    if (!userProfile || !userProfile.participations) return [];
+  const getProgramCohortIds = (programId) => {
+    // Use participationData directly without requiring a userProfile parameter
+    const participations = participationData?.participation || [];
+    if (!participations.length) return [];
     
     // Get all cohort IDs related to this program initiative directly from participations
-    return userProfile.participations
+    return participations
       .filter(p => p.cohort?.initiativeDetails?.id === programId)
       .map(p => p.cohort?.id)
       .filter(Boolean);
@@ -503,13 +505,15 @@ export function DashboardProvider({ children }) {
   
   // Get all program initiatives - defined as early function to avoid circular dependencies
   const getAllProgramInitiatives = () => {
-    if (!profile || !profile.participations) return [];
+    // Get participations from participationData instead of profile
+    if (!participationData?.participation) return [];
     
     // Use a Set to avoid duplicate initiatives
     const initiatives = new Set();
     const result = [];
     
-    const participations = profile.participations || [];
+    const participations = participationData.participation || [];
+    console.log(`getAllProgramInitiatives: Found ${participations.length} participations`);
     
     participations.forEach(p => {
       if (p.cohort?.initiativeDetails?.id) {
@@ -548,6 +552,7 @@ export function DashboardProvider({ children }) {
       }
     });
     
+    console.log(`getAllProgramInitiatives: Returning ${result.length} initiatives`, result);
     return result;
   };
   
@@ -623,8 +628,8 @@ export function DashboardProvider({ children }) {
       return programDataProcessed;
     }
     
-    // Find participation using our own search instead of the helper method
-    const participation = profile.participations?.find(p => 
+    // Find participation using participationData
+    const participation = participationData?.participation?.find(p => 
       p.cohort?.initiativeDetails?.id === activeId
     );
     
