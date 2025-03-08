@@ -306,7 +306,7 @@ export function DashboardProvider({ children }) {
     }
     
     return processedMilestones;
-  }, [milestonesData, programDataProcessed.cohort, teamData?.id, queryClient, activeProgramId, profile])
+  }, [milestonesData, programDataProcessed.cohort, teamData?.id, queryClient, activeProgramId, profile, getProgramCohortIds])
   
   // Combine loading states
   const isLoading = isUserLoading || isProfileLoading
@@ -490,18 +490,20 @@ export function DashboardProvider({ children }) {
     };
   }, [profile, participationData]);
   
-  // Helper functions for getting program data - defined before they're used
-  const getProgramCohortIds = (programId) => {
-    // Use participationData directly without requiring a userProfile parameter
-    const participations = participationData?.participation || [];
-    if (!participations.length) return [];
-    
-    // Get all cohort IDs related to this program initiative directly from participations
-    return participations
-      .filter(p => p.cohort?.initiativeDetails?.id === programId)
-      .map(p => p.cohort?.id)
-      .filter(Boolean);
-  };
+  // Helper functions for getting program data - defined with useCallback to avoid rendering issues
+  const getProgramCohortIds = useMemo(() => {
+    return (programId) => {
+      // Use participationData directly without requiring a userProfile parameter  
+      const participations = participationData?.participation || [];
+      if (!participations.length) return [];
+      
+      // Get all cohort IDs related to this program initiative directly from participations
+      return participations
+        .filter(p => p.cohort?.initiativeDetails?.id === programId)
+        .map(p => p.cohort?.id)
+        .filter(Boolean);
+    };
+  }, [participationData]);
   
   // Get all program initiatives - defined as early function to avoid circular dependencies
   const getAllProgramInitiatives = () => {
@@ -730,6 +732,9 @@ export function DashboardProvider({ children }) {
     participationType: programDataProcessed.participationType,
     programLoading,
     programError,
+    
+    // Raw API data - expose this for safer access in components
+    participationData,
     
     // UI state
     isEditModalOpen,

@@ -58,13 +58,48 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
     console.error('Error accessing dashboard context in sidebar:', error);
   }
   
-  // Get all active program initiatives
-  const programInitiatives = getAllProgramInitiatives() || [];
+  // Get active program initiatives safely - don't use getAllProgramInitiatives directly
+  // Instead, use the raw participationData from API
+  let programInitiatives = [];
+  
+  try {
+    // Try to access the dashboard context's participation data directly
+    // This should be available from the API response
+    const dashboardContext = useDashboard();
+    const participationData = dashboardContext?.participationData;
+    
+    // Process the participation data manually - safer than calling the function
+    if (participationData?.participation && Array.isArray(participationData.participation)) {
+      // Use a Set to track unique initiative IDs
+      const uniqueInitiativeIds = new Set();
+      
+      // Map participations to initiatives
+      participationData.participation.forEach(p => {
+        if (p.cohort?.initiativeDetails?.id) {
+          const initiativeId = p.cohort.initiativeDetails.id;
+          
+          // Only add each initiative once
+          if (!uniqueInitiativeIds.has(initiativeId)) {
+            uniqueInitiativeIds.add(initiativeId);
+            
+            programInitiatives.push({
+              id: initiativeId,
+              name: p.cohort.initiativeDetails.name || "Unknown Initiative",
+              cohortId: p.cohort.id,
+              teamId: p.teamId || null
+            });
+          }
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error processing program initiatives in sidebar:', error);
+  }
   
   // Debug logs
-  console.log("Program Initiatives:", programInitiatives);
+  console.log("Program Initiatives (safe method):", programInitiatives);
   console.log("Profile has active participations:", dashboardProfile?.hasActiveParticipation);
-  console.log("Profile participations:", dashboardProfile?.participations?.length);
+  console.log("Total program initiatives found:", programInitiatives.length);
   
   // Debug router state
   console.log("Current router state:", { 
