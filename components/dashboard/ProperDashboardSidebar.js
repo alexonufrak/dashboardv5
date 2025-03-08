@@ -323,19 +323,23 @@ const programGroups = programInitiatives
                   /* Render program groups */
                   programGroups.map((group) => (
                     <SidebarGroup key={group.id}>
-                      <Collapsible defaultOpen className="group/collapsible w-full">
+                      <Collapsible open={router.query.programId === group.programId} defaultOpen className="group/collapsible w-full">
                         <SidebarGroupLabel asChild>
-                          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md p-2 hover:bg-sidebar-accent cursor-pointer">
-                            <div className="flex items-center gap-3">
+                          <CollapsibleTrigger className={`flex w-full items-center justify-between rounded-md px-2 py-2 hover:bg-sidebar-accent cursor-pointer ${
+                            router.query.programId === group.programId ? 'bg-sidebar-accent/10' : ''
+                          }`}>
+                            <div className="flex items-center gap-3 pl-[2px]">
                               {group.icon}
-                              <span className="font-medium">{group.label}</span>
+                              <span className={`font-medium ${
+                                router.query.programId === group.programId ? 'text-sidebar-accent-foreground' : ''
+                              }`}>{group.label}</span>
                             </div>
                             <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=closed]/collapsible:rotate-180" />
                           </CollapsibleTrigger>
                         </SidebarGroupLabel>
                         
                         <CollapsibleContent>
-                          <SidebarMenuSub className="ml-6 pl-2">
+                          <SidebarMenuSub className="ml-6 pl-2 pt-1">
                             {group.links.map((link) => (
                               <SidebarMenuSubItem key={link.id}>
                                 <Link
@@ -352,14 +356,23 @@ const programGroups = programInitiatives
                                 >
                                   <SidebarMenuSubButton
                                     isActive={
+                                      // Direct path match
                                       (router.pathname === link.href) ||
-                                      (router.pathname.includes(link.href) && link.href !== ROUTES.PROGRAM.DETAIL(link.programId)) ||
-                                      (router.query.programId === link.programId && 
-                                        ((link.label === "Home" && router.pathname === ROUTES.PROGRAM.DETAIL(link.programId)) ||
-                                         (link.label === "Bounties" && router.pathname === ROUTES.PROGRAM.BOUNTIES(link.programId)) ||
-                                         (link.label === "ConneXions" && router.pathname === ROUTES.PROGRAM.CONNEXIONS(link.programId))))
+                                      
+                                      // Handle exact matches for special sections
+                                      (router.query.programId === link.programId && (
+                                        // Home/program detail page
+                                        (link.label === "Home" && router.pathname === `/program/${link.programId}`) ||
+                                        
+                                        // Bounties page
+                                        (link.label === "Bounties" && router.pathname === `/program/${link.programId}/bounties`) ||
+                                        
+                                        // ConneXions page
+                                        (link.label === "ConneXions" && router.pathname === `/program/${link.programId}/connexions`)
+                                      ))
                                     }
-                                    className="ml-0.5"
+                                    size="default"
+                                    className="pl-[2px] ml-0 h-8"
                                   >
                                     <div className="flex items-center gap-3">
                                       {link.icon}
