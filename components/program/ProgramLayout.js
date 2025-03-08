@@ -7,20 +7,11 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { useRouter } from 'next/router'
-import { Compass, Users, Award, Calendar, ExternalLink } from 'lucide-react'
+import { Compass, Users, Award, Calendar } from 'lucide-react'
 import TeamSelector from './TeamSelector'
 import { ROUTES } from '@/lib/routing'
 
-const ProgramLayout = ({ children, programId, activeTab = 'overview', activeSection }) => {
-  // Convert activeSection to activeTab format for backward compatibility
-  if (activeSection && !activeTab) {
-    switch (activeSection) {
-      case 'home': activeTab = 'overview'; break;
-      case 'bounties': activeTab = 'bounties'; break;
-      case 'connexions': activeTab = 'connexions'; break;
-      default: activeTab = activeSection;
-    }
-  }
+const ProgramLayout = ({ children, programId, activeTab = 'overview' }) => {
   const router = useRouter()
   const { 
     getActiveProgramData, 
@@ -66,9 +57,6 @@ const ProgramLayout = ({ children, programId, activeTab = 'overview', activeSect
         break
       case 'bounties':
         router.push(ROUTES.PROGRAM.BOUNTIES(programId))
-        break
-      case 'connexions':
-        router.push(ROUTES.PROGRAM.CONNEXIONS(programId))
         break
       case 'milestones':
         router.push(ROUTES.PROGRAM.MILESTONES(programId))
@@ -142,10 +130,11 @@ const ProgramLayout = ({ children, programId, activeTab = 'overview', activeSect
           
           {/* Navigation Tabs */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid grid-cols-3 md:grid-cols-4 w-full">
+            <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               {isXtrapreneurs && <TabsTrigger value="bounties">Bounties</TabsTrigger>}
-              <TabsTrigger value="connexions">ConneXions</TabsTrigger>
+              <TabsTrigger value="milestones">Milestones</TabsTrigger>
+              <TabsTrigger value="team">Team</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
