@@ -78,18 +78,9 @@ function ProgramDashboardInner({ onNavigate, programId }) {
     }
   }, [programTeamData, activeProgramId]);
   
-  // Only show loading indicator if this is first load, not navigation
-  if (programLoading && !programCohort && !programTeamData) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary mb-4" />
-          <h3 className="text-xl font-medium">Loading program information...</h3>
-          <p className="text-muted-foreground">Please wait while we fetch your data</p>
-        </div>
-      </div>
-    )
-  }
+  // Don't show a loading indicator at this level - we'll let the parent DashboardShell handle it
+  // This prevents duplicate loading states and allows for a single consistent loader
+  // We use !programCohort && !programTeamData to check if data is loaded, but don't return a loading UI
   
   // Handle error case, but specifically handle "not participating" errors differently
   if (programError) {

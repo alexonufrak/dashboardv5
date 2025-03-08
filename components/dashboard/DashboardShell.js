@@ -331,7 +331,8 @@ export default function DashboardShell() {
   }, []);
   
   // Only show full loader on initial app load, never between page navigations
-  const showFullLoader = isLoading && !initialLoadComplete;
+  // Consolidate all loading states to prevent multiple loaders
+  const showFullLoader = !initialLoadComplete && (isLoading || !profile);
   
   // Show error message if there's an error
   if (error) {
@@ -366,7 +367,7 @@ export default function DashboardShell() {
       </Head>
       
       {showFullLoader ? (
-        <LoadingScreen message="Loading dashboard data..." />
+        <LoadingScreen message="Loading dashboard..." />
       ) : (
         getPageComponent()
       )}

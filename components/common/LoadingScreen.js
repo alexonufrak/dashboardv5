@@ -1,4 +1,4 @@
-const LoadingScreen = ({ message = "Loading your xFoundry profile..." }) => {
+const LoadingScreen = ({ message = "Loading dashboard..." }) => {
   return (
     <div className="loading-screen">
       <div className="spinner"></div>
@@ -11,13 +11,14 @@ const LoadingScreen = ({ message = "Loading your xFoundry profile..." }) => {
           left: 0;
           width: 100%;
           height: 100%;
-          background-color: rgba(255, 255, 255, 0.95);
+          background-color: rgba(255, 255, 255, 0.97);
           display: flex;
           flex-direction: column;
           justify-content: center;
           align-items: center;
           z-index: 9999;
           animation: fadeIn 0.3s ease-in-out;
+          backdrop-filter: blur(2px);
         }
 
         @keyframes fadeIn {
@@ -26,8 +27,8 @@ const LoadingScreen = ({ message = "Loading your xFoundry profile..." }) => {
         }
 
         .spinner {
-          width: 80px;
-          height: 80px;
+          width: 60px;
+          height: 60px;
           border: 4px solid rgba(0, 86, 179, 0.1);
           border-left-color: #0056b3;
           border-radius: 50%;
@@ -39,9 +40,10 @@ const LoadingScreen = ({ message = "Loading your xFoundry profile..." }) => {
         }
 
         .message {
-          margin-top: 20px;
-          font-size: 18px;
+          margin-top: 16px;
+          font-size: 16px;
           color: #343a40;
+          font-weight: 500;
           font-family: var(--font-sans);
         }
       `}</style>

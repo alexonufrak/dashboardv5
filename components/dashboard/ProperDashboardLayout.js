@@ -66,13 +66,15 @@ const ProperDashboardLayout = ({
             </div>
           </div>
           
-          {/* Dashboard Sidebar */}
-          <ProperDashboardSidebar 
-            profile={profile} 
-            onEditClick={onEditClick} 
-            currentPage={currentPage}
-            onNavigate={onNavigate}
-          />
+          {/* Dashboard Sidebar - only rendered when profile is available */}
+          {profile && (
+            <ProperDashboardSidebar 
+              profile={profile} 
+              onEditClick={onEditClick} 
+              currentPage={currentPage}
+              onNavigate={onNavigate}
+            />
+          )}
           
           {/* Main Content */}
           <SidebarInset className="bg-background">
