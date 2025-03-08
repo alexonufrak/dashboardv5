@@ -16,7 +16,8 @@ import {
   LogOut,
   Menu,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  LayoutDashboard
 } from "lucide-react"
 
 import {
@@ -30,8 +31,17 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger
+  SidebarTrigger,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem
 } from "@/components/ui/sidebar"
+
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent
+} from "@/components/ui/collapsible"
 
 const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate }) => {
   const router = useRouter()
@@ -126,52 +136,50 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
   // Create program groups with nested links for each initiative
   const programGroups = programInitiatives
     .filter(initiative => initiative && initiative.id) // Only include valid initiatives
-    .map(initiative => ({
-      id: `program-group-${initiative.id}`,
-      label: initiative.name || "Program",
-      icon: <Compass className="h-4 w-4" />,
-      programId: initiative.id,
-      // Add default expanded state
-      expanded: true,
-      // Define sublinks for this program group
-      links: [
-        {
-          id: `program-home-${initiative.id}`,
-          href: ROUTES.PROGRAM.DETAIL(initiative.id), // Use routing utility
-          label: "Home",
-          programId: initiative.id
-        },
-        // Add more program tabs as needed
-        {
-          id: `program-milestones-${initiative.id}`,
-          href: ROUTES.PROGRAM.MILESTONES(initiative.id),
-          label: "Milestones",
-          programId: initiative.id
-        },
-        {
-          id: `program-team-${initiative.id}`,
-          href: ROUTES.PROGRAM.TEAM(initiative.id),
-          label: "Team",
-          programId: initiative.id
-        }
-      ]
-    }));
-  
-  // Initialize state for program group expansion
-  const [expandedGroups, setExpandedGroups] = useState(
-    programGroups.reduce((acc, group) => {
-      acc[group.id] = true; // Start with all groups expanded
-      return acc;
-    }, {})
-  );
-
-  // Toggle expansion for a program group
-  const toggleGroupExpansion = (groupId) => {
-    setExpandedGroups(prev => ({
-      ...prev,
-      [groupId]: !prev[groupId]
-    }));
-  };
+    .map(initiative => {
+      const isXtrapreneurs = initiative.name?.toLowerCase().includes('xtrapreneur');
+      
+      return {
+        id: `program-group-${initiative.id}`,
+        label: initiative.name || "Program",
+        icon: <Compass className="h-4 w-4" />,
+        programId: initiative.id,
+        // Define sublinks for this program group
+        links: [
+          {
+            id: `program-home-${initiative.id}`,
+            href: ROUTES.PROGRAM.DETAIL(initiative.id),
+            label: "Home",
+            icon: <LayoutDashboard className="h-4 w-4" />,
+            programId: initiative.id
+          },
+          {
+            id: `program-milestones-${initiative.id}`,
+            href: ROUTES.PROGRAM.MILESTONES(initiative.id),
+            label: "Milestones",
+            icon: <Users className="h-4 w-4" />,
+            programId: initiative.id
+          },
+          {
+            id: `program-team-${initiative.id}`,
+            href: ROUTES.PROGRAM.TEAM(initiative.id),
+            label: "Team",
+            icon: <Users className="h-4 w-4" />,
+            programId: initiative.id
+          },
+          // Add Bounties tab only for Xtrapreneurs programs
+          ...(isXtrapreneurs ? [
+            {
+              id: `program-bounties-${initiative.id}`,
+              href: ROUTES.PROGRAM.BOUNTIES(initiative.id),
+              label: "Bounties",
+              icon: <Award className="h-4 w-4" />,
+              programId: initiative.id
+            }
+          ] : [])
+        ]
+      };
+    });
   
   // Combine base links with program groups
   const links = [...baseLinks];
@@ -260,51 +268,52 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
                 {/* Render program groups */}
                 {programGroups.map((group) => (
                   <SidebarGroup key={group.id}>
-                    {/* Program group header with collapsible toggle */}
-                    <div className="flex items-center justify-between rounded-md py-2 px-2 hover:bg-sidebar-accent cursor-pointer"
-                         onClick={() => toggleGroupExpansion(group.id)}>
-                      <div className="flex items-center gap-3">
-                        {group.icon}
-                        <span className="font-medium">{group.label}</span>
-                      </div>
-                      {expandedGroups[group.id] ? 
-                        <ChevronDown className="h-4 w-4" /> : 
-                        <ChevronRight className="h-4 w-4" />
-                      }
-                    </div>
-                    
-                    {/* Program sub-links */}
-                    {expandedGroups[group.id] && (
-                      <SidebarMenuSub>
-                        {group.links.map((link) => (
-                          <SidebarMenuSubItem key={link.id}>
-                            <Link
-                              href={link.href}
-                              className="w-full"
-                              shallow={true}
-                              scroll={false}
-                              onClick={() => {
-                                if (onNavigate && link.programId) {
-                                  onNavigate(`program-${link.programId}`);
-                                }
-                              }}
-                              passHref
-                            >
-                              <SidebarMenuSubButton
-                                isActive={
-                                  (router.pathname === link.href) ||
-                                  (router.pathname.includes(link.href) && link.href !== ROUTES.PROGRAM.DETAIL(link.programId)) ||
-                                  (router.query.programId === link.programId && link.label === "Home" && 
-                                   router.pathname === ROUTES.PROGRAM.DETAIL(link.programId))
-                                }
+                    <Collapsible defaultOpen className="group/collapsible w-full">
+                      <SidebarGroupLabel asChild>
+                        <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 rounded-md py-2 hover:bg-sidebar-accent cursor-pointer">
+                          <div className="flex items-center gap-2">
+                            {group.icon}
+                            <span className="font-medium">{group.label}</span>
+                          </div>
+                          <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=closed]/collapsible:rotate-180" />
+                        </CollapsibleTrigger>
+                      </SidebarGroupLabel>
+                      
+                      <CollapsibleContent>
+                        <SidebarMenuSub>
+                          {group.links.map((link) => (
+                            <SidebarMenuSubItem key={link.id}>
+                              <Link
+                                href={link.href}
+                                className="w-full"
+                                shallow={true}
+                                scroll={false}
+                                onClick={() => {
+                                  if (onNavigate && link.programId) {
+                                    onNavigate(`program-${link.programId}`);
+                                  }
+                                }}
+                                passHref
                               >
-                                <span>{link.label}</span>
-                              </SidebarMenuSubButton>
-                            </Link>
-                          </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
-                    )}
+                                <SidebarMenuSubButton
+                                  isActive={
+                                    (router.pathname === link.href) ||
+                                    (router.pathname.includes(link.href) && link.href !== ROUTES.PROGRAM.DETAIL(link.programId)) ||
+                                    (router.query.programId === link.programId && link.label === "Home" && 
+                                     router.pathname === ROUTES.PROGRAM.DETAIL(link.programId))
+                                  }
+                                >
+                                  <div className="flex items-center gap-2">
+                                    {link.icon}
+                                    <span>{link.label}</span>
+                                  </div>
+                                </SidebarMenuSubButton>
+                              </Link>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </SidebarGroup>
                 ))}
               </SidebarMenu>

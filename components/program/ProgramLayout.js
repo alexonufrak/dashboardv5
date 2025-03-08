@@ -71,7 +71,7 @@ const ProgramLayout = ({ children, programId, activeTab = 'overview' }) => {
   
   // Get team data
   const teamData = programData?.teamData || null
-  const isXtrapreneurs = initiative?.name?.toLowerCase().includes('xtrapreneur')
+  const isXtrapreneurs = initiative?.name?.toLowerCase().includes('xtrapreneurs')
   
   return (
     <div className="space-y-6">
