@@ -48,7 +48,7 @@ function DashboardContent() {
   
   const router = useRouter();
   
-  // Check URL parameters for program info
+  // Check URL parameters for program info and redirect to new URL structure if needed
   useEffect(() => {
     try {
       // Get program ID from query parameters
@@ -57,16 +57,8 @@ function DashboardContent() {
       if (program) {
         console.log(`Program specified in URL: ${program}`);
         
-        // Update the context with the program ID, but only if context is available
-        if (typeof setActiveProgram === 'function') {
-          try {
-            setActiveProgram(program);
-          } catch (error) {
-            console.error("Error setting active program:", error);
-          }
-        } else {
-          console.warn("setActiveProgram function not available");
-        }
+        // Redirect to the new URL structure
+        router.replace(`/program/${encodeURIComponent(program)}`);
       } else {
         // Check URL hash for program ID as another fallback
         if (typeof window !== 'undefined' && window.location.hash) {
@@ -75,12 +67,9 @@ function DashboardContent() {
             const programId = hash.replace('program-', '');
             console.log(`Hash-based program detected: ${programId}`);
             
-            if (typeof setActiveProgram === 'function' && programId) {
-              try {
-                setActiveProgram(programId);
-              } catch (error) {
-                console.error("Error setting active program from hash:", error);
-              }
+            // Redirect to the new URL structure
+            if (programId) {
+              router.replace(`/program/${encodeURIComponent(programId)}`);
             }
           }
         }
@@ -88,7 +77,7 @@ function DashboardContent() {
     } catch (error) {
       console.error("Error handling URL parameters:", error);
     }
-  }, [router.query, setActiveProgram, router]);
+  }, [router.query, router]);
   
   return (
     <>

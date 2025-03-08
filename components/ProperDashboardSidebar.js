@@ -147,7 +147,7 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
       return;
     }
     
-    // For program-specific navigation, use a safe approach
+    // For program-specific navigation, use the new URL structure
     if (link.programId) {
       console.log(`Navigating to program ${link.programId}`);
       
@@ -157,31 +157,26 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
           onNavigate(`program-${link.programId}`);
         }
         
-        // Update URL query parameter
+        // Update URL to use path-based routing
         try {
           if (router && typeof router.push === 'function') {
-            // Try Next.js routing first
-            router.push({
-              pathname: '/dashboard',
-              query: { program: link.programId },
-            },
-            undefined,
-            { shallow: true });
+            // Use the new path-based URL structure
+            router.push(`/program/${encodeURIComponent(link.programId)}`, undefined, { shallow: true });
           } else if (typeof window !== "undefined") {
             // Fallback to direct URL change
-            window.location.href = `/dashboard?program=${encodeURIComponent(link.programId)}`;
+            window.location.href = `/program/${encodeURIComponent(link.programId)}`;
           }
         } catch (error) {
           console.error("Error updating URL:", error);
           if (typeof window !== "undefined") {
             // Final fallback
-            window.location.href = `/dashboard?program=${encodeURIComponent(link.programId)}`;
+            window.location.href = `/program/${encodeURIComponent(link.programId)}`;
           }
         }
       } catch (error) {
         console.error("Error handling program navigation:", error);
         // Fallback to simple navigation
-        window.location.href = `/dashboard?program=${encodeURIComponent(link.programId)}`;
+        window.location.href = `/program/${encodeURIComponent(link.programId)}`;
       }
       return;
     }

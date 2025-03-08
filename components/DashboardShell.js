@@ -72,23 +72,19 @@ export default function DashboardShell() {
       return;
     }
     
-    // Handle program in query parameter
+    // Handle program in query parameter - LEGACY: redirect to new path structure
     if (path === "/dashboard" && query.program) {
-      // This is a specific program page using the new query param approach
+      // Redirect to the new URL structure
       const programId = query.program;
-      console.log(`Found program in query: ${programId}`);
-      setActivePage("program");
-      
-      // Set the active program in the state
-      setActiveProgramId(programId);
-      
-      // Set a generic title first - we'll update it later
-      setTitle("Program Dashboard");
+      console.log(`Found program in query: ${programId} - redirecting to new URL structure`);
+      router.replace(`/program/${programId}`);
+      return;
     }
-    // Handle program with ID (new route)
-    else if (path === "/program/[programId]" && query.programId) {
-      // This is a specific program page
+    // Handle program with ID (new dynamic route)
+    else if ((path === "/program/[programId]" || path.startsWith("/program/")) && query.programId) {
+      // This is a specific program page (dynamic route)
       const programId = query.programId;
+      console.log(`Program dynamic route with ID: ${programId}`);
       setActivePage("program");
       
       // Set the active program in the state
@@ -108,7 +104,7 @@ export default function DashboardShell() {
     else if (path === "/program-dashboard") {
       // If we have a programId in context, redirect to that program page
       if (activeProgramId) {
-        router.replace(`/program/${activeProgramId}`, undefined, { shallow: true });
+        router.replace(`/program/${activeProgramId}`);
       } else {
         setActivePage("program");
         setTitle("Program Dashboard");
@@ -300,12 +296,24 @@ export default function DashboardShell() {
       const path = window.location.pathname;
       console.log(`PopState event detected: ${path}`);
       
-      // Handle new program-specific URLs
-      if (path.startsWith('/program/')) {
+      // Handle dynamic program routes
+      if (path.match(/^\/program\/[^\/]+$/)) {
         // Extract the program ID from the path
         const match = path.match(/\/program\/([^\/]+)(?:\/|$)/);
         if (match && match[1]) {
           const programId = match[1];
+          console.log(`PopState detected program ID: ${programId}`);
+          setActivePage('program');
+          setActiveProgramId(programId);
+        }
+      }
+      // Handle program subdirectory pages
+      else if (path.match(/^\/program\/[^\/]+\/[^\/]+$/)) {
+        // Extract the program ID from the path
+        const match = path.match(/\/program\/([^\/]+)\//);
+        if (match && match[1]) {
+          const programId = match[1];
+          console.log(`PopState detected program ID with subpath: ${programId}`);
           setActivePage('program');
           setActiveProgramId(programId);
         }
@@ -321,6 +329,21 @@ export default function DashboardShell() {
           window.history.replaceState({}, '', `/program/${programId}`);
         }
       } 
+      // Handle legacy URL with query parameter
+      else if (path === '/dashboard' && window.location.search.includes('program=')) {
+        const params = new URLSearchParams(window.location.search);
+        const programId = params.get('program');
+        if (programId) {
+          // Redirect to the new URL structure
+          if (typeof window !== 'undefined') {
+            window.history.replaceState({}, '', `/program/${programId}`);
+          }
+          setActivePage('program');
+          setActiveProgramId(programId);
+        } else {
+          setActivePage('dashboard');
+        }
+      }
       // Handle standard URLs
       else if (path === '/dashboard') {
         setActivePage('dashboard');
