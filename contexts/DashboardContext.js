@@ -196,13 +196,37 @@ export function DashboardProvider({ children }) {
     isLoading: isMilestonesLoading 
   } = useMilestoneData(cohortId)
   
-  // Process milestones data with fallbacks
+  // Process milestones data with fallbacks and filtering by active program
   const milestones = useMemo(() => {
-    const processedMilestones = milestonesData?.milestones && milestonesData.milestones.length > 0
+    // Get all milestones
+    const allMilestones = milestonesData?.milestones && milestonesData.milestones.length > 0
       ? milestonesData.milestones
       : programDataProcessed.cohort 
         ? generateFallbackMilestones(programDataProcessed.cohort.name || "Program")
         : [];
+        
+    // Filter milestones based on active program's cohort if activeProgramId is set
+    let processedMilestones = allMilestones;
+    if (activeProgramId) {
+      console.log(`Filtering milestones for active program: ${activeProgramId}`);
+      const programData = getActiveProgramData(activeProgramId);
+      
+      if (programData && programData.cohort?.id) {
+        // Filter milestones to only include ones for this program's cohort
+        processedMilestones = allMilestones.filter(milestone => {
+          // Check if milestone has cohortId that matches the active program's cohort
+          const matchesCohort = milestone.cohortId === programData.cohort.id;
+          
+          if (!matchesCohort) {
+            console.log(`Excluding milestone ${milestone.name} (${milestone.id}) - does not match active cohort ${programData.cohort.id}`);
+          }
+          
+          return matchesCohort;
+        });
+        
+        console.log(`Filtered milestones: ${processedMilestones.length} (of ${allMilestones.length} total)`);
+      }
+    }
     
     // Only proceed with prefetching if we have both team and milestones
     if (teamData?.id && processedMilestones.length > 0) {
@@ -263,7 +287,7 @@ export function DashboardProvider({ children }) {
     }
     
     return processedMilestones;
-  }, [milestonesData, programDataProcessed.cohort, teamData?.id, queryClient])
+  }, [milestonesData, programDataProcessed.cohort, teamData?.id, queryClient, activeProgramId, getActiveProgramData])
   
   // Combine loading states
   const isLoading = isUserLoading || isProfileLoading
@@ -463,24 +487,47 @@ export function DashboardProvider({ children }) {
     
     // Find the active initiative
     const initiative = initiatives.find(init => init.id === activeId);
-    if (!initiative) return programDataProcessed;
+    if (!initiative) {
+      console.log(`Initiative not found for program ID: ${activeId}`);
+      return programDataProcessed;
+    }
     
     // Get the participation for this initiative
     const participation = enhancedProfile.findParticipationsByInitiativeId?.(activeId)?.[0];
-    if (!participation) return programDataProcessed;
+    if (!participation) {
+      console.log(`Participation not found for initiative ID: ${activeId}`);
+      return programDataProcessed;
+    }
+    
+    console.log(`Found participation for program ${activeId}:`, {
+      cohortId: participation.cohort?.id,
+      cohortName: participation.cohort?.name,
+      initiativeName: initiative.name
+    });
+    
+    // Get all available teams for this program
+    const availableTeams = getTeamsForProgram(activeId);
     
     // Get the active team for this program (could be different from initiative.teamId)
     const teamId = getActiveTeamForProgram(activeId) || initiative.teamId;
     
-    // Get all available teams for this program
-    const availableTeams = getTeamsForProgram(activeId);
     const userHasMultipleTeams = availableTeams.length > 1;
     
     // Find the actual team data for this program
-    const teamData = availableTeams.find(team => team.id === teamId) || 
-                    (teams && teams.find(team => team.id === teamId));
+    let teamData = availableTeams.find(team => team.id === teamId);
     
-    return {
+    // If no team found in available teams but we have a teamId, try to find it in all teams
+    if (!teamData && teamId && teams) {
+      teamData = teams.find(team => team.id === teamId);
+      
+      // If team is found in all teams but not in available teams, it might be from another cohort
+      if (teamData) {
+        console.log(`Team ${teamData.name} (${teamId}) found in all teams but not in available teams for this program.`);
+      }
+    }
+    
+    // Create the program data object with filtered info
+    const programData = {
       programId: activeId,
       cohort: participation.cohort,
       initiativeName: initiative.name,
@@ -491,6 +538,14 @@ export function DashboardProvider({ children }) {
       userHasMultipleTeams: userHasMultipleTeams,
       availableTeams: availableTeams
     };
+    
+    console.log(`Program data for ${activeId}:`, {
+      cohortId: programData.cohort?.id, 
+      teamId: programData.teamId, 
+      teamsCount: programData.availableTeams?.length
+    });
+    
+    return programData;
   };
   
   // Get all program initiatives
@@ -516,22 +571,47 @@ export function DashboardProvider({ children }) {
   const getTeamsForProgram = (programId) => {
     if (!enhancedProfile || !teams) return []
     
+    // Get the specific program data
+    const programData = programId ? getActiveProgramData(programId) : null;
+    const programCohortId = programData?.cohort?.id;
+    
+    console.log(`Getting teams for program ${programId} with cohort ID: ${programCohortId}`);
+    
     // Get teams for the specific program based on cohort
-    return teams.filter(team => {
-      // If team has cohortIds array, check if it contains a cohort related to this program
+    const filteredTeams = teams.filter(team => {
+      // If team has cohortIds array, check if it contains the cohort for this program
       if (team.cohortIds && Array.isArray(team.cohortIds)) {
-        // Get all cohort IDs related to this program initiative
+        // If we have a specific cohort ID from the program data, use that for direct comparison
+        if (programCohortId) {
+          const includesCohort = team.cohortIds.includes(programCohortId);
+          if (!includesCohort) {
+            console.log(`Excluding team ${team.name} (${team.id}) - does not include cohort ${programCohortId}`);
+          }
+          return includesCohort;
+        }
+        
+        // Fallback: Get all cohort IDs related to this program initiative
         const programCohorts = enhancedProfile.participations
           .filter(p => p.cohort?.initiativeDetails?.id === programId)
           .map(p => p.cohort?.id)
           .filter(Boolean)
         
         // Check if any of the team's cohorts match the program cohorts
-        return team.cohortIds.some(cohortId => programCohorts.includes(cohortId))
+        const matchesCohort = team.cohortIds.some(cohortId => programCohorts.includes(cohortId));
+        
+        if (!matchesCohort) {
+          console.log(`Excluding team ${team.name} (${team.id}) - cohorts don't match program: ${team.cohortIds.join(',')} vs ${programCohorts.join(',')}`);
+        }
+        
+        return matchesCohort;
       }
       
-      return false
-    })
+      // No cohortIds, can't match
+      return false;
+    });
+    
+    console.log(`Filtered teams for program ${programId}: ${filteredTeams.length} (of ${teams.length} total)`);
+    return filteredTeams;
   }
   
   // Set active team for a program
