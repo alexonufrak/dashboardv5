@@ -13,10 +13,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Eye, ExternalLink } from 'lucide-react'
 import { FilloutPopupEmbed } from "@fillout/react"
-import TeamSelectDialog from '../TeamSelectDialog'
-import TeamCreateDialog from '../TeamCreateDialog'
+import TeamSelectDialog from '@/components/teams/TeamSelectDialog'
+import TeamCreateDialog from '@/components/teams/TeamCreateDialog'
 import InitiativeConflictDialog from './InitiativeConflictDialog'
-import XtrapreneursApplicationForm from '../XtrapreneursApplicationForm'
+import XtrapreneursApplicationForm from '@/components/program/xtrapreneurs/XtrapreneursApplicationForm'
 
 /**
  * A shared cohort card component to display cohort/initiative information

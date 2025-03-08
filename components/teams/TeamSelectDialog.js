@@ -23,7 +23,7 @@ import { Badge } from '@/components/ui/badge'
 import { AlertCircle, PlusCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import TeamCreateDialog from './TeamCreateDialog'
-import InitiativeConflictDialog from './shared/InitiativeConflictDialog'
+import InitiativeConflictDialog from '@/components/cohorts/InitiativeConflictDialog'
 
 /**
  * Dialog for selecting or creating a team for an application

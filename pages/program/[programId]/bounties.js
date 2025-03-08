@@ -7,7 +7,7 @@ import { useEffect } from "react"
 import { Toaster } from "sonner"
 import ProgramLayout from "@/components/program/ProgramLayout"
 import BountyList from "@/components/program/xtrapreneurs/BountyList"
-import ProfileEditModal from "@/components/ProfileEditModal"
+import ProfileEditModal from "@/components/profile/ProfileEditModal"
 
 function XtrapreneursBountiesPage() {
   const router = useRouter()

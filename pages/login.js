@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useUser } from "@auth0/nextjs-auth0/client";
-import Layout from "../components/Layout";
-import LoadingScreen from "../components/LoadingScreen";
-import Logo from "../components/Logo";
+import Layout from "@/components/layout/Layout";
+import LoadingScreen from "@/components/common/LoadingScreen";
+import Logo from "@/components/common/Logo";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";

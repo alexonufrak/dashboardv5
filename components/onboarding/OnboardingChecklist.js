@@ -18,10 +18,10 @@ import {
   UserPlus,
   Compass
 } from "lucide-react"
-import CohortGrid from './shared/CohortGrid'
-import TeamCreateDialog from './TeamCreateDialog'
-import TeamSelectDialog from './TeamSelectDialog'
-import FilloutPopupEmbed from './FilloutPopupEmbed'
+import CohortGrid from '@/components/cohorts/CohortGrid'
+import TeamCreateDialog from '@/components/teams/TeamCreateDialog'
+import TeamSelectDialog from '@/components/teams/TeamSelectDialog'
+import FilloutPopupEmbed from '@/components/common/FilloutPopupEmbed'
 
 // Import our data fetching hooks
 import { 

@@ -1,5 +1,5 @@
 import { withPageAuthRequired } from "@auth0/nextjs-auth0";
-import DashboardShell from "../../../components/DashboardShell";
+import DashboardShell from "@/components/dashboard/DashboardShell";
 
 export default function ProgramsPage({ user, profile }) {
   return (

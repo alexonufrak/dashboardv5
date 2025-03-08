@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { FilloutPopupEmbed } from "@fillout/react"
-import TeamSelectDialog from './TeamSelectDialog'
-import TeamCreateDialog from './TeamCreateDialog'
-import InitiativeConflictDialog from './shared/InitiativeConflictDialog'
-import XtrapreneursApplicationForm from './XtrapreneursApplicationForm'
+import TeamSelectDialog from '@/components/teams/TeamSelectDialog'
+import TeamCreateDialog from '@/components/teams/TeamCreateDialog'
+import InitiativeConflictDialog from '@/components/cohorts/InitiativeConflictDialog'
+import XtrapreneursApplicationForm from './xtrapreneurs/XtrapreneursApplicationForm'
 
 /**
  * A reusable component that handles the application process for a cohort.

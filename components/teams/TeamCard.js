@@ -8,8 +8,8 @@ import { Users, Info, Pencil, UserPlus, Compass } from "lucide-react";
 import TeamDetailModal from "./TeamDetailModal";
 import TeamEditDialog from "./TeamEditDialog";
 import TeamInviteDialog from "./TeamInviteDialog";
-import CohortCard from "./shared/CohortCard";
-import ProgramDetailModal from "./ProgramDetailModal";
+import CohortCard from "@/components/cohorts/CohortCard";
+import ProgramDetailModal from "@/components/program/ProgramDetailModal";
 import { useToast } from "@/components/ui/use-toast";
 import { useTeamCohorts } from "@/lib/useDataFetching";
 

@@ -5,8 +5,8 @@ import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import Head from "next/head"
 import ProperDashboardSidebar from "./ProperDashboardSidebar"
-import Breadcrumbs from "./Breadcrumbs"
-import { SidebarProvider, SidebarInset } from "./ui/sidebar"
+import Breadcrumbs from "@/components/common/Breadcrumbs"
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { isProgramRoute } from '@/lib/routing'
 
 const ProperDashboardLayout = ({ 

@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2, Mail, School, MapPin, Smartphone } from "lucide-react"
-import ProfileEditModal from "@/components/ProfileEditModal"
+import ProfileEditModal from "@/components/profile/ProfileEditModal"
 
 // Inner component that uses dashboard context
 function ProfilePageInner({ onNavigate }) {

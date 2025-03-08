@@ -5,8 +5,8 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0/client"
 
-import DashboardSidebar from "./ProperDashboardSidebar"
-import Breadcrumbs from "./Breadcrumbs"
+import DashboardSidebar from "@/components/dashboard/ProperDashboardSidebar"
+import Breadcrumbs from "@/components/common/Breadcrumbs"
 
 const Layout = ({ children, title = "xFoundry Hub", profile, onEditClick }) => {
   const [currentYear, setCurrentYear] = useState("")

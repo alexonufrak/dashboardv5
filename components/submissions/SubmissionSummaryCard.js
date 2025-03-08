@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { useTeamSubmissions } from "@/lib/useDataFetching"
-import MilestoneSubmissionChecker from "./MilestoneSubmissionChecker"
+import MilestoneSubmissionChecker from "@/components/milestones/MilestoneSubmissionChecker"
 
 export default function SubmissionSummaryCard({ submissions: initialSubmissions = [], milestones = [] }) {
   const { teamData } = useDashboard()

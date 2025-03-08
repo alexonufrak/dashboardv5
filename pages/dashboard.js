@@ -2,8 +2,8 @@
 
 import { withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { DashboardProvider, useDashboard } from "@/contexts/DashboardContext"
-import DashboardShell from "@/components/DashboardShell"
-import ProfileEditModal from "@/components/ProfileEditModal"
+import DashboardShell from "@/components/dashboard/DashboardShell"
+import ProfileEditModal from "@/components/profile/ProfileEditModal"
 import { Toaster } from "sonner"
 import { useEffect } from "react"
 import { useRouter } from "next/router"

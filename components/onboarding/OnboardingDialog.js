@@ -2,10 +2,10 @@
 
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { useOnboarding } from '@/contexts/OnboardingContext'
-import { Button } from "./ui/button"
-import { Progress } from "./ui/progress"
+import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
 import { CheckCircle, ChevronDown, ChevronUp, Compass, ExternalLink, ArrowRight } from "lucide-react"
-import CohortGrid from './shared/CohortGrid'
+import CohortGrid from '@/components/cohorts/CohortGrid'
 import { useState } from "react"
 
 export default function OnboardingDialog({ profile, applications, isLoadingApplications = false }) {

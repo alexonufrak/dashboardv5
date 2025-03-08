@@ -2,12 +2,12 @@
 
 import { withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { useDashboard } from "@/contexts/DashboardContext"
-import ProfileEditModal from "@/components/ProfileEditModal"
+import ProfileEditModal from "@/components/profile/ProfileEditModal"
 import { Toaster } from "sonner"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/router"
 import dynamic from "next/dynamic"
-import ProperDashboardLayout from "@/components/ProperDashboardLayout"
+import ProperDashboardLayout from "@/components/dashboard/ProperDashboardLayout"
 
 // Dynamic import for ProgramDashboard to prevent context issues during build
 const ProgramDashboard = dynamic(() => import("@/pages/dashboards/ProgramDashboard"), {

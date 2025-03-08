@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import LoadingScreen from './LoadingScreen';
+import LoadingScreen from '@/components/common/LoadingScreen';
 import { 
   getProgramIdFromUrl, 
   navigateToProgram,

@@ -4,7 +4,7 @@ import { withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { useRouter } from "next/router"
 import { useEffect } from "react"
 import { useDashboard } from "@/contexts/DashboardContext"
-import LoadingScreen from "../components/LoadingScreen"
+import LoadingScreen from "@/components/common/LoadingScreen"
 
 // Profile page that opens the edit modal and stays on the current page
 const ProfilePage = () => {

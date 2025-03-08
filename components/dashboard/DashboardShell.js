@@ -6,8 +6,8 @@ import dynamic from "next/dynamic"
 import Head from "next/head"
 import { useDashboard } from "@/contexts/DashboardContext"
 import ProperDashboardLayout from "./ProperDashboardLayout"
-import LoadingScreen from "./LoadingScreen"
-import { Skeleton } from "./ui/skeleton"
+import LoadingScreen from "@/components/common/LoadingScreen"
+import { Skeleton } from "@/components/ui/skeleton"
 import { 
   getProgramIdFromUrl, 
   navigateToProgram, 

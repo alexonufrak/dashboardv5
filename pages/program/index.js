@@ -4,7 +4,7 @@ import { withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { useRouter } from "next/router"
 import { useEffect } from "react"
-import LoadingScreen from "@/components/LoadingScreen"
+import LoadingScreen from "@/components/common/LoadingScreen"
 
 /**
  * Program index page

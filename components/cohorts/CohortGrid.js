@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import CohortCard from './CohortCard'
-import ProgramDetailModal from '../ProgramDetailModal'
+import ProgramDetailModal from '../program/ProgramDetailModal'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
 

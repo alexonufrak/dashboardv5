@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
-import Layout from "../components/Layout"
+import Layout from "@/components/layout/Layout"
 import { useUser } from "@auth0/nextjs-auth0/client"
-import LoadingScreen from "../components/LoadingScreen"
-import Logo from "../components/Logo"
+import LoadingScreen from "@/components/common/LoadingScreen"
+import Logo from "@/components/common/Logo"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"

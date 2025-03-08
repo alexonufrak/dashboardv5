@@ -6,9 +6,9 @@ import {
   CardHeader, 
   CardTitle, 
   CardDescription 
-} from "./ui/card"
-import { Button } from "./ui/button"
-import { Progress } from "./ui/progress"
+} from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
 import { CheckCircle } from "lucide-react"
 
 export default function OnboardingBanner() {

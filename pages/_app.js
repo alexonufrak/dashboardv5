@@ -9,7 +9,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Analytics } from "@vercel/analytics/react"
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
-import LoadingScreen from '@/components/LoadingScreen'
+import LoadingScreen from '@/components/common/LoadingScreen'
 
 // Simple class-based error boundary component defined inline to avoid import issues
 class ErrorBoundary extends React.Component {

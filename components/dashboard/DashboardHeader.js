@@ -1,5 +1,5 @@
 import Link from "next/link"
-import Logo from "./Logo"
+import Logo from "@/components/common/Logo"
 
 const DashboardHeader = ({ profile }) => {
   // Get first name from full name or use "Student" as fallback

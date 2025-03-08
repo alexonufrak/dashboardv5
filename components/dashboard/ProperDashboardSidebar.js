@@ -4,7 +4,7 @@ import { useRouter } from "next/router"
 import Link from "next/link" 
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { useState, useEffect } from "react"
-import ProfileMenuButton from "./ProfileMenuButton"
+import ProfileMenuButton from "@/components/profile/ProfileMenuButton"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { ROUTES } from '@/lib/routing'
 
@@ -29,7 +29,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger
-} from "./ui/sidebar"
+} from "@/components/ui/sidebar"
 
 const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate }) => {
   const router = useRouter()
