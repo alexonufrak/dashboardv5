@@ -488,7 +488,16 @@
   /* Ensure all tabs content expands to full width */
   [role="tabpanel"] {
     width: 100%;
-    max-width: 100%;
+    max-width: none !important;
+    display: block;
+  }
+  
+  /* Program dashboard specific styles */
+  .program-dashboard .card,
+  .dashboard-content .card,
+  [role="tabpanel"] .card {
+    width: 100%;
+    max-width: none;
   }
 
   /* Animation for sliding in from top */

@@ -22,7 +22,7 @@ export function OverviewTab({
   onViewMembers
 }) {
   return (
-    <div className="space-y-4 w-full max-w-none">
+    <div className="space-y-4 w-full">
       <div className="grid grid-cols-1 md:grid-cols-7 gap-4 w-full">
         {/* Main Overview Content */}
         <MainOverviewContent 

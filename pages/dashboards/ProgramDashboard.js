@@ -126,7 +126,7 @@ function ProgramDashboardInner({ onNavigate, programId }) {
   }
   
   return (
-    <div className="program-dashboard space-y-6 w-full overflow-x-hidden max-w-none min-w-full">
+    <div className="dashboard-content space-y-6">
       {/* Program Header */}
       <ProgramHeader
         programCohort={programCohort}
@@ -139,7 +139,7 @@ function ProgramDashboardInner({ onNavigate, programId }) {
       />
       
       {/* Main Content Tabs */}
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 w-full max-w-none">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 w-full">
         <TabsList className="w-full md:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="milestones">Milestones</TabsTrigger>
