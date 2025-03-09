@@ -53,12 +53,14 @@ export function AppSidebar({
   };
 
   // Create base navigation for main section (Dashboard only)
+  const isDashboardActive = (router.pathname === "/dashboard" || router.pathname === "/dashboard-new") && !router.query.programId;
+
   const navMainItems = [
     {
       title: "Dashboard",
       url: "/dashboard-new",
       icon: Home,
-      isActive: (router.pathname === "/dashboard" || router.pathname === "/dashboard-new") && !router.query.programId
+      isActive: isDashboardActive
     }
   ];
 
@@ -86,8 +88,7 @@ export function AppSidebar({
             url: programUrl,
             icon: Compass, 
             id: initiativeId,
-            isActive: router.query.programId === initiativeId || 
-                    (router.pathname.includes('/program-new/') && router.query.programId === initiativeId)
+            isActive: router.query.programId === initiativeId
           });
         }
       }
@@ -158,7 +159,7 @@ export function AppSidebar({
               <SidebarMenuButton size="lg" asChild>
                 <Link href="/dashboard">
                   <div
-                    className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                    className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg mr-2">
                     <Command className="size-4" />
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">

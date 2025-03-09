@@ -43,12 +43,21 @@ export function NavProjects({
         <SidebarMenu>
           {projects.map((item) => (
             <SidebarMenuItem key={item.name || item.id}>
-              <SidebarMenuButton asChild isActive={item.isActive}>
-                <Link href={item.url} passHref>
-                  <item.icon />
-                  <span>{item.name}</span>
-                </Link>
-              </SidebarMenuButton>
+              {item.isActive ? (
+                <SidebarMenuButton asChild isActive>
+                  <Link href={item.url}>
+                    <item.icon className="mr-2 h-4 w-4" />
+                    <span>{item.name}</span>
+                  </Link>
+                </SidebarMenuButton>
+              ) : (
+                <SidebarMenuButton asChild>
+                  <Link href={item.url}>
+                    <item.icon className="mr-2 h-4 w-4" />
+                    <span>{item.name}</span>
+                  </Link>
+                </SidebarMenuButton>
+              )}
             </SidebarMenuItem>
           ))}
         </SidebarMenu>

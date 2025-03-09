@@ -17,12 +17,21 @@ export function NavMain({
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.title}>
-            <SidebarMenuButton asChild isActive={item.isActive} tooltip={item.title}>
-              <Link href={item.url} passHref>
-                <item.icon />
-                <span>{item.title}</span>
-              </Link>
-            </SidebarMenuButton>
+            {item.isActive ? (
+              <SidebarMenuButton asChild isActive tooltip={item.title}>
+                <Link href={item.url}>
+                  <item.icon className="mr-2 h-4 w-4" />
+                  <span>{item.title}</span>
+                </Link>
+              </SidebarMenuButton>
+            ) : (
+              <SidebarMenuButton asChild tooltip={item.title}>
+                <Link href={item.url}>
+                  <item.icon className="mr-2 h-4 w-4" />
+                  <span>{item.title}</span>
+                </Link>
+              </SidebarMenuButton>
+            )}
           </SidebarMenuItem>
         ))}
       </SidebarMenu>

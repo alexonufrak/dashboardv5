@@ -25,13 +25,13 @@ export function NavSecondary({
                 {item.url.startsWith('/api/') ? (
                   // Internal auth links like logout
                   <Link href={item.url}>
-                    <item.icon />
+                    <item.icon className="mr-2 h-4 w-4" />
                     <span>{item.title}</span>
                   </Link>
                 ) : (
                   // External links
                   <a href={item.url} target="_blank" rel="noopener noreferrer">
-                    <item.icon />
+                    <item.icon className="mr-2 h-4 w-4" />
                     <span>{item.title}</span>
                   </a>
                 )}
