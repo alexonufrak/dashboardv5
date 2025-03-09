@@ -21,6 +21,38 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
+  // Add rewrites for legacy routes
+  async rewrites() {
+    return [
+      // Redirect legacy program routes to new program routes
+      {
+        source: '/program/:programId',
+        destination: '/program-new/:programId',
+      },
+      {
+        source: '/program/:programId/milestones',
+        destination: '/program-new/:programId/milestones',
+      },
+      {
+        source: '/program/:programId/team',
+        destination: '/program-new/:programId/team',
+      },
+      {
+        source: '/program/:programId/bounties',
+        destination: '/program-new/:programId/bounties',
+      },
+      // Redirect program-dashboard to dashboard-new
+      {
+        source: '/program-dashboard',
+        destination: '/dashboard-new',
+      },
+      // Redirect dashboard-shell to dashboard-new
+      {
+        source: '/dashboard-shell',
+        destination: '/dashboard-new',
+      },
+    ]
+  },
 }
 
 mergeConfig(nextConfig, userConfig)

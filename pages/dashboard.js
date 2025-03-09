@@ -1,45 +1,37 @@
-"use client"
-
+// This page has been refactored. It now serves as a redirect to maintain backward compatibility.
 import { withPageAuthRequired } from "@auth0/nextjs-auth0"
-import { DashboardProvider } from "@/contexts/DashboardContext"
-import { useRouter } from "next/router"
-import { useEffect } from "react"
 
-// Simple redirect wrapper to the new dashboard
-function Dashboard() {
-  const router = useRouter()
+// This page redirects to the new dashboard
+export async function getServerSideProps(context) {
+  // Get any query parameters from the current URL
+  const { query } = context
   
-  useEffect(() => {
-    // Get any query parameters from the current URL
-    const query = router.query
-    
-    // Only redirect when router is ready
-    if (router.isReady) {
-      console.log("Redirecting from /dashboard to /dashboard-new with query:", query);
-      
-      // Handle special cases - if there's a programId in the query, redirect to program page
-      if (query.programId) {
-        router.replace(`/program-new/${query.programId}`);
-      } else {
-        // Standard redirect to dashboard-new
-        router.replace({
-          pathname: '/dashboard-new',
-          query: query
-        });
-      }
+  // Handle special cases - if there's a programId in the query, redirect to program page
+  if (query.programId) {
+    return {
+      redirect: {
+        destination: `/program-new/${query.programId}`,
+        permanent: false,
+      },
     }
-  }, [router, router.isReady])
+  }
   
-  return (
-    <DashboardProvider>
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-lg text-gray-500">Redirecting to new dashboard...</p>
-      </div>
-    </DashboardProvider>
-  )
+  // Standard redirect to dashboard-new with any query parameters
+  const queryString = Object.keys(query).length > 0 
+    ? `?${new URLSearchParams(query).toString()}`
+    : ''
+  
+  return {
+    redirect: {
+      destination: `/dashboard-new${queryString}`,
+      permanent: false,
+    },
+  }
+}
+
+function Dashboard() {
+  return <div>Redirecting to new dashboard...</div>
 }
 
 // Wrap with auth protection
-export const getServerSideProps = withPageAuthRequired()
-
-export default Dashboard
+export default withPageAuthRequired(Dashboard)

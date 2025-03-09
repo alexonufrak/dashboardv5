@@ -1,21 +1,23 @@
-// This is a simple redirect page - it will redirect to the main dashboard
-// which will then detect the program ID from the URL and show the correct program
+// This is a redirect file for backwards compatibility
+import { withPageAuthRequired } from "@auth0/nextjs-auth0"
 
-// Export a getServerSideProps function to handle the redirect
+// This page redirects directly to the new program page
 export async function getServerSideProps(context) {
-  // Get the program ID from the URL
-  const { programId } = context.params;
+  // Get the program ID from the URL parameters
+  const { programId } = context.params
   
-  // Return a redirect to the dashboard page
+  // Redirect to the new program page with the same programId
   return {
     redirect: {
-      destination: '/dashboard',
+      destination: `/program-new/${programId}`,
       permanent: false,
     },
-  };
+  }
 }
 
-// This component won't actually render, but we need to export something
-export default function ProgramDashboardPage() {
-  return <div>Redirecting...</div>;
+function ProgramDashboardPage() {
+  return <div>Redirecting to program dashboard...</div>
 }
+
+// Wrap with auth protection
+export default withPageAuthRequired(ProgramDashboardPage)

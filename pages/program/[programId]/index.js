@@ -1,32 +1,21 @@
-"use client"
-
+// This page has been refactored. It now serves as a redirect to maintain backward compatibility.
 import { withPageAuthRequired } from "@auth0/nextjs-auth0"
-import { useEffect } from "react"
-import { useRouter } from "next/router"
 
-// Simple redirect wrapper to the new program page
+// This page redirects to the new program page structure
+export async function getServerSideProps(context) {
+  const { programId } = context.params
+  
+  return {
+    redirect: {
+      destination: `/program-new/${programId}`,
+      permanent: false,
+    },
+  }
+}
+
 function ProgramPage() {
-  const router = useRouter()
-  const { programId } = router.query
-  
-  useEffect(() => {
-    // Wait for programId to be available
-    if (programId && router.isReady) {
-      console.log(`Redirecting from /program/${programId} to /program-new/${programId}`);
-      
-      // Redirect to the new program page with same programId
-      router.replace(`/program-new/${programId}`, undefined, { shallow: true })
-    }
-  }, [programId, router, router.isReady])
-  
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <p className="text-lg text-gray-500">Redirecting to new program dashboard...</p>
-    </div>
-  )
+  return <div>Redirecting to new program dashboard...</div>
 }
 
 // Wrap with auth protection
-export const getServerSideProps = withPageAuthRequired()
-
-export default ProgramPage
+export default withPageAuthRequired(ProgramPage)

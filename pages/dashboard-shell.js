@@ -1,23 +1,19 @@
-"use client"
-
+// This is a redirect file for backwards compatibility
 import { withPageAuthRequired } from "@auth0/nextjs-auth0"
-import { useRouter } from "next/router"
-import { useEffect } from "react"
 
-// This is a legacy page that redirects to the main dashboard
-// We keep this for backward compatibility with existing links
+// This page redirects to the dashboard page
+export async function getServerSideProps() {
+  return {
+    redirect: {
+      destination: '/dashboard-new',
+      permanent: false,
+    },
+  }
+}
+
 function DashboardShellPage() {
-  const router = useRouter()
-
-  useEffect(() => {
-    router.replace("/dashboard")
-  }, [router])
-
-  // Return an empty div as this will be redirected immediately
-  return <div></div>
+  return <div>Redirecting to dashboard...</div>
 }
 
 // Wrap with auth protection
-export const getServerSideProps = withPageAuthRequired()
-
-export default DashboardShellPage
+export default withPageAuthRequired(DashboardShellPage)
