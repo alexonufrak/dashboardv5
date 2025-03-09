@@ -74,9 +74,9 @@ const ProgramLayout = ({ children, programId, activeTab = 'overview' }) => {
   const isXtrapreneurs = initiative?.name?.toLowerCase().includes('xtrapreneurs')
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full h-full overflow-auto pb-8">
       {/* Program Header Card */}
-      <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-100">
+      <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-100 w-full">
         <div className="p-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
             <div>
@@ -146,7 +146,7 @@ const ProgramLayout = ({ children, programId, activeTab = 'overview' }) => {
       )}
       
       {/* Content Area */}
-      <div className="space-y-6">
+      <div className="space-y-6 w-full">
         {children}
       </div>
     </div>

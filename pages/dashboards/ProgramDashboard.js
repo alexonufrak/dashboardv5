@@ -178,11 +178,11 @@ function ProgramDashboardInner({ onNavigate, programId }) {
   // No placeholder milestones - use real data only
   
   return (
-    <div className="program-dashboard space-y-6">
+    <div className="program-dashboard space-y-6 w-full overflow-x-hidden">
       {/* Program Header */}
       <div className="mb-6">
         {/* Program Banner */}
-        <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-100 mb-4">
+        <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-100 mb-4 w-full">
           <CardContent className="p-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
               <div>
@@ -309,8 +309,8 @@ function ProgramDashboardInner({ onNavigate, programId }) {
       </div>
       
       {/* Main Content Tabs */}
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
+      <Tabs defaultValue="overview" className="space-y-4 w-full">
+        <TabsList className="w-full md:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="milestones">Milestones</TabsTrigger>
           {isTeamProgram && <TabsTrigger value="members">Team Members</TabsTrigger>}
