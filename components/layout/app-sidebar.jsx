@@ -108,11 +108,6 @@ export function AppSidebar({
       title: "xFoundry Website",
       url: "https://xfoundry.org",
       icon: ExternalLink,
-    },
-    {
-      title: "Sign Out",
-      url: "/api/auth/logout",
-      icon: LogOut,
     }
   ];
 
