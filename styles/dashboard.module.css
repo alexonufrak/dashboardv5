@@ -1,0 +1,20 @@
+/* Dashboard layout specific styles */
+.dashboardContainer {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboardContent {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Force child elements to respect container width */
+.dashboardContent > * {
+  width: 100%;
+  max-width: 100%;
+}

@@ -6,6 +6,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/layout/app-sidebar"
 import LoadingScreen from "@/components/common/LoadingScreen"
 import { Toaster } from "sonner"
+import styles from "@/styles/dashboard.module.css"
 
 /**
  * Shared dashboard layout component used across different dashboard pages
@@ -54,10 +55,10 @@ export default function DashboardLayout({
           
           {/* Main Content */}
           <SidebarInset className="bg-background flex-1 overflow-auto">
-            <div className="pt-[60px] md:pt-4 overflow-x-hidden h-full">
-              <div className="mx-auto max-w-6xl px-4 md:px-6 h-full flex flex-col">
+            <div className="pt-[60px] md:pt-4 overflow-x-hidden h-full w-full">
+              <div className="w-full px-4 md:px-6 h-full flex flex-col">
                 {/* Content wrapper with page transitions */}
-                <div className="dashboard-content flex-1">
+                <div className={`dashboard-content flex-1 w-full ${styles.dashboardContent}`}>
                   {error ? (
                     <div className="flex flex-col items-center justify-center min-h-[60vh]">
                       <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
@@ -74,12 +75,14 @@ export default function DashboardLayout({
                   ) : isLoading ? (
                     <LoadingScreen message={loadingMessage} />
                   ) : (
-                    children
+                    <div className={styles.dashboardContainer}>
+                      {children}
+                    </div>
                   )}
                 </div>
                 
                 {/* Footer */}
-                <footer className="border-t py-8 mt-8 text-center text-muted-foreground text-sm">
+                <footer className="border-t py-8 mt-8 text-center text-muted-foreground text-sm w-full">
                   <p>© {new Date().getFullYear()} xFoundry Education Platform. All rights reserved.</p>
                 </footer>
               </div>

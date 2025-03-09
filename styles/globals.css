@@ -478,9 +478,17 @@
   }
 
   /* Dashboard main content */
-  .dashboard-main-content {
+  .dashboard-main-content,
+  .program-dashboard {
     transition: opacity 0.3s ease, transform 0.3s ease;
     width: 100%;
+    max-width: 100%;
+  }
+  
+  /* Ensure all tabs content expands to full width */
+  [role="tabpanel"] {
+    width: 100%;
+    max-width: 100%;
   }
 
   /* Animation for sliding in from top */
