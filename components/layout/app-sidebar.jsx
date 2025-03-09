@@ -78,12 +78,16 @@ export function AppSidebar({
         if (!uniqueInitiativeIds.has(initiativeId)) {
           uniqueInitiativeIds.add(initiativeId);
           
+          // Use new program URL structure
+          const programUrl = `/program-new/${initiativeId}`;
+          
           initiatives.push({
             name: p.cohort.initiativeDetails.name || "Unknown Program",
-            url: ROUTES.PROGRAM.DETAIL(initiativeId),
+            url: programUrl,
             icon: Compass, 
             id: initiativeId,
-            isActive: router.query.programId === initiativeId
+            isActive: router.query.programId === initiativeId || 
+                    (router.pathname.includes('/program-new/') && router.query.programId === initiativeId)
           });
         }
       }
