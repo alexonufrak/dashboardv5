@@ -1,7 +1,6 @@
 /* Dashboard layout specific styles */
 .dashboardContainer {
   width: 100%;
-  max-width: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -13,8 +12,7 @@
   flex-direction: column;
 }
 
-/* Force child elements to respect container width */
+/* This selects only direct children of dashboardContent */
 .dashboardContent > * {
   width: 100%;
-  max-width: 100%;
 }
