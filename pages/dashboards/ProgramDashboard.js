@@ -178,13 +178,13 @@ function ProgramDashboardInner({ onNavigate, programId }) {
   // No placeholder milestones - use real data only
   
   return (
-    <div className="program-dashboard space-y-6 w-full overflow-x-hidden">
+    <div className="program-dashboard space-y-6 w-full overflow-x-hidden max-w-none min-w-full">
       {/* Program Header */}
-      <div className="mb-6">
+      <div className="mb-6 w-full">
         {/* Program Banner */}
-        <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-100 mb-4 w-full">
+        <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-100 mb-4 w-full max-w-none">
           <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 w-full">
               <div>
                 <div className="flex gap-2 mb-2">
                   <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
@@ -251,7 +251,7 @@ function ProgramDashboardInner({ onNavigate, programId }) {
         
         {/* Team Info (if team-based program) */}
         {isTeamProgram && team && (
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
             <div className="flex items-center gap-3">
               <Avatar className="h-12 w-12 border">
                 <AvatarImage src={team.image} alt={team.name} />
@@ -309,7 +309,7 @@ function ProgramDashboardInner({ onNavigate, programId }) {
       </div>
       
       {/* Main Content Tabs */}
-      <Tabs defaultValue="overview" className="space-y-4 w-full">
+      <Tabs defaultValue="overview" className="space-y-4 w-full max-w-none">
         <TabsList className="w-full md:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="milestones">Milestones</TabsTrigger>
@@ -317,10 +317,10 @@ function ProgramDashboardInner({ onNavigate, programId }) {
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+        <TabsContent value="overview" className="space-y-4 w-full max-w-none">
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-4 w-full">
             {/* Main Overview Content */}
-            <div className="md:col-span-5 space-y-4">
+            <div className="md:col-span-5 space-y-4 w-full">
               {/* Milestone Summary Card */}
               <MilestoneSummaryCard 
                 milestones={milestones || []}
@@ -386,9 +386,9 @@ function ProgramDashboardInner({ onNavigate, programId }) {
             </div>
             
             {/* Sidebar */}
-            <div className="md:col-span-2 space-y-4">
+            <div className="md:col-span-2 space-y-4 w-full">
               {/* Points */}
-              <Card>
+              <Card className="w-full">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg">Points</CardTitle>
                 </CardHeader>
@@ -409,7 +409,7 @@ function ProgramDashboardInner({ onNavigate, programId }) {
               
               {/* Team Members (if team-based) */}
               {isTeamProgram && team && (
-                <Card>
+                <Card className="w-full">
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">Team Members</CardTitle>
@@ -438,12 +438,12 @@ function ProgramDashboardInner({ onNavigate, programId }) {
           </div>
         </TabsContent>
         
-        <TabsContent value="milestones">
-          <div className="space-y-4">
+        <TabsContent value="milestones" className="w-full max-w-none">
+          <div className="space-y-4 w-full">
             {/* Summary Card */}
-            <Card className="bg-gradient-to-r from-indigo-50 to-blue-50 border-blue-100">
+            <Card className="bg-gradient-to-r from-indigo-50 to-blue-50 border-blue-100 w-full max-w-none">
               <CardContent className="p-4">
-                <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between">
+                <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between w-full">
                   <div>
                     <h2 className="text-xl font-semibold mb-2">Program Milestones</h2>
                     <div className="text-sm text-muted-foreground">
@@ -531,12 +531,12 @@ function ProgramDashboardInner({ onNavigate, programId }) {
             </Card>
             
             {/* Detailed Milestones */}
-            <Card>
+            <Card className="w-full max-w-none">
               <CardHeader>
                 <CardTitle>Milestone Details</CardTitle>
                 <CardDescription>Complete timeline of program milestones</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="w-full">
                 <TeamMilestoneProgress 
                   milestones={milestones || []} 
                   detailed={true}
@@ -548,26 +548,26 @@ function ProgramDashboardInner({ onNavigate, programId }) {
         </TabsContent>
         
         {isTeamProgram && (
-          <TabsContent value="members">
-            <Card>
+          <TabsContent value="members" className="w-full max-w-none">
+            <Card className="w-full max-w-none">
               <CardHeader>
                 <CardTitle>Team Members</CardTitle>
                 <CardDescription>All members of {team?.name || "your team"}</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="w-full">
                 <TeamMemberList team={team} detailed={true} />
               </CardContent>
             </Card>
           </TabsContent>
         )}
         
-        <TabsContent value="activity">
-          <Card>
+        <TabsContent value="activity" className="w-full max-w-none">
+          <Card className="w-full max-w-none">
             <CardHeader>
               <CardTitle>Program Activity</CardTitle>
               <CardDescription>Recent activities, achievements, and updates</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="w-full">
               <TeamActivityFeed team={team} detailed={true} />
             </CardContent>
           </Card>
