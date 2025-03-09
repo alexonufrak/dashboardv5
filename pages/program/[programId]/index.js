@@ -12,6 +12,8 @@ function ProgramPage() {
   useEffect(() => {
     // Wait for programId to be available
     if (programId && router.isReady) {
+      console.log(`Redirecting from /program/${programId} to /program-new/${programId}`);
+      
       // Redirect to the new program page with same programId
       router.replace(`/program-new/${programId}`, undefined, { shallow: true })
     }

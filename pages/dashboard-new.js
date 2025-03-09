@@ -194,23 +194,14 @@ function Dashboard() {
   // Only show full loader on initial app load
   const showFullLoader = !initialLoadComplete && (isLoading || !profile);
   
-  // Show error message if there's an error
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
-          <h2 className="text-lg font-semibold text-red-800 mb-2">Error Loading Dashboard</h2>
-          <p className="text-red-700 mb-4">{error}</p>
-          <button 
-            className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
-            onClick={() => refreshData('all')}
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Use refreshData function for error retry
+  const handleRetry = () => {
+    if (refreshData) {
+      refreshData('all');
+    } else {
+      window.location.reload();
+    }
+  };
   
   // Render profile edit modal
   useEffect(() => {
@@ -230,6 +221,7 @@ function Dashboard() {
         profile={profile}
         isLoading={showFullLoader}
         loadingMessage="Loading dashboard..."
+        error={error}
       >
         {getPageComponent()}
       </DashboardLayout>

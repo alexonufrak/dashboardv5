@@ -56,9 +56,9 @@ export function AppSidebar({
   const navMainItems = [
     {
       title: "Dashboard",
-      url: "/dashboard",
+      url: "/dashboard-new",
       icon: Home,
-      isActive: router.pathname === "/dashboard" && !router.query.programId
+      isActive: (router.pathname === "/dashboard" || router.pathname === "/dashboard-new") && !router.query.programId
     }
   ];
 

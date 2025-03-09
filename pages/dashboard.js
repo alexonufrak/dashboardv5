@@ -15,11 +15,18 @@ function Dashboard() {
     
     // Only redirect when router is ready
     if (router.isReady) {
-      // Create new URL with the same query parameters
-      router.replace({
-        pathname: '/dashboard-new',
-        query: query
-      })
+      console.log("Redirecting from /dashboard to /dashboard-new with query:", query);
+      
+      // Handle special cases - if there's a programId in the query, redirect to program page
+      if (query.programId) {
+        router.replace(`/program-new/${query.programId}`);
+      } else {
+        // Standard redirect to dashboard-new
+        router.replace({
+          pathname: '/dashboard-new',
+          query: query
+        });
+      }
     }
   }, [router, router.isReady])
   

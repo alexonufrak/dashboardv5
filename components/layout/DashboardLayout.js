@@ -22,7 +22,8 @@ export default function DashboardLayout({
   title = "xFoundry Hub", 
   profile,
   isLoading = false,
-  loadingMessage = "Loading dashboard..."
+  loadingMessage = "Loading dashboard...",
+  error = null
 }) {
   return (
     <>
@@ -57,7 +58,20 @@ export default function DashboardLayout({
               <div className="mx-auto max-w-6xl px-4 md:px-6 h-full flex flex-col">
                 {/* Content wrapper with page transitions */}
                 <div className="dashboard-content flex-1">
-                  {isLoading ? (
+                  {error ? (
+                    <div className="flex flex-col items-center justify-center min-h-[60vh]">
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+                        <h2 className="text-lg font-semibold text-red-800 mb-2">Error Loading Dashboard</h2>
+                        <p className="text-red-700 mb-4">{error}</p>
+                        <button 
+                          className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+                          onClick={() => window.location.reload()}
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    </div>
+                  ) : isLoading ? (
                     <LoadingScreen message={loadingMessage} />
                   ) : (
                     children

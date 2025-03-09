@@ -36,6 +36,7 @@ function ProgramPage() {
     setActiveProgram, 
     profile, 
     isLoading,
+    error,
     isEditModalOpen, 
     setIsEditModalOpen, 
     getActiveProgramData,
@@ -99,6 +100,7 @@ function ProgramPage() {
         profile={profile}
         isLoading={showFullLoader}
         loadingMessage="Loading program dashboard..."
+        error={error}
       >
         <ProgramDashboard programId={programId} />
       </DashboardLayout>
