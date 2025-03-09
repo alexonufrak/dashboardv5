@@ -166,7 +166,7 @@ export function AppSidebar({
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent className="flex flex-col flex-grow">
           {/* Main Navigation (Dashboard) */}
           <NavMain items={navMainItems} />
           
@@ -177,8 +177,11 @@ export function AppSidebar({
             <NavProjects projects={programInitiatives} groupLabel="Programs" />
           ) : null}
           
+          {/* Add spacer to push secondary links to bottom */}
+          <div className="flex-grow min-h-[50px]"></div>
+          
           {/* Secondary Links */}
-          <NavSecondary items={secondaryLinks} className="mt-auto" />
+          <NavSecondary items={secondaryLinks} />
         </SidebarContent>
         <SidebarFooter>
           {/* User Profile */}
