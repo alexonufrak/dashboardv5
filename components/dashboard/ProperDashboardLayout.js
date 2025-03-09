@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import Head from "next/head"
-import ProperDashboardSidebar from "./ProperDashboardSidebar"
+import { AppSidebar } from "@/components/layout/app-sidebar"
 import Breadcrumbs from "@/components/common/Breadcrumbs"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { isProgramRoute } from '@/lib/routing'
@@ -66,15 +66,8 @@ const ProperDashboardLayout = ({
             </div>
           </div>
           
-          {/* Dashboard Sidebar - only rendered when profile is available */}
-          {profile && (
-            <ProperDashboardSidebar 
-              profile={profile} 
-              onEditClick={onEditClick} 
-              currentPage={currentPage}
-              onNavigate={onNavigate}
-            />
-          )}
+          {/* Dashboard Sidebar using the new AppSidebar component */}
+          <AppSidebar />
           
           {/* Main Content */}
           <SidebarInset className="bg-background">

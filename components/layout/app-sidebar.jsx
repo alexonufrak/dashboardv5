@@ -1,17 +1,12 @@
+"use client"
+
 import * as React from "react"
-import { Suspense } from "react"
-import {
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  LifeBuoy,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
-  Send
-} from "lucide-react"
+import { useRouter } from "next/router"
+import Link from "next/link"
+import { Home, ExternalLink, LogOut, Command, Compass } from "lucide-react"
+import { useDashboard } from "@/contexts/DashboardContext"
+import { useUser } from "@auth0/nextjs-auth0/client"
+import { ROUTES } from '@/lib/routing'
 
 import { NavMain } from "@/components/layout/nav-main"
 import { NavProjects, NavProjectsSkeleton } from "@/components/layout/nav-projects"
@@ -25,167 +20,177 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarTrigger,
+  SidebarMenuSkeleton
 } from "@/components/ui/sidebar"
-
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navMain: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Support",
-      url: "#",
-      icon: LifeBuoy,
-    },
-    {
-      title: "Feedback",
-      url: "#",
-      icon: Send,
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-}
 
 export function AppSidebar({
   ...props
 }) {
-  return (
-    (<Sidebar
-      className="top-(--header-height) h-[calc(100svh-var(--header-height))]!"
-      {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <a href="#">
-                <div
-                  className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Command className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">Acme Inc</span>
-                  <span className="truncate text-xs">Enterprise</span>
-                </div>
-              </a>
-            </SidebarMenuButton>
+  const router = useRouter()
+  const { user } = useUser()
+  
+  // Get dashboard context data
+  const {
+    profile,
+    isLoading,
+    programLoading,
+    participationData,
+    setIsEditModalOpen
+  } = useDashboard()
+
+  // Create navigation links skeleton for loading state
+  const NavigationLinksSkeleton = () => {
+    return (
+      <>
+        {Array.from({ length: 3 }).map((_, index) => (
+          <SidebarMenuItem key={`nav-skeleton-${index}`}>
+            <SidebarMenuSkeleton showIcon />
           </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={data.navMain} />
-        <Suspense fallback={<NavProjectsSkeleton />}>
-          <NavProjects projects={data.projects} />
-        </Suspense>
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
-      </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
-    </Sidebar>)
+        ))}
+      </>
+    );
+  };
+
+  // Create base navigation for main section (Dashboard only)
+  const navMainItems = [
+    {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: Home,
+      isActive: router.pathname === "/dashboard" && !router.query.programId
+    }
+  ];
+
+  // Process program initiatives from participation data
+  const programInitiatives = React.useMemo(() => {
+    if (!participationData?.participation || isLoading) return [];
+    
+    // Use a Set to track unique initiative IDs
+    const uniqueInitiativeIds = new Set();
+    const initiatives = [];
+    
+    participationData.participation.forEach(p => {
+      if (p.cohort?.initiativeDetails?.id) {
+        const initiativeId = p.cohort.initiativeDetails.id;
+        
+        // Only add each initiative once
+        if (!uniqueInitiativeIds.has(initiativeId)) {
+          uniqueInitiativeIds.add(initiativeId);
+          
+          initiatives.push({
+            name: p.cohort.initiativeDetails.name || "Unknown Program",
+            url: ROUTES.PROGRAM.DETAIL(initiativeId),
+            icon: Compass, 
+            id: initiativeId,
+            isActive: router.query.programId === initiativeId
+          });
+        }
+      }
+    });
+    
+    return initiatives;
+  }, [participationData, isLoading, router.query.programId]);
+
+  // External links for secondary navigation
+  const secondaryLinks = [
+    {
+      title: "ConneXions Community",
+      url: "https://connexions.xfoundry.org",
+      icon: ExternalLink,
+    },
+    {
+      title: "xFoundry Website",
+      url: "https://xfoundry.org",
+      icon: ExternalLink,
+    },
+    {
+      title: "Sign Out",
+      url: "/api/auth/logout",
+      icon: LogOut,
+    }
+  ];
+
+  // Get institution name from profile data
+  const institutionName = React.useMemo(() => {
+    if (!profile) return "Institution";
+    
+    return profile.institutionName || 
+           profile.institution?.name || 
+           "Your Institution";
+  }, [profile]);
+
+  // User data for the NavUser component
+  const userData = React.useMemo(() => {
+    if (!user || !profile) return null;
+    
+    return {
+      name: `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || user.name || "User",
+      email: user.email,
+      avatar: profile.headshot || user.picture || '/placeholder-user.jpg',
+      // Pass the onEditClick handler to open profile modal
+      onEditClick: () => setIsEditModalOpen(true)
+    };
+  }, [user, profile, setIsEditModalOpen]);
+
+  // Mobile trigger button (fixed position)
+  const MobileTrigger = () => (
+    <div className="md:hidden fixed left-4 top-3 z-40">
+      <SidebarTrigger 
+        className="h-10 w-10 rounded-full bg-white shadow-xs border"
+      />
+    </div>
+  );
+
+  return (
+    <>
+      <MobileTrigger />
+      <Sidebar
+        className="top-(--header-height) h-[calc(100svh-var(--header-height))]!"
+        {...props}>
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg" asChild>
+                <Link href="/dashboard">
+                  <div
+                    className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                    <Command className="size-4" />
+                  </div>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">{institutionName}</span>
+                    <span className="truncate text-xs">xFoundry Hub</span>
+                  </div>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
+        <SidebarContent>
+          {/* Main Navigation (Dashboard) */}
+          <NavMain items={navMainItems} />
+          
+          {/* Programs Navigation */}
+          {isLoading || programLoading ? (
+            <NavProjectsSkeleton />
+          ) : programInitiatives.length > 0 ? (
+            <NavProjects projects={programInitiatives} groupLabel="Programs" />
+          ) : null}
+          
+          {/* Secondary Links */}
+          <NavSecondary items={secondaryLinks} className="mt-auto" />
+        </SidebarContent>
+        <SidebarFooter>
+          {/* User Profile */}
+          {userData ? (
+            <NavUser user={userData} profile={profile} />
+          ) : (
+            <SidebarMenuItem>
+              <SidebarMenuSkeleton showIcon />
+            </SidebarMenuItem>
+          )}
+        </SidebarFooter>
+      </Sidebar>
+    </>
   );
 }

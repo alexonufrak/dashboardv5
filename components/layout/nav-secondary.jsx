@@ -1,8 +1,10 @@
 import * as React from "react"
+import Link from "next/link"
 
 import {
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -14,15 +16,25 @@ export function NavSecondary({
 }) {
   return (
     (<SidebarGroup {...props}>
+      <SidebarGroupLabel>Links</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton asChild size="sm">
-                <a href={item.url}>
-                  <item.icon />
-                  <span>{item.title}</span>
-                </a>
+                {item.url.startsWith('/api/') ? (
+                  // Internal auth links like logout
+                  <Link href={item.url}>
+                    <item.icon />
+                    <span>{item.title}</span>
+                  </Link>
+                ) : (
+                  // External links
+                  <a href={item.url} target="_blank" rel="noopener noreferrer">
+                    <item.icon />
+                    <span>{item.title}</span>
+                  </a>
+                )}
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}

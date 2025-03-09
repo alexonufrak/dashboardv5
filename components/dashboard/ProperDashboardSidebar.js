@@ -116,12 +116,12 @@ const ProperDashboardSidebar = ({ profile, onEditClick, currentPage, onNavigate 
     currentPage: currentPage 
   });
   
-  // Navigation links skeleton
-const NavigationLinksSkeleton = () => {
+  // Navigation links skeleton (short version)
+const ShortNavigationLinksSkeleton = () => {
   return (
     <>
       {Array.from({ length: 2 }).map((_, index) => (
-        <SidebarMenuItem key={`nav-skeleton-${index}`}>
+        <SidebarMenuItem key={`nav-skeleton-short-${index}`}>
           <SidebarMenuSkeleton showIcon />
         </SidebarMenuItem>
       ))}

@@ -1,8 +1,10 @@
 "use client"
 
 import {
+  BadgeCheck,
+  Bell,
   LogOut,
-  User,
+  Sparkles,
 } from "lucide-react"
 
 import {
@@ -25,27 +27,12 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { CaretSortIcon } from "@radix-ui/react-icons"
-import Link from "next/link"
-
-/**
- * Helper function to generate initials from name
- */
-function getInitials(name) {
-  if (!name) return "UN";
-  
-  const names = name.split(" ");
-  if (names.length === 1) return names[0].charAt(0).toUpperCase();
-  
-  return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
-}
+import { CaretSortIcon, ComponentPlaceholderIcon } from "@radix-ui/react-icons"
 
 export function NavUser({
-  user,
-  profile
+  user
 }) {
   const { isMobile } = useSidebar()
-  const initials = getInitials(user.name);
 
   return (
     (<SidebarMenu>
@@ -57,10 +44,10 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{user.name}</span>
+                <span className="truncate font-medium">{user.name}</span>
                 <span className="truncate text-xs">{user.email}</span>
               </div>
               <CaretSortIcon className="ml-auto size-4" />
@@ -75,27 +62,40 @@ export function NavUser({
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{user.name}</span>
+                  <span className="truncate font-medium">{user.name}</span>
                   <span className="truncate text-xs">{user.email}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={user.onEditClick ? user.onEditClick : undefined}>
-                <User className="mr-2 h-4 w-4" />
-                Edit Profile
+              <DropdownMenuItem>
+                <Sparkles />
+                Upgrade to Pro
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/api/auth/logout">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </Link>
+            <DropdownMenuGroup>
+              <DropdownMenuItem>
+                <BadgeCheck />
+                Account
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <ComponentPlaceholderIcon />
+                Billing
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Bell />
+                Notifications
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <LogOut />
+              Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

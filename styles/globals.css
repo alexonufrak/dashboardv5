@@ -348,24 +348,24 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
-  
+
   /* Removed animations for dashboard shell page transitions for smoother experience */
   .proper-dashboard-layout-content {
     /* No transitions for main navigation between pages to avoid glitchy behavior */
   }
-  
+
   /* Removed animations for dashboard pages when switching tabs */
   .dashboard-content,
   .program-dashboard,
   .profile-page {
     /* No animations for page switches to avoid glitchy behavior */
   }
-  
+
   /* Only use fadeInUp animation when explicitly requested */
   .animate-fadeInUp {
     animation: fadeInUp 0.3s ease-in-out;
   }
-  
+
   @keyframes fadeInUp {
     from { 
       opacity: 0.2;
@@ -376,7 +376,7 @@
       transform: translateY(0);
     }
   }
-  
+
   /* Global cursor styles */
   button:not([disabled]), 
   .btn:not(.disabled):not([disabled]),
@@ -391,13 +391,13 @@
   select:not([disabled]) {
     cursor: pointer !important;
   }
-  
+
   /* Text input cursors */
   input:not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([disabled]),
   textarea:not([disabled]) {
     cursor: text !important;
   }
-  
+
   /* Disabled elements */
   button[disabled],
   input[disabled],
@@ -408,24 +408,24 @@
   [aria-disabled="true"] {
     cursor: not-allowed !important;
   }
-  
+
   /* Simple, subtle animation transitions */
   .dialog-overlay[data-state="open"] {
     animation: fadeIn 180ms ease;
   }
-  
+
   .dialog-overlay[data-state="closed"] {
     animation: fadeOut 180ms ease;
   }
-  
+
   .dialog-content[data-state="open"] {
     animation: fadeIn 200ms ease;
   }
-  
+
   .dialog-content[data-state="closed"] {
     animation: fadeOut 200ms ease;
   }
-  
+
   /* Onboarding container and transitions - completely revised approach */
   .onboarding-container {
     width: 100%;
@@ -433,41 +433,41 @@
     flex-direction: column;
     gap: 1.5rem;
   }
-  
+
   /* Checklist wrapper */
   .onboarding-checklist-wrapper {
     width: 100%; 
     transition: max-height 0.5s ease, opacity 0.4s ease, margin 0.5s ease;
     overflow: hidden;
   }
-  
+
   /* Checklist states */  
   .onboarding-checklist-visible {
     max-height: 2000px; /* Large enough to fit all content */
     opacity: 1;
     margin-bottom: 2rem;
   }
-  
+
   .onboarding-checklist-hidden {
     max-height: 0;
     opacity: 0;
     margin: 0;
     pointer-events: none;
   }
-  
+
   /* Condensed banner */
   .onboarding-condensed {
     width: 100%;
     transition: max-height 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
     animation: slideInTop 0.4s ease-out;
   }
-  
+
   .onboarding-condensed-visible {
     max-height: 200px; 
     opacity: 1;
     transform: translateY(0);
   }
-  
+
   .onboarding-condensed-hidden {
     max-height: 0;
     opacity: 0;
@@ -476,13 +476,13 @@
     margin: 0;
     padding: 0;
   }
-  
+
   /* Dashboard main content */
   .dashboard-main-content {
     transition: opacity 0.3s ease, transform 0.3s ease;
     width: 100%;
   }
-  
+
   /* Animation for sliding in from top */
   @keyframes slideInTop {
     from { 
@@ -494,7 +494,7 @@
       opacity: 1;
     }
   }
-  
+
   /* Animation for sliding in from bottom */
   @keyframes slideInBottom {
     from { 
@@ -506,55 +506,55 @@
       opacity: 1;
     }
   }
-  
+
   /* For mobile responsiveness */
   @media (max-width: 768px) {
     .onboarding-checklist-visible {
       margin-bottom: 1rem;
     }
   }
-  
+
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
   }
-  
+
   @keyframes fadeOut {
     from { opacity: 1; }
     to { opacity: 0; }
   }
-  
+
   @keyframes slideIn {
     from { transform: translateY(20px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
   }
-  
+
   @keyframes slideOut {
     from { transform: translateY(0); opacity: 1; }
     to { transform: translateY(-20px); opacity: 0; }
   }
-  
+
   @keyframes completedPulse {
     0% { background-color: #22c55e; transform: scale(1); }
     50% { background-color: #16a34a; transform: scale(1.05); box-shadow: 0 0 15px rgba(34, 197, 94, 0.5); }
     100% { background-color: #22c55e; transform: scale(1); }
   }
-  
+
   @keyframes successBounce {
     0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
     40% { transform: translateY(-5px); }
     60% { transform: translateY(-3px); }
   }
-  
+
   .animate-complete-fade {
     animation: fadeOut 0.6s ease forwards, slideOut 0.7s ease forwards;
   }
-  
+
   /* Add animation transitions to common elements */
   button, a, .card, .badge, .alert {
     transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
   }
-  
+
   /* Specific cursor fixes for Shadcn/UI components */
   .btn:not([disabled]), 
   [class*="button"]:not([disabled]),
@@ -575,7 +575,7 @@
   [data-state]:not([data-disabled="true"]):not([disabled]) {
     cursor: pointer !important;
   }
-  
+
   /* Default cursor for non-interactive elements */
   div:not([onclick]):not([role="button"]):not(.cursor-pointer):not(.clickable),
   span:not([onclick]):not([role="button"]):not(.cursor-pointer):not(.clickable),
@@ -589,7 +589,7 @@
   aside:not([onclick]):not([role="button"]):not(.cursor-pointer):not(.clickable) {
     cursor: default !important;
   }
-  
+
   :root {
     --sidebar: 0 0% 100%;
     --sidebar-foreground: 222.2 84% 4.9%;
@@ -598,7 +598,7 @@
     --sidebar-accent-foreground: 222.2 47.4% 11.2%;
     --sidebar-ring: 215 20.2% 65.1%;
   }
-  
+
   .dark {
     --sidebar: 222.2 84% 4.9%;
     --sidebar-foreground: 210 40% 98%;
@@ -607,5 +607,50 @@
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-ring: 217.2 32.6% 17.5%;
   }
+}
+
+/*
+  ---break---
+*/
+
+:root {
+  --sidebar: hsl(0 0% 98%);
+  --sidebar-foreground: hsl(240 5.3% 26.1%);
+  --sidebar-primary: hsl(240 5.9% 10%);
+  --sidebar-primary-foreground: hsl(0 0% 98%);
+  --sidebar-accent: hsl(240 4.8% 95.9%);
+  --sidebar-accent-foreground: hsl(240 5.9% 10%);
+  --sidebar-border: hsl(220 13% 91%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+}
+
+/*
+  ---break---
+*/
+
+.dark {
+  --sidebar: hsl(240 5.9% 10%);
+  --sidebar-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-primary: hsl(224.3 76.3% 48%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(240 3.7% 15.9%);
+  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
+  --sidebar-border: hsl(240 3.7% 15.9%);
+  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+}
+
+/*
+  ---break---
+*/
+
+@theme inline {
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
