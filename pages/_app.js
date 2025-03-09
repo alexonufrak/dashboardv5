@@ -52,8 +52,10 @@ function AppContent({ Component, pageProps, router }) {
   // Check if this is a dashboard-related page to keep app state
   const isDashboardRoute = 
     router.pathname === '/dashboard' || 
+    router.pathname === '/dashboard-new' || 
     router.pathname === '/profile' || 
     router.pathname.startsWith('/program/') ||
+    router.pathname.startsWith('/program-new/') ||
     router.pathname.startsWith('/dashboard/') ||
     router.pathname === '/program-dashboard';
 
@@ -96,7 +98,8 @@ function MyApp({ Component, pageProps }) {
       // Only show loading state for dashboard-related routes
       if (url.includes('/dashboard') || 
           url.includes('/profile') || 
-          url.includes('/program/')) {
+          url.includes('/program/') ||
+          url.includes('/program-new/')) {
         setPageLoading(true);
       }
     };

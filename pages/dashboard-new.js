@@ -1,24 +1,18 @@
 "use client"
 
 import { withPageAuthRequired } from "@auth0/nextjs-auth0"
-import { DashboardProvider, useDashboard } from "@/contexts/DashboardContext"
+import { useDashboard } from "@/contexts/DashboardContext"
 import dynamic from "next/dynamic"
-import Head from "next/head"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
 import ProfileEditModal from "@/components/profile/ProfileEditModal"
-import { Toaster } from "sonner"
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/layout/app-sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
-import LoadingScreen from "@/components/common/LoadingScreen"
+import DashboardLayout from "@/components/layout/DashboardLayout"
 import { 
   isProgramRoute, 
-  getProgramIdFromUrl, 
   navigateToProgram, 
   navigateToDashboard,
-  navigateToProfile,
-  ROUTES 
+  navigateToProfile
 } from '@/lib/routing'
 
 // Dynamically import dashboard pages
@@ -49,46 +43,20 @@ function PageSkeleton() {
 }
 
 function Dashboard() {
-  return (
-    <DashboardProvider>
-      <DashboardContent />
-      <ProfileModalWrapper />
-      <Toaster position="top-right" />
-    </DashboardProvider>
-  )
-}
-
-// Helper component to render ProfileEditModal with the right context
-function ProfileModalWrapper() {
-  const { profile, isEditModalOpen, setIsEditModalOpen, handleProfileUpdate } = useDashboard()
-  
-  return (
-    profile && (
-      <ProfileEditModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        profile={profile}
-        onSave={handleProfileUpdate}
-      />
-    )
-  )
-}
-
-// Main dashboard content
-function DashboardContent() {
-  const router = useRouter()
   const { 
     profile, 
     isLoading, 
     error, 
     refreshData,
     programError,
-    cohort,
     isEditModalOpen,
     setIsEditModalOpen,
     setActiveProgram,
-    getAllProgramInitiatives
+    getAllProgramInitiatives,
+    handleProfileUpdate
   } = useDashboard()
+  
+  const router = useRouter()
   
   // Track current page and active program
   const [activePage, setActivePage] = useState("dashboard")
@@ -244,55 +212,36 @@ function DashboardContent() {
     );
   }
   
+  // Render profile edit modal
+  useEffect(() => {
+    // Component did mount - set up profile edit modal if needed
+    return () => {
+      // Component will unmount - close any open modals
+      if (isEditModalOpen) {
+        setIsEditModalOpen(false);
+      }
+    };
+  }, [isEditModalOpen, setIsEditModalOpen]);
+  
   return (
     <>
-      <Head>
-        <title>{title}</title>
-        <meta name="description" content="xFoundry Hub - Empowering education through technology" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+      <DashboardLayout
+        title={title}
+        profile={profile}
+        isLoading={showFullLoader}
+        loadingMessage="Loading dashboard..."
+      >
+        {getPageComponent()}
+      </DashboardLayout>
       
-      <SidebarProvider defaultOpen>
-        <div className="flex min-h-screen h-screen">
-          {/* Mobile Header - Only visible on mobile */}
-          <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white border-b py-3 px-4 flex justify-between items-center shadow-xs">
-            <div className="flex items-center">
-              <div className="w-10"></div> {/* Placeholder for alignment */}
-              <h2 className="text-lg font-bold tracking-tight text-primary ml-4">
-                xFoundry Hub
-              </h2>
-            </div>
-            <div className="text-xs">
-              {profile?.institutionName || "Institution"}
-            </div>
-          </div>
-          
-          {/* Sidebar */}
-          <AppSidebar className="h-screen" />
-          
-          {/* Main Content */}
-          <SidebarInset className="bg-background flex-1 overflow-auto">
-            <div className="pt-[60px] md:pt-4 overflow-x-hidden h-full">
-              <div className="mx-auto max-w-6xl px-4 md:px-6 h-full flex flex-col">
-                {/* Content wrapper with page transitions */}
-                <div className="proper-dashboard-layout-content flex-1">
-                  {showFullLoader ? (
-                    <LoadingScreen message="Loading dashboard..." />
-                  ) : (
-                    getPageComponent()
-                  )}
-                </div>
-                
-                {/* Footer */}
-                <footer className="border-t py-8 mt-8 text-center text-muted-foreground text-sm">
-                  <p>© {new Date().getFullYear()} xFoundry Education Platform. All rights reserved.</p>
-                </footer>
-              </div>
-            </div>
-          </SidebarInset>
-        </div>
-      </SidebarProvider>
+      {profile && isEditModalOpen && (
+        <ProfileEditModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          profile={profile}
+          onSave={handleProfileUpdate}
+        />
+      )}
     </>
   )
 }
