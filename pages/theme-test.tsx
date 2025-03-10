@@ -1,4 +1,4 @@
-import { Button, Card, Container, Heading, Text } from '@heroui/react';
+import { Button } from '@heroui/react';
 import { useTheme } from 'next-themes';
 import { useState, useEffect } from 'react';
 
@@ -16,14 +16,14 @@ export default function ThemeTest() {
   }
 
   return (
-    <Container maxWidth="xl" className="py-10">
-      <Card className="mb-6">
-        <Card.Header>
-          <Heading size="lg">HeroUI Theme Test Page</Heading>
-        </Card.Header>
-        <Card.Body>
+    <div className="max-w-4xl mx-auto py-10 px-4">
+      <div className="rounded-lg border shadow-sm mb-6 overflow-hidden">
+        <div className="p-4 border-b">
+          <h2 className="text-xl font-bold">HeroUI Theme Test Page</h2>
+        </div>
+        <div className="p-4">
           <div className="mb-6">
-            <Text>Current theme: {theme}</Text>
+            <p>Current theme: {theme}</p>
             <Button 
               color="primary" 
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -47,11 +47,11 @@ export default function ThemeTest() {
               <Button color="primary" variant="solid">Solid</Button>
             </div>
           </div>
-        </Card.Body>
-        <Card.Footer>
-          <Text>This page demonstrates HeroUI theme elements</Text>
-        </Card.Footer>
-      </Card>
-    </Container>
+        </div>
+        <div className="p-4 border-t">
+          <p>This page demonstrates HeroUI theme elements</p>
+        </div>
+      </div>
+    </div>
   );
 }
