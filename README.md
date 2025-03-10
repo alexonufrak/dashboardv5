@@ -18,7 +18,7 @@ xFoundry Dashboard is a comprehensive student management platform designed to co
 - Airtable (Data storage)
 - Vercel (Deployment)
 
-## Setup Instructions
+## Setup Instructions 
 
 ### Installation
 
