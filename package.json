@@ -12,8 +12,6 @@
     "@auth0/nextjs-auth0": "^3.5.0",
     "@heroicons/react": "^2.2.0",
     "@heroui/react": "^2.7.5",
-    "@heroui/system": "2.4.10",
-    "@heroui/theme": "2.4.9",
     "@react-aria/visually-hidden": "3.8.19",
     "@tailwindcss/postcss": "^4.0.12",
     "@tanstack/react-query": "^5.22.2",
