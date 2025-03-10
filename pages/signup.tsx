@@ -310,275 +310,296 @@ export default function SignUp() {
           
           {/* Signup Card */}
           <Card className="p-6 md:p-8 shadow-lg bg-content1 dark:bg-content1">
-            {/* Step Indicators */}
-            <div className="mb-8 w-full flex justify-center space-x-16">
-              {/* Step 1 */}
-              <div className="text-center">
-                <div 
-                  className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center text-sm font-medium mb-2 transition-all duration-300 shadow-sm
-                    ${currentStep >= 1 
-                      ? 'bg-primary text-white' 
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700'}`}
-                >
-                  1
-                </div>
-                <span className={`text-xs font-medium ${currentStep >= 1 ? 'text-primary' : 'text-gray-400 dark:text-gray-500'}`}>
-                  Institution
-                </span>
-              </div>
-              
-              {/* Step 2 */}
-              <div className="text-center">
-                <div 
-                  className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center text-sm font-medium mb-2 transition-all duration-300 shadow-sm
-                    ${currentStep >= 2 
-                      ? 'bg-primary-600 text-white' 
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700'}`}
-                >
-                  2
-                </div>
-                <span className={`text-xs font-medium ${currentStep >= 2 ? 'text-primary-600' : 'text-gray-400 dark:text-gray-500'}`}>
-                  Profile
-                </span>
-              </div>
-            </div>
-
-            <Tabs 
-              selectedKey={currentStep === 1 ? "step1" : "step2"}
-            >
-              {/* Step 1: Institution Verification */}
-              <Tab key="step1" title="Institution" className="space-y-6">
-                <div className="max-w-lg mx-auto">
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-center mb-6">
-                      <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center">
-                        <MailIcon className="h-8 w-8 text-primary" />
-                      </div>
+            {/* Enhanced Step Indicators */}
+            <div className="mb-8 w-full">
+              <div className="flex justify-center items-center mb-6">
+                <div className="w-full max-w-md flex items-center">
+                  {/* Step 1 */}
+                  <div className="flex-1 text-center">
+                    <div 
+                      className={`w-12 h-12 mx-auto rounded-full flex items-center justify-center text-base font-medium mb-2 transition-all duration-500 shadow-md
+                        ${currentStep >= 1 
+                          ? 'bg-primary text-white scale-110 ring-4 ring-primary/20' 
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700'}`}
+                    >
+                      <span className="animate-fade-in">1</span>
                     </div>
-                    
-                    <h2 className="text-xl font-semibold text-center">Verify Your Institution</h2>
-                    <p className="text-default-500 text-center">
-                      Enter your institutional email to get started. We'll verify that your school is part of our network.
-                    </p>
-                    
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium" htmlFor="email">Institutional Email</label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="your.name@school.edu"
-                          isDisabled={isVerifying || isRedirecting}
-                          className="h-12"
-                        />
-                        {emailError && (
-                          <p className="text-sm font-medium text-danger">{emailError}</p>
-                        )}
+                    <span className={`text-sm font-medium transition-all duration-300 ${currentStep >= 1 ? 'text-primary' : 'text-gray-400 dark:text-gray-500'}`}>
+                      Institution
+                    </span>
+                  </div>
+
+                  {/* Connecting Line */}
+                  <div className="w-24 h-1 mx-2 rounded-full transition-all duration-500 relative overflow-hidden">
+                    <div className={`absolute inset-0 bg-gray-200 dark:bg-gray-700 rounded-full`}></div>
+                    <div 
+                      className={`absolute inset-0 bg-primary rounded-full transition-all duration-1000 ease-out
+                        ${currentStep >= 2 ? 'w-full' : 'w-0'}`}
+                    ></div>
+                  </div>
+                  
+                  {/* Step 2 */}
+                  <div className="flex-1 text-center">
+                    <div 
+                      className={`w-12 h-12 mx-auto rounded-full flex items-center justify-center text-base font-medium mb-2 transition-all duration-500 shadow-md
+                        ${currentStep >= 2 
+                          ? 'bg-primary text-white scale-110 ring-4 ring-primary/20' 
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700'}`}
+                    >
+                      <span className="animate-fade-in">2</span>
+                    </div>
+                    <span className={`text-sm font-medium transition-all duration-300 ${currentStep >= 2 ? 'text-primary' : 'text-gray-400 dark:text-gray-500'}`}>
+                      Profile
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content container with animation */}
+              <div className="relative overflow-hidden">
+                {/* Step 1: Institution Verification */}
+                <div 
+                  className={`transition-all duration-500 transform ${
+                    currentStep === 1 ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 absolute inset-0'
+                  }`}
+                >
+                  <div className="max-w-lg mx-auto">
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-center mb-6">
+                        <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/20 flex items-center justify-center">
+                          <MailIcon className="h-8 w-8 text-primary" />
+                        </div>
                       </div>
                       
-                      {/* Verify Button */}
-                      {(institutionStatus === null || institutionStatus === "error") && (
-                        <Button 
-                          onPress={verifyInstitution}
-                          isDisabled={isVerifying || !email || isRedirecting}
-                          className="w-full h-12"
-                          color="primary"
-                        >
-                          {isVerifying ? (
-                            <div className="flex items-center">
-                              <span className="mr-2">Verifying</span>
-                              <div className="flex space-x-1">
-                                <span className="inline-block animate-pulse">•</span>
-                                <span className="inline-block animate-pulse delay-75">•</span>
-                                <span className="inline-block animate-pulse delay-150">•</span>
-                              </div>
-                            </div>
-                          ) : "Verify Institution"}
-                        </Button>
-                      )}
+                      <h2 className="text-xl font-semibold text-center">Verify Your Institution</h2>
+                      <p className="text-default-500 text-center">
+                        Enter your institutional email to get started. We'll verify that your school is part of our network.
+                      </p>
                       
-                      {/* Results */}
-                      <div className="space-y-4 mt-2">
-                        {/* User exists message */}
-                        {userExists && (
-                          <Alert
-                            color="primary"
-                            title="Account Found"
-                          >
-                            An account with this email already exists. Redirecting you to the login page...
-                          </Alert>
-                        )}
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium" htmlFor="email">Institutional Email</label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="your.name@school.edu"
+                            isDisabled={isVerifying || isRedirecting}
+                            className="h-12"
+                          />
+                          {emailError && (
+                            <p className="text-sm font-medium text-danger">{emailError}</p>
+                          )}
+                        </div>
                         
-                        {/* Institution verification success */}
-                        {institutionStatus === "success" && !userExists && (
-                          <Alert
-                            color="success"
-                            title={`Institution Verified: ${institution?.name}`}
-                          >
-                            Your institution has been verified. Continue to complete your profile.
-                          </Alert>
-                        )}
-                        
-                        {/* Institution verification error */}
-                        {institutionStatus === "error" && !userExists && (
-                          <Alert
-                            color="danger"
-                            title="Verification Failed"
-                          >
-                            Institution not recognized. Please use your school email address.
-                          </Alert>
-                        )}
-                        
-                        {/* Continue Button */}
-                        {institutionStatus === "success" && !userExists && (
-                          <Button
-                            onPress={nextStep}
+                        {/* Verify Button */}
+                        {(institutionStatus === null || institutionStatus === "error") && (
+                          <Button 
+                            onPress={verifyInstitution}
+                            isDisabled={isVerifying || !email || isRedirecting}
                             className="w-full h-12"
                             color="primary"
                           >
-                            Continue to Profile Details
-                            <ArrowRightIcon className="ml-2 h-4 w-4" />
+                            {isVerifying ? (
+                              <div className="flex items-center">
+                                <span className="mr-2">Verifying</span>
+                                <div className="flex space-x-1">
+                                  <span className="inline-block animate-pulse">•</span>
+                                  <span className="inline-block animate-pulse delay-75">•</span>
+                                  <span className="inline-block animate-pulse delay-150">•</span>
+                                </div>
+                              </div>
+                            ) : "Verify Institution"}
                           </Button>
                         )}
+                        
+                        {/* Results */}
+                        <div className="space-y-4 mt-2">
+                          {/* User exists message */}
+                          {userExists && (
+                            <Alert
+                              color="primary"
+                              title="Account Found"
+                            >
+                              An account with this email already exists. Redirecting you to the login page...
+                            </Alert>
+                          )}
+                          
+                          {/* Institution verification success */}
+                          {institutionStatus === "success" && !userExists && (
+                            <Alert
+                              color="success"
+                              title={`Institution Verified: ${institution?.name}`}
+                            >
+                              Your institution has been verified. Continue to complete your profile.
+                            </Alert>
+                          )}
+                          
+                          {/* Institution verification error */}
+                          {institutionStatus === "error" && !userExists && (
+                            <Alert
+                              color="danger"
+                              title="Verification Failed"
+                            >
+                              Institution not recognized. Please use your school email address.
+                            </Alert>
+                          )}
+                          
+                          {/* Continue Button */}
+                          {institutionStatus === "success" && !userExists && (
+                            <Button
+                              onPress={nextStep}
+                              className="w-full h-12 group"
+                              color="primary"
+                            >
+                              Continue to Profile Details
+                              <ArrowRightIcon className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </Tab>
-              
-              {/* Step 2: Profile Details */}
-              <Tab key="step2" title="Profile" className="space-y-6">
-                <div className="max-w-lg mx-auto">
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-center mb-6">
-                      <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center">
-                        <UserIcon className="h-8 w-8 text-primary" />
-                      </div>
-                    </div>
-                    
-                    <h2 className="text-xl font-semibold text-center">Complete Your Profile</h2>
-                    {hasPrefilledData ? (
-                      <Alert
-                        color="primary"
-                        title="Existing Information Found"
-                      >
-                        We found your existing information! Please verify it's correct before continuing.
-                      </Alert>
-                    ) : (
-                      <p className="text-default-500 text-center">
-                        Please provide the following information to complete your profile.
-                      </p>
-                    )}
-                    
+
+                {/* Step 2: Profile Details */}
+                <div 
+                  className={`transition-all duration-500 transform ${
+                    currentStep === 2 ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 absolute inset-0'
+                  }`}
+                >
+                  <div className="max-w-lg mx-auto">
                     <div className="space-y-6">
-                      {/* Name Fields */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium" htmlFor="firstName">First Name</label>
-                          <Input
-                            id="firstName"
-                            name="firstName"
-                            value={formData.firstName}
-                            onChange={handleInputChange}
-                            className="h-12"
-                          />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium" htmlFor="lastName">Last Name</label>
-                          <Input
-                            id="lastName"
-                            name="lastName"
-                            value={formData.lastName}
-                            onChange={handleInputChange}
-                            className="h-12"
-                          />
+                      <div className="flex items-center justify-center mb-6">
+                        <div className="w-16 h-16 rounded-full bg-primary-100 dark:bg-primary-900/20 flex items-center justify-center">
+                          <UserIcon className="h-8 w-8 text-primary" />
                         </div>
                       </div>
                       
-                      {/* Education Fields */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium" htmlFor="graduationYear">Expected Graduation Year</label>
-                          <Input
-                            id="graduationYear"
-                            name="graduationYear"
-                            value={formData.graduationYear}
-                            onChange={handleInputChange}
-                            placeholder="YYYY"
-                            className="h-12"
-                          />
+                      <h2 className="text-xl font-semibold text-center">Complete Your Profile</h2>
+                      {hasPrefilledData ? (
+                        <Alert
+                          color="primary"
+                          title="Existing Information Found"
+                        >
+                          We found your existing information! Please verify it's correct before continuing.
+                        </Alert>
+                      ) : (
+                        <p className="text-default-500 text-center">
+                          Please provide the following information to complete your profile.
+                        </p>
+                      )}
+                      
+                      <div className="space-y-6">
+                        {/* Name Fields */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium" htmlFor="firstName">First Name</label>
+                            <Input
+                              id="firstName"
+                              name="firstName"
+                              value={formData.firstName}
+                              onChange={handleInputChange}
+                              className="h-12"
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium" htmlFor="lastName">Last Name</label>
+                            <Input
+                              id="lastName"
+                              name="lastName"
+                              value={formData.lastName}
+                              onChange={handleInputChange}
+                              className="h-12"
+                            />
+                          </div>
                         </div>
                         
+                        {/* Education Fields */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium" htmlFor="graduationYear">Expected Graduation Year</label>
+                            <Input
+                              id="graduationYear"
+                              name="graduationYear"
+                              value={formData.graduationYear}
+                              onChange={handleInputChange}
+                              placeholder="YYYY"
+                              className="h-12"
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium" htmlFor="degreeType">Degree Type</label>
+                            <Select
+                              id="degreeType"
+                              selectedKeys={formData.degreeType ? [formData.degreeType] : []}
+                              onChange={(e) => handleSelectChange("degreeType", e.target.value)}
+                              placeholder="Select Degree Type"
+                              className="h-12"
+                            >
+                              <SelectItem key="Undergraduate">Undergraduate</SelectItem>
+                              <SelectItem key="Graduate">Graduate</SelectItem>
+                              <SelectItem key="Doctorate">Doctorate</SelectItem>
+                              <SelectItem key="Certificate">Certificate</SelectItem>
+                            </Select>
+                          </div>
+                        </div>
+                        
+                        {/* Referral Field */}
                         <div className="space-y-2">
-                          <label className="text-sm font-medium" htmlFor="degreeType">Degree Type</label>
+                          <label className="text-sm font-medium" htmlFor="referralSource">How did you hear about xFoundry?</label>
                           <Select
-                            id="degreeType"
-                            selectedKeys={formData.degreeType ? [formData.degreeType] : []}
-                            onChange={(e) => handleSelectChange("degreeType", e.target.value)}
-                            placeholder="Select Degree Type"
+                            id="referralSource"
+                            selectedKeys={formData.referralSource ? [formData.referralSource] : []}
+                            onChange={(e) => handleSelectChange("referralSource", e.target.value)}
+                            placeholder="Please select..."
                             className="h-12"
                           >
-                            <SelectItem key="Undergraduate">Undergraduate</SelectItem>
-                            <SelectItem key="Graduate">Graduate</SelectItem>
-                            <SelectItem key="Doctorate">Doctorate</SelectItem>
-                            <SelectItem key="Certificate">Certificate</SelectItem>
+                            <SelectItem key="Friend">Friend or Classmate</SelectItem>
+                            <SelectItem key="Professor">Professor or Advisor</SelectItem>
+                            <SelectItem key="Email">Email</SelectItem>
+                            <SelectItem key="SocialMedia">Social Media</SelectItem>
+                            <SelectItem key="Event">Campus Event</SelectItem>
+                            <SelectItem key="Search">Search Engine</SelectItem>
+                            <SelectItem key="Other">Other</SelectItem>
                           </Select>
                         </div>
-                      </div>
-                      
-                      {/* Referral Field */}
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium" htmlFor="referralSource">How did you hear about xFoundry?</label>
-                        <Select
-                          id="referralSource"
-                          selectedKeys={formData.referralSource ? [formData.referralSource] : []}
-                          onChange={(e) => handleSelectChange("referralSource", e.target.value)}
-                          placeholder="Please select..."
-                          className="h-12"
-                        >
-                          <SelectItem key="Friend">Friend or Classmate</SelectItem>
-                          <SelectItem key="Professor">Professor or Advisor</SelectItem>
-                          <SelectItem key="Email">Email</SelectItem>
-                          <SelectItem key="SocialMedia">Social Media</SelectItem>
-                          <SelectItem key="Event">Campus Event</SelectItem>
-                          <SelectItem key="Search">Search Engine</SelectItem>
-                          <SelectItem key="Other">Other</SelectItem>
-                        </Select>
-                      </div>
-                      
-                      {/* Buttons */}
-                      <div className="flex flex-col md:flex-row gap-3 pt-4">
-                        <Button 
-                          variant="bordered" 
-                          onPress={prevStep}
-                          className="h-12 md:flex-1 border-primary text-primary"
-                        >
-                          Back
-                        </Button>
                         
-                        <Button 
-                          onPress={handleGoogleSignup}
-                          isDisabled={!formData.firstName || !formData.lastName || !formData.graduationYear || !formData.degreeType}
-                          className="h-12 md:flex-2"
-                          color="warning"
-                        >
-                          <div className="flex items-center">
-                            Create Account with Google
-                          </div>
-                        </Button>
+                        {/* Buttons */}
+                        <div className="flex flex-col md:flex-row gap-3 pt-4">
+                          <Button 
+                            variant="bordered" 
+                            onPress={prevStep}
+                            className="h-12 md:flex-1 border-primary text-primary group"
+                          >
+                            <ArrowRightIcon className="mr-2 h-4 w-4 rotate-180 transition-transform group-hover:-translate-x-1" />
+                            Back
+                          </Button>
+                          
+                          <Button 
+                            onPress={handleGoogleSignup}
+                            isDisabled={!formData.firstName || !formData.lastName || !formData.graduationYear || !formData.degreeType}
+                            className="h-12 md:flex-2"
+                            color="warning"
+                          >
+                            <div className="flex items-center">
+                              Create Account with Google
+                            </div>
+                          </Button>
+                        </div>
+                        
+                        <p className="text-sm text-center text-default-500 mt-4">
+                          By creating an account, you agree to our Terms of Service and Privacy Policy.
+                        </p>
                       </div>
-                      
-                      <p className="text-sm text-center text-default-500 mt-4">
-                        By creating an account, you agree to our Terms of Service and Privacy Policy.
-                      </p>
                     </div>
                   </div>
                 </div>
-              </Tab>
-            </Tabs>
+              </div>
+            </div>
           </Card>
           
           <div className="text-center mt-6">
