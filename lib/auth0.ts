@@ -136,7 +136,7 @@ interface SignupMetadata {
 }
 
 // Directly export the Management API functions
-export default {
+const auth0API = {
   /**
    * Get a direct Auth0 Management API token
    * @returns {Promise<string|null>} Auth0 Management API token
@@ -458,3 +458,5 @@ export default {
     }
   }
 };
+
+export default auth0API;

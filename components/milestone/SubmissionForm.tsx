@@ -61,8 +61,19 @@ export function SubmissionForm({
   
   // Load draft from localStorage on mount
   useEffect(() => {
+    if (defaultValues) {
+      // If default values are provided, use them instead of draft data
+      setDescription(defaultValues.description || "");
+      setFiles(defaultValues.files || []);
+      setLinks(defaultValues.links || []);
+      setContributors(defaultValues.contributors || []);
+      setNotes(defaultValues.notes || "");
+      return;
+    }
+    
+    // Otherwise try to load from localStorage
     const savedDraft = localStorage.getItem(draftKey);
-    if (savedDraft && !defaultValues) {
+    if (savedDraft) {
       try {
         const parsedDraft = JSON.parse(savedDraft);
         setDescription(parsedDraft.description || "");

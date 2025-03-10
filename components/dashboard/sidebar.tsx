@@ -29,105 +29,82 @@ export function DashboardSidebar({
   const router = useRouter();
   const { getAllProgramInitiatives } = useDashboard();
   
-  // Define main navigation links
-  const [mainLinks, setMainLinks] = useState([
-    {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: <HomeIcon />,
-      isActive: false
-    },
-    {
-      title: "Profile",
-      url: "/profile",
-      icon: <UserIcon />,
-      isActive: false
-    },
-    {
-      title: "Teams",
-      url: "/teams",
-      icon: <TeamIcon />,
-      isActive: false
-    }
-  ]);
+  // Memoize main links with active state based on current route
+  const mainLinks = React.useMemo(() => {
+    // Define navigation links inside the memo
+    const mainLinksConfig = [
+      {
+        title: "Dashboard",
+        url: "/dashboard",
+        icon: <HomeIcon />
+      },
+      {
+        title: "Profile",
+        url: "/profile",
+        icon: <UserIcon />
+      },
+      {
+        title: "Teams",
+        url: "/teams",
+        icon: <TeamIcon />
+      }
+    ];
+    
+    return mainLinksConfig.map(link => ({
+      ...link,
+      isActive: router.pathname === link.url || 
+                (link.url !== '/dashboard' && router.pathname.startsWith(link.url))
+    }));
+  }, [router.pathname]);
   
-  // Get programs from context
-  const programInitiatives = profile ? getAllProgramInitiatives() : [];
+  // Get and memoize program initiatives from context
+  const programInitiatives = React.useMemo(() => {
+    return profile ? getAllProgramInitiatives() : [];
+  }, [profile, getAllProgramInitiatives]);
   
-  // Create program links from initiatives
-  const [programLinks, setProgramLinks] = useState<Array<{
-    title: string;
-    url: string;
-    icon: JSX.Element;
-    isActive: boolean;
-  }>>([]);
-  
-  // Update program links when profile/initiatives change
-  useEffect(() => {
-    if (programInitiatives.length > 0) {
-      const newProgramLinks = programInitiatives.map(initiative => ({
-        title: initiative.name,
-        url: `/program/${initiative.id}`,
-        icon: <CompassIcon />,
-        isActive: false
-      }));
-      
-      // Update active states based on current route
-      const updatedLinks = newProgramLinks.map(link => ({
-        ...link,
-        isActive: router.pathname.includes(link.url)
-      }));
-      
-      setProgramLinks(updatedLinks);
-    } else {
-      setProgramLinks([]);
-    }
+  // Memoize program links creation based on initiatives
+  const programLinks = React.useMemo(() => {
+    if (programInitiatives.length === 0) return [];
+    
+    return programInitiatives.map(initiative => ({
+      title: initiative.name,
+      url: `/program/${initiative.id}`,
+      icon: <CompassIcon />,
+      isActive: router.pathname.includes(`/program/${initiative.id}`)
+    }));
   }, [programInitiatives, router.pathname]);
   
-  // Define utility links
-  const [utilityLinks, setUtilityLinks] = useState([
-    {
-      title: "ConneXions Community",
-      url: "https://connexions.xfoundry.org",
-      icon: <ExternalLinkIcon />,
-      isExternal: true,
-      isActive: false
-    },
-    {
-      title: "xFoundry Website",
-      url: "https://xfoundry.org",
-      icon: <ExternalLinkIcon />,
-      isExternal: true,
-      isActive: false
-    },
-    {
-      title: "Settings",
-      url: "/settings",
-      icon: <SettingsIcon />,
-      isExternal: false,
-      isActive: false
-    }
-  ]);
-  
-  // Update active state based on current route
-  useEffect(() => {
-    // Update main links active state
-    setMainLinks(prev => 
-      prev.map(link => ({
-        ...link,
-        isActive: router.pathname === link.url || 
-                  (link.url !== '/dashboard' && router.pathname.startsWith(link.url))
-      }))
-    );
+  // Memoize utility links with active state based on current route
+  const utilityLinks = React.useMemo(() => {
+    // Define utility links configuration inside the memo
+    const utilityLinksConfig = [
+      {
+        title: "ConneXions Community",
+        url: "https://connexions.xfoundry.org",
+        icon: <ExternalLinkIcon />,
+        isExternal: true
+      },
+      {
+        title: "xFoundry Website",
+        url: "https://xfoundry.org",
+        icon: <ExternalLinkIcon />,
+        isExternal: true
+      },
+      {
+        title: "Settings",
+        url: "/settings",
+        icon: <SettingsIcon />,
+        isExternal: false
+      }
+    ];
     
-    // Update utility links active state
-    setUtilityLinks(prev => 
-      prev.map(link => ({
-        ...link,
-        isActive: !link.isExternal && router.pathname === link.url
-      }))
-    );
+    return utilityLinksConfig.map(link => ({
+      ...link,
+      isActive: !link.isExternal && router.pathname === link.url
+    }));
   }, [router.pathname]);
+  
+  // Active state calculation is now handled in the useMemo hooks above
 
   // Format the institution name
   const institutionName = profile?.institutionName || 

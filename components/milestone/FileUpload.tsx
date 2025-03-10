@@ -36,17 +36,27 @@ export function FileUpload({
   
   // Reset progress when files change
   useEffect(() => {
+    // Create a stable reference to uploadProgress to avoid dependency cycles
+    const currentProgress = { ...uploadProgress };
+    
     const newProgress: Record<string, number> = {};
     value.forEach(file => {
       // If we already have progress for this file, keep it
-      if (uploadProgress[file.name]) {
-        newProgress[file.name] = uploadProgress[file.name];
+      if (currentProgress[file.name]) {
+        newProgress[file.name] = currentProgress[file.name];
       } else {
         // Otherwise set to 100 (complete) as these are already "uploaded" to the component
         newProgress[file.name] = 100;
       }
     });
-    setUploadProgress(newProgress);
+    
+    // Only update if progress values have actually changed
+    const hasChanges = Object.keys(newProgress).length !== Object.keys(currentProgress).length ||
+      Object.keys(newProgress).some(key => newProgress[key] !== currentProgress[key]);
+      
+    if (hasChanges) {
+      setUploadProgress(newProgress);
+    }
   }, [value, uploadProgress]);
   
   // Trigger file input click

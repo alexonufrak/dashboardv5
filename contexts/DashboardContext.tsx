@@ -672,58 +672,60 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     };
   }, [profile, participationData]);
   
-  // Get all program initiatives - defined as early function to avoid circular dependencies
-  const getAllProgramInitiatives = (): Initiative[] => {
-    // Get participations from participationData instead of profile
-    if (!participationData?.participation) return [];
-    
-    // Use a Set to avoid duplicate initiatives
-    const initiatives = new Set<string>();
-    const result: Initiative[] = [];
-    
-    const participations = participationData.participation || [];
-    console.log(`getAllProgramInitiatives: Found ${participations.length} participations`);
-    
-    participations.forEach(p => {
-      if (p.cohort?.initiativeDetails?.id) {
-        const initiativeId = p.cohort.initiativeDetails.id;
-        
-        // Skip if we've already processed this initiative
-        if (initiatives.has(initiativeId)) return;
-        initiatives.add(initiativeId);
-        
-        const participationType = p.cohort?.participationType || 
-                               p.cohort?.initiativeDetails?.["Participation Type"] || 
-                               "Individual";
-        
-        // Helper function to check if participation type is team-based
-        const isTeamBased = (() => {
-          if (!participationType) return false;
+  // Get all program initiatives - using useMemo to prevent recreation on each render
+  const getAllProgramInitiatives = useMemo(() => {
+    return (): Initiative[] => {
+      // Get participations from participationData instead of profile
+      if (!participationData?.participation) return [];
+      
+      // Use a Set to avoid duplicate initiatives
+      const initiatives = new Set<string>();
+      const result: Initiative[] = [];
+      
+      const participations = participationData.participation || [];
+      console.log(`getAllProgramInitiatives: Found ${participations.length} participations`);
+      
+      participations.forEach(p => {
+        if (p.cohort?.initiativeDetails?.id) {
+          const initiativeId = p.cohort.initiativeDetails.id;
           
-          const normalizedType = String(participationType).trim().toLowerCase();
-          return normalizedType === "team" || 
-                 normalizedType.includes("team") ||
-                 normalizedType === "teams" ||
-                 normalizedType === "group" ||
-                 normalizedType.includes("group") ||
-                 normalizedType === "collaborative" ||
-                 normalizedType.includes("collaborative");
-        })();
-        
-        result.push({
-          id: initiativeId,
-          name: p.cohort.initiativeDetails.name || "Unknown Initiative",
-          participationType: participationType,
-          isTeamBased: isTeamBased,
-          teamId: p.teamId || null,
-          cohortId: p.cohort.id
-        });
-      }
-    });
-    
-    console.log(`getAllProgramInitiatives: Returning ${result.length} initiatives`, result);
-    return result;
-  };
+          // Skip if we've already processed this initiative
+          if (initiatives.has(initiativeId)) return;
+          initiatives.add(initiativeId);
+          
+          const participationType = p.cohort?.participationType || 
+                                 p.cohort?.initiativeDetails?.["Participation Type"] || 
+                                 "Individual";
+          
+          // Helper function to check if participation type is team-based
+          const isTeamBased = (() => {
+            if (!participationType) return false;
+            
+            const normalizedType = String(participationType).trim().toLowerCase();
+            return normalizedType === "team" || 
+                   normalizedType.includes("team") ||
+                   normalizedType === "teams" ||
+                   normalizedType === "group" ||
+                   normalizedType.includes("group") ||
+                   normalizedType === "collaborative" ||
+                   normalizedType.includes("collaborative");
+          })();
+          
+          result.push({
+            id: initiativeId,
+            name: p.cohort.initiativeDetails.name || "Unknown Initiative",
+            participationType: participationType,
+            isTeamBased: isTeamBased,
+            teamId: p.teamId || null,
+            cohortId: p.cohort.id
+          });
+        }
+      });
+      
+      console.log(`getAllProgramInitiatives: Returning ${result.length} initiatives`, result);
+      return result;
+    };
+  }, [participationData]);
   
   // Get teams for a specific program - defined early to avoid circular dependencies
   const getTeamsForProgram = (programId: string): Team[] => {

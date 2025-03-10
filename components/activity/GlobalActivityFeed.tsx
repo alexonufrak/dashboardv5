@@ -227,8 +227,8 @@ export default function GlobalActivityFeed({
       <CardBody>
         {isLoadingPoints ? (
           <div className="space-y-4">
-            {Array(limit).fill(0).map((_, i) => (
-              <div key={i} className="flex gap-3">
+            {Array.from({ length: limit }).map((_, i) => (
+              <div key={`skeleton-${i}-${Date.now()}`} className="flex gap-3">
                 <Skeleton className="h-10 w-10 rounded-full" />
                 <div className="space-y-2 flex-1">
                   <Skeleton className="h-4 w-3/4" />
