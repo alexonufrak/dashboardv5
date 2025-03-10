@@ -17,6 +17,7 @@ import {
   ExclamationCircleIcon as AlertCircleIcon,
   ArrowTopRightOnSquareIcon as ExternalLinkIcon
 } from "@heroicons/react/24/solid";
+import { ThemeSwitch } from "@/components/theme-switch";
 
 export default function Login() {
   const router = useRouter();
@@ -152,12 +153,13 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center py-10 px-4 bg-background">
+    <div className="flex min-h-screen w-full items-center justify-center py-10 px-4 bg-background dark:bg-background">
       <div className="w-full max-w-md">
-        <Card className="p-6 md:p-8 shadow-md bg-white">
+        <Card className="p-6 md:p-8 shadow-md bg-content1 dark:bg-content1">
           <CardBody className="space-y-6">
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-between items-center mb-6">
               <h1 className="text-2xl font-bold text-primary">xFoundry</h1>
+              <ThemeSwitch />
             </div>
             <div className="space-y-2 text-center">
               <h1 className="text-2xl font-bold text-primary">Sign In</h1>
@@ -294,7 +296,7 @@ export default function Login() {
                   <Divider className="w-full" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-white px-2 text-default-500">Or</span>
+                  <span className="bg-content1 dark:bg-content1 px-2 text-default-500">Or</span>
                 </div>
               </div>
               

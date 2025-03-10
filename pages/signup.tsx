@@ -24,6 +24,7 @@ import {
   EnvelopeIcon as MailIcon,
   AcademicCapIcon as GraduationCapIcon
 } from "@heroicons/react/24/solid";
+import { ThemeSwitch } from "@/components/theme-switch";
 
 export default function SignUp() {
   const { user, isLoading } = useUser();
@@ -289,23 +290,26 @@ export default function SignUp() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background dark:bg-background">
       <div className="container mx-auto flex flex-col items-center justify-center py-12 px-4 lg:px-8">
         <div className="max-w-5xl w-full">
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-4">
               <h1 className="text-3xl font-bold text-primary">xFoundry</h1>
+              <ThemeSwitch />
             </div>
-            <h1 className="text-3xl font-bold text-primary sm:text-4xl">
-              Join Our Multidisciplinary Community
-            </h1>
-            <p className="mt-3 text-xl text-default-500">
-              Break down academic silos and collaborate across disciplines to tackle global challenges
-            </p>
+            <div className="text-center">
+              <h1 className="text-3xl font-bold text-primary sm:text-4xl">
+                Join Our Multidisciplinary Community
+              </h1>
+              <p className="mt-3 text-xl text-default-500">
+                Break down academic silos and collaborate across disciplines to tackle global challenges
+              </p>
+            </div>
           </div>
           
           {/* Signup Card */}
-          <Card className="p-6 md:p-8 shadow-lg bg-white">
+          <Card className="p-6 md:p-8 shadow-lg bg-content1 dark:bg-content1">
             {/* Step Indicators */}
             <div className="mb-8 w-full flex justify-center space-x-16">
               {/* Step 1 */}
@@ -314,11 +318,11 @@ export default function SignUp() {
                   className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center text-sm font-medium mb-2 transition-all duration-300 shadow-sm
                     ${currentStep >= 1 
                       ? 'bg-primary text-white' 
-                      : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700'}`}
                 >
                   1
                 </div>
-                <span className={`text-xs font-medium ${currentStep >= 1 ? 'text-primary' : 'text-gray-400'}`}>
+                <span className={`text-xs font-medium ${currentStep >= 1 ? 'text-primary' : 'text-gray-400 dark:text-gray-500'}`}>
                   Institution
                 </span>
               </div>
@@ -329,11 +333,11 @@ export default function SignUp() {
                   className={`w-10 h-10 mx-auto rounded-full flex items-center justify-center text-sm font-medium mb-2 transition-all duration-300 shadow-sm
                     ${currentStep >= 2 
                       ? 'bg-primary-600 text-white' 
-                      : 'bg-gray-100 text-gray-400 border border-gray-200'}`}
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 border border-gray-200 dark:border-gray-700'}`}
                 >
                   2
                 </div>
-                <span className={`text-xs font-medium ${currentStep >= 2 ? 'text-primary-600' : 'text-gray-400'}`}>
+                <span className={`text-xs font-medium ${currentStep >= 2 ? 'text-primary-600' : 'text-gray-400 dark:text-gray-500'}`}>
                   Profile
                 </span>
               </div>
