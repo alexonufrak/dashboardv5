@@ -9,15 +9,16 @@ import {
   ModalHeader,
   ModalBody,
   ModalFooter,
+  Textarea,
+  Alert,
+  Button, 
+  Input,
+  addToast
 } from "@heroui/react"
 
-import { Textarea } from "@heroui/react"
 import { AlertCircle } from "lucide-react"
-import { Alert } from "@heroui/react"
-import { addToast } from "@heroui/toast"
 import { Team } from "@/types/dashboard"
-import { updateTeamData } from "@/lib/useDataFetching"
-import { Button, Input } from "@heroui/react";
+import { updateTeamData } from "@/lib/useDataFetching";
 
 /**
  * Dialog component for editing team details
@@ -34,6 +35,7 @@ const TeamEditDialog = ({
   onTeamUpdated?: (team: Team) => void;
 }) => {
   const queryClient = useQueryClient()
+  // Form state
   const [teamName, setTeamName] = useState("")
   const [teamDescription, setTeamDescription] = useState("")
   const [error, setError] = useState("")

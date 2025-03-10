@@ -12,10 +12,8 @@ import {
 } from "@heroui/react"
 
 import { AlertCircle, CheckCircle } from "lucide-react"
-import { Alert } from "@heroui/react"
-import { addToast } from "@heroui/toast"
-import { Team } from "@/types/dashboard"
-import { Button, Input } from "@heroui/react";
+import { Alert, addToast, Button, Input } from "@heroui/react"
+import { Team } from "@/types/dashboard";
 
 /**
  * Dialog component for inviting users to a team

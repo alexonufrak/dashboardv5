@@ -7,7 +7,6 @@ import { UserProvider } from '@auth0/nextjs-auth0/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { fontSans, fontMono } from "@/config/fonts";
-import xFoundryTheme from "@/config/theme";
 import { DashboardProvider } from "@/contexts/DashboardContext";
 import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import "@/styles/globals.css";
@@ -38,7 +37,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <QueryClientProvider client={queryClient}>
         {/* Theme provider for light/dark mode */}
         <NextThemesProvider attribute="class" defaultTheme="light">
-          {/* HeroUI provider */}
+          {/* HeroUI provider with default theme */}
           <HeroUIProvider>
             {/* Conditionally wrap with providers based on route */}
             {isDashboardPage ? (

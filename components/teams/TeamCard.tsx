@@ -2,13 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardHeader, CardBody, CardFooter, Badge, Tooltip } from "@heroui/react";
+import { Card, CardHeader, CardBody, CardFooter, Badge, Tooltip, Button, addToast } from "@heroui/react";
 
-import { addToast } from "@heroui/toast";
 import { Users, Info, Pencil, UserPlus } from "lucide-react";
 import { TeamInviteDialog, TeamEditDialog, TeamDetailModal } from "./index";
 import { Team, Profile, Cohort } from "@/types/dashboard";
-import { Button } from "@heroui/react";
 
 interface TeamCardProps {
   team: Team;
@@ -21,6 +19,7 @@ interface TeamCardProps {
  */
 const TeamCard = ({ team, profile, onTeamUpdated }: TeamCardProps) => {
   const router = useRouter();
+  // Use toast notification system
   const [currentTeam, setCurrentTeam] = useState<Team>(team);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [showTeamEditDialog, setShowTeamEditDialog] = useState(false);

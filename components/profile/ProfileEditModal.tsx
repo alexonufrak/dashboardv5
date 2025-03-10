@@ -8,12 +8,12 @@ import {
   ModalFooter,
   Input,
   Select,
-  Alert
+  SelectItem,
+  Alert,
+  Button
 } from "@heroui/react";
-import { SelectItem } from "@heroui/select";
 
 import { useMajors, updateProfileData } from "@/lib/useDataFetching";
-import { Button } from "@heroui/react";
 
 // Define the major type
 interface Major {

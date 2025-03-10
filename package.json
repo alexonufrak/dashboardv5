@@ -12,8 +12,9 @@
     "@auth0/nextjs-auth0": "^3.5.0",
     "@heroicons/react": "^2.2.0",
     "@heroui/react": "^2.7.5",
+    "@heroui/system": "^2.4.12",
+    "@heroui/theme": "^2.4.12",
     "@react-aria/visually-hidden": "3.8.19",
-    "@tailwindcss/postcss": "^4.0.12",
     "@tanstack/react-query": "^5.22.2",
     "@vercel/blob": "^0.27.2",
     "airtable": "^0.12.2",
@@ -39,7 +40,7 @@
     "@types/uuid": "^9.0.7",
     "@typescript-eslint/eslint-plugin": "8.11.0",
     "@typescript-eslint/parser": "8.11.0",
-    "autoprefixer": "^10.4.21",
+    "autoprefixer": "^10.4.14",
     "eslint": "^8.57.0",
     "eslint-config-next": "^15.2.1",
     "eslint-config-prettier": "9.1.0",
@@ -50,11 +51,11 @@
     "eslint-plugin-react": "^7.23.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-unused-imports": "4.1.4",
-    "postcss": "^8.5.3",
+    "postcss": "^8.4.24",
     "postcss-cli": "^11.0.0",
     "prettier": "3.3.3",
     "tailwind-variants": "0.3.0",
-    "tailwindcss": "^4.0.12",
+    "tailwindcss": "^3.2.7",
     "typescript": "5.6.3"
   }
 }
