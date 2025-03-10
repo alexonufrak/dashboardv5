@@ -105,7 +105,7 @@ function ProgramDashboardInner({ onNavigate, programId }) {
   }
   
   return (
-    <div className="flex flex-col flex-1 w-full">
+    <div className="space-y-6">
       <ProgramHeader
         programCohort={programCohort}
         programInitiativeName={programInitiativeName}
@@ -116,7 +116,7 @@ function ProgramDashboardInner({ onNavigate, programId }) {
         onEditTeamClick={() => setIsEditDialogOpen(true)}
       />
       
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col mt-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList className="w-full md:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="milestones">Milestones</TabsTrigger>
@@ -124,32 +124,30 @@ function ProgramDashboardInner({ onNavigate, programId }) {
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
         
-        <div className="flex-1 mt-4">
-          <TabsContent value="overview" className="h-full">
-            <OverviewTab
-              milestones={milestones || []}
-              isTeamProgram={isTeamProgram}
-              team={team}
-              teamData={teamData}
-              onViewMilestones={handleViewMilestones}
-              onViewMembers={handleViewMembers}
-            />
+        <TabsContent value="overview">
+          <OverviewTab
+            milestones={milestones || []}
+            isTeamProgram={isTeamProgram}
+            team={team}
+            teamData={teamData}
+            onViewMilestones={handleViewMilestones}
+            onViewMembers={handleViewMembers}
+          />
+        </TabsContent>
+        
+        <TabsContent value="milestones">
+          <MilestonesTab milestones={milestones || []} />
+        </TabsContent>
+        
+        {isTeamProgram && (
+          <TabsContent value="members">
+            <TeamMembersTab team={team} />
           </TabsContent>
-          
-          <TabsContent value="milestones" className="h-full">
-            <MilestonesTab milestones={milestones || []} />
-          </TabsContent>
-          
-          {isTeamProgram && (
-            <TabsContent value="members" className="h-full">
-              <TeamMembersTab team={team} />
-            </TabsContent>
-          )}
-          
-          <TabsContent value="activity" className="h-full">
-            <ActivityTab team={team} />
-          </TabsContent>
-        </div>
+        )}
+        
+        <TabsContent value="activity">
+          <ActivityTab team={team} />
+        </TabsContent>
       </Tabs>
       
       {isTeamProgram && team && (

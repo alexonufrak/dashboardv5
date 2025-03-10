@@ -55,10 +55,10 @@ export default function DashboardLayout({
           
           {/* Main Content */}
           <SidebarInset className="bg-background flex-1 overflow-auto">
-            <div className="pt-[60px] md:pt-4 h-full w-full flex flex-col">
-              <div className="w-full h-full px-4 md:px-6 flex flex-col flex-1">
+            <div className="pt-[60px] md:pt-4 h-full w-full">
+              <div className="w-full h-full px-4 md:px-6 flex flex-col">
                 {/* Content wrapper with page transitions */}
-                <div className={`dashboard-content flex-1 flex flex-col ${styles.dashboardContent}`}>
+                <div className={`dashboard-content flex-1 ${styles.dashboardContent}`}>
                   {error ? (
                     <div className="flex flex-col items-center justify-center min-h-[60vh]">
                       <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
@@ -75,14 +75,14 @@ export default function DashboardLayout({
                   ) : isLoading ? (
                     <LoadingScreen message={loadingMessage} />
                   ) : (
-                    <div className={`${styles.dashboardContainer} flex-1 flex flex-col`}>
+                    <div className={styles.dashboardContainer}>
                       {children}
                     </div>
                   )}
                 </div>
                 
                 {/* Footer */}
-                <footer className="border-t py-6 mt-auto text-center text-muted-foreground text-sm">
+                <footer className="border-t py-8 mt-8 text-center text-muted-foreground text-sm">
                   <p>© {new Date().getFullYear()} xFoundry Education Platform. All rights reserved.</p>
                 </footer>
               </div>
