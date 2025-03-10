@@ -140,7 +140,8 @@ export default function Login() {
       window.location.href = `/api/auth/login?connection=google-oauth2&login_hint=${encodedEmail}&prompt=login`;
     } else {
       // If user doesn't exist, redirect to signup with email prefilled
-      router.push(`/signup?email=${encodedEmail}`);
+      // Add from_login=true flag to indicate this is a redirect from login
+      router.push(`/signup?email=${encodedEmail}&from_login=true`);
     }
   };
 
@@ -301,7 +302,12 @@ export default function Login() {
               </div>
               
               <div className="text-center">
-                <Button variant="bordered" className="w-full border-primary text-primary" as="a" href="/signup">
+                <Button 
+                  variant="bordered" 
+                  className="w-full border-primary text-primary" 
+                  as="a" 
+                  href="/signup"
+                >
                   Create New Account
                 </Button>
               </div>

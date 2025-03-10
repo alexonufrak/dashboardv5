@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/router";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { 
@@ -38,6 +38,8 @@ export default function SignUp() {
   const [userExists, setUserExists] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [hasPrefilledData, setHasPrefilledData] = useState(false);
+  const [isEmailFromRedirect, setIsEmailFromRedirect] = useState(false);
+  const hasVerifiedEmailRef = useRef(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -68,6 +70,11 @@ export default function SignUp() {
       return;
     }
     
+    // Don't re-verify if already in success state
+    if (institutionStatus === "success" && !isVerifying) {
+      return;
+    }
+    
     setIsVerifying(true);
     setEmailError("");
     setInstitutionStatus(null);
@@ -85,15 +92,12 @@ export default function SignUp() {
         body: JSON.stringify({ email }),
       });
       
-      console.log(`User check response status: ${userCheckResponse.status}`);
-      
       if (!userCheckResponse.ok) {
         console.error("Failed user check response:", userCheckResponse);
         throw new Error("Failed to check user existence");
       }
       
       const userCheckData = await userCheckResponse.json();
-      console.log("User check data:", userCheckData);
       
       // If user exists in Auth0, show message and prepare for redirect
       if (userCheckData.exists) {
@@ -162,12 +166,13 @@ export default function SignUp() {
       }
       
       const data = await response.json();
-      console.log("Institution lookup response:", data);
       
       if (data.success) {
         console.log(`Institution found: ${data.institution.name}`);
         setInstitution(data.institution);
         setInstitutionStatus("success");
+        // Set our flag to indicate successful verification
+        hasVerifiedEmailRef.current = true;
       } else {
         console.log("No matching institution found");
         setInstitutionStatus("error");
@@ -178,7 +183,7 @@ export default function SignUp() {
     } finally {
       setIsVerifying(false);
     }
-  }, [email, formData, institutionStatus, nextStep]);
+  }, [email, formData, institutionStatus, nextStep, isVerifying]);
 
   // Redirect to dashboard if user is already logged in
   useEffect(() => {
@@ -195,10 +200,19 @@ export default function SignUp() {
   // Handle email from URL query parameters and auto-verification
   useEffect(() => {
     // Get email from URL query parameters if available
-    if (router.query.email) {
-      setEmail(router.query.email as string);
+    if (router.query.email && !hasVerifiedEmailRef.current) {
+      const emailFromQuery = router.query.email as string;
+      setEmail(emailFromQuery);
+      
+      // Only mark as redirected from login if we have both email query param and from_login flag
+      const isFromLogin = router.query.from_login === 'true';
+      setIsEmailFromRedirect(isFromLogin && emailFromQuery.includes('@'));
+      
       // Automatically initiate verification if email is provided via URL
-      if (typeof router.query.email === 'string' && router.query.email.includes('@')) {
+      if (typeof emailFromQuery === 'string' && emailFromQuery.includes('@')) {
+        // Set the flag to prevent multiple verifications
+        hasVerifiedEmailRef.current = true;
+        
         // Need to wait for component to fully mount
         const timer = setTimeout(() => {
           verifyInstitution();
@@ -207,7 +221,7 @@ export default function SignUp() {
         return () => clearTimeout(timer);
       }
     }
-  }, [router.query.email, verifyInstitution]);
+  }, [router.query.email, router.query.from_login, verifyInstitution]);
 
   // Function to handle input changes for personal info form
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -385,11 +399,16 @@ export default function SignUp() {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="your.name@school.edu"
-                            isDisabled={isVerifying || isRedirecting}
+                            isDisabled={isVerifying || isRedirecting || isEmailFromRedirect}
                             className="h-12"
+                            startContent={isEmailFromRedirect && 
+                              <CheckCircleIcon className="h-5 w-5 text-success" aria-label="Email pre-filled from login" />}
                           />
                           {emailError && (
                             <p className="text-sm font-medium text-danger">{emailError}</p>
+                          )}
+                          {isEmailFromRedirect && !emailError && (
+                            <p className="text-xs text-success">Email pre-filled from login attempt</p>
                           )}
                         </div>
                         
