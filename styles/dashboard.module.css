@@ -3,6 +3,8 @@
   width: 100%;
   display: flex;
   flex-direction: column;
+  flex: 1;
+  height: 100%;
 }
 
 .dashboardContent {
@@ -10,9 +12,13 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 /* This selects only direct children of dashboardContent */
 .dashboardContent > * {
   width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
