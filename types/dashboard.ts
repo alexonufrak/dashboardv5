@@ -1,5 +1,6 @@
 /**
  * Type definitions for the Dashboard components and data models
+ * This file defines all the interfaces used throughout the application for data fetching and component props
  */
 
 // Profile data
@@ -195,4 +196,118 @@ export interface Activity {
   member: ActivityMember;
   timestamp: Date;
   details?: string;
+}
+
+// Submission data
+export interface Submission {
+  id: string;
+  milestoneId: string;
+  teamId: string;
+  description?: string;
+  fileUrls?: Array<{
+    url: string;
+    filename: string;
+    contentType: string;
+    size: number;
+  }>;
+  contributors?: string[];
+  submittedAt?: string;
+  status?: 'pending' | 'reviewed' | 'approved' | 'rejected';
+  feedback?: string;
+  notes?: string;
+  links?: string[];
+  [key: string]: any;
+}
+
+export interface SubmissionData {
+  submissions: Submission[];
+  [key: string]: any;
+}
+
+// Reward data
+export interface Reward {
+  id: string;
+  name: string;
+  description?: string;
+  pointsCost: number;
+  imageUrl?: string;
+  isAvailable: boolean;
+  quantity?: number;
+  [key: string]: any;
+}
+
+export interface ClaimedReward {
+  id: string;
+  rewardId: string;
+  rewardName?: string;
+  contactId?: string;
+  contactName?: string;
+  teamId?: string;
+  teamName?: string;
+  claimedDate: string;
+  status: 'pending' | 'approved' | 'fulfilled' | 'rejected';
+  notes?: string;
+  [key: string]: any;
+}
+
+// User Metadata
+export interface UserMetadata {
+  onboardingCompleted?: boolean;
+  preferences?: {
+    darkMode?: boolean;
+    emailNotifications?: boolean;
+    dashboardLayout?: string;
+    [key: string]: any;
+  };
+  lastActiveAt?: string;
+  lastSeen?: {
+    teamId?: string;
+    programId?: string;
+    [key: string]: any;
+  };
+  [key: string]: any;
+}
+
+// Team Cohort data
+export interface TeamCohort {
+  id: string;
+  teamId: string;
+  cohortId: string;
+  initiativeId?: string;
+  cohortName?: string;
+  initiativeName?: string;
+  status?: string;
+  [key: string]: any;
+}
+
+export interface TeamCohortsData {
+  cohorts: TeamCohort[];
+  [key: string]: any;
+}
+
+// Institution data
+export interface Institution {
+  id: string;
+  name: string;
+  domains?: string[];
+  type?: string;
+  country?: string;
+  logoUrl?: string;
+  [key: string]: any;
+}
+
+// Initiative Conflict
+export interface InitiativeConflict {
+  initiativeId: string;
+  initiativeName: string;
+  conflictingInitiativeId: string;
+  conflictingInitiativeName: string;
+  conflictType: 'same_cohort' | 'overlapping_dates' | 'incompatible_types' | string;
+  message: string;
+  severity: 'warning' | 'error';
+}
+
+export interface InitiativeConflictsData {
+  conflicts: InitiativeConflict[];
+  [key: string]: any;
 }

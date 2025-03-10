@@ -737,7 +737,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     const programCohorts = getProgramCohortIds(programId);
     
     // Get teams for the specific program based on cohort
-    const filteredTeams = teams.filter(team => {
+    const filteredTeams = teams.filter((team: Team) => {
       // If team has cohortIds array, check if it contains any cohort related to this program
       if (team.cohortIds && Array.isArray(team.cohortIds)) {
         // Check if any of the team's cohorts match the program cohorts
@@ -828,7 +828,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     
     // If no team found in available teams but we have a teamId, try to find it in all teams
     if (!teamData && teamId && teams) {
-      teamData = teams.find(team => team.id === teamId);
+      teamData = teams.find((team: Team) => team.id === teamId);
       
       // If team is found in all teams but not in available teams, it might be from another cohort
       if (teamData) {

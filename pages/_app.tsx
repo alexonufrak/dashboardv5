@@ -1,6 +1,6 @@
 import type { AppProps } from "next/app";
 
-import { HeroUIProvider } from "@heroui/react";
+import { HeroUIProvider, ToastProvider } from "@heroui/react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { useRouter } from "next/router";
 import { UserProvider } from '@auth0/nextjs-auth0/client';
