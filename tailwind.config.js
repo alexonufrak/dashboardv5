@@ -16,15 +16,6 @@ module.exports = {
         "xf-blue": "#24a9e0",      // Curious Blue - Primary
         "xf-dark-blue": "#0e445a", // Eden - Secondary
         "xf-gold": "#ffd200",      // Gold - Accent
-        
-        // Brand-specific variants for Tailwind classes outside the HeroUI components
-        "primary-light": "#55c4f1",
-        "primary-dark": "#0e445a",
-        
-        // Additional utility colors
-        "success": "#28a745",
-        "warning": "#ffd200",
-        "danger": "#dc3545",
       },
       fontFamily: {
         sans: [
@@ -43,9 +34,6 @@ module.exports = {
         "spinner": "spinner 1.5s linear infinite",
         "fade-in": "fade-in 0.3s ease-in-out",
         "fade-out": "fade-out 0.3s ease-in-out",
-        "slide-in-right": "slide-in-right 0.3s ease-in-out",
-        "slide-in-left": "slide-in-left 0.3s ease-in-out",
-        "slide-in-bottom": "slide-in-bottom 0.3s ease-in-out",
       },
       keyframes: {
         "spinner": {
@@ -59,18 +47,6 @@ module.exports = {
         "fade-out": {
           "0%": { opacity: 1 },
           "100%": { opacity: 0 },
-        },
-        "slide-in-right": {
-          "0%": { transform: "translateX(100%)", opacity: 0 },
-          "100%": { transform: "translateX(0)", opacity: 1 },
-        },
-        "slide-in-left": {
-          "0%": { transform: "translateX(-100%)", opacity: 0 },
-          "100%": { transform: "translateX(0)", opacity: 1 },
-        },
-        "slide-in-bottom": {
-          "0%": { transform: "translateY(20px)", opacity: 0 },
-          "100%": { transform: "translateY(0)", opacity: 1 },
         },
       },
     },

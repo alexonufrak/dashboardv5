@@ -1,6 +1,6 @@
 import type { AppProps } from "next/app";
 
-import { HeroUIProvider } from "@heroui/system";
+import { HeroUIProvider } from "@heroui/react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { useRouter } from "next/router";
 import { UserProvider } from '@auth0/nextjs-auth0/client';
@@ -36,10 +36,10 @@ export default function App({ Component, pageProps }: AppProps) {
     <UserProvider>
       {/* React Query for data fetching */}
       <QueryClientProvider client={queryClient}>
-        {/* HeroUI provider with xFoundry theme */}
-        <HeroUIProvider>
-          {/* Theme provider for light/dark mode */}
-          <NextThemesProvider attribute="class" defaultTheme="light">
+        {/* Theme provider for light/dark mode */}
+        <NextThemesProvider attribute="class" defaultTheme="light">
+          {/* HeroUI provider */}
+          <HeroUIProvider>
             {/* Conditionally wrap with providers based on route */}
             {isDashboardPage ? (
               <DashboardProvider>
@@ -50,8 +50,8 @@ export default function App({ Component, pageProps }: AppProps) {
             ) : (
               <Component {...pageProps} />
             )}
-          </NextThemesProvider>
-        </HeroUIProvider>
+          </HeroUIProvider>
+        </NextThemesProvider>
       </QueryClientProvider>
     </UserProvider>
   );
