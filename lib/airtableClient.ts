@@ -183,3 +183,101 @@ export function formatAttachments(attachments: Array<{ url: string; filename?: s
     filename: attachment.filename || attachment.url.split('/').pop() || 'file'
   }));
 }
+
+/**
+ * Look up an institution by email domain
+ * @param email - Email address to extract domain from and find institution
+ * @returns Institution data if found, null otherwise
+ */
+export async function lookupInstitutionByEmail(email: string) {
+  try {
+    if (!email || !TABLES.INSTITUTIONS) {
+      return null;
+    }
+    
+    // Extract domain from email
+    const domainMatch = email.match(/@(.+)$/);
+    if (!domainMatch || !domainMatch[1]) {
+      return null;
+    }
+    
+    const domain = domainMatch[1];
+    console.log(`Looking up institution for domain: "${domain}"`);
+    
+    // Get institutions table
+    const institutionsTable = getTable('INSTITUTIONS');
+    
+    // Pre-filter with FIND to get candidates
+    const recordsQuery = await institutionsTable.select({
+      fields: ['Name', 'Domains'],
+      filterByFormula: `OR(FIND("${domain},", {Domains}), FIND("${domain}", {Domains}))`
+    }).firstPage();
+    
+    // If no results, try to get all records as fallback
+    const records = recordsQuery.length > 0 ? recordsQuery : 
+      await institutionsTable.select({
+        fields: ['Name', 'Domains'],
+      }).firstPage();
+    
+    // Filter records manually to match exact domains
+    const matchingRecords = records.filter((record: any) => {
+      if (!record.fields.Domains) return false;
+      
+      // Split domains by comma and trim whitespace
+      const domainList = record.fields.Domains.split(',').map((d: string) => d.trim());
+      
+      // Check if domain matches exactly
+      return domainList.includes(domain);
+    });
+    
+    if (matchingRecords && matchingRecords.length > 0) {
+      // Return the first matching institution
+      return {
+        id: matchingRecords[0].id,
+        name: matchingRecords[0].fields.Name,
+        domains: matchingRecords[0].fields.Domains
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Error looking up institution by email:", error);
+    return null;
+  }
+}
+
+/**
+ * Get user by email from Airtable
+ * @param email - Email address to look up
+ * @returns User data if found, null otherwise
+ */
+export async function getUserByEmail(email: string) {
+  try {
+    if (!email || !TABLES.CONTACTS) {
+      return null;
+    }
+    
+    // Normalize the email
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    // Query the contacts table for the user with this email
+    const contactsTable = getTable('CONTACTS');
+    const records = await contactsTable.select({
+      maxRecords: 1,
+      filterByFormula: `LOWER({Email}) = "${normalizedEmail}"`
+    }).firstPage();
+    
+    if (records.length === 0) {
+      return null;
+    }
+    
+    // Return the user data with ID
+    return {
+      contactId: records[0].id,
+      ...records[0].fields
+    };
+  } catch (error) {
+    console.error("Error getting user by email:", error);
+    return null;
+  }
+}
