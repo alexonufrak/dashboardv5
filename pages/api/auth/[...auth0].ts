@@ -165,46 +165,140 @@ const afterCallback = async (req: any, res: any, session: any, state: any) => {
       metadata: session.user.user_metadata
     });
     
+    // Get the user's Airtable contact ID - either from query params or look up in Airtable
+    let userContactId = contactId || airtableId;
+    
+    if (!userContactId) {
+      try {
+        // Import the user profile and Airtable utils
+        const { getUserByEmail, createRecord, updateRecord, lookupInstitutionByEmail } = await import('@/lib/airtableClient');
+        
+        // Try to find an existing Airtable record for this user by email
+        const existingUser = await getUserByEmail(session.user.email);
+        if (existingUser && existingUser.contactId) {
+          userContactId = existingUser.contactId;
+          console.log(`Found existing Airtable contact for ${session.user.email}: ${userContactId}`);
+          
+          // Update the session with the found contactId
+          session.user.contactId = userContactId;
+        } else {
+          // Create a new user record in Airtable if none exists
+          console.log(`No existing Airtable contact found for ${session.user.email}, creating one`);
+          
+          // Prepare contact data
+          const contactData: any = {
+            'Email': session.user.email,
+            'Auth0ID': session.user.sub
+          };
+          
+          // Add optional fields if available
+          if (firstName || session.user.given_name) contactData['First Name'] = firstName || session.user.given_name;
+          if (lastName || session.user.family_name) contactData['Last Name'] = lastName || session.user.family_name;
+          
+          // If we have a verified email, look up institution by domain
+          if (!institutionId && session.user.email) {
+            const suggestedInstitution = await lookupInstitutionByEmail(session.user.email);
+            if (suggestedInstitution && suggestedInstitution.id) {
+              contactData['Institution'] = [suggestedInstitution.id];
+            }
+          }
+          
+          try {
+            // Create the contact record in Airtable
+            const newContact = await createRecord('CONTACTS', contactData);
+            userContactId = newContact.id;
+            console.log(`Created new Airtable contact for ${session.user.email}: ${userContactId}`);
+            
+            // Update the session with the new contactId
+            session.user.contactId = userContactId;
+            
+            // Create education record if we have institution data
+            if (institutionId || (degreeType && graduationYear)) {
+              const educationData: any = {
+                'Contact': [userContactId] // Link to contact
+              };
+              
+              // Add optional fields if available
+              if (institutionId) educationData['Institution'] = [institutionId];
+              if (degreeType) educationData['Degree Type'] = degreeType;
+              if (graduationYear) educationData['Graduation Year'] = graduationYear;
+              if (major) educationData['Major'] = [major]; // Major needs to be a record ID array
+              
+              // Create the education record
+              const newEducation = await createRecord('EDUCATION', educationData);
+              const newEducationId = newEducation.id;
+              console.log(`Created new Airtable education record: ${newEducationId}`);
+              
+              // Update the session with the new educationId
+              session.user.educationId = newEducationId;
+              
+              // Link education back to contact
+              await updateRecord('CONTACTS', userContactId, {
+                'Education': [newEducationId]
+              });
+            }
+          } catch (createError) {
+            console.error("Error creating Airtable records:", createError);
+          }
+        }
+      } catch (lookupError) {
+        console.error("Error looking up or creating Airtable user:", lookupError);
+      }
+    }
+
     // Handle invitation acceptance if there's a token and we have a contact ID
-    if (invitationToken && (contactId || airtableId)) {
+    if (invitationToken && userContactId) {
       try {
         console.log("Processing team invitation acceptance with token:", invitationToken);
         
-        // NOTE: Team invitation acceptance needs to be reimplemented
-        // Current airtableClient doesn't have this function
-        console.log("Team invitation acceptance needs to be reimplemented");
-        
-        // Get the contact ID from either the contactId or airtableId parameter
-        const userContactId = contactId || airtableId;
-        
-        // Dummy result for now - this needs to be properly implemented
-        const acceptResult = { 
-          success: true, 
-          teamId: "team-id-placeholder",
-          invitation: {
-            team: {
-              id: "team-id-placeholder",
-              name: "Team Name",
-              createdTime: new Date().toISOString()
-            }
-          }
-        };
-        
-        if (acceptResult.success) {
-          console.log("Successfully accepted team invitation:", acceptResult);
+        // Try to import team invitation acceptance function
+        try {
+          const { acceptTeamInvitation } = await import('@/lib/airtableClient');
           
-          // Store result in session for the frontend to access
+          // Accept the invitation if the function exists
+          if (typeof acceptTeamInvitation === 'function') {
+            const acceptResult = await acceptTeamInvitation(invitationToken as string, userContactId as string);
+            
+            if (acceptResult && acceptResult.success) {
+              console.log("Successfully accepted team invitation:", acceptResult);
+              
+              // Store result in session for the frontend to access
+              session.user.teamInviteAccepted = {
+                success: true,
+                team: acceptResult.invitation?.team || null
+              };
+            } else {
+              console.error("Failed to accept team invitation:", acceptResult?.error || "Unknown error");
+              
+              // Store error in session for the frontend to handle
+              session.user.teamInviteAccepted = {
+                success: false,
+                error: acceptResult?.error || "Failed to accept team invitation"
+              };
+            }
+          } else {
+            // Function not available yet
+            console.log("Team invitation acceptance function not implemented");
+            
+            // Store a placeholder in session for the frontend
+            session.user.teamInviteAccepted = {
+              success: true,
+              pendingProcess: true,
+              message: "Invitation token received, will be processed on dashboard load",
+              token: invitationToken,
+              contactId: userContactId
+            };
+          }
+        } catch (importError) {
+          console.error("Error importing team invitation acceptance function:", importError);
+          
+          // Store a placeholder in session for the frontend
           session.user.teamInviteAccepted = {
             success: true,
-            team: acceptResult.invitation?.team || null
-          };
-        } else {
-          console.error("Failed to accept team invitation");
-          
-          // Store error in session for the frontend to handle
-          session.user.teamInviteAccepted = {
-            success: false,
-            error: "Failed to accept team invitation"
+            pendingProcess: true,
+            message: "Invitation token received, will be processed on dashboard load",
+            token: invitationToken,
+            contactId: userContactId
           };
         }
       } catch (error: any) {

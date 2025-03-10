@@ -896,7 +896,10 @@ export function useCreateTeam() {
  */
 export function extractTeamData<T>(response: { team?: T } | T): T {
   // Handle both formats (wrapped with .team or unwrapped)
-  return 'team' in response && response.team !== undefined ? response.team : response as T;
+  if (response && typeof response === 'object' && 'team' in response && response.team !== undefined) {
+    return response.team;
+  }
+  return response as T;
 }
 
 /**

@@ -463,13 +463,27 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     return processedMilestones;
   }, [milestonesData, programDataProcessed.cohort, teamData?.id, queryClient, activeProgramId, profile, getProgramCohortIds]);
   
-  // Combine loading states
-  const isLoading = isUserLoading || isProfileLoading;
-  const isTeamLoading = isTeamsLoading;
-  const programLoading = isProgramLoading || isMilestonesLoading;
+  // Combine loading states with useMemo to avoid recalculation
+  const isLoading = useMemo(() => 
+    isUserLoading || isProfileLoading,
+    [isUserLoading, isProfileLoading]
+  );
   
-  // Combine error states
-  const error = profileError || teamsError;
+  const isTeamLoading = useMemo(() => 
+    isTeamsLoading,
+    [isTeamsLoading]
+  );
+  
+  const programLoading = useMemo(() => 
+    isProgramLoading || isMilestonesLoading,
+    [isProgramLoading, isMilestonesLoading]
+  );
+  
+  // Combine error states with useMemo
+  const error = useMemo(() => 
+    profileError || teamsError,
+    [profileError, teamsError]
+  );
   
   // Handle profile update with caching
   async function handleProfileUpdate(updatedData: Partial<Profile>): Promise<Profile> {
@@ -727,136 +741,151 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     };
   }, [participationData]);
   
-  // Get teams for a specific program - defined early to avoid circular dependencies
-  const getTeamsForProgram = (programId: string): Team[] => {
-    if (!teams) return [];
-    
-    console.log(`Getting teams for program ${programId}`);
-    
-    // Get cohort IDs for this program directly from profile data to avoid circular dependency
-    const programCohorts = getProgramCohortIds(programId);
-    
-    // Get teams for the specific program based on cohort
-    const filteredTeams = teams.filter((team: Team) => {
-      // If team has cohortIds array, check if it contains any cohort related to this program
-      if (team.cohortIds && Array.isArray(team.cohortIds)) {
-        // Check if any of the team's cohorts match the program cohorts
-        const matchesCohort = team.cohortIds.some(cohortId => programCohorts.includes(cohortId));
-        
-        if (!matchesCohort && team.name) {
-          console.log(`Excluding team ${team.name} (${team.id}) - cohorts don't match program`);
+  // Get teams for a specific program - memoized to improve performance
+  const getTeamsForProgram = useMemo(() => {
+    return (programId: string): Team[] => {
+      if (!teams) return [];
+      
+      console.log(`Getting teams for program ${programId}`);
+      
+      // Get cohort IDs for this program directly from profile data to avoid circular dependency
+      const programCohorts = getProgramCohortIds(programId);
+      
+      // Get teams for the specific program based on cohort
+      const filteredTeams = teams.filter((team: Team) => {
+        // If team has cohortIds array, check if it contains any cohort related to this program
+        if (team.cohortIds && Array.isArray(team.cohortIds)) {
+          // Check if any of the team's cohorts match the program cohorts
+          const matchesCohort = team.cohortIds.some(cohortId => programCohorts.includes(cohortId));
+          
+          if (!matchesCohort && team.name) {
+            console.log(`Excluding team ${team.name} (${team.id}) - cohorts don't match program`);
+          }
+          
+          return matchesCohort;
         }
         
-        return matchesCohort;
-      }
+        // No cohortIds, can't match
+        return false;
+      });
       
-      // No cohortIds, can't match
-      return false;
-    });
-    
-    console.log(`Filtered teams for program ${programId}: ${filteredTeams.length} (of ${teams?.length || 0} total)`);
-    return filteredTeams;
-  };
-  
-  // Get active team for a program - defined early to avoid circular dependencies
-  const getActiveTeamForProgram = (programId: string): string | null => {
-    // Try to get from state first
-    if (programTeams[programId]) {
-      return programTeams[programId];
-    }
-    
-    // If not set in state, find a default team for this program
-    const programTeamsList = getTeamsForProgram(programId);
-    
-    if (programTeamsList.length > 0) {
-      // Set the first team as default and store it
-      setProgramTeams(prev => ({
-        ...prev,
-        [programId]: programTeamsList[0].id
-      }));
-      return programTeamsList[0].id;
-    }
-    
-    return null;
-  };
-  
-  // Get the active program data
-  const getActiveProgramData = (programId?: string): ProgramData | ProcessedProgramData | null => {
-    if (!profile) return null;
-    
-    // Use our independently defined function instead of accessing through enhancedProfile
-    const initiatives = getAllProgramInitiatives();
-    
-    // If no program ID specified, use the currently active one or the first available
-    const activeId = programId || activeProgramId || (initiatives.length > 0 ? initiatives[0].id : null);
-    
-    if (!activeId) return programDataProcessed;
-    
-    // Find the active initiative
-    const initiative = initiatives.find(init => init.id === activeId);
-    if (!initiative) {
-      console.log(`Initiative not found for program ID: ${activeId}`);
-      return programDataProcessed;
-    }
-    
-    // Find participation using participationData
-    const participation = participationData?.participation?.find(p => 
-      p.cohort?.initiativeDetails?.id === activeId
-    );
-    
-    if (!participation) {
-      console.log(`Participation not found for initiative ID: ${activeId}`);
-      return programDataProcessed;
-    }
-    
-    console.log(`Found participation for program ${activeId}:`, {
-      cohortId: participation.cohort?.id,
-      cohortName: participation.cohort?.name,
-      initiativeName: initiative.name
-    });
-    
-    // Get all available teams for this program
-    const availableTeams = getTeamsForProgram(activeId);
-    
-    // Get the active team for this program (could be different from initiative.teamId)
-    const teamId = getActiveTeamForProgram(activeId) || initiative.teamId;
-    
-    const userHasMultipleTeams = availableTeams.length > 1;
-    
-    // Find the actual team data for this program
-    let teamData = availableTeams.find(team => team.id === teamId);
-    
-    // If no team found in available teams but we have a teamId, try to find it in all teams
-    if (!teamData && teamId && teams) {
-      teamData = teams.find((team: Team) => team.id === teamId);
-      
-      // If team is found in all teams but not in available teams, it might be from another cohort
-      if (teamData) {
-        console.log(`Team ${teamData.name} (${teamId}) found in all teams but not in available teams for this program.`);
-      }
-    }
-    
-    // Create the program data object with filtered info
-    const programData = {
-      programId: activeId,
-      cohort: participation.cohort as Cohort,
-      initiativeName: initiative.name,
-      participationType: initiative.participationType,
-      isTeamBased: initiative.isTeamBased,
-      teamId: teamId,
-      teamData: teamData || null,
-      userHasMultipleTeams: userHasMultipleTeams,
-      availableTeams: availableTeams
+      console.log(`Filtered teams for program ${programId}: ${filteredTeams.length} (of ${teams?.length || 0} total)`);
+      return filteredTeams;
     };
-    
-    console.log(`Program data for ${activeId}:`, {
-      cohortId: programData.cohort?.id, 
-      teamId: programData.teamId, 
-      teamsCount: programData.availableTeams?.length
-    });
-    
-    return programData;
-  };
+  }, [teams, getProgramCohortIds]); // Only recreate when teams or getProgramCohortIds changes
+  
+  // Get active team for a program - memoized for performance
+  const getActiveTeamForProgram = useMemo(() => {
+    return (programId: string): string | null => {
+      // Try to get from state first
+      if (programTeams[programId]) {
+        return programTeams[programId];
+      }
+      
+      // If not set in state, find a default team for this program
+      const programTeamsList = getTeamsForProgram(programId);
+      
+      if (programTeamsList.length > 0) {
+        // Set the first team as default and store it
+        setProgramTeams(prev => ({
+          ...prev,
+          [programId]: programTeamsList[0].id
+        }));
+        return programTeamsList[0].id;
+      }
+      
+      return null;
+    };
+  }, [programTeams, getTeamsForProgram, setProgramTeams]); // Dependencies to watch for changes
+  
+  // Get the active program data - memoized for performance
+  const getActiveProgramData = useMemo(() => {
+    return (programId?: string): ProgramData | ProcessedProgramData | null => {
+      if (!profile) return null;
+      
+      // Use our independently defined function instead of accessing through enhancedProfile
+      const initiatives = getAllProgramInitiatives();
+      
+      // If no program ID specified, use the currently active one or the first available
+      const activeId = programId || activeProgramId || (initiatives.length > 0 ? initiatives[0].id : null);
+      
+      if (!activeId) return programDataProcessed;
+      
+      // Find the active initiative
+      const initiative = initiatives.find(init => init.id === activeId);
+      if (!initiative) {
+        console.log(`Initiative not found for program ID: ${activeId}`);
+        return programDataProcessed;
+      }
+      
+      // Find participation using participationData
+      const participation = participationData?.participation?.find(p => 
+        p.cohort?.initiativeDetails?.id === activeId
+      );
+      
+      if (!participation) {
+        console.log(`Participation not found for initiative ID: ${activeId}`);
+        return programDataProcessed;
+      }
+      
+      console.log(`Found participation for program ${activeId}:`, {
+        cohortId: participation.cohort?.id,
+        cohortName: participation.cohort?.name,
+        initiativeName: initiative.name
+      });
+      
+      // Get all available teams for this program
+      const availableTeams = getTeamsForProgram(activeId);
+      
+      // Get the active team for this program (could be different from initiative.teamId)
+      const teamId = getActiveTeamForProgram(activeId) || initiative.teamId;
+      
+      const userHasMultipleTeams = availableTeams.length > 1;
+      
+      // Find the actual team data for this program
+      let teamData = availableTeams.find(team => team.id === teamId);
+      
+      // If no team found in available teams but we have a teamId, try to find it in all teams
+      if (!teamData && teamId && teams) {
+        teamData = teams.find((team: Team) => team.id === teamId);
+        
+        // If team is found in all teams but not in available teams, it might be from another cohort
+        if (teamData) {
+          console.log(`Team ${teamData.name} (${teamId}) found in all teams but not in available teams for this program.`);
+        }
+      }
+      
+      // Create the program data object with filtered info
+      const programData = {
+        programId: activeId,
+        cohort: participation.cohort as Cohort,
+        initiativeName: initiative.name,
+        participationType: initiative.participationType,
+        isTeamBased: initiative.isTeamBased,
+        teamId: teamId,
+        teamData: teamData || null,
+        userHasMultipleTeams: userHasMultipleTeams,
+        availableTeams: availableTeams
+      };
+      
+      console.log(`Program data for ${activeId}:`, {
+        cohortId: programData.cohort?.id, 
+        teamId: programData.teamId, 
+        teamsCount: programData.availableTeams?.length
+      });
+      
+      return programData;
+    };
+  }, [
+    profile, 
+    activeProgramId, 
+    getAllProgramInitiatives, 
+    programDataProcessed, 
+    participationData, 
+    getTeamsForProgram, 
+    getActiveTeamForProgram, 
+    teams
+  ]); // Dependencies to watch for changes
   
   // Set the active program - use useMemo to prevent recreation on each render
   const setActiveProgram = useMemo(() => {
@@ -869,13 +898,16 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     };
   }, [activeProgramId]);
 
-  // Set active team for a program
-  const setActiveTeamForProgram = (programId: string, teamId: string) => {
-    setProgramTeams(prev => ({
-      ...prev,
-      [programId]: teamId
-    }))
-  }
+  // Set active team for a program - memoized to prevent unnecessary recreations
+  const setActiveTeamForProgram = useMemo(() => {
+    return (programId: string, teamId: string) => {
+      console.log(`Setting active team for program ${programId}: ${teamId}`);
+      setProgramTeams(prev => ({
+        ...prev,
+        [programId]: teamId
+      }));
+    };
+  }, [setProgramTeams]); // Only recreate when setProgramTeams changes
   
   // Create context value
   const value: DashboardContextType = {
@@ -914,8 +946,11 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     refreshData,
     handleProfileUpdate,
     
-    // Helper methods for navigation
-    hasProgramData: Boolean(programDataProcessed.cohort) || Boolean(teamData?.cohortIds?.length),
+    // Helper methods for navigation - memoized for performance
+    hasProgramData: useMemo(() => 
+      Boolean(programDataProcessed.cohort) || Boolean(teamData?.cohortIds?.length),
+      [programDataProcessed.cohort, teamData?.cohortIds]
+    ),
     
     // Multiple program management
     activeProgramId,

@@ -267,8 +267,11 @@ export async function updateUserProfileData(userId: string, contactId: string, u
   }
 }
 
-export default {
+// Create a named object for default export to avoid ESLint warning
+const userProfileApi = {
   getCompleteUserProfile,
   getUserByEmail,
   updateUserProfileData
 };
+
+export default userProfileApi;

@@ -312,7 +312,7 @@ export async function getUserProfile(userId: string | null, email: string) {
     const contactsTable = getTable('CONTACTS');
     const records = await contactsTable.select({
       maxRecords: 1,
-      filterByFormula
+      filterByFormula: filterFormula
     }).firstPage();
     
     if (records.length === 0 && userId && email) {
@@ -425,6 +425,86 @@ export async function getCohortsByInstitution(institutionId: string) {
   } catch (error) {
     console.error("Error getting cohorts for institution:", error);
     return [];
+  }
+}
+
+/**
+ * Accept a team invitation
+ * @param invitationToken - Invitation token to identify the invitation
+ * @param contactId - Airtable contact record ID of the user accepting the invitation
+ * @returns Success status and team info
+ */
+export async function acceptTeamInvitation(invitationToken: string, contactId: string) {
+  try {
+    if (!invitationToken || !contactId) {
+      return {
+        success: false,
+        error: 'Missing invitation token or contact ID'
+      };
+    }
+    
+    // Step 1: Find the invitation record
+    const invitationsTable = getTable('MEMBERS');
+    const invitations = await invitationsTable.select({
+      filterByFormula: `{InvitationToken} = "${invitationToken}"`,
+      maxRecords: 1
+    }).firstPage();
+    
+    if (invitations.length === 0) {
+      return {
+        success: false,
+        error: 'Invitation not found'
+      };
+    }
+    
+    const invitation = invitations[0];
+    
+    // Step 2: Get the team ID from the invitation
+    const teamId = invitation.fields.Team ? invitation.fields.Team[0] : null;
+    
+    if (!teamId) {
+      return {
+        success: false,
+        error: 'Invitation is not associated with a team'
+      };
+    }
+    
+    // Step 3: Get the team details
+    const teamData = await findRecordById('TEAMS', teamId);
+    
+    if (!teamData) {
+      return {
+        success: false,
+        error: 'Team not found'
+      };
+    }
+    
+    // Step 4: Update the invitation record to link it to the contact and mark as accepted
+    await updateRecord('MEMBERS', invitation.id, {
+      Contact: [contactId],
+      Status: 'Accepted',
+      InvitationAcceptedAt: new Date().toISOString()
+    });
+    
+    // Step 5: Return success with team data
+    return {
+      success: true,
+      teamId,
+      invitation: {
+        id: invitation.id,
+        team: {
+          id: teamId,
+          name: teamData.Name || 'Team',
+          createdTime: teamData.createdTime || new Date().toISOString()
+        }
+      }
+    };
+  } catch (error) {
+    console.error('Error accepting team invitation:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to accept invitation'
+    };
   }
 }
 
