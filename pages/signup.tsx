@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { 
@@ -45,30 +45,22 @@ export default function SignUp() {
     referralSource: ""
   });
 
-  // Redirect to dashboard if user is already logged in
-  useEffect(() => {
-    if (user) {
-      // If there's a cohortId parameter, add it to the dashboard redirect
-      if (router.query.cohortId) {
-        router.push(`/dashboard?cohortId=${router.query.cohortId}`);
-      } else {
-        router.push("/dashboard");
-      }
+  // Function to continue to the next step
+  const nextStep = useCallback(() => {
+    if (currentStep < 2) {
+      setCurrentStep(currentStep + 1);
     }
-    
-    // Get email from URL query parameters if available
-    if (router.query.email) {
-      setEmail(router.query.email as string);
-      // Automatically initiate verification if email is provided via URL
-      if (typeof router.query.email === 'string' && router.query.email.includes('@')) {
-        // Need to wait for component to fully mount
-        setTimeout(() => verifyInstitution(), 500);
-      }
+  }, [currentStep]);
+
+  // Function to go back to the previous step
+  const prevStep = useCallback(() => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
     }
-  }, [user, router, router.query]);
+  }, [currentStep]);
 
   // Function to check email domain against institution domains and check if user exists
-  const verifyInstitution = async () => {
+  const verifyInstitution = useCallback(async () => {
     // Basic email validation
     if (!email || !email.includes("@")) {
       setEmailError("Please enter a valid email address");
@@ -185,7 +177,36 @@ export default function SignUp() {
     } finally {
       setIsVerifying(false);
     }
-  };
+  }, [email, formData, institutionStatus, nextStep]);
+
+  // Redirect to dashboard if user is already logged in
+  useEffect(() => {
+    if (user) {
+      // If there's a cohortId parameter, add it to the dashboard redirect
+      if (router.query.cohortId) {
+        router.push(`/dashboard?cohortId=${router.query.cohortId}`);
+      } else {
+        router.push("/dashboard");
+      }
+    }
+  }, [user, router, router.query.cohortId]);
+  
+  // Handle email from URL query parameters and auto-verification
+  useEffect(() => {
+    // Get email from URL query parameters if available
+    if (router.query.email) {
+      setEmail(router.query.email as string);
+      // Automatically initiate verification if email is provided via URL
+      if (typeof router.query.email === 'string' && router.query.email.includes('@')) {
+        // Need to wait for component to fully mount
+        const timer = setTimeout(() => {
+          verifyInstitution();
+        }, 500);
+        
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [router.query.email, verifyInstitution]);
 
   // Function to handle input changes for personal info form
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,20 +223,6 @@ export default function SignUp() {
       ...formData,
       [name]: value,
     });
-  };
-
-  // Function to continue to the next step
-  const nextStep = () => {
-    if (currentStep < 2) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  // Function to go back to the previous step
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
   };
 
   // Function to handle the Google sign up/in
@@ -394,7 +401,6 @@ export default function SignUp() {
                         {userExists && (
                           <Alert
                             color="primary"
-                            startContent={<AlertCircleIcon className="h-4 w-4" />}
                             title="Account Found"
                           >
                             An account with this email already exists. Redirecting you to the login page...
@@ -405,7 +411,6 @@ export default function SignUp() {
                         {institutionStatus === "success" && !userExists && (
                           <Alert
                             color="success"
-                            startContent={<CheckCircleIcon className="h-4 w-4" />}
                             title={`Institution Verified: ${institution?.name}`}
                           >
                             Your institution has been verified. Continue to complete your profile.
@@ -416,7 +421,6 @@ export default function SignUp() {
                         {institutionStatus === "error" && !userExists && (
                           <Alert
                             color="danger"
-                            startContent={<XCircleIcon className="h-4 w-4" />}
                             title="Verification Failed"
                           >
                             Institution not recognized. Please use your school email address.
@@ -454,7 +458,7 @@ export default function SignUp() {
                     {hasPrefilledData ? (
                       <Alert
                         color="primary"
-                        startContent={<CheckCircleIcon className="h-4 w-4" />}
+                        title="Existing Information Found"
                       >
                         We found your existing information! Please verify it's correct before continuing.
                       </Alert>

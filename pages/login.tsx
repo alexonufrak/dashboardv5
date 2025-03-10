@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import { 
@@ -6,7 +6,6 @@ import {
   CardBody, 
   Button, 
   Input, 
-  Badge, 
   Divider, 
   Spinner,
   Alert
@@ -35,20 +34,10 @@ export default function Login() {
     if (user) {
       router.push("/dashboard");
     }
-
-    // Get email from URL query parameters if available
-    if (router.query.email) {
-      setEmail(router.query.email as string);
-      
-      // Auto-verify if email is in the URL
-      if (typeof router.query.email === 'string' && router.query.email.includes('@')) {
-        setTimeout(() => verifyEmailAndInstitution(), 500);
-      }
-    }
-  }, [user, router, router.query]);
+  }, [user, router]);
 
   // Function to verify the institution and check if user exists
-  const verifyEmailAndInstitution = async () => {
+  const verifyEmailAndInstitution = useCallback(async () => {
     // Basic email validation
     if (!email || !email.includes("@")) {
       setEmailError("Please enter a valid email address");
@@ -115,7 +104,25 @@ export default function Login() {
     } finally {
       setIsVerifying(false);
     }
-  };
+  }, [email]);
+  
+  // Handle email from URL query parameters and auto-verification
+  useEffect(() => {
+    // Get email from URL query parameters if available
+    if (router.query.email) {
+      setEmail(router.query.email as string);
+      
+      // Auto-verify if email is in the URL
+      if (typeof router.query.email === 'string' && router.query.email.includes('@')) {
+        // We use setTimeout to ensure component is fully mounted
+        const timer = setTimeout(() => {
+          verifyEmailAndInstitution();
+        }, 500);
+        
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [router.query, verifyEmailAndInstitution]);
 
   // Function to proceed to login or signup based on user existence
   const proceedToAuth = () => {
@@ -201,7 +208,6 @@ export default function Login() {
                 {userExists === true && institutionStatus === "success" && (
                   <Alert 
                     color="success"
-                    startContent={<CheckCircleIcon className="h-4 w-4" />}
                     title={`Welcome back - ${institution?.name}`}
                   >
                     Your account was found. You can sign in now.
@@ -212,7 +218,6 @@ export default function Login() {
                 {userExists === false && institutionStatus === "success" && (
                   <Alert 
                     color="primary"
-                    startContent={<AlertCircleIcon className="h-4 w-4" />}
                     title={`Institution verified: ${institution?.name}`}
                   >
                     No account found with this email. We'll help you create one.
@@ -223,7 +228,7 @@ export default function Login() {
                 {institutionStatus === "error" && (
                   <Alert 
                     color="danger"
-                    startContent={<XCircleIcon className="h-4 w-4" />}
+                    title="Verification Failed"
                   >
                     We couldn't verify your institution. Please use your school email.
                   </Alert>
