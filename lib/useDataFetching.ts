@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient, QueryClient } from '@tanstack/react-query';
 import { addToast } from "@heroui/react";
 
@@ -863,11 +864,404 @@ export function useCreateTeam() {
 }
 
 /**
- * Invalidate all dashboard data
+ * Extracts team data from an API response, handling both wrapped and unwrapped formats
+ * @param response - The API response
+ * @returns The team data
  */
+export function extractTeamData<T>(response: { team?: T } | T): T {
+  // Handle both formats (wrapped with .team or unwrapped)
+  return 'team' in response && response.team !== undefined ? response.team : response as T;
+}
+
+/**
+ * Standardizes an API response by wrapping the data in a named object if needed
+ * @param data - The data to standardize
+ * @param resourceName - The name of the resource (e.g., 'team', 'submission')
+ * @returns The standardized response
+ */
+export function standardizeApiResponse<T>(data: T | Record<string, T>, resourceName: string): Record<string, T> {
+  // If data is already in the format { resourceName: ... }, return it as is
+  if (data && typeof data === 'object' && resourceName in (data as object)) {
+    return data as Record<string, T>;
+  }
+  
+  // Otherwise, wrap it
+  return { [resourceName]: data as T };
+}
+
+/**
+ * Custom hook for a team member to leave a team
+ */
+export function useLeaveTeam() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (teamId: string) => {
+      const response = await fetch(`/api/teams/${teamId}/leave`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || 'Failed to leave team');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      
+      addToast({
+        title: "Success",
+        description: "You have left the team",
+        color: "success"
+      });
+    },
+    onError: (error) => {
+      addToast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to leave team',
+        color: "danger"
+      });
+    }
+  });
+}
+
+/**
+ * Custom hook for removing a team member (as team admin)
+ */
+export function useRemoveTeamMember() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ teamId, memberId }: { teamId: string; memberId: string }) => {
+      const response = await fetch(`/api/teams/${teamId}/members/${memberId}/remove`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || 'Failed to remove team member');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['teams'] });
+      queryClient.invalidateQueries({ queryKey: ['teamMembers', variables.teamId] });
+      
+      addToast({
+        title: "Success",
+        description: "Team member has been removed",
+        color: "success"
+      });
+    },
+    onError: (error) => {
+      addToast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to remove team member',
+        color: "danger"
+      });
+    }
+  });
+}
+
+/**
+ * Custom hook for fetching team members with extended details and caching
+ */
+export function useTeamMembers(teamId?: string) {
+  return useQuery({
+    queryKey: ['teamMembers', teamId],
+    queryFn: async () => {
+      if (!teamId) return { members: [] };
+      
+      const response = await fetch(`/api/teams/${teamId}/members`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch team members: ${response.statusText}`);
+      }
+      
+      try {
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error('Error parsing team members response:', error);
+        return { members: [] };
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!teamId,
+    retry: 2
+  });
+}
+
+/**
+ * Custom hook for updating team member roles with automatic cache invalidation
+ */
+export function useUpdateTeamMemberRole() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      teamId, 
+      memberId, 
+      role 
+    }: { 
+      teamId: string; 
+      memberId: string; 
+      role: string 
+    }) => {
+      const response = await fetch(`/api/teams/${teamId}/members/${memberId}/role`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to update member role');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ['teams'] });
+      queryClient.invalidateQueries({ queryKey: ['teamMembers', variables.teamId] });
+      
+      addToast({
+        title: "Success",
+        description: "Team member role updated",
+        color: "success"
+      });
+    },
+    onError: (error) => {
+      addToast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to update member role',
+        color: "danger"
+      });
+    }
+  });
+}
+
+/**
+ * Custom hook for submitting milestone work
+ */
+export function useSubmitMilestone() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ 
+      teamId, 
+      milestoneId, 
+      data 
+    }: { 
+      teamId: string; 
+      milestoneId: string; 
+      data: any 
+    }) => {
+      const response = await fetch(`/api/teams/${teamId}/submissions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          milestoneId,
+          ...data
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || 'Failed to submit milestone work');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: (data, variables) => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: ['submissions', variables.teamId, variables.milestoneId] });
+      queryClient.invalidateQueries({ queryKey: ['milestones'] });
+      queryClient.invalidateQueries({ queryKey: ['teams'] });
+      
+      addToast({
+        title: "Success",
+        description: "Milestone work submitted successfully",
+        color: "success"
+      });
+    },
+    onError: (error) => {
+      addToast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to submit milestone work',
+        color: "danger"
+      });
+    }
+  });
+}
+
+/**
+ * Custom hook for fetching program bounties (tasks/challenges) with caching
+ */
+export function useProgramBounties(programId?: string) {
+  return useQuery({
+    queryKey: ['bounties', programId],
+    queryFn: async () => {
+      if (!programId) return { bounties: [] };
+      
+      const response = await fetch(`/api/bounties?programId=${programId}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch program bounties: ${response.statusText}`);
+      }
+      
+      try {
+        const data = await response.json();
+        return data.bounties || [];
+      } catch (error) {
+        console.error('Error parsing bounties response:', error);
+        return [];
+      }
+    },
+    staleTime: 10 * 60 * 1000, // 10 minutes
+    enabled: !!programId,
+    retry: 2
+  });
+}
+
+/**
+ * Custom hook for submitting application for a program
+ */
+export function useSubmitApplication() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch('/api/applications/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || errorData.message || 'Failed to submit application');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      // Invalidate related queries
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      
+      addToast({
+        title: "Success",
+        description: "Application submitted successfully",
+        color: "success"
+      });
+    },
+    onError: (error) => {
+      addToast({
+        title: "Error",
+        description: error instanceof Error ? error.message : 'Failed to submit application',
+        color: "danger"
+      });
+    }
+  });
+}
+
+/**
+ * Hook for direct file uploads with progress tracking
+ */
+export function useFileUpload() {
+  const [progress, setProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  
+  const uploadFile = async (file: File): Promise<{ url: string; filename: string; contentType: string; size: number }> => {
+    setIsUploading(true);
+    setProgress(0);
+    setError(null);
+    
+    try {
+      // Step 1: Get pre-signed URL from our API
+      const getUrlResponse = await fetch('/api/upload');
+      
+      if (!getUrlResponse.ok) {
+        throw new Error('Failed to get upload URL');
+      }
+      
+      const { uploadUrl, fileUrl } = await getUrlResponse.json();
+      
+      // Step 2: Upload file directly to storage provider
+      const xhr = new XMLHttpRequest();
+      
+      // Create a promise to track the upload
+      const uploadPromise = new Promise<{ url: string; filename: string; contentType: string; size: number }>((resolve, reject) => {
+        xhr.upload.addEventListener('progress', (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = Math.round((event.loaded / event.total) * 100);
+            setProgress(percentComplete);
+          }
+        });
+        
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve({
+              url: fileUrl,
+              filename: file.name,
+              contentType: file.type,
+              size: file.size
+            });
+          } else {
+            reject(new Error(`Upload failed with status: ${xhr.status}`));
+          }
+        });
+        
+        xhr.addEventListener('error', () => {
+          reject(new Error('Upload failed due to network error'));
+        });
+        
+        xhr.addEventListener('abort', () => {
+          reject(new Error('Upload was aborted'));
+        });
+      });
+      
+      // Start the upload
+      xhr.open('PUT', uploadUrl);
+      xhr.setRequestHeader('Content-Type', file.type);
+      xhr.send(file);
+      
+      // Wait for upload to complete
+      const result = await uploadPromise;
+      return result;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Unknown upload error');
+      setError(error);
+      throw error;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+  
+  return { uploadFile, progress, isUploading, error };
+}
+
 export function invalidateAllData(queryClient: QueryClient): void {
   queryClient.invalidateQueries({ queryKey: ['profile'] });
   queryClient.invalidateQueries({ queryKey: ['teams'] });
+  queryClient.invalidateQueries({ queryKey: ['teamMembers'] });
   queryClient.invalidateQueries({ queryKey: ['applications'] });
   queryClient.invalidateQueries({ queryKey: ['participation'] });
   queryClient.invalidateQueries({ queryKey: ['milestones'] });
@@ -881,4 +1275,5 @@ export function invalidateAllData(queryClient: QueryClient): void {
   queryClient.invalidateQueries({ queryKey: ['claimedRewards'] });
   queryClient.invalidateQueries({ queryKey: ['institutionLookup'] });
   queryClient.invalidateQueries({ queryKey: ['initiativeConflicts'] });
+  queryClient.invalidateQueries({ queryKey: ['bounties'] });
 }
