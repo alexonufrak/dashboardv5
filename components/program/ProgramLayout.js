@@ -63,8 +63,8 @@ export default function ProgramLayout({ children, programId, activeTab = "overvi
   const isXtrapreneurs = initiative?.name?.toLowerCase().includes("xtrapreneurs")
   
   return (
-    <div className="space-y-6 w-full h-full overflow-auto pb-8 max-w-none min-w-full">
-      <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-100 w-full max-w-none">
+    <div className="flex flex-col flex-1 w-full h-full overflow-auto pb-8">
+      <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-100 w-full sticky top-0 z-10">
         <div className="p-4 w-full">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 w-full">
             <div>
@@ -128,10 +128,12 @@ export default function ProgramLayout({ children, programId, activeTab = "overvi
       </Card>
       
       {programData?.isTeamBased && programData?.userHasMultipleTeams && (
-        <TeamSelector programId={programId} />
+        <div className="mt-4">
+          <TeamSelector programId={programId} />
+        </div>
       )}
       
-      <div className="space-y-6 w-full max-w-none">
+      <div className="flex-1 space-y-6 w-full mt-4">
         {children}
       </div>
     </div>

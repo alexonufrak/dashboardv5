@@ -3,6 +3,7 @@
   width: 100%;
   display: flex;
   flex-direction: column;
+  min-height: 0; /* Important for flex child that needs to scroll */
 }
 
 .dashboardContent {
@@ -10,9 +11,15 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0; /* Important for flex child that needs to scroll */
+  overflow: hidden; /* Prevent overflow at this level */
 }
 
 /* This selects only direct children of dashboardContent */
 .dashboardContent > * {
   width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Important for scroll containment */
 }
