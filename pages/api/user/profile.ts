@@ -1,6 +1,7 @@
 import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getAuth0ManagementClient } from '@/lib/auth0';
+import { getCompleteUserProfile, updateUserProfileData } from '@/lib/userProfile';
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -14,36 +15,45 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     
     // For GET request - return profile data
     if (req.method === 'GET') {
-      // Get user from Auth0 to access metadata
-      const auth0 = await getAuth0ManagementClient();
-      const userResponse = await auth0.users.get({ id: userId });
-      const user = userResponse?.data || {};
-      
-      // Extract profile data from user metadata and identity
-      const metadata = user.user_metadata || {};
-      
-      const profile = {
-        id: userId,
-        email: session.user.email,
-        firstName: metadata.firstName || session.user.given_name || '',
-        lastName: metadata.lastName || session.user.family_name || '',
-        institutionName: metadata.institution || '',
-        institution: metadata.institutionId ? {
-          id: metadata.institutionId,
-          name: metadata.institution || ''
-        } : null,
-        contactId: metadata.contactId || null,
-        educationId: metadata.educationId || null,
-        degreeType: metadata.degreeType || '',
-        major: metadata.major || '',
-        programId: metadata.programId || metadata.major || '',
-        graduationYear: metadata.graduationYear || '',
-        headshot: session.user.picture || null,
-        showMajor: true,
-        needsInstitutionConfirm: !metadata.institutionId && !metadata.institution
-      };
-      
-      return res.status(200).json(profile);
+      try {
+        // Use the new integrated function to get complete profile from Airtable and Auth0
+        const profile = await getCompleteUserProfile(session.user);
+        return res.status(200).json(profile);
+      } catch (profileError) {
+        console.error('Error fetching complete profile:', profileError);
+        
+        // Fallback to Auth0-only profile if Airtable integration fails
+        const auth0 = await getAuth0ManagementClient();
+        const userResponse = await auth0.users.get({ id: userId });
+        const user = userResponse?.data || {};
+        
+        // Extract profile data from user metadata and identity
+        const metadata = user.user_metadata || {};
+        
+        const fallbackProfile = {
+          id: userId,
+          email: session.user.email,
+          firstName: metadata.firstName || session.user.given_name || '',
+          lastName: metadata.lastName || session.user.family_name || '',
+          institutionName: metadata.institution || '',
+          institution: metadata.institutionId ? {
+            id: metadata.institutionId,
+            name: metadata.institution || ''
+          } : null,
+          contactId: metadata.contactId || null,
+          educationId: metadata.educationId || null,
+          degreeType: metadata.degreeType || '',
+          major: metadata.major || '',
+          programId: metadata.programId || metadata.major || '',
+          graduationYear: metadata.graduationYear || '',
+          headshot: session.user.picture || null,
+          showMajor: true,
+          needsInstitutionConfirm: !metadata.institutionId && !metadata.institution,
+          isProfileComplete: false
+        };
+        
+        return res.status(200).json(fallbackProfile);
+      }
     }
     
     // For PUT request - update profile data
@@ -54,12 +64,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       if (!updateData) {
         return res.status(400).json({ error: 'No update data provided' });
       }
+
+      if (!updateData.contactId) {
+        return res.status(400).json({ error: 'Contact ID is required for updates' });
+      }
       
-      // In a real implementation, we would:
-      // 1. Update the Auth0 user metadata
+      // 1. Update the Auth0 user metadata to keep both systems in sync
       const auth0 = await getAuth0ManagementClient();
       
-      // Prepare metadata update
+      // Prepare metadata update for Auth0
       const metadataUpdate = {
         firstName: updateData.firstName,
         lastName: updateData.lastName,
@@ -67,6 +80,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         major: updateData.major,
         programId: updateData.programId || updateData.major,
         graduationYear: updateData.graduationYear,
+        contactId: updateData.contactId, // Keep track of Airtable record ID
         educationId: updateData.educationId,
         institutionId: updateData.institutionId || updateData.institution?.id,
         institution: updateData.institution?.name || updateData.institutionName
@@ -78,16 +92,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         { user_metadata: metadataUpdate }
       );
       
-      // 2. If we have Airtable integration, we would:
-      //    - Update or create the Contact record
-      //    - Update or create the Education record
-      //    But this would be handled by a separate service
-      
-      // Return the updated profile
-      return res.status(200).json({
-        id: userId,
-        ...updateData
-      });
+      // 2. Update Airtable records using our integrated function
+      try {
+        const updatedProfile = await updateUserProfileData(userId, updateData.contactId, updateData);
+        return res.status(200).json(updatedProfile);
+      } catch (airtableError) {
+        console.error('Error updating Airtable profile:', airtableError);
+        
+        // If Airtable update fails, return what we have from Auth0
+        return res.status(200).json({
+          id: userId,
+          ...updateData,
+          airtableError: 'Failed to update Airtable record'
+        });
+      }
     }
     
     // Handle unsupported methods

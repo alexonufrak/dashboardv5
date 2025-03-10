@@ -281,3 +281,234 @@ export async function getUserByEmail(email: string) {
     return null;
   }
 }
+
+/**
+ * Get user profile from Airtable by Auth0 user ID or email
+ * @param userId - Auth0 user ID
+ * @param email - User email (used as fallback)
+ * @returns User profile data
+ */
+export async function getUserProfile(userId: string | null, email: string) {
+  try {
+    if (!TABLES.CONTACTS) {
+      console.error('No CONTACTS table configured');
+      return null;
+    }
+    
+    let filterFormula = '';
+    
+    if (userId) {
+      // First try to look up by Auth0 ID
+      filterFormula = `{Auth0ID} = "${userId}"`;
+    } else if (email) {
+      // Fall back to email if no user ID or if no results found
+      const normalizedEmail = email.toLowerCase().trim();
+      filterFormula = `LOWER({Email}) = "${normalizedEmail}"`;
+    } else {
+      return null;
+    }
+    
+    // Query the Contacts table
+    const contactsTable = getTable('CONTACTS');
+    const records = await contactsTable.select({
+      maxRecords: 1,
+      filterByFormula
+    }).firstPage();
+    
+    if (records.length === 0 && userId && email) {
+      // If not found by Auth0 ID, try again with email
+      const normalizedEmail = email.toLowerCase().trim();
+      const emailFilterFormula = `LOWER({Email}) = "${normalizedEmail}"`;
+      
+      const emailRecords = await contactsTable.select({
+        maxRecords: 1,
+        filterByFormula: emailFilterFormula
+      }).firstPage();
+      
+      if (emailRecords.length === 0) {
+        return null;
+      }
+      
+      // Format and return the user record
+      return {
+        contactId: emailRecords[0].id,
+        ...emailRecords[0].fields
+      };
+    } else if (records.length === 0) {
+      return null;
+    }
+    
+    // Format and return the user record
+    return {
+      contactId: records[0].id,
+      ...records[0].fields
+    };
+  } catch (error) {
+    console.error("Error in getUserProfile:", error);
+    return null;
+  }
+}
+
+/**
+ * Get institution details by ID
+ * @param institutionId - Airtable institution record ID
+ * @returns Institution data
+ */
+export async function getInstitution(institutionId: string) {
+  try {
+    if (!institutionId || !TABLES.INSTITUTIONS) {
+      return null;
+    }
+    
+    return await findRecordById('INSTITUTIONS', institutionId);
+  } catch (error) {
+    console.error("Error getting institution:", error);
+    return null;
+  }
+}
+
+/**
+ * Get education record details
+ * @param educationId - Airtable education record ID
+ * @returns Education record data
+ */
+export async function getEducation(educationId: string) {
+  try {
+    if (!educationId || !TABLES.EDUCATION) {
+      return null;
+    }
+    
+    return await findRecordById('EDUCATION', educationId);
+  } catch (error) {
+    console.error("Error getting education record:", error);
+    return null;
+  }
+}
+
+/**
+ * Get program/major details
+ * @param programId - Airtable program record ID
+ * @returns Program data
+ */
+export async function getProgram(programId: string) {
+  try {
+    if (!programId || !TABLES.MAJORS) {
+      return null;
+    }
+    
+    return await findRecordById('MAJORS', programId);
+  } catch (error) {
+    console.error("Error getting program data:", error);
+    return null;
+  }
+}
+
+/**
+ * Get cohorts for an institution
+ * @param institutionId - Airtable institution record ID
+ * @returns Array of cohort records
+ */
+export async function getCohortsByInstitution(institutionId: string) {
+  try {
+    if (!institutionId || !TABLES.COHORTS) {
+      return [];
+    }
+    
+    const filterFormula = `AND(
+      FIND("${institutionId}", ARRAYJOIN({Institutions})) > 0,
+      {Is Current} = 1
+    )`;
+    
+    return await queryRecords('COHORTS', filterFormula, {
+      sort: [{ field: 'Start Date', direction: 'desc' }]
+    });
+  } catch (error) {
+    console.error("Error getting cohorts for institution:", error);
+    return [];
+  }
+}
+
+/**
+ * Update user profile data in Airtable
+ * @param contactId - Airtable contact record ID
+ * @param data - Profile data to update
+ * @returns Updated user profile
+ */
+export async function updateUserProfile(contactId: string, data: any) {
+  try {
+    if (!contactId || !TABLES.CONTACTS) {
+      throw new Error('Contact ID or CONTACTS table not configured');
+    }
+    
+    // First update the Contact record
+    const updatedContactFields: any = {};
+    
+    // Map fields to Airtable contact fields
+    if (data.FirstName !== undefined) updatedContactFields['First Name'] = data.FirstName;
+    if (data.LastName !== undefined) updatedContactFields['Last Name'] = data.LastName;
+    
+    // Update the contact record
+    const updatedContact = await updateRecord('CONTACTS', contactId, updatedContactFields);
+    console.log("Updated contact record:", updatedContact);
+    
+    // Handle education record - create or update
+    let educationRecord;
+    const educationFields: any = {};
+    let shouldUpdateEducation = false;
+    
+    // Check which education fields we need to update
+    if (data.DegreeType !== undefined) {
+      educationFields['Degree Type'] = data.DegreeType;
+      shouldUpdateEducation = true;
+    }
+    
+    if (data.GraduationYear !== undefined) {
+      educationFields['Graduation Year'] = data.GraduationYear;
+      shouldUpdateEducation = true;
+    }
+    
+    if (data.Major !== undefined) {
+      // Major field needs to be an array of record IDs for Airtable
+      educationFields['Major'] = data.Major ? [data.Major] : [];
+      shouldUpdateEducation = true;
+    }
+    
+    if (data.InstitutionId !== undefined) {
+      // Institution field needs to be an array of record IDs for Airtable
+      educationFields['Institution'] = data.InstitutionId ? [data.InstitutionId] : [];
+      shouldUpdateEducation = true;
+    }
+    
+    // Add link to contact record
+    educationFields['Contact'] = [contactId];
+    
+    // Only proceed with education update if we have fields to update
+    if (shouldUpdateEducation) {
+      if (data.educationId) {
+        // Update existing education record
+        educationRecord = await updateRecord('EDUCATION', data.educationId, educationFields);
+        console.log("Updated education record:", educationRecord);
+      } else {
+        // Create new education record
+        educationRecord = await createRecord('EDUCATION', educationFields);
+        console.log("Created education record:", educationRecord);
+        
+        // Link the new education record back to the contact
+        await updateRecord('CONTACTS', contactId, {
+          'Education': [educationRecord.id]
+        });
+      }
+    }
+    
+    // Return the combined result
+    return {
+      contactId,
+      educationId: educationRecord?.id || data.educationId,
+      ...updatedContact,
+      ...(educationRecord ? { educationRecord } : {})
+    };
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    throw error;
+  }
+}

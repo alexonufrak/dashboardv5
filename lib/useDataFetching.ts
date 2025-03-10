@@ -626,10 +626,22 @@ export async function updateProfileData(profileData: Partial<Profile>, queryClie
       lastName: profileData.lastName,
       degreeType: profileData.degreeType,
       graduationYear: profileData.graduationYear,
-      contactId: profileData.id,
+      contactId: profileData.contactId || profileData.id,  // Use contactId first, fall back to id
       institutionId: profileData.institution?.id,
       educationId: profileData.educationId
     };
+    
+    // Check if we have a contactId (required for Airtable updates)
+    if (!dataToSend.contactId) {
+      console.error('Missing contactId for profile update - cannot update Airtable record');
+      
+      // Show warning to user
+      addToast({
+        title: "Warning",
+        description: "Your Airtable profile record is not linked. Some features may be limited.",
+        color: "warning"
+      });
+    }
     
     // Handle the major field carefully
     if ('major' in profileData) {
@@ -642,6 +654,8 @@ export async function updateProfileData(profileData: Partial<Profile>, queryClie
         dataToSend.major = null;
       }
     }
+    
+    console.log("Sending profile update with data:", JSON.stringify(dataToSend, null, 2));
     
     const response = await fetch('/api/user/profile', {
       method: 'PUT',
@@ -668,14 +682,26 @@ export async function updateProfileData(profileData: Partial<Profile>, queryClie
     
     const data = await response.json();
     
+    // Check if there was an Airtable error but Auth0 was updated
+    if (data.airtableError) {
+      console.warn('Auth0 profile updated but Airtable update failed');
+      
+      addToast({
+        title: "Partial Success",
+        description: "Your profile was updated in Auth0, but Airtable update failed. Some features may be affected.",
+        color: "warning"
+      });
+    } else {
+      addToast({
+        title: "Success",
+        description: "Profile updated successfully",
+        color: "success"
+      });
+    }
+    
     // Invalidate profile query to refetch updated data
     queryClient.invalidateQueries({ queryKey: ['profile'] });
     
-    addToast({
-      title: "Success",
-      description: "Profile updated successfully",
-      color: "success"
-    });
     return data as Profile;
   } catch (err) {
     console.error('Error updating profile:', err);
