@@ -1,17 +1,17 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
-import { useDashboard } from '@/contexts/DashboardContext'
-import { Card } from '@/components/ui/card'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
-import { useRouter } from 'next/router'
-import { Compass, Users, Award, Calendar } from 'lucide-react'
-import TeamSelector from './TeamSelector'
-import { ROUTES } from '@/lib/routing'
+import React, { useEffect, useState } from "react"
+import { useRouter } from "next/router"
+import { useDashboard } from "@/contexts/DashboardContext"
+import { Compass, Users, Award, Calendar } from "lucide-react"
+import { Card } from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+import { ROUTES } from "@/lib/routing"
+import TeamSelector from "./TeamSelector"
 
-const ProgramLayout = ({ children, programId, activeTab = 'overview' }) => {
+export default function ProgramLayout({ children, programId, activeTab = "overview" }) {
   const router = useRouter()
   const { 
     getActiveProgramData, 
@@ -20,17 +20,12 @@ const ProgramLayout = ({ children, programId, activeTab = 'overview' }) => {
     setIsEditModalOpen
   } = useDashboard()
   
-  // State for page title
   const [pageTitle, setPageTitle] = useState("Program Dashboard")
   
-  // Get program-specific data
   const programData = getActiveProgramData(programId)
   const allInitiatives = getAllProgramInitiatives()
-  
-  // Find the current initiative name
   const initiative = allInitiatives.find(init => init.id === programId)
   
-  // Set page title based on initiative name
   useEffect(() => {
     if (initiative?.name) {
       setPageTitle(`${initiative.name} Dashboard`)
@@ -39,29 +34,24 @@ const ProgramLayout = ({ children, programId, activeTab = 'overview' }) => {
     }
   }, [initiative, programData])
   
-  // Handle profile edit click
   const handleEditProfileClick = () => {
-    console.log("Opening profile edit modal")
     setIsEditModalOpen(true)
   }
   
-  // Handle tab navigation
   const handleTabChange = (value) => {
-    // Use routing constants from routing utility
     const basePath = ROUTES.PROGRAM.DETAIL(programId)
     
-    // Navigate to the selected tab
     switch (value) {
-      case 'overview':
+      case "overview":
         router.push(basePath)
         break
-      case 'bounties':
+      case "bounties":
         router.push(ROUTES.PROGRAM.BOUNTIES(programId))
         break
-      case 'milestones':
+      case "milestones":
         router.push(ROUTES.PROGRAM.MILESTONES(programId))
         break
-      case 'team':
+      case "team":
         router.push(ROUTES.PROGRAM.TEAM(programId))
         break
       default:
@@ -69,13 +59,11 @@ const ProgramLayout = ({ children, programId, activeTab = 'overview' }) => {
     }
   }
   
-  // Get team data
   const teamData = programData?.teamData || null
-  const isXtrapreneurs = initiative?.name?.toLowerCase().includes('xtrapreneurs')
+  const isXtrapreneurs = initiative?.name?.toLowerCase().includes("xtrapreneurs")
   
   return (
     <div className="space-y-6 w-full h-full overflow-auto pb-8 max-w-none min-w-full">
-      {/* Program Header Card */}
       <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-100 w-full max-w-none">
         <div className="p-4 w-full">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 w-full">
@@ -85,7 +73,7 @@ const ProgramLayout = ({ children, programId, activeTab = 'overview' }) => {
                   {initiative?.name || programData?.initiativeName || "Program"}
                 </Badge>
                 
-                {programData?.cohort?.['Current Cohort'] && (
+                {programData?.cohort?.["Current Cohort"] && (
                   <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">
                     Active Cohort
                   </Badge>
@@ -99,14 +87,14 @@ const ProgramLayout = ({ children, programId, activeTab = 'overview' }) => {
               
               <div className="text-sm text-muted-foreground flex items-center">
                 <Calendar className="h-3.5 w-3.5 mr-1" />
-                {programData?.cohort?.['Start Date'] && programData?.cohort?.['End Date'] ? (
+                {programData?.cohort?.["Start Date"] && programData?.cohort?.["End Date"] ? (
                   <span>
-                    {new Date(programData.cohort['Start Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
-                    {' - '}
-                    {new Date(programData.cohort['End Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
+                    {new Date(programData.cohort["Start Date"]).toLocaleDateString("en-US", {year: "numeric", month: "short", day: "numeric"})}
+                    {" - "}
+                    {new Date(programData.cohort["End Date"]).toLocaleDateString("en-US", {year: "numeric", month: "short", day: "numeric"})}
                   </span>
                 ) : (
-                  <span>Active Program • {new Date().toLocaleDateString('en-US', {year: 'numeric', month: 'long'})}</span>
+                  <span>Active Program • {new Date().toLocaleDateString("en-US", {year: "numeric", month: "long"})}</span>
                 )}
               </div>
             </div>
@@ -121,14 +109,13 @@ const ProgramLayout = ({ children, programId, activeTab = 'overview' }) => {
                   <h3 className="font-medium">{teamData.name || "Your Team"}</h3>
                   <div className="flex items-center text-sm text-muted-foreground">
                     <Users className="h-3.5 w-3.5 mr-1" />
-                    <span>{teamData.members?.length || 0} member{teamData.members?.length !== 1 ? 's' : ''}</span>
+                    <span>{teamData.members?.length || 0} member{teamData.members?.length !== 1 ? "s" : ""}</span>
                   </div>
                 </div>
               </div>
             )}
           </div>
           
-          {/* Navigation Tabs */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full">
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -140,17 +127,13 @@ const ProgramLayout = ({ children, programId, activeTab = 'overview' }) => {
         </div>
       </Card>
       
-      {/* Team Selector - if user has multiple teams */}
       {programData?.isTeamBased && programData?.userHasMultipleTeams && (
         <TeamSelector programId={programId} />
       )}
       
-      {/* Content Area */}
       <div className="space-y-6 w-full max-w-none">
         {children}
       </div>
     </div>
   )
 }
-
-export default ProgramLayout

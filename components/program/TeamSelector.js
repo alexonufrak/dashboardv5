@@ -1,20 +1,18 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import { useDashboard } from '@/contexts/DashboardContext'
-import { Card, CardContent } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
+import { useDashboard } from "@/contexts/DashboardContext"
+import { Users, CheckCircle2 } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { 
   Select, 
   SelectContent, 
   SelectItem, 
   SelectTrigger, 
   SelectValue 
-} from '@/components/ui/select'
-import { Users, CheckCircle2 } from 'lucide-react'
+} from "@/components/ui/select"
 
-const TeamSelector = ({ programId }) => {
+export default function TeamSelector({ programId }) {
   const { 
     getTeamsForProgram, 
     getActiveProgramData, 
@@ -22,31 +20,24 @@ const TeamSelector = ({ programId }) => {
     refreshData
   } = useDashboard()
   
-  // Get all teams for this program
   const teams = getTeamsForProgram ? getTeamsForProgram(programId) : []
   const programData = getActiveProgramData ? getActiveProgramData(programId) : null
-  
-  // Get active team ID
   const activeTeamId = programData?.teamId
   
-  // Handle team change
   const handleTeamChange = (teamId) => {
     if (setActiveTeamForProgram) {
       setActiveTeamForProgram(programId, teamId)
       
-      // Refresh data to get updated team information
       if (refreshData) {
-        refreshData('teams')
+        refreshData("teams")
       }
     }
   }
   
-  // Skip rendering if only one team
   if (!teams || teams.length <= 1) {
     return null
   }
   
-  // Find the active team object
   const activeTeam = teams.find(team => team.id === activeTeamId) || teams[0]
   
   return (
@@ -63,7 +54,7 @@ const TeamSelector = ({ programId }) => {
           
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Select
-              value={activeTeamId || ''}
+              value={activeTeamId || ""}
               onValueChange={handleTeamChange}
             >
               <SelectTrigger className="w-full sm:w-[220px]">
@@ -91,7 +82,6 @@ const TeamSelector = ({ programId }) => {
           </div>
         </div>
         
-        {/* Current Team Status */}
         <div className="mt-3 border-t border-blue-200 pt-3 flex items-center">
           <span className="text-sm">Currently viewing:</span>
           <div className="flex items-center ml-2">
@@ -108,5 +98,3 @@ const TeamSelector = ({ programId }) => {
     </Card>
   )
 }
-
-export default TeamSelector
