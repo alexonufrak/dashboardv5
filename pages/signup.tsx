@@ -395,6 +395,7 @@ export default function SignUp() {
                           <Alert
                             color="primary"
                             startContent={<AlertCircleIcon className="h-4 w-4" />}
+                            title="Account Found"
                           >
                             An account with this email already exists. Redirecting you to the login page...
                           </Alert>
@@ -405,9 +406,9 @@ export default function SignUp() {
                           <Alert
                             color="success"
                             startContent={<CheckCircleIcon className="h-4 w-4" />}
-                            title="Verification Successful"
+                            title={`Institution Verified: ${institution?.name}`}
                           >
-                            Institution: {institution.name}
+                            Your institution has been verified. Continue to complete your profile.
                           </Alert>
                         )}
                         
@@ -416,6 +417,7 @@ export default function SignUp() {
                           <Alert
                             color="danger"
                             startContent={<XCircleIcon className="h-4 w-4" />}
+                            title="Verification Failed"
                           >
                             Institution not recognized. Please use your school email address.
                           </Alert>

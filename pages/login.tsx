@@ -202,8 +202,9 @@ export default function Login() {
                   <Alert 
                     color="success"
                     startContent={<CheckCircleIcon className="h-4 w-4" />}
+                    title={`Welcome back - ${institution?.name}`}
                   >
-                    Welcome back! Your account was found.
+                    Your account was found. You can sign in now.
                   </Alert>
                 )}
                 
@@ -212,6 +213,7 @@ export default function Login() {
                   <Alert 
                     color="primary"
                     startContent={<AlertCircleIcon className="h-4 w-4" />}
+                    title={`Institution verified: ${institution?.name}`}
                   >
                     No account found with this email. We'll help you create one.
                   </Alert>
@@ -225,14 +227,6 @@ export default function Login() {
                   >
                     We couldn't verify your institution. Please use your school email.
                   </Alert>
-                )}
-                
-                {/* Institution verification success */}
-                {institutionStatus === "success" && (
-                  <Badge color="primary" variant="flat" className="px-3 py-1.5 flex items-center">
-                    <CheckCircleIcon className="h-3.5 w-3.5 mr-1.5" />
-                    {institution.name}
-                  </Badge>
                 )}
               </div>
               
