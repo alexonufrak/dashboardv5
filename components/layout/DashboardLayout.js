@@ -92,10 +92,6 @@ export default function DashboardLayout({
                   )}
                 </div>
                 
-                {/* Footer */}
-                <footer className="border-t py-8 mt-8 text-center text-muted-foreground text-sm">
-                  <p>© {new Date().getFullYear()} xFoundry Education Platform. All rights reserved.</p>
-                </footer>
               </div>
             </div>
           </SidebarInset>

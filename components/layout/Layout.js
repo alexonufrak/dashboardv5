@@ -50,10 +50,6 @@ const Layout = ({ children, title = "xFoundry Hub", profile, onEditClick }) => {
             </div>
           </main>
 
-          {/* Footer */}
-          <footer className="border-t py-8 mt-8 text-center text-muted-foreground text-sm">
-            <p>© {currentYear} xFoundry Education Platform. All rights reserved.</p>
-          </footer>
         </div>
       )}
     </>

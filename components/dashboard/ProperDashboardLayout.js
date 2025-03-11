@@ -80,10 +80,6 @@ const ProperDashboardLayout = ({
                   {children}
                 </div>
                 
-                {/* Footer */}
-                <footer className="border-t py-8 mt-8 text-center text-muted-foreground text-sm">
-                  <p>© {currentYear} xFoundry Education Platform. All rights reserved.</p>
-                </footer>
               </div>
             </div>
           </SidebarInset>
@@ -97,10 +93,6 @@ const ProperDashboardLayout = ({
             </div>
           </main>
           
-          {/* Footer without sidebar */}
-          <footer className="border-t py-8 mt-8 text-center text-muted-foreground text-sm">
-            <p>© {currentYear} xFoundry Education Platform. All rights reserved.</p>
-          </footer>
         </div>
       )}
     </>
