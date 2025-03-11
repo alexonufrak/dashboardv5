@@ -70,15 +70,14 @@ function ProgramDashboardInner({ onNavigate, programId }) {
   // Get tab labels based on program type
   const tabLabels = getTabLabels(programType)
   
-  // Set up dynamic components
+  // Set up dynamic components - simplified with single component map
   useEffect(() => {
     const loadComponents = async () => {
-      // Load components based on program type
       try {
-        const OverviewComponent = await programComponentMap[programType].overview()
-        const MilestonesComponent = await programComponentMap[programType].milestones()
-        const TeamComponent = await programComponentMap[programType].team()
-        const ActivityComponent = await programComponentMap[programType].activity()
+        const OverviewComponent = await programComponentMap.overview()
+        const MilestonesComponent = await programComponentMap.milestones()
+        const TeamComponent = await programComponentMap.team()
+        const ActivityComponent = await programComponentMap.activity()
         
         setActiveComponents({
           overview: OverviewComponent.default,
@@ -92,7 +91,7 @@ function ProgramDashboardInner({ onNavigate, programId }) {
     }
     
     loadComponents()
-  }, [programType])
+  }, [])
   
   useEffect(() => {
     if (programTeamData) {

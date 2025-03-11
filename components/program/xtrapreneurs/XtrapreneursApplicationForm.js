@@ -1,256 +1,201 @@
-import { useState } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription
-} from "@/components/ui/dialog"
+"use client"
+
+import React, { useState } from 'react'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { BadgeCheck } from 'lucide-react'
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 /**
- * Custom application form for Xtrapreneurs initiative
- * To be shown in a dialog within the dashboard
+ * Application form component for Xtrapreneurs program
+ * Simplified version restored temporarily for build compatibility
  */
-const XtrapreneursApplicationForm = ({ open, onClose, onSubmit, cohort = {}, profile = {} }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+const XtrapreneursApplicationForm = ({ profile, cohort, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
-    reason: "",
-    commitment: "weekly" // Default to weekly
+    name: profile?.name || '',
+    email: profile?.email || '',
+    institution: profile?.institutionName || '',
+    major: profile?.major || '',
+    year: profile?.graduationYear || '',
+    reason: '',
+    experience: '',
+    referral: 'Website'
   })
-  const [errors, setErrors] = useState({})
-  const [isSuccess, setIsSuccess] = useState(false)
-
-  // Handle form input changes
+  
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    
+    try {
+      if (onSubmit) {
+        await onSubmit({
+          ...formData,
+          cohortId: cohort?.id,
+          initiativeId: cohort?.initiativeId
+        })
+      }
+    } catch (error) {
+      console.error("Error submitting application:", error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+  
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
       [name]: value
     }))
-    
-    // Clear error for this field if it exists
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: null
-      }))
-    }
   }
-
-  // Handle select changes
+  
   const handleSelectChange = (name, value) => {
     setFormData(prev => ({
       ...prev,
       [name]: value
     }))
-    
-    // Clear error for this field if it exists
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: null
-      }))
-    }
   }
-
-  // Validate form data
-  const validateForm = () => {
-    const newErrors = {}
-    
-    if (!formData.reason.trim()) {
-      newErrors.reason = "Please explain why you want to join Xtrapreneurs"
-    }
-    
-    if (!formData.commitment) {
-      newErrors.commitment = "Please select your time commitment"
-    }
-    
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    
-    // Validate form data
-    if (!validateForm()) {
-      return
-    }
-    
-    setIsSubmitting(true)
-    
-    try {
-      // Prepare application data
-      const applicationData = {
-        cohortId: cohort.id,
-        reason: formData.reason,
-        commitment: formData.commitment,
-        // Add metadata about user
-        userId: profile.userId,
-        contactId: profile.contactId,
-        userEmail: profile.email,
-        userName: profile.name,
-        // Flag this as xtrapreneurs application
-        applicationType: "xtrapreneurs"
-      }
-      
-      // Submit application to API
-      const response = await fetch('/api/applications/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(applicationData)
-      })
-      
-      const data = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit application')
-      }
-      
-      // Show success state
-      setIsSuccess(true)
-      
-      // After a brief delay, close the dialog and call onSubmit
-      setTimeout(() => {
-        if (onSubmit) {
-          onSubmit(data)
-        }
-        onClose()
-      }, 1500)
-      
-    } catch (error) {
-      console.error('Error submitting Xtrapreneurs application:', error)
-      setErrors({
-        submit: error.message || 'An error occurred. Please try again.'
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  // Reset form when dialog opens/closes
-  const handleDialogChange = (open) => {
-    if (!open) {
-      // Reset form state if dialog is closed
-      setFormData({
-        reason: "",
-        commitment: "weekly"
-      })
-      setErrors({})
-      setIsSuccess(false)
-      onClose()
-    }
-  }
-
+  
   return (
-    <Dialog open={open} onOpenChange={handleDialogChange}>
-      <DialogContent className="max-w-md">
-        {isSuccess ? (
-          // Success state
-          <div className="py-12 flex flex-col items-center justify-center space-y-4">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-              <BadgeCheck className="h-10 w-10 text-green-600" />
-            </div>
-            <DialogTitle className="text-center">Application Submitted!</DialogTitle>
-            <DialogDescription className="text-center">
-              Your application for the Xtrapreneurs initiative has been successfully submitted.
-            </DialogDescription>
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader>
+        <CardTitle>Xtrapreneurs Application</CardTitle>
+        <CardDescription>
+          Apply to join the {cohort?.name || 'Xtrapreneurs'} cohort
+        </CardDescription>
+      </CardHeader>
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4">
+          <div className="space-y-1">
+            <Label htmlFor="name">Full Name</Label>
+            <Input 
+              id="name" 
+              name="name" 
+              value={formData.name} 
+              onChange={handleChange} 
+              disabled={true}
+              required 
+            />
           </div>
-        ) : (
-          // Form state
-          <>
-            <DialogHeader>
-              <DialogTitle>Apply to Xtrapreneurs</DialogTitle>
-              <DialogDescription>
-                Fill out this form to apply for the {cohort.initiativeDetails?.name || "Xtrapreneurs"} initiative.
-              </DialogDescription>
-            </DialogHeader>
+          
+          <div className="space-y-1">
+            <Label htmlFor="email">Email Address</Label>
+            <Input 
+              id="email" 
+              name="email" 
+              type="email" 
+              value={formData.email}
+              onChange={handleChange}
+              disabled={true}
+              required 
+            />
+          </div>
+          
+          <div className="space-y-1">
+            <Label htmlFor="institution">Institution</Label>
+            <Input 
+              id="institution" 
+              name="institution" 
+              value={formData.institution}
+              onChange={handleChange}
+              disabled={true}
+              required 
+            />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <Label htmlFor="major">Major/Field of Study</Label>
+              <Input 
+                id="major" 
+                name="major" 
+                value={formData.major}
+                onChange={handleChange}
+                required 
+              />
+            </div>
             
-            <form onSubmit={handleSubmit} className="space-y-6 py-4">
-              {/* Reason field */}
-              <div className="space-y-2">
-                <Label htmlFor="reason" className="text-sm font-medium">
-                  Why do you want to join Xtrapreneurs? <span className="text-red-500">*</span>
-                </Label>
-                <Textarea
-                  id="reason"
-                  name="reason"
-                  value={formData.reason}
-                  onChange={handleChange}
-                  placeholder="Tell us your motivation for joining..."
-                  className={errors.reason ? "border-red-500" : ""}
-                  rows={4}
-                />
-                {errors.reason && (
-                  <p className="text-sm text-red-500">{errors.reason}</p>
-                )}
-              </div>
-              
-              {/* Commitment field */}
-              <div className="space-y-2">
-                <Label htmlFor="commitment" className="text-sm font-medium">
-                  How much time do you want to commit to Xtrapreneurs this year? <span className="text-red-500">*</span>
-                </Label>
-                <Select 
-                  value={formData.commitment} 
-                  onValueChange={(value) => handleSelectChange('commitment', value)}
-                >
-                  <SelectTrigger className={errors.commitment ? "border-red-500" : ""}>
-                    <SelectValue placeholder="Select your time commitment" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="occasionally">Occasionally</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.commitment && (
-                  <p className="text-sm text-red-500">{errors.commitment}</p>
-                )}
-              </div>
-              
-              {/* General error message */}
-              {errors.submit && (
-                <p className="text-sm text-red-500 p-2 bg-red-50 rounded-md">{errors.submit}</p>
-              )}
-              
-              <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={onClose}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Submitting...' : 'Submit Application'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </>
-        )}
-      </DialogContent>
-    </Dialog>
+            <div className="space-y-1">
+              <Label htmlFor="year">Graduation Year</Label>
+              <Input 
+                id="year" 
+                name="year" 
+                value={formData.year}
+                onChange={handleChange}
+                required 
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-1">
+            <Label htmlFor="reason">Why are you interested in joining?</Label>
+            <Textarea 
+              id="reason" 
+              name="reason" 
+              value={formData.reason}
+              onChange={handleChange}
+              placeholder="Tell us about your interest..."
+              required 
+              rows={3}
+            />
+          </div>
+          
+          <div className="space-y-1">
+            <Label htmlFor="experience">Relevant Experience</Label>
+            <Textarea 
+              id="experience" 
+              name="experience" 
+              value={formData.experience}
+              onChange={handleChange}
+              placeholder="Share your relevant experience..."
+              required 
+              rows={3}
+            />
+          </div>
+          
+          <div className="space-y-1">
+            <Label htmlFor="referral">How did you hear about us?</Label>
+            <Select 
+              id="referral"
+              name="referral"
+              value={formData.referral}
+              onValueChange={(value) => handleSelectChange('referral', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select an option" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Website">Website</SelectItem>
+                <SelectItem value="Social Media">Social Media</SelectItem>
+                <SelectItem value="Friend">Friend/Colleague</SelectItem>
+                <SelectItem value="School">School/Institution</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+        
+        <CardFooter className="flex justify-end gap-2">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onCancel}
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Submitting...' : 'Submit Application'}
+          </Button>
+        </CardFooter>
+      </form>
+    </Card>
   )
 }
 

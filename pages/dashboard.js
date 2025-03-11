@@ -7,7 +7,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
 import ProfileEditModal from "@/components/profile/ProfileEditModal"
 import { Skeleton } from "@/components/ui/skeleton"
-import ProperDashboardLayout from "@/components/dashboard/ProperDashboardLayout"
+import MainDashboardLayout from "@/components/layout/MainDashboardLayout"
 import { 
   isProgramRoute, 
   navigateToProgram, 
@@ -20,7 +20,7 @@ const DashboardHome = dynamic(() => import("@/pages/dashboards/DashboardHome"), 
   loading: () => <PageSkeleton />
 })
 
-const ProgramDashboard = dynamic(() => import("@/pages/dashboards/ProgramDashboard"), {
+const ProgramDashboard = dynamic(() => import("@/components/program/ProgramDashboard"), {
   loading: () => <PageSkeleton />
 })
 

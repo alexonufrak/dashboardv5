@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Search, Filter, Award } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
-const BountyList = ({ programId }) => {
+const BountyList = ({ programId, title = "Bounties", description = "Find projects, internships, and bounties to apply for" }) => {
   // State for filters
   const [searchTerm, setSearchTerm] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
@@ -161,9 +161,9 @@ const BountyList = ({ programId }) => {
       {/* Header with title and search */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold">Xtrapreneurs Bounties</h2>
+          <h2 className="text-2xl font-bold">{title}</h2>
           <p className="text-muted-foreground mt-1">
-            Find projects, internships, and bounties to apply for
+            {description}
           </p>
         </div>
         <div className="relative w-full md:w-64">

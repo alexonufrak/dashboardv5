@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import BountyList from '@/components/program/xtrapreneurs/BountyList'
+import { BountyList } from '@/components/program/common'
 
 export function BountiesTab({ programId }) {
   return (

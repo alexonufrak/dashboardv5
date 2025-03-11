@@ -7,10 +7,10 @@ import { withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
-import ProperDashboardLayout from "@/components/dashboard/ProperDashboardLayout"
+import MainDashboardLayout from "@/components/layout/MainDashboardLayout"
 import ProfileEditModal from "@/components/profile/ProfileEditModal"
 
-const ProgramDashboard = dynamic(() => import("@/pages/dashboards/ProgramDashboard"), {
+const ProgramDashboard = dynamic(() => import("@/components/program/ProgramDashboard"), {
   loading: () => <PageSkeleton />
 })
 
@@ -86,7 +86,7 @@ function ProgramPage() {
   
   return (
     <>
-      <ProperDashboardLayout
+      <MainDashboardLayout
         title={pageTitle}
         profile={profile}
         onEditClick={() => setIsEditModalOpen(true)}
@@ -113,9 +113,20 @@ function ProgramPage() {
             </div>
           </div>
         ) : (
-          <ProgramDashboard programId={programId} />
+          <ProgramDashboard 
+            programId={programId}
+            programData={getActiveProgramData ? getActiveProgramData(programId) : null}
+            teamData={teamData}
+            cohort={cohort}
+            milestones={milestones}
+            submissions={submissions}
+            bounties={bounties}
+            programError={error}
+            refreshData={refreshData}
+            onNavigate={(route) => router.push(route)}
+          />
         )}
-      </ProperDashboardLayout>
+      </MainDashboardLayout>
       
       {profile && isEditModalOpen && (
         <ProfileEditModal

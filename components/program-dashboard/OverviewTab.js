@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Award } from "lucide-react"
 import MilestoneSummaryCard from "@/components/milestones/MilestoneSummaryCard"
 import SubmissionSummaryCard from "@/components/submissions/SubmissionSummaryCard"
-import TeamPointsSummary from "@/components/teams/TeamPointsSummary"
-import TeamMemberList from "@/components/teams/TeamMemberList"
+import { PointsSummary, TeamMembers } from "@/components/program/common"
 
 /**
  * Overview tab content component that displays program overview information
@@ -125,7 +124,7 @@ function OverviewSidebar({ isTeamProgram, team, onViewMembers }) {
         </CardHeader>
         <CardContent>
           {isTeamProgram ? (
-            <TeamPointsSummary team={team} />
+            <PointsSummary team={team} />
           ) : (
             <div className="text-center p-2 bg-gray-50 rounded-lg border border-gray-200">
               <Award className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
@@ -156,7 +155,7 @@ function OverviewSidebar({ isTeamProgram, team, onViewMembers }) {
           </CardHeader>
           <CardContent className="p-0">
             <ScrollArea className="h-[250px]">
-              <TeamMemberList team={team} truncated={true} />
+              <TeamMembers team={team} truncated={true} />
             </ScrollArea>
           </CardContent>
         </Card>
