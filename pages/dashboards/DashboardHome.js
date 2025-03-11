@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useDashboard } from "@/contexts/DashboardContext"
+import { useOnboarding } from "@/contexts/OnboardingContext"
 import { toast } from "sonner"
 import Link from "next/link"
 import dynamic from "next/dynamic"
@@ -50,6 +51,18 @@ function DashboardHomeInner({ onNavigate }) {
     setIsEditModalOpen,
     handleProfileUpdate
   } = useDashboard()
+  
+  // Get onboarding functions from onboarding context
+  const { checkOnboardingStatus } = useOnboarding()
+  
+  // Initialize onboarding on component mount
+  useEffect(() => {
+    // Check onboarding status when dashboard loads
+    if (profile && !isLoading) {
+      console.log("Checking onboarding status on dashboard load")
+      checkOnboardingStatus()
+    }
+  }, [profile, isLoading, checkOnboardingStatus])
   
   // Handler functions
   const handleEditClick = () => {
@@ -133,7 +146,14 @@ function DashboardHomeInner({ onNavigate }) {
             onApplySuccess={(cohort) => {
               toast.success(`Applied to ${cohort.initiativeDetails?.name || 'program'} successfully!`);
               
-              // Simpler approach - just update steps without needing to check current state
+              // Update onboarding status in Airtable to 'Applied'
+              fetch('/api/user/onboarding-completed', {
+                method: 'POST'
+              }).catch(err => {
+                console.error("Error updating onboarding status after application:", err);
+              });
+              
+              // Also update Auth0 metadata for backwards compatibility
               fetch('/api/user/metadata', {
                 method: 'POST',
                 headers: {
