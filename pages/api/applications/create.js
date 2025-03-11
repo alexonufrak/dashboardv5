@@ -49,6 +49,9 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
       if (!commitment) {
         return res.status(400).json({ error: 'Commitment level is required' })
       }
+      
+      // For Xtrapreneurs applications, set status to "Accepted" immediately
+      applicationStatus = 'Accepted'
     }
     
     // Get user profile from Airtable
@@ -159,23 +162,19 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     if (applicationType === 'xtrapreneurs') {
       applicationData['Xtrapreneurs/Reason'] = reason;
       
-      // Map the commitment level to a more descriptive value
-      let commitmentDescription;
-      switch (commitment) {
-        case 'weekly':
-          commitmentDescription = 'Weekly';
-          break;
-        case 'monthly':
-          commitmentDescription = 'Monthly';
-          break;
-        case 'occasionally':
-          commitmentDescription = 'Occasionally';
-          break;
-        default:
-          commitmentDescription = commitment;
-      }
+      // Set status to Accepted for Xtrapreneurs applications
+      applicationData['Status'] = 'Accepted';
       
-      applicationData['Xtrapreneurs/Commitment'] = commitmentDescription;
+      // Store the commitment level directly (already in correct format)
+      applicationData['Xtrapreneurs/Commitment'] = commitment;
+      
+      console.log('Creating Xtrapreneurs application with data:', {
+        reason,
+        commitment,
+        status: 'Accepted',
+        contactId: userProfile.contactId,
+        cohortId
+      });
     }
     
     // Create the application record
