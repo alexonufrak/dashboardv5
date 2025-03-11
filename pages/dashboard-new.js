@@ -7,7 +7,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
 import ProfileEditModal from "@/components/profile/ProfileEditModal"
 import { Skeleton } from "@/components/ui/skeleton"
-import DashboardLayout from "@/components/layout/DashboardLayout"
+import ProperDashboardLayout from "@/components/dashboard/ProperDashboardLayout"
 import { 
   isProgramRoute, 
   navigateToProgram, 
@@ -216,15 +216,42 @@ function Dashboard() {
   
   return (
     <>
-      <DashboardLayout
+      <ProperDashboardLayout
         title={title}
         profile={profile}
-        isLoading={showFullLoader}
-        loadingMessage="Loading dashboard..."
-        error={error}
+        currentPage={activePage}
+        onNavigate={handleNavigation}
       >
-        {getPageComponent()}
-      </DashboardLayout>
+        {showFullLoader ? (
+          <div className="space-y-6 w-full py-6">
+            <Skeleton className="h-8 w-64 mb-6" />
+            <Skeleton className="h-48 w-full rounded-lg mb-6" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Skeleton className="h-32 rounded-lg" />
+              <Skeleton className="h-32 rounded-lg" />
+            </div>
+            <div className="mt-6">
+              <Skeleton className="h-6 w-32 mb-3" />
+              <Skeleton className="h-24 w-full rounded-lg" />
+            </div>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+              <h2 className="text-lg font-semibold text-red-800 mb-2">Error Loading Dashboard</h2>
+              <p className="text-red-700 mb-4">{error}</p>
+              <button 
+                className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+                onClick={handleRetry}
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        ) : (
+          getPageComponent()
+        )}
+      </ProperDashboardLayout>
       
       {profile && isEditModalOpen && (
         <ProfileEditModal
