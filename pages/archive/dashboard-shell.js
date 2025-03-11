@@ -5,7 +5,7 @@ import { withPageAuthRequired } from "@auth0/nextjs-auth0"
 export async function getServerSideProps() {
   return {
     redirect: {
-      destination: '/dashboard-new',
+      destination: '/dashboard',
       permanent: false,
     },
   }

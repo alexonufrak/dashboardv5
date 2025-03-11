@@ -19,7 +19,7 @@ export async function getServerSideProps(context) {
   // Otherwise, redirect to the dashboard
   return {
     redirect: {
-      destination: '/dashboard-new',
+      destination: '/dashboard',
       permanent: false,
     },
   }
