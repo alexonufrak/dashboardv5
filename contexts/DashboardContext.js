@@ -230,53 +230,33 @@ export function DashboardProvider({ children }) {
 
   // Process milestones data with fallbacks and filtering by active program
   const milestones = useMemo(() => {
-    // Get all milestones
+    // Get all milestones from the API response
     const allMilestones = milestonesData?.milestones && milestonesData.milestones.length > 0
       ? milestonesData.milestones
       : programDataProcessed.cohort 
         ? generateFallbackMilestones(programDataProcessed.cohort.name || "Program")
         : [];
-        
-    // Filter milestones based on active program's cohort if activeProgramId is set
-    let processedMilestones = allMilestones;
-    if (activeProgramId && profile) {
-      console.log(`Filtering milestones for active program: ${activeProgramId}`);
-      
-      // Get cohort IDs for the active program directly - use updated version that doesn't require profile
-      const programCohorts = getProgramCohortIds(activeProgramId);
-      
-      if (programCohorts.length > 0) {
-        // Filter milestones to only include ones for this program's cohorts
-        processedMilestones = allMilestones.filter(milestone => {
-          // Check if milestone has cohortId that matches any of the active program's cohorts
-          const matchesCohort = programCohorts.includes(milestone.cohortId);
-          
-          if (!matchesCohort) {
-            console.log(`Excluding milestone ${milestone.name} (${milestone.id}) - does not match any program cohorts`);
-          }
-          
-          return matchesCohort;
-        });
-        
-        console.log(`Filtered milestones: ${processedMilestones.length} (of ${allMilestones.length} total)`);
-      }
-    }
+    
+    console.log(`Found ${allMilestones.length} milestones for cohort ${cohortId}`);
+    
+    // Since we're already fetching milestones for the specific cohort,
+    // we can just use them directly instead of filtering further
     
     // Only proceed with prefetching if we have both team and milestones
-    if (teamData?.id && processedMilestones.length > 0) {
-      console.log(`Starting background prefetch for ${processedMilestones.length} milestones`);
+    if (teamData?.id && allMilestones.length > 0) {
+      console.log(`Starting background prefetch for ${allMilestones.length} milestones`);
       
       // Prefetch submissions for milestones in the background
       // Using setTimeout to avoid blocking the UI rendering
       setTimeout(() => {
         // Single log message instead of one per milestone
-        const milestoneIds = processedMilestones
+        const milestoneIds = allMilestones
           .filter(m => m.id)
           .map(m => m.id)
           .slice(0, 3); // Only show first 3 in log
           
         console.log(`Prefetching milestones: ${milestoneIds.length > 3 ? 
-          `${milestoneIds.join(', ')}... and ${processedMilestones.length - 3} more` : 
+          `${milestoneIds.join(', ')}... and ${allMilestones.length - 3} more` : 
           milestoneIds.join(', ')}`);
         
         // Process milestones in batches to reduce network congestion
@@ -316,11 +296,11 @@ export function DashboardProvider({ children }) {
         };
         
         // Start processing in batches
-        processMilestones(processedMilestones.filter(m => m.id));
+        processMilestones(allMilestones.filter(m => m.id));
       }, 1000); // Delay initial prefetching to let initial render complete
     }
     
-    return processedMilestones;
+    return allMilestones;
   }, [milestonesData, programDataProcessed.cohort, teamData?.id, queryClient, activeProgramId, profile, getProgramCohortIds])
   
   // Combine loading states
