@@ -45,12 +45,12 @@ export function ProgramHeader({
  */
 function ProgramBanner({ programCohort, programInitiativeName, milestones }) {
   return (
-    <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-100 mb-4 w-full max-w-none">
+    <Card className="bg-primary/5 dark:bg-primary/10 border-primary/10 mb-4 w-full max-w-none">
       <CardContent className="p-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 w-full">
           <div>
             <div className="flex gap-2 mb-2">
-              <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                 {programCohort?.initiativeDetails?.name || programInitiativeName}
               </Badge>
               
@@ -58,7 +58,7 @@ function ProgramBanner({ programCohort, programInitiativeName, milestones }) {
                 programCohort?.['Current Cohort'] === 'true' || 
                 programCohort?.['Is Current'] === true ||
                 programCohort?.['Is Current'] === 'true') && (
-                <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">
+                <Badge variant="outline" className="bg-success/10 text-success border-success/20">
                   Active Cohort
                 </Badge>
               )}
@@ -87,7 +87,7 @@ function ProgramBanner({ programCohort, programInitiativeName, milestones }) {
           </div>
           <div className="flex gap-2 mt-3 md:mt-0">
             {/* Dynamic completion percentage based on actual milestones */}
-            <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
+            <Badge variant="outline" className="bg-success/10 text-success border-success/20">
               <BarChart3 className="h-3.5 w-3.5 mr-1" />
               {(() => {
                 // Use a key to force re-render when milestones change
@@ -101,7 +101,7 @@ function ProgramBanner({ programCohort, programInitiativeName, milestones }) {
                 return `${progressPercentage}% Complete (${completedCount}/${totalCount})`;
               })()}
             </Badge>
-            <Badge variant="outline" className="bg-purple-50 text-purple-800 border-purple-200">
+            <Badge variant="outline" className="bg-secondary/10 text-secondary border-secondary/20">
               <Flag className="h-3.5 w-3.5 mr-1" />
               {(() => {
                 // Same calculation but with different wording

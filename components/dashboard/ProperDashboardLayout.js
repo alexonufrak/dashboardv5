@@ -56,14 +56,14 @@ const ProperDashboardLayout = ({
       {showSidebar ? (
         <SidebarProvider defaultOpen>
           {/* Mobile Header - Only visible on mobile */}
-          <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-white border-b py-3 px-4 flex justify-between items-center shadow-xs">
+          <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-background border-b py-3 px-4 flex justify-between items-center shadow-xs">
             <div className="flex items-center">
               <div className="w-10"></div> {/* Placeholder for alignment */}
               <h2 className="text-lg font-bold tracking-tight text-primary ml-4">
                 xFoundry Hub
               </h2>
             </div>
-            <div className="text-xs">
+            <div className="text-xs text-muted-foreground">
               {profile?.institutionName || "Institution"}
             </div>
           </div>
