@@ -7,7 +7,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
 import ProfileEditModal from "@/components/profile/ProfileEditModal"
 import { Skeleton } from "@/components/ui/skeleton"
-import MainDashboardLayout from "@/components/layout/MainDashboardLayout"
+import ProperDashboardLayout from "@/components/dashboard/ProperDashboardLayout"
 import { 
   isProgramRoute, 
   navigateToProgram, 

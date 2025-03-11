@@ -7,7 +7,7 @@ import { withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
-import MainDashboardLayout from "@/components/layout/MainDashboardLayout"
+import ProperDashboardLayout from "@/components/dashboard/ProperDashboardLayout"
 import ProfileEditModal from "@/components/profile/ProfileEditModal"
 
 const ProgramDashboard = dynamic(() => import("@/components/program/ProgramDashboard"), {
@@ -91,7 +91,7 @@ function ProgramPage() {
   
   return (
     <>
-      <MainDashboardLayout
+      <ProperDashboardLayout
         title={pageTitle}
         profile={profile}
         onEditClick={() => setIsEditModalOpen(true)}
@@ -131,7 +131,7 @@ function ProgramPage() {
             onNavigate={(route) => router.push(route)}
           />
         )}
-      </MainDashboardLayout>
+      </ProperDashboardLayout>
       
       {profile && isEditModalOpen && (
         <ProfileEditModal
