@@ -11,10 +11,17 @@ import TeamMilestoneProgress from "@/components/teams/TeamMilestoneProgress"
  * Milestones tab content component that displays program milestones
  */
 export function MilestonesTab({ milestones }) {
+  // Add unique keys to both cards to ensure they re-render when milestones change
+  const milestoneKey = React.useMemo(() => {
+    const count = milestones?.length || 0;
+    const completed = milestones?.filter(m => m.status === "completed").length || 0;
+    return `milestones-${count}-${completed}`;
+  }, [milestones]);
+
   return (
     <div className="space-y-4 w-full">
-      <MilestonesSummaryCard milestones={milestones} />
-      <MilestonesDetailCard milestones={milestones} />
+      <MilestonesSummaryCard key={`summary-${milestoneKey}`} milestones={milestones} />
+      <MilestonesDetailCard key={`detail-${milestoneKey}`} milestones={milestones} />
     </div>
   )
 }

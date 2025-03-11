@@ -90,17 +90,21 @@ function ProgramBanner({ programCohort, programInitiativeName, milestones }) {
             <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">
               <BarChart3 className="h-3.5 w-3.5 mr-1" />
               {(() => {
+                // Use a key to force re-render when milestones change
                 const completedCount = milestones?.filter(m => m.status === "completed").length || 0;
                 const totalCount = milestones?.length || 0;
                 const progressPercentage = totalCount > 0 
                   ? Math.round((completedCount) / totalCount * 100) 
                   : 0;
-                return `${progressPercentage}% Complete`;
+                
+                // Include key values in output for easier debugging
+                return `${progressPercentage}% Complete (${completedCount}/${totalCount})`;
               })()}
             </Badge>
             <Badge variant="outline" className="bg-purple-50 text-purple-800 border-purple-200">
               <Flag className="h-3.5 w-3.5 mr-1" />
               {(() => {
+                // Same calculation but with different wording
                 const completedCount = milestones?.filter(m => m.status === "completed").length || 0;
                 const totalCount = milestones?.length || 0;
                 return `${completedCount} of ${totalCount} Milestones`;

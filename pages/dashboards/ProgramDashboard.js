@@ -45,6 +45,14 @@ function ProgramDashboardInner({ onNavigate, programId }) {
   
   const currentProgramId = programId || activeProgramId
   
+  // Fetch latest data for the current program whenever the programId changes
+  useEffect(() => {
+    if (currentProgramId) {
+      console.log(`ProgramDashboardInner: Refreshing data for program ${currentProgramId}`);
+      refreshData('program');  // Refresh all program-related data
+    }
+  }, [currentProgramId, refreshData]);
+  
   const activeProgramData = getActiveProgramData(currentProgramId)
   const programCohort = activeProgramData?.cohort || cohort
   const programInitiativeName = activeProgramData?.initiativeName || initiativeName
