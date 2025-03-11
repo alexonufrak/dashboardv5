@@ -4,7 +4,7 @@ import Head from "next/head"
 import { useState } from "react"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/layout/app-sidebar"
-import LoadingScreen from "@/components/common/LoadingScreen"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Toaster } from "sonner"
 import styles from "@/styles/dashboard.module.css"
 
@@ -73,7 +73,18 @@ export default function DashboardLayout({
                       </div>
                     </div>
                   ) : isLoading ? (
-                    <LoadingScreen message={loadingMessage} />
+                    <div className="space-y-6 w-full py-6">
+                      <Skeleton className="h-8 w-64 mb-6" />
+                      <Skeleton className="h-48 w-full rounded-lg mb-6" />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Skeleton className="h-32 rounded-lg" />
+                        <Skeleton className="h-32 rounded-lg" />
+                      </div>
+                      <div className="mt-6">
+                        <Skeleton className="h-6 w-32 mb-3" />
+                        <Skeleton className="h-24 w-full rounded-lg" />
+                      </div>
+                    </div>
                   ) : (
                     <div className={styles.dashboardContainer}>
                       {children}

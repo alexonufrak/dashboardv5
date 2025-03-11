@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import LoadingScreen from '@/components/common/LoadingScreen';
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   getProgramIdFromUrl, 
   navigateToProgram,
@@ -28,7 +28,17 @@ const DashboardRedirect = () => {
     }
   }, [router]);
   
-  return <LoadingScreen message="Redirecting to dashboard..." />;
+  return (
+    <div className="space-y-6 w-full py-6 max-w-6xl mx-auto">
+      <Skeleton className="h-8 w-64 mb-6" />
+      <div className="text-muted-foreground text-sm mb-6">Redirecting to dashboard...</div>
+      <Skeleton className="h-48 w-full rounded-lg mb-6" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Skeleton className="h-32 rounded-lg" />
+        <Skeleton className="h-32 rounded-lg" />
+      </div>
+    </div>
+  );
 };
 
 export default DashboardRedirect;
