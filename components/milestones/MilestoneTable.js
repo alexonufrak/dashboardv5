@@ -78,16 +78,16 @@ export default function MilestoneTable({
   // Status configuration for visual elements - completed/upcoming/late
   const statusConfig = {
     completed: { 
-      icon: <CheckCircle className="h-5 w-5 text-green-500" />,
-      textClass: "text-green-700"
+      icon: <CheckCircle className="h-5 w-5 text-success" />,
+      textClass: "text-success dark:text-success/90"
     },
     upcoming: { 
-      icon: <Circle className="h-5 w-5 text-gray-300" />,
-      textClass: "text-gray-500"
+      icon: <Circle className="h-5 w-5 text-muted-foreground/50" />,
+      textClass: "text-muted-foreground"
     },
     late: {
-      icon: <AlertCircle className="h-5 w-5 text-red-500" />,
-      textClass: "text-red-700"
+      icon: <AlertCircle className="h-5 w-5 text-destructive" />,
+      textClass: "text-destructive dark:text-destructive/90"
     }
   }
 
@@ -330,7 +330,7 @@ export default function MilestoneTable({
         
         <div className="border rounded-md p-8 text-center">
           <div className="text-muted-foreground mb-2">
-            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
             <h3 className="text-lg font-medium mb-1">No Milestones Available</h3>
             <p className="text-sm">
               The program administrator has not added any milestones to this program yet.
@@ -416,14 +416,14 @@ export default function MilestoneTable({
                     
                     {/* Days remaining indicator - simplified */}
                     {status !== "completed" && daysRemaining !== null && (
-                      <Badge variant="outline" className="mt-1 bg-gray-50 text-gray-700 border-gray-200">
+                      <Badge variant="outline" className="mt-1 bg-muted/50 border-muted">
                         {daysRemaining <= 0 ? "Due today" : `${daysRemaining} days remaining`}
                       </Badge>
                     )}
                     
                     {/* Submission date (if completed) */}
                     {status === "completed" && milestone.submissionDate && (
-                      <div className="flex items-center gap-1 text-xs text-green-600 mt-1">
+                      <div className="flex items-center gap-1 text-xs text-success mt-1">
                         <CheckCircle className="h-3 w-3" />
                         <span>Submitted: {formatDate(milestone.submissionDate)}</span>
                       </div>
@@ -445,7 +445,7 @@ export default function MilestoneTable({
                   {milestone.hasSubmission && (
                     <div className="mt-1 flex flex-col text-xs">
                       {milestone.hasAttachments && (
-                        <div className="flex items-center gap-1 text-blue-600">
+                        <div className="flex items-center gap-1 text-primary">
                           <FileText className="h-3 w-3" />
                           <span>
                             {milestone.attachmentCount > 1 
@@ -456,7 +456,7 @@ export default function MilestoneTable({
                       )}
                       
                       {milestone.submissionLink && (
-                        <div className="flex items-center gap-1 text-blue-600">
+                        <div className="flex items-center gap-1 text-primary">
                           <ExternalLink className="h-3 w-3" />
                           <a 
                             href={milestone.submissionLink}

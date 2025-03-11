@@ -77,7 +77,7 @@ function MilestonesSummaryCard({ milestones }) {
   const stats = getMilestoneStats();
 
   return (
-    <Card className="bg-gradient-to-r from-indigo-50 to-blue-50 border-blue-100 w-full max-w-none">
+    <Card className="bg-primary/5 dark:bg-primary/10 border-primary/10 w-full max-w-none">
       <CardContent className="p-4">
         <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between w-full">
           <div>
@@ -85,16 +85,16 @@ function MilestonesSummaryCard({ milestones }) {
             <div className="text-sm text-muted-foreground">
               <div className="flex items-center gap-4">
                 <span className="flex items-center gap-1">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CheckCircle className="h-4 w-4 text-success" />
                   <span><strong>{stats.completedCount}</strong> Completed</span>
                 </span>
                 <span className="flex items-center gap-1">
-                  <Circle className="h-4 w-4 text-gray-400" />
+                  <Circle className="h-4 w-4 text-muted-foreground" />
                   <span><strong>{stats.upcomingCount}</strong> Upcoming</span>
                 </span>
                 {stats.lateCount > 0 && (
                   <span className="flex items-center gap-1">
-                    <AlertCircle className="h-4 w-4 text-red-600" />
+                    <AlertCircle className="h-4 w-4 text-destructive" />
                     <span><strong>{stats.lateCount}</strong> Late</span>
                   </span>
                 )}
@@ -104,7 +104,7 @@ function MilestonesSummaryCard({ milestones }) {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-sm font-medium">Overall Progress:</span>
-              <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                 {`${stats.completionPercentage}%`}
               </Badge>
             </div>

@@ -111,30 +111,30 @@ export default function TeamMilestoneProgress({ milestones: initialMilestones = 
         <div className="flex justify-between items-center mb-4">
           <div className="flex-1">
             <div className="flex justify-between text-sm mb-1">
-              <div className="h-4 bg-gray-200 animate-pulse rounded w-24"></div>
-              <div className="h-4 bg-gray-200 animate-pulse rounded w-8"></div>
+              <div className="h-4 bg-muted animate-pulse rounded w-24"></div>
+              <div className="h-4 bg-muted animate-pulse rounded w-8"></div>
             </div>
-            <div className="h-2.5 bg-gray-100 animate-pulse rounded"></div>
+            <div className="h-2.5 bg-muted/50 animate-pulse rounded"></div>
           </div>
           
           <div className="flex ml-4">
             <div className="border rounded-md flex bg-muted/20">
-              <div className="h-8 w-20 bg-gray-200 animate-pulse rounded"></div>
-              <div className="h-8 w-20 bg-gray-200 animate-pulse rounded"></div>
+              <div className="h-8 w-20 bg-muted animate-pulse rounded"></div>
+              <div className="h-8 w-20 bg-muted animate-pulse rounded"></div>
             </div>
           </div>
         </div>
         
         <div className="border rounded-md p-4">
           <div className="space-y-4 animate-pulse">
-            <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="h-10 bg-muted animate-pulse rounded"></div>
             {[1, 2, 3].map(i => (
               <div key={i} className="flex justify-between items-center h-16 border-t pt-4">
                 <div className="flex items-center gap-2">
-                  <div className="h-5 w-5 rounded-full bg-gray-200"></div>
-                  <div className="w-32 h-6 bg-gray-200 rounded"></div>
+                  <div className="h-5 w-5 rounded-full bg-muted"></div>
+                  <div className="w-32 h-6 bg-muted rounded"></div>
                 </div>
-                <div className="w-24 h-8 bg-gray-200 rounded"></div>
+                <div className="w-24 h-8 bg-muted rounded"></div>
               </div>
             ))}
           </div>
@@ -148,7 +148,7 @@ export default function TeamMilestoneProgress({ milestones: initialMilestones = 
     return (
       <div className="border rounded-md p-6 text-center">
         <div className="text-muted-foreground mb-2">
-          <AlertCircle className="h-10 w-10 mx-auto mb-3 text-gray-300" />
+          <AlertCircle className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
           <h3 className="text-lg font-medium mb-2">No Milestones Available</h3>
           <p className="text-sm">
             This team doesn't have any milestones assigned yet.
