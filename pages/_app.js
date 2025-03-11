@@ -10,6 +10,7 @@ import { Analytics } from "@vercel/analytics/react"
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import LoadingScreen from '@/components/common/LoadingScreen'
+import { ThemeProvider } from '@/components/theme-provider'
 
 // Simple class-based error boundary component defined inline to avoid import issues
 class ErrorBoundary extends React.Component {
@@ -135,20 +136,27 @@ function MyApp({ Component, pageProps }) {
   // Client-side rendered app with all providers
   return (
     <QueryClientProvider client={queryClient}>
-      <UserProvider>
-        <OnboardingProvider>
-          <ErrorBoundary>
-            <AppContent Component={Component} pageProps={pageProps} router={router} />
-            {showLoadingOverlay && (
-              <div className="fixed inset-0 bg-white bg-opacity-70 z-50 flex items-center justify-center pointer-events-none">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-              </div>
-            )}
-            <Analytics />
-          </ErrorBoundary>
-        </OnboardingProvider>
-      </UserProvider>
-      {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
+      <ThemeProvider 
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <UserProvider>
+          <OnboardingProvider>
+            <ErrorBoundary>
+              <AppContent Component={Component} pageProps={pageProps} router={router} />
+              {showLoadingOverlay && (
+                <div className="fixed inset-0 bg-white dark:bg-gray-900 bg-opacity-70 dark:bg-opacity-70 z-50 flex items-center justify-center pointer-events-none">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
+                </div>
+              )}
+              <Analytics />
+            </ErrorBoundary>
+          </OnboardingProvider>
+        </UserProvider>
+        {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
+      </ThemeProvider>
     </QueryClientProvider>
   )
 }

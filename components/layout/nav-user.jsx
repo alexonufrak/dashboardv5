@@ -3,7 +3,10 @@
 import {
   LogOut,
   User,
+  Moon,
+  Sun,
 } from "lucide-react"
+import { useTheme } from "next-themes"
 
 import {
   Avatar,
@@ -45,6 +48,7 @@ export function NavUser({
   profile
 }) {
   const { isMobile } = useSidebar()
+  const { setTheme, theme } = useTheme()
   const initials = getInitials(user.name);
 
   return (
@@ -88,6 +92,24 @@ export function NavUser({
               <DropdownMenuItem onClick={user.onEditClick ? user.onEditClick : undefined}>
                 <User className="mr-2 h-4 w-4" />
                 Edit Profile
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => setTheme("light")}>
+                <Sun className="mr-2 h-4 w-4" />
+                Light Theme
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("dark")}>
+                <Moon className="mr-2 h-4 w-4" />
+                Dark Theme
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setTheme("system")}>
+                <span className="mr-2 h-4 w-4 flex items-center justify-center">
+                  <Sun className="h-3 w-3 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                  <Moon className="absolute h-3 w-3 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                </span>
+                System Theme
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
