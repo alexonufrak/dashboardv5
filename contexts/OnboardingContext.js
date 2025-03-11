@@ -48,36 +48,36 @@ export function OnboardingProvider({ children }) {
     setIsLoading(true)
     
     try {
-      // First, check for completed=true in metadata (most reliable source)
-      const metadataResponse = await fetch('/api/user/metadata')
-      if (metadataResponse.ok) {
-        const metadata = await metadataResponse.json()
+      // First, check onboarding status using the dedicated API endpoint
+      // which now uses Airtable's Contact Onboarding field as primary source
+      const onboardingResponse = await fetch('/api/user/onboarding-completed')
+      
+      if (onboardingResponse.ok) {
+        const data = await onboardingResponse.json()
+        console.log("Onboarding status check response:", data)
         
-        // If onboardingCompleted is explicitly set to true, hide the onboarding
-        if (metadata.onboardingCompleted === true) {
-          console.log("Onboarding explicitly marked as completed")
+        // If completed is true (status is "Applied"), hide onboarding
+        if (data.completed === true) {
+          console.log("Onboarding marked as completed (status: Applied)")
           setOnboardingCompleted(true)
           setShowOnboarding(false)
           setIsLoading(false)
           return
         }
         
-        // Check for completed steps in metadata
-        if (metadata.onboarding && Array.isArray(metadata.onboarding)) {
-          // Update steps based on what's in metadata
-          setSteps(prevSteps => {
-            const updatedSteps = { ...prevSteps }
-            
-            Object.keys(updatedSteps).forEach(stepId => {
-              updatedSteps[stepId].completed = metadata.onboarding.includes(stepId)
-            })
-            
-            return updatedSteps
-          })
+        // If the status is "Registered", mark the register step as completed
+        if (data.status === "Registered") {
+          setSteps(prevSteps => ({
+            ...prevSteps,
+            register: {
+              ...prevSteps.register,
+              completed: true
+            }
+          }))
         }
       }
       
-      // Check if user has any applications
+      // Check if user has any applications (this is still useful to determine selectCohort completion)
       const applicationsResponse = await fetch('/api/user/check-application')
       if (applicationsResponse.ok) {
         const data = await applicationsResponse.json()
@@ -95,6 +95,14 @@ export function OnboardingProvider({ children }) {
               completed: true
             }
           }))
+          
+          // Also update Airtable Onboarding status to "Applied" if they have applications
+          try {
+            await fetch('/api/user/onboarding-completed', { method: 'POST' })
+            console.log("Updated onboarding status to Applied based on existing applications")
+          } catch (error) {
+            console.error("Error updating onboarding status:", error)
+          }
         }
       }
       
@@ -142,19 +150,34 @@ export function OnboardingProvider({ children }) {
     }
   }
   
-  // We no longer need to mark onboarding as explicitly completed
-  // Instead, we'll just track the completion of individual steps
-  // This simplifies our approach and matches the requirement to 
-  // just let users close the dialog after they've completed all steps
+  // Complete onboarding - this now updates both Airtable and Auth0
   const completeOnboarding = async () => {
     try {
-      // Mark as completed in local state for this session
-      setOnboardingCompleted(true)
+      // First update the onboarding status in Airtable
+      const response = await fetch('/api/user/onboarding-completed', {
+        method: 'POST'
+      })
       
-      // Hide the onboarding UI
-      setShowOnboarding(false)
+      if (response.ok) {
+        const result = await response.json()
+        console.log("Onboarding completion result:", result)
+        
+        if (result.success) {
+          // Update local state
+          setOnboardingCompleted(true)
+          setShowOnboarding(false)
+          return true
+        } else {
+          console.error("Failed to update onboarding status:", result.error)
+          return false
+        }
+      } else {
+        console.error("Error response from onboarding completion API:", response.status)
+        return false
+      }
     } catch (error) {
       console.error("Error completing onboarding:", error)
+      return false
     }
   }
   

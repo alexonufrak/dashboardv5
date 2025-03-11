@@ -185,7 +185,19 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
       throw new Error('Failed to create application record')
     }
     
-    // Step 3: After application is created, try to create a participation record
+    // Step 3: Update the user's Onboarding status in Airtable to "Applied"
+    try {
+      // Update the contact record with the new onboarding status
+      await contactsTable.update(userProfile.contactId, {
+        "Onboarding": "Applied"
+      });
+      console.log(`Updated contact ${userProfile.contactId} Onboarding status to "Applied"`);
+    } catch (onboardingError) {
+      // Log but don't fail if onboarding update fails
+      console.error("Error updating onboarding status:", onboardingError);
+    }
+    
+    // Step 4: After application is created, try to create a participation record
     // This is based on the initiative's enrollment type (Immediate vs. Review)
     let participationResult = null;
     try {
