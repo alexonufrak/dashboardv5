@@ -64,8 +64,7 @@ function ProgramBanner({ programCohort, programInitiativeName, milestones }) {
               )}
             </div>
             <h2 className="text-xl font-semibold mb-1">
-              {programCohort?.topicNames?.[0] || "Active Program"} 
-              {programCohort?.Short_Name && ` - ${programCohort.Short_Name}`}
+              {programCohort?.initiativeDetails?.name || programInitiativeName || "Active Program"}
             </h2>
             <div className="text-sm text-muted-foreground flex items-center">
               <CalendarIcon className="h-3.5 w-3.5 mr-1" />
