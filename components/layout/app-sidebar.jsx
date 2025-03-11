@@ -53,12 +53,12 @@ export function AppSidebar({
   };
 
   // Create base navigation for main section (Dashboard only)
-  const isDashboardActive = (router.pathname === "/dashboard" || router.pathname === "/dashboard-new") && !router.query.programId;
+  const isDashboardActive = router.pathname === ROUTES.DASHBOARD && !router.query.programId;
 
   const navMainItems = [
     {
       title: "Dashboard",
-      url: "/dashboard-new",
+      url: ROUTES.DASHBOARD,
       icon: Home,
       isActive: isDashboardActive
     }
