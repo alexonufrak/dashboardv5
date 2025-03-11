@@ -4,7 +4,7 @@ import { useUser } from "@auth0/nextjs-auth0/client"
 import { useRouter } from "next/router"
 import { useEffect } from "react"
 import Layout from "@/components/layout/Layout"
-import LoadingScreen from "@/components/common/LoadingScreen"
+import { Skeleton } from "@/components/ui/skeleton"
 import DashboardRedirect from "@/components/dashboard/DashboardRedirect"
 import Logo from "@/components/common/Logo"
 import { Button } from "@/components/ui/button"
@@ -23,7 +23,21 @@ export default function Home() {
   }, [user, router])
 
   if (isLoading) {
-    return <LoadingScreen />
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+        <div className="max-w-6xl w-full p-8 space-y-8">
+          <Skeleton className="h-16 w-48 mb-8" />
+          <Skeleton className="h-14 w-3/4 mb-4" />
+          <Skeleton className="h-10 w-1/2 mb-10" />
+          <Skeleton className="h-32 w-full rounded-lg mb-8" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Skeleton className="h-48 w-full rounded-lg" />
+            <Skeleton className="h-48 w-full rounded-lg" />
+            <Skeleton className="h-48 w-full rounded-lg" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (user) {

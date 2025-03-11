@@ -4,7 +4,7 @@ import { withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { useRouter } from "next/router"
 import { useEffect } from "react"
-import LoadingScreen from "@/components/common/LoadingScreen"
+import { Skeleton } from "@/components/ui/skeleton"
 
 /**
  * Program index page
@@ -33,7 +33,15 @@ function ProgramIndex() {
   }, [router, getAllProgramInitiatives, isLoading])
   
   return (
-    <LoadingScreen message="Redirecting to your program..." />
+    <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
+      <div className="text-center mb-6">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent mx-auto mb-4"></div>
+        <p className="text-muted-foreground text-sm">Redirecting to your program...</p>
+      </div>
+      <Skeleton className="h-6 w-48 mb-4" />
+      <Skeleton className="h-6 w-64 mb-4" />
+      <Skeleton className="h-6 w-32" />
+    </div>
   )
 }
 

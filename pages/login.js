@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useUser } from "@auth0/nextjs-auth0/client";
 import Layout from "@/components/layout/Layout";
-import LoadingScreen from "@/components/common/LoadingScreen";
+import { Skeleton } from "@/components/ui/skeleton";
 import Logo from "@/components/common/Logo";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -149,7 +149,16 @@ export default function Login() {
   };
 
   if (isLoading) {
-    return <LoadingScreen />;
+    return (
+      <Layout title="Loading - xFoundry">
+        <div className="flex min-h-[calc(100vh-100px)] w-full items-center justify-center py-10 px-4">
+          <div className="w-full max-w-md">
+            <Skeleton className="h-12 w-48 mx-auto mb-8" />
+            <Skeleton className="h-[400px] w-full rounded-lg" />
+          </div>
+        </div>
+      </Layout>
+    );
   }
 
   return (

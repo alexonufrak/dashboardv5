@@ -11,7 +11,6 @@ import Head from "next/head"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/layout/app-sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
-import LoadingScreen from "@/components/common/LoadingScreen"
 
 // Dynamic import for ProgramDashboard with a proper skeleton
 const ProgramDashboard = dynamic(() => import("@/pages/dashboards/ProgramDashboard"), {
@@ -148,7 +147,15 @@ function ProgramPageContent({ programId }) {
                 {/* Content wrapper with page transitions */}
                 <div className="proper-dashboard-layout-content flex-1">
                   {showFullLoader ? (
-                    <LoadingScreen message="Loading program dashboard..." />
+                    <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
+                      <div className="text-center mb-6">
+                        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent mx-auto mb-4"></div>
+                        <p className="text-muted-foreground text-sm">Loading program dashboard...</p>
+                      </div>
+                      <Skeleton className="h-6 w-48 mb-4" />
+                      <Skeleton className="h-6 w-64 mb-4" />
+                      <Skeleton className="h-6 w-32" />
+                    </div>
                   ) : (
                     <ProgramDashboard programId={programId} />
                   )}

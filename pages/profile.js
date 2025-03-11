@@ -4,7 +4,7 @@ import { withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { useRouter } from "next/router"
 import { useEffect } from "react"
 import { useDashboard } from "@/contexts/DashboardContext"
-import LoadingScreen from "@/components/common/LoadingScreen"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // Profile page that opens the edit modal and stays on the current page
 const ProfilePage = () => {
@@ -27,7 +27,17 @@ const ProfilePage = () => {
     router.replace(isInternalRoute ? returnPath : "/dashboard", undefined, { shallow: true })
   }, [router, setIsEditModalOpen])
   
-  return <LoadingScreen message="Opening profile editor..." />
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
+      <div className="text-center mb-6">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent mx-auto mb-4"></div>
+        <p className="text-muted-foreground text-sm">Opening profile editor...</p>
+      </div>
+      <Skeleton className="h-6 w-48 mb-4" />
+      <Skeleton className="h-6 w-64 mb-4" />
+      <Skeleton className="h-6 w-32" />
+    </div>
+  )
 }
 
 export const getServerSideProps = withPageAuthRequired()
