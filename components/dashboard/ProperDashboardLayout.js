@@ -25,6 +25,7 @@ const ProperDashboardLayout = ({
   
   // Check if current route is a dashboard route - include dynamic program routes
   const isDashboard = router.pathname === "/dashboard" || 
+                      router.pathname === "/dashboard-new" || 
                       router.pathname === "/profile" || 
                       router.pathname === "/program-dashboard" ||
                       isProgramRoute(router) ||
@@ -34,6 +35,7 @@ const ProperDashboardLayout = ({
   
   // Don't show breadcrumbs on main dashboard pages but show on program pages
   const showBreadcrumbs = router.pathname !== "/dashboard" && 
+                          router.pathname !== "/dashboard-new" && 
                           router.pathname !== "/program-dashboard" && 
                           !router.pathname.startsWith("/program/[programId]") &&
                           showSidebar
