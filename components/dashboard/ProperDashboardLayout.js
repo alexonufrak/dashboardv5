@@ -67,7 +67,7 @@ const ProperDashboardLayout = ({
           </div>
           
           {/* Dashboard Sidebar using the new AppSidebar component */}
-          <AppSidebar />
+          <AppSidebar className="h-screen" />
           
           {/* Main Content */}
           <SidebarInset className="bg-background">

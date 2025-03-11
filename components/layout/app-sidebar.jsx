@@ -80,8 +80,8 @@ export function AppSidebar({
         if (!uniqueInitiativeIds.has(initiativeId)) {
           uniqueInitiativeIds.add(initiativeId);
           
-          // Use new program URL structure
-          const programUrl = `/program-new/${initiativeId}`;
+          // Use updated program URL structure
+          const programUrl = `/program/${initiativeId}`;
           
           initiatives.push({
             name: p.cohort.initiativeDetails.name || "Unknown Program",
