@@ -11,6 +11,7 @@ import { BackgroundGradientAnimation } from "@/components/ui/background-gradient
 import DashboardRedirect from "@/components/dashboard/DashboardRedirect"
 import Logo from "@/components/common/Logo"
 import Head from "next/head"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function Home() {
   const { user, isLoading } = useUser()
@@ -46,16 +47,20 @@ export default function Home() {
         <meta name="description" content="xFoundry is an education innovation platform that connects students across disciplines" />
       </Head>
 
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+      
       <BackgroundGradientAnimation
-        gradientBackgroundStart="rgb(14, 68, 90)" // Eden
-        gradientBackgroundEnd="rgb(36, 169, 224)" // Curious Blue
+        gradientBackgroundStart="rgb(14, 68, 90)" // Eden (light mode)
+        gradientBackgroundEnd="rgb(36, 169, 224)" // Curious Blue (light mode)
         firstColor="36, 169, 224" // Curious Blue
         secondColor="14, 68, 90" // Eden
         thirdColor="255, 210, 0" // Gold
         fourthColor="22, 163, 74" // Green
         fifthColor="36, 169, 224" // Curious Blue
         interactive={true}
-        className="h-screen w-screen"
+        className="h-screen w-screen dark:bg-gradient-to-b dark:from-gray-900 dark:to-gray-800"
       >
         <div className="h-full w-full flex flex-col items-center justify-center">
           <div className="relative z-10 max-w-md mx-auto px-4 text-center">

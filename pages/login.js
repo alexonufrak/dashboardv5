@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useUser } from "@auth0/nextjs-auth0/client";
-import Layout from "@/components/layout/Layout";
+import Head from "next/head";
 import { Skeleton } from "@/components/ui/skeleton";
 import Logo from "@/components/common/Logo";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ExternalLink, AlertCircle, CheckCircle, XCircle, ArrowRight } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function Login() {
   const router = useRouter();
@@ -150,22 +151,34 @@ export default function Login() {
 
   if (isLoading) {
     return (
-      <Layout title="Loading - xFoundry">
-        <div className="flex min-h-[calc(100vh-100px)] w-full items-center justify-center py-10 px-4">
+      <>
+        <Head>
+          <title>Loading - xFoundry</title>
+        </Head>
+        <div className="fixed top-4 right-4 z-50">
+          <ThemeToggle />
+        </div>
+        <div className="flex min-h-screen w-full items-center justify-center py-10 px-4 bg-background">
           <div className="w-full max-w-md">
             <Skeleton className="h-12 w-48 mx-auto mb-8" />
             <Skeleton className="h-[400px] w-full rounded-lg" />
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout title="Sign In - xFoundry">
-      <div className="flex min-h-[calc(100vh-100px)] w-full items-center justify-center py-10 px-4">
+    <>
+      <Head>
+        <title>Sign In - xFoundry</title>
+      </Head>
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+      <div className="flex min-h-screen w-full items-center justify-center py-10 px-4 bg-background">
         <div className="w-full max-w-md">
-          <Card className="p-6 md:p-8 shadow-md border-0 bg-white">
+          <Card className="p-6 md:p-8 shadow-md">
             <div className="space-y-6">
               <div className="flex justify-center mb-6">
                 <Logo variant="horizontal" color="eden" height={40} />
@@ -304,7 +317,7 @@ export default function Login() {
                     <Separator className="w-full" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-muted-foreground">Or</span>
+                    <span className="bg-card px-2 text-muted-foreground">Or</span>
                   </div>
                 </div>
                 
@@ -318,6 +331,6 @@ export default function Login() {
           </Card>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }

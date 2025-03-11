@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
-import Layout from "@/components/layout/Layout"
 import { useUser } from "@auth0/nextjs-auth0/client"
+import Head from "next/head"
 import { Skeleton } from "@/components/ui/skeleton"
 import Logo from "@/components/common/Logo"
 import { Card } from "@/components/ui/card"
@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { ArrowRight, CheckCircle, XCircle, AlertCircle, GraduationCap, Mail, User } from "lucide-react"
 import { toast } from "sonner"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function SignUp() {
   const { user, isLoading } = useUser();
@@ -270,20 +271,32 @@ export default function SignUp() {
 
   if (isLoading) {
     return (
-      <Layout title="Loading - xFoundry">
-        <div className="flex min-h-[calc(100vh-100px)] w-full items-center justify-center py-10 px-4">
+      <>
+        <Head>
+          <title>Loading - xFoundry</title>
+        </Head>
+        <div className="fixed top-4 right-4 z-50">
+          <ThemeToggle />
+        </div>
+        <div className="flex min-h-screen w-full items-center justify-center py-10 px-4 bg-background">
           <div className="w-full max-w-md">
             <Skeleton className="h-12 w-48 mx-auto mb-8" />
             <Skeleton className="h-[600px] w-full rounded-lg" />
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout title="Sign Up - xFoundry">
-      <div className="container mx-auto flex flex-col items-center justify-center py-12 px-4 lg:px-8">
+    <>
+      <Head>
+        <title>Sign Up - xFoundry</title>
+      </Head>
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+      <div className="container mx-auto flex flex-col items-center justify-center py-12 px-4 lg:px-8 bg-background min-h-screen">
         <div className="max-w-5xl w-full">
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
@@ -590,6 +603,6 @@ export default function SignUp() {
           </div>
         </div>
       </div>
-    </Layout>
+    </>
   );
 }
