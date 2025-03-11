@@ -13,6 +13,7 @@ import {
   MilestonesTab,
   TeamMembersTab,
   ActivityTab,
+  BountiesTab,
   TeamDialogs,
   cleanTeamData,
   isNotParticipatingError,
