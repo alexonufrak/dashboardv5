@@ -39,7 +39,12 @@ function ProgramPage() {
     isEditModalOpen, 
     setIsEditModalOpen, 
     getActiveProgramData,
-    handleProfileUpdate
+    handleProfileUpdate,
+    teamData,
+    cohort,
+    milestones,
+    submissions,
+    bounties
   } = useDashboard()
   
   const [pageTitle, setPageTitle] = useState("Program Dashboard")
