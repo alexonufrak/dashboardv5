@@ -6,7 +6,7 @@ import dynamic from "next/dynamic"
 import { withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { Skeleton } from "@/components/ui/skeleton"
-import DashboardLayout from "@/components/layout/DashboardLayout"
+import ProperDashboardLayout from "@/components/dashboard/ProperDashboardLayout"
 import ProfileEditModal from "@/components/profile/ProfileEditModal"
 
 const ProgramDashboard = dynamic(() => import("@/pages/dashboards/ProgramDashboard"), {
@@ -85,15 +85,37 @@ function ProgramPage() {
   
   return (
     <>
-      <DashboardLayout
+      <ProperDashboardLayout
         title={pageTitle}
         profile={profile}
-        isLoading={showFullLoader}
-        loadingMessage="Loading program dashboard..."
-        error={error}
+        onEditClick={() => setIsEditModalOpen(true)}
+        currentPage="program"
+        onNavigate={(route) => router.push(route)}
       >
-        <ProgramDashboard programId={programId} />
-      </DashboardLayout>
+        {showFullLoader ? (
+          <div className="flex justify-center items-center py-16">
+            <div className="text-center">
+              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading program dashboard...</p>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center min-h-[60vh]">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+              <h2 className="text-lg font-semibold text-red-800 mb-2">Error Loading Dashboard</h2>
+              <p className="text-red-700 mb-4">{error}</p>
+              <button 
+                className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        ) : (
+          <ProgramDashboard programId={programId} />
+        )}
+      </ProperDashboardLayout>
       
       {profile && isEditModalOpen && (
         <ProfileEditModal
