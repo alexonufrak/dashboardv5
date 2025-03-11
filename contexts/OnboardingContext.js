@@ -43,21 +43,22 @@ export function OnboardingProvider({ children }) {
     setCompletionPercentage(percentage)
   }, [steps])
   
-  // Check onboarding status - this will be called once when the dashboard loads
-  const checkOnboardingStatus = async () => {
+  // Check onboarding status using the profile data from Airtable
+  // This avoids a separate API call since the profile already has the onboarding status
+  const checkOnboardingStatus = async (profileData) => {
     setIsLoading(true)
     
     try {
-      // First, check onboarding status using the dedicated API endpoint
-      // which now uses Airtable's Contact Onboarding field as primary source
-      const onboardingResponse = await fetch('/api/user/onboarding-completed')
+      console.log("Checking onboarding status from profile:", profileData)
       
-      if (onboardingResponse.ok) {
-        const data = await onboardingResponse.json()
-        console.log("Onboarding status check response:", data)
+      // If we have a profile with onboarding data
+      if (profileData) {
+        // Get onboarding status directly from the profile
+        const onboardingStatus = profileData.Onboarding || "Registered" // Default to "Registered" if not set
+        console.log("Onboarding status from profile:", onboardingStatus)
         
-        // If completed is true (status is "Applied"), hide onboarding
-        if (data.completed === true) {
+        // If status is "Applied", hide onboarding
+        if (onboardingStatus === "Applied") {
           console.log("Onboarding marked as completed (status: Applied)")
           setOnboardingCompleted(true)
           setShowOnboarding(false)
@@ -65,29 +66,24 @@ export function OnboardingProvider({ children }) {
           return
         }
         
-        // If the status is "Registered", mark the register step as completed
-        if (data.status === "Registered") {
-          setSteps(prevSteps => ({
-            ...prevSteps,
-            register: {
-              ...prevSteps.register,
-              completed: true
-            }
-          }))
-        }
-      }
-      
-      // Check if user has any applications (this is still useful to determine selectCohort completion)
-      const applicationsResponse = await fetch('/api/user/check-application')
-      if (applicationsResponse.ok) {
-        const data = await applicationsResponse.json()
-        const userHasApplications = Array.isArray(data.applications) && data.applications.length > 0
+        // Mark register step as completed (always true since they're registered)
+        setSteps(prevSteps => ({
+          ...prevSteps,
+          register: {
+            ...prevSteps.register,
+            completed: true
+          }
+        }))
+        
+        // Check if user has any applications
+        const hasApplications = Array.isArray(profileData.applications) && 
+                               profileData.applications.length > 0
         
         // Update application status
-        setHasApplications(userHasApplications)
+        setHasApplications(hasApplications)
         
         // If user has applications, mark the selectCohort step as completed
-        if (userHasApplications) {
+        if (hasApplications) {
           setSteps(prevSteps => ({
             ...prevSteps,
             selectCohort: {
@@ -97,11 +93,14 @@ export function OnboardingProvider({ children }) {
           }))
           
           // Also update Airtable Onboarding status to "Applied" if they have applications
-          try {
-            await fetch('/api/user/onboarding-completed', { method: 'POST' })
-            console.log("Updated onboarding status to Applied based on existing applications")
-          } catch (error) {
-            console.error("Error updating onboarding status:", error)
+          // but their status is still "Registered" - this ensures consistency
+          if (onboardingStatus !== "Applied") {
+            try {
+              await fetch('/api/user/onboarding-completed', { method: 'POST' })
+              console.log("Updated onboarding status to Applied based on existing applications")
+            } catch (error) {
+              console.error("Error updating onboarding status:", error)
+            }
           }
         }
       }

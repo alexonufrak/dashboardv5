@@ -59,10 +59,14 @@ function DashboardHomeInner({ onNavigate }) {
   useEffect(() => {
     // Check onboarding status when dashboard loads
     if (profile && !isLoading) {
-      console.log("Checking onboarding status on dashboard load")
-      checkOnboardingStatus()
+      console.log("Checking onboarding status on dashboard load with profile data")
+      // Pass the full profile with applications data
+      checkOnboardingStatus({
+        ...profile,
+        applications: applications
+      })
     }
-  }, [profile, isLoading, checkOnboardingStatus])
+  }, [profile, isLoading, applications, checkOnboardingStatus])
   
   // Handler functions
   const handleEditClick = () => {
