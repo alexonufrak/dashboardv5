@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTheme } from 'next-themes';
 
 /**
  * Logo component that can display different variations of the xFoundry logo
@@ -13,18 +14,28 @@ import Link from 'next/link';
  */
 const Logo = ({ 
   variant = "horizontal", 
-  color = "eden", 
+  color = "auto", // 'auto' will choose based on theme, or can specify 'eden' or 'white'
   height = 40, 
   clickable = true,
   className = "",
 }) => {
+  const { theme, systemTheme } = useTheme();
+  
+  // Determine the current effective theme
+  const currentTheme = theme === 'system' ? systemTheme : theme;
+  
+  // If color is 'auto', determine based on theme
+  const effectiveColor = color === 'auto' 
+    ? (currentTheme === 'dark' ? 'white' : 'eden')
+    : color;
+  
   const getLogoSrc = () => {
     if (variant === "horizontal") {
-      return color === "white"
+      return effectiveColor === "white"
         ? "/logos/xFoundry Logo.svg"
         : "/logos/xFoundry Blue 900 (1).svg";
     } else {
-      return color === "white"
+      return effectiveColor === "white"
         ? "/logos/X Icon White.svg"
         : "/logos/X Icon Blue.svg";
     }
@@ -50,7 +61,7 @@ const Logo = ({
           className="w-full h-full bg-contain bg-center bg-no-repeat"
           style={{
             backgroundImage: `url('/placeholder-logo.svg')`,
-            filter: color === "white" ? "brightness(0) invert(1)" : "none"
+            filter: effectiveColor === "white" ? "brightness(0) invert(1)" : "none"
           }}
         />
       </object>

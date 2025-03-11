@@ -181,10 +181,10 @@ export default function Login() {
           <Card className="p-6 md:p-8 shadow-md">
             <div className="space-y-6">
               <div className="flex justify-center mb-6">
-                <Logo variant="horizontal" color="eden" height={40} />
+                <Logo variant="horizontal" color="auto" height={40} />
               </div>
               <div className="space-y-2 text-center">
-                <h1 className="text-2xl font-bold tracking-tight text-curious">Sign In</h1>
+                <h1 className="text-2xl font-bold tracking-tight text-primary">Sign In</h1>
                 <p className="text-muted-foreground text-sm">Enter your institutional email to continue</p>
               </div>
               

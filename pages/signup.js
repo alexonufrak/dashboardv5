@@ -300,12 +300,12 @@ export default function SignUp() {
         <div className="max-w-5xl w-full">
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
-              <Logo variant="horizontal" color="eden" height={50} />
+              <Logo variant="horizontal" color="auto" height={50} />
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-primary sm:text-4xl">
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-primary dark:text-primary">
               Join Our Multidisciplinary Community
             </h1>
-            <p className="mt-3 text-xl text-gray-500">
+            <p className="mt-3 text-xl text-muted-foreground">
               Break down academic silos and collaborate across disciplines to tackle global challenges
             </p>
           </div>

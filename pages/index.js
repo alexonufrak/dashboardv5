@@ -67,15 +67,15 @@ export default function Home() {
             <div className="mb-8">
               <Logo 
                 variant="horizontal" 
-                color="white" 
+                color="auto" 
                 height={80} 
                 className="mx-auto"
               />
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold text-white dark:text-white mb-4">
               Education Innovation Platform
             </h1>
-            <p className="text-lg md:text-xl text-white/80 mb-8">
+            <p className="text-lg md:text-xl text-white/80 dark:text-white/80 mb-8">
               Connect students across disciplines to build solutions for real-world challenges.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
