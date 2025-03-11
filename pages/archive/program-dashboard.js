@@ -1,42 +1,33 @@
-"use client"
-
+// This is a redirect file for backwards compatibility
 import { withPageAuthRequired } from "@auth0/nextjs-auth0"
-import { useDashboard } from "@/contexts/DashboardContext"
-import { Toaster } from "sonner"
-import { useEffect } from "react"
-import { useRouter } from "next/router"
+
+// This page redirects to the dashboard page
+export async function getServerSideProps(context) {
+  // Get any query parameters from the current URL
+  const { query } = context
+  
+  // If there's a programId, redirect to the program page
+  if (query.programId) {
+    return {
+      redirect: {
+        destination: `/program-new/${query.programId}`,
+        permanent: false,
+      },
+    }
+  }
+  
+  // Otherwise, redirect to the dashboard
+  return {
+    redirect: {
+      destination: '/dashboard-new',
+      permanent: false,
+    },
+  }
+}
 
 function ProgramDashboardLegacy() {
-  const router = useRouter()
-  const { getAllProgramInitiatives } = useDashboard()
-  
-  // Redirect to the new URL structure using routing utilities
-  useEffect(() => {
-    const { navigateToProgram, navigateToDashboard } = require('@/lib/routing');
-    const initiatives = getAllProgramInitiatives()
-    
-    // If user has active initiatives, redirect to the first one
-    if (initiatives && initiatives.length > 0) {
-      navigateToProgram(router, initiatives[0].id, { replace: true })
-    } else {
-      // Otherwise redirect to the dashboard
-      navigateToDashboard(router, { replace: true })
-    }
-  }, [router, getAllProgramInitiatives])
-  
-  return (
-    <div className="flex items-center justify-center min-h-[300px]">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-        <h3 className="text-lg font-medium mb-2">Redirecting...</h3>
-        <p className="text-muted-foreground">Taking you to your program dashboard</p>
-      </div>
-      <Toaster position="top-right" />
-    </div>
-  )
+  return <div>Redirecting to your program dashboard...</div>
 }
 
 // Wrap with auth protection
-export const getServerSideProps = withPageAuthRequired()
-
-export default ProgramDashboardLegacy
+export default withPageAuthRequired(ProgramDashboardLegacy)

@@ -48,6 +48,7 @@ function ProgramDashboardInner({ onNavigate, programId }) {
   const programCohort = activeProgramData?.cohort || cohort
   const programInitiativeName = activeProgramData?.initiativeName || initiativeName
   const programParticipationType = activeProgramData?.participationType || participationType
+  const isXtrapreneurs = programInitiativeName?.toLowerCase().includes("xtrapreneurs")
   
   const programTeamId = activeProgramData?.teamId
   const programTeamData = programTeamId ? 
@@ -119,7 +120,11 @@ function ProgramDashboardInner({ onNavigate, programId }) {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList className="w-full md:w-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="milestones">Milestones</TabsTrigger>
+          {isXtrapreneurs ? (
+            <TabsTrigger value="bounties">Bounties</TabsTrigger>
+          ) : (
+            <TabsTrigger value="milestones">Milestones</TabsTrigger>
+          )}
           {isTeamProgram && <TabsTrigger value="members">Team Members</TabsTrigger>}
           <TabsTrigger value="activity">Activity</TabsTrigger>
         </TabsList>
@@ -135,9 +140,17 @@ function ProgramDashboardInner({ onNavigate, programId }) {
           />
         </TabsContent>
         
-        <TabsContent value="milestones">
-          <MilestonesTab milestones={milestones || []} />
-        </TabsContent>
+        {!isXtrapreneurs && (
+          <TabsContent value="milestones">
+            <MilestonesTab milestones={milestones || []} />
+          </TabsContent>
+        )}
+        
+        {isXtrapreneurs && (
+          <TabsContent value="bounties">
+            <BountiesTab programId={currentProgramId} />
+          </TabsContent>
+        )}
         
         {isTeamProgram && (
           <TabsContent value="members">

@@ -24,23 +24,6 @@ const nextConfig = {
   // Add rewrites for legacy routes
   async rewrites() {
     return [
-      // Redirect legacy program routes to new program routes
-      {
-        source: '/program/:programId',
-        destination: '/program-new/:programId',
-      },
-      {
-        source: '/program/:programId/milestones',
-        destination: '/program-new/:programId/milestones',
-      },
-      {
-        source: '/program/:programId/team',
-        destination: '/program-new/:programId/team',
-      },
-      {
-        source: '/program/:programId/bounties',
-        destination: '/program-new/:programId/bounties',
-      },
       // Redirect program-dashboard to dashboard-new
       {
         source: '/program-dashboard',
@@ -50,6 +33,11 @@ const nextConfig = {
       {
         source: '/dashboard-shell',
         destination: '/dashboard-new',
+      },
+      // Redirect program-new to program (reverse of previous direction)
+      {
+        source: '/program-new/:programId',
+        destination: '/program/:programId',
       },
     ]
   },
