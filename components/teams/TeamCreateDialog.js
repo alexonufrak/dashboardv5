@@ -254,6 +254,24 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
   
   // Handle selection of a team to join
   const handleSelectTeam = (team) => {
+    // Ensure the team has a proper id
+    if (team) {
+      // Log the team data to help with debugging
+      console.log("Selected team for joining:", team);
+      
+      // Make sure we have a valid id
+      if (!team.id && team.recordId) {
+        team.id = team.recordId;
+      }
+      
+      // Double check we have an id before proceeding
+      if (!team.id) {
+        console.error("Team selected for joining has no id:", team);
+        setError("The selected team has no ID. Please try again or choose another team.");
+        return;
+      }
+    }
+    
     setSelectedTeam(team)
     setShowJoinDialog(true)
   }
@@ -270,10 +288,19 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
       return
     }
     
+    // Ensure the team has a valid ID
+    if (!selectedTeam.id) {
+      console.error("Team selected for joining has no id:", selectedTeam);
+      setError("The selected team has no ID. Please try again or choose another team.");
+      return;
+    }
+    
     setIsSubmitting(true)
     setError('')
     
     try {
+      console.log("Submitting join request for team:", selectedTeam.id, selectedTeam.name);
+      
       // Create the application with the team join request
       const response = await fetch('/api/applications/create', {
         method: 'POST',
@@ -284,7 +311,7 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
           cohortId: cohortId,
           participationType: 'Team',
           applicationType: 'joinTeam',
-          teamToJoin: selectedTeam.id,
+          teamToJoin: selectedTeam.id, // Make sure we're using the correct ID field
           joinTeamMessage: joinMessage
         })
       })
