@@ -44,9 +44,23 @@ export default withApiAuthRequired(async function joinableTeamsHandler(req, res)
     // Get the Teams table
     const teamsTable = base(process.env.AIRTABLE_TEAMS_TABLE_ID)
     
-    // For now, get all teams in the cohort regardless of joinable status
-    // This is temporary to ensure we're getting teams
-    let formula = `FIND('${cohortId}', ARRAYJOIN({Cohorts}, ',')) > 0`
+    // We need to get all teams for this cohort, regardless of joinable flag
+    // The Airtable SEARCH formula is more reliable than FIND for array matching
+    // Format: AND(condition1, OR(cohort matches))
+    let formula;
+    
+    // If we're searching for a specific cohort ID
+    if (cohortId) {
+      // Use this approach to find teams that have the cohort ID in their Cohorts field
+      formula = `OR(
+        SEARCH('${cohortId}', ARRAYJOIN({Cohorts}, ',')), 
+        SEARCH('${cohortId}', ARRAYJOIN(Cohorts, ',')),
+        SEARCH('${cohortId}', Cohorts)
+      )`;
+    } else {
+      // If no cohort specified, default to showing all teams
+      formula = "TRUE()";
+    }
     
     // Add institution filter
     formula = `AND(${formula}, {Institution} = '${instId}')`
