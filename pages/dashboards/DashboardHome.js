@@ -58,25 +58,30 @@ function DashboardHomeInner({ onNavigate }) {
   const onboardingInitializedRef = useRef(false);
   
   useEffect(() => {
-    // Only check onboarding status once when profile and applications data are available
+    // Only check onboarding status once when profile and participation data are available
     // and prevent infinite loops by using the ref
     if (profile && !onboardingInitializedRef.current) {
       console.log("Checking onboarding status on dashboard load with profile data", {
         "Onboarding status": profile.Onboarding || "Not set",
         "Has applications": applications?.length > 0,
+        "Has participation": profile.hasActiveParticipation || false,
         "Profile ID": profile?.contactId
       })
       
-      // Pass the full profile with applications data
-      checkOnboardingStatus({
-        ...profile,
-        applications: applications
-      });
-      
-      // Mark as initialized to prevent unnecessary rechecks
-      onboardingInitializedRef.current = true;
+      // Wait a bit for all data to be loaded properly - especially participationData
+      setTimeout(() => {
+        // Pass the full profile with all related data
+        checkOnboardingStatus({
+          ...profile,
+          applications: applications,
+          participationData: teamsData?.participationData || profile?.participationData
+        });
+        
+        // Mark as initialized to prevent unnecessary rechecks
+        onboardingInitializedRef.current = true;
+      }, 300); 
     }
-  }, [profile, applications])
+  }, [profile, applications, teamsData])
   
   // Handler functions
   const handleEditClick = () => {

@@ -54,11 +54,20 @@ export function OnboardingProvider({ children }) {
       
       // If we have a profile with onboarding data
       if (profileData) {
-        // Check if the user has participation records directly
-        const hasParticipationRecords = profileData.Participation && 
-                                       Array.isArray(profileData.Participation) && 
-                                       profileData.Participation.length > 0;
-                                       
+        // Check for participation records - they could exist in different properties
+        const participations = profileData.participations || profileData.Participation;
+        const hasParticipationRecords = (
+          // Check the participations array (usually set by enhanced profile)
+          (participations && Array.isArray(participations) && participations.length > 0) ||
+          // Check participationData that might be in the profile
+          (profileData.participationData && 
+           profileData.participationData.participation && 
+           Array.isArray(profileData.participationData.participation) && 
+           profileData.participationData.participation.length > 0) ||
+          // Check hasActiveParticipation flag that might be set
+          profileData.hasActiveParticipation === true
+        );
+        
         // Check if the user has applications records
         const hasApplicationsRecords = profileData.applications && 
                                      Array.isArray(profileData.applications) && 
@@ -67,7 +76,11 @@ export function OnboardingProvider({ children }) {
         // Log the participation status for debugging
         console.log("Participation status check:", {
           hasParticipationRecords,
-          participationCount: hasParticipationRecords ? profileData.Participation.length : 0,
+          participationsDirect: participations ? participations.length : 0,
+          participationsNested: profileData.participationData && 
+                               profileData.participationData.participation ? 
+                               profileData.participationData.participation.length : 0,
+          hasActiveParticipationFlag: profileData.hasActiveParticipation,
           hasApplicationsRecords,
           applicationCount: hasApplicationsRecords ? profileData.applications.length : 0
         });
@@ -75,6 +88,18 @@ export function OnboardingProvider({ children }) {
         // Get onboarding status directly from the profile
         const onboardingStatus = profileData.Onboarding || "Registered" // Default to "Registered" if not set
         console.log("Onboarding status from profile:", onboardingStatus)
+        
+        // Enhanced debug logging to show what data we're working with
+        console.log("Full profile data properties for onboarding:", {
+          hasOnboardingField: profileData.hasOwnProperty('Onboarding'),
+          onboardingValue: profileData.Onboarding,
+          hasParticipationsArray: Boolean(participations),
+          participationsProperty: Boolean(profileData.hasOwnProperty('participations')),
+          participationProperty: Boolean(profileData.hasOwnProperty('Participation')),
+          hasParticipationData: Boolean(profileData.participationData),
+          hasActiveParticipationFlag: Boolean(profileData.hasActiveParticipation),
+          contactId: profileData.contactId
+        });
         
         // User has completed onboarding if:
         // 1. Onboarding status is "Applied" OR
