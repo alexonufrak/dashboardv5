@@ -1,10 +1,14 @@
 import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0'
-import { getUserProfile, getUserTeams } from '@/lib/airtable'
+import { getUserProfile, getUserTeams, getTeamsByIds } from '@/lib/airtable'
 
 /**
- * API handler to get the user's teams
+ * API handler to get teams
  * @param {Object} req - Next.js API Request
  * @param {Object} res - Next.js API Response
+ * 
+ * Supports two modes:
+ * 1. Get user's teams (default): /api/teams
+ * 2. Get teams by IDs: /api/teams?ids=id1,id2,id3
  */
 export default withApiAuthRequired(async function teamsHandler(req, res) {
   // Only allow GET requests
@@ -20,6 +24,25 @@ export default withApiAuthRequired(async function teamsHandler(req, res) {
       return res.status(401).json({ error: 'Not authenticated' })
     }
     
+    // Check if specific team IDs were requested
+    const { ids } = req.query
+    
+    // If IDs are provided, fetch those teams
+    if (ids) {
+      console.log(`Fetching teams by IDs: ${ids}`)
+      const teamIds = ids.split(',').map(id => id.trim()).filter(id => id)
+      
+      if (teamIds.length === 0) {
+        return res.status(400).json({ error: 'No valid team IDs provided' })
+      }
+      
+      const teams = await getTeamsByIds(teamIds)
+      console.log(`Teams API returned ${teams.length} teams by IDs`)
+      
+      return res.status(200).json({ teams })
+    }
+    
+    // Otherwise, get the user's teams
     // Get user profile from Airtable
     const userProfile = await getUserProfile(session.user.sub, session.user.email)
     
@@ -46,7 +69,7 @@ export default withApiAuthRequired(async function teamsHandler(req, res) {
       cohortIds: teams.cohortIds
     }]
     
-    console.log('Teams API response:', { count: formattedTeams.length, teams: formattedTeams })
+    console.log('Teams API response:', { count: formattedTeams.length })
     return res.status(200).json({ teams: formattedTeams })
   } catch (error) {
     console.error('Error fetching teams:', error)

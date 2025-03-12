@@ -57,33 +57,69 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
 
   // Fetch joinable teams for this cohort
   const fetchJoinableTeams = async () => {
-    // Skip if we don't have both cohortId and profile
-    if (!cohortId || !profile?.institution?.id) return;
+    // Skip if we don't have the cohort
+    if (!cohort) return;
     
     setIsLoadingTeams(true)
     setError('')
     
     try {
-      // Get the institution from the profile
-      const institutionId = profile.institution.id
+      console.log("Cohort data:", cohort);
       
-      // Fetch the joinable teams specifically for this cohort and institution
-      const response = await fetch(`/api/teams/joinable?institutionId=${institutionId}&cohortId=${cohortId}`)
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch teams: ${response.status} ${response.statusText}`)
+      // First check if we can get teams directly from the cohort
+      if (Array.isArray(cohort.teams) && cohort.teams.length > 0) {
+        console.log("Found teams array directly in cohort:", cohort.teams);
+        setJoinableTeams(cohort.teams);
+        setIsLoadingTeams(false);
+        return;
       }
       
-      const data = await response.json()
-      const fetchedTeams = data.teams || []
+      // Check if there's a Teams field that contains team IDs
+      if (Array.isArray(cohort.Teams) && cohort.Teams.length > 0) {
+        console.log("Found team IDs in cohort.Teams:", cohort.Teams);
+        
+        try {
+          // Fetch details for these team IDs
+          const teamsResponse = await fetch('/api/teams?ids=' + cohort.Teams.join(','));
+          if (teamsResponse.ok) {
+            const teamsData = await teamsResponse.json();
+            console.log("Fetched teams details:", teamsData);
+            if (Array.isArray(teamsData.teams)) {
+              setJoinableTeams(teamsData.teams);
+              setIsLoadingTeams(false);
+              return;
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching team details from IDs:", error);
+        }
+      }
       
-      console.log("Fetched joinable teams:", fetchedTeams)
-      setJoinableTeams(fetchedTeams)
+      // Fallback: Use the joinable API endpoint
+      if (profile?.institution?.id) {
+        const institutionId = profile.institution.id;
+        console.log(`Falling back to joinable API with institutionId ${institutionId} and cohortId ${cohortId}`);
+        
+        const response = await fetch(`/api/teams/joinable?institutionId=${institutionId}&cohortId=${cohortId}`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch teams: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const fetchedTeams = data.teams || [];
+        
+        console.log("Fetched joinable teams from API:", fetchedTeams);
+        setJoinableTeams(fetchedTeams);
+      } else {
+        console.log("No institution ID available in profile, can't fetch joinable teams");
+        setJoinableTeams([]);
+      }
     } catch (error) {
-      console.error("Error fetching joinable teams:", error)
-      setError("Failed to fetch teams. Please try again later.")
+      console.error("Error fetching joinable teams:", error);
+      setError("Failed to fetch teams. Please try again later.");
     } finally {
-      setIsLoadingTeams(false)
+      setIsLoadingTeams(false);
     }
   }
 
