@@ -23,6 +23,12 @@ import {
   SidebarTrigger,
   SidebarMenuSkeleton
 } from "@/components/ui/sidebar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { CheckCircle } from "lucide-react"
 
 export function AppSidebar({
   ...props
@@ -151,18 +157,31 @@ export function AppSidebar({
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton size="lg" asChild>
-                <Link href="/dashboard">
-                  <div
-                    className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg mr-2">
-                    <Command className="size-4" />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Link href="/dashboard" className="w-full">
+                    <SidebarMenuButton size="lg" className="cursor-pointer w-full">
+                      <div
+                        className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg mr-2">
+                        <Command className="size-4" />
+                      </div>
+                      <div className="grid flex-1 text-left text-sm leading-tight">
+                        <span className="truncate font-semibold">{institutionName}</span>
+                        <span className="truncate text-xs">xFoundry Hub</span>
+                      </div>
+                    </SidebarMenuButton>
+                  </Link>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-4">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm text-muted-foreground">Verified Institution</h4>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{institutionName}</span>
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    </div>
                   </div>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{institutionName}</span>
-                    <span className="truncate text-xs">xFoundry Hub</span>
-                  </div>
-                </Link>
-              </SidebarMenuButton>
+                </PopoverContent>
+              </Popover>
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
