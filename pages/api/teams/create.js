@@ -21,7 +21,9 @@ export default withApiAuthRequired(async function createTeamHandler(req, res) {
     }
     
     // Get the request body containing team data
-    const { name, description } = req.body
+    const { name, description, joinable } = req.body
+    
+    console.log("Team creation request:", { name, description, joinable })
     
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Team name is required' })
@@ -63,7 +65,9 @@ export default withApiAuthRequired(async function createTeamHandler(req, res) {
     // Prepare team data
     const teamData = {
       'Team Name': name.trim(),
-      'Description': description?.trim() || ''
+      'Description': description?.trim() || '',
+      // Set the Joinable field in Airtable, defaulting to true if not specified
+      'Joinable': joinable !== undefined ? joinable : true
     }
     
     // Add cohort ID to team if provided

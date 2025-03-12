@@ -37,6 +37,7 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
   const [activeTab, setActiveTab] = useState("create")
   const [teamName, setTeamName] = useState('')
   const [teamDescription, setTeamDescription] = useState('')
+  const [teamIsJoinable, setTeamIsJoinable] = useState(true) // Default to true - team is joinable
   const [error, setError] = useState('')
   const [joinableTeams, setJoinableTeams] = useState([])
   const [isLoadingTeams, setIsLoadingTeams] = useState(false)
@@ -237,7 +238,8 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
       // Prepare team data
       const teamData = {
         name: teamName.trim(),
-        description: teamDescription.trim()
+        description: teamDescription.trim(),
+        joinable: teamIsJoinable // Add the joinable field to be sent to the API
       }
       
       // Call our mutation function
@@ -384,6 +386,7 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
       // Reset all state
       setTeamName('')
       setTeamDescription('')
+      setTeamIsJoinable(true) // Reset joinable option to default (true)
       setError('')
       setActiveTab("create")
       setSelectedTeam(null)
@@ -458,6 +461,19 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
                   <p className="text-xs text-muted-foreground mt-1">
                     Note: You can add team members after creating your team.
                   </p>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="teamJoinable"
+                    checked={teamIsJoinable}
+                    onChange={(e) => setTeamIsJoinable(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <label htmlFor="teamJoinable" className="text-sm font-medium">
+                    Allow others to request to join this team
+                  </label>
                 </div>
                 
                 <DialogFooter>
