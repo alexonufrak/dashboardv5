@@ -63,7 +63,7 @@ export default function ProgramTabs({
     exit: { opacity: 0, y: -8, transition: { duration: 0.1, ease: "easeIn" } }
   }
   
-  // Update container height when active tab changes
+  // Update container height when active tab changes or when view changes within tabs
   useEffect(() => {
     // Get the right ref key based on active tab
     let refKey = activeTab;
@@ -84,11 +84,63 @@ export default function ProgramTabs({
       }
     };
 
-    // Set an initial height immediately and then update after animation completes
+    // Set an initial height immediately
     updateHeight();
-    const timer = setTimeout(updateHeight, 200);
     
-    return () => clearTimeout(timer);
+    // Then update after short delay to allow animations to complete
+    const shortTimer = setTimeout(updateHeight, 200);
+    
+    // Also update after longer delay to catch any delayed content rendering
+    // This helps with timeline view which may take longer to fully render
+    const longTimer = setTimeout(updateHeight, 500);
+    
+    // Create a handler for timeline/table view switching
+    const handleMilestoneViewChange = (event) => {
+      console.log("Milestone view changed:", event.detail.mode);
+      
+      // Set multiple timeouts to catch the rendering at different points
+      // Timeline view especially needs time to fully render
+      setTimeout(updateHeight, 50);
+      setTimeout(updateHeight, 150);
+      setTimeout(updateHeight, 300);
+      setTimeout(updateHeight, 500);
+      setTimeout(updateHeight, 800);
+    };
+    
+    // Listen for milestone view changes (timeline/table toggle)
+    window.addEventListener('milestoneViewChanged', handleMilestoneViewChange);
+    
+    // Set up mutation observer to detect DOM changes in the content
+    // This is especially important for timeline/table view switches within the milestones tab
+    const ref = contentRefs[refKey];
+    if (ref?.current) {
+      const observer = new MutationObserver((mutations) => {
+        // When DOM changes, update the height
+        updateHeight();
+      });
+      
+      // Observe all changes to the subtree
+      observer.observe(ref.current, { 
+        childList: true,
+        subtree: true,
+        attributes: true,
+        characterData: true
+      });
+      
+      // Clean up
+      return () => {
+        clearTimeout(shortTimer);
+        clearTimeout(longTimer);
+        window.removeEventListener('milestoneViewChanged', handleMilestoneViewChange);
+        observer.disconnect();
+      };
+    }
+    
+    return () => {
+      clearTimeout(shortTimer);
+      clearTimeout(longTimer);
+      window.removeEventListener('milestoneViewChanged', handleMilestoneViewChange);
+    };
   }, [activeTab, programType]);
   
   // Prevent layout shifts by adding overflow handling
@@ -97,7 +149,8 @@ export default function ProgramTabs({
     overflowY: "hidden", // Prevent vertical scrollbar flash during transitions
     position: "relative", // Required for absolute positioning of children
     minHeight: "200px",   // Ensure container has minimum size to reduce layout shift
-    height: contentHeight // Dynamic height based on active tab content
+    height: contentHeight, // Dynamic height based on active tab content
+    transition: "height 0.25s ease-in-out" // Smooth transition when height changes
   }
 
   return (

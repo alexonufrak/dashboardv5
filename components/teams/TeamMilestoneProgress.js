@@ -205,7 +205,13 @@ export default function TeamMilestoneProgress({ milestones: initialMilestones = 
               variant={viewMode === "table" ? "secondary" : "ghost"}
               size="sm"
               className="rounded-r-none"
-              onClick={() => setViewMode("table")}
+              onClick={() => {
+                setViewMode("table");
+                // Dispatch resize event for container to detect
+                window.dispatchEvent(new CustomEvent('milestoneViewChanged', {
+                  detail: { mode: 'table' }
+                }));
+              }}
             >
               <TableIcon className="h-4 w-4 mr-1" />
               Table
@@ -214,7 +220,13 @@ export default function TeamMilestoneProgress({ milestones: initialMilestones = 
               variant={viewMode === "timeline" ? "secondary" : "ghost"}
               size="sm"
               className="rounded-l-none"
-              onClick={() => setViewMode("timeline")}
+              onClick={() => {
+                setViewMode("timeline");
+                // Dispatch resize event for container to detect
+                window.dispatchEvent(new CustomEvent('milestoneViewChanged', {
+                  detail: { mode: 'timeline' }
+                }));
+              }}
             >
               <AlignLeft className="h-4 w-4 mr-1" />
               Timeline
