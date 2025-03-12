@@ -345,7 +345,7 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
   return (
     <>
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="max-w-lg z-[200]">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{initiativeName}</DialogTitle>
             <DialogDescription>

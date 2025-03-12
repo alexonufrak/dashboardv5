@@ -147,7 +147,7 @@ const JoinableTeamsList = ({ teams = [], cohort, profile, onApplySuccess, onClos
           setTimeout(() => onClose(), 50);
         }
       }}>
-      <DialogContent className="sm:max-w-4xl z-[200]">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Join a Team for {cohort.name || "this cohort"}</DialogTitle>
           <DialogDescription>

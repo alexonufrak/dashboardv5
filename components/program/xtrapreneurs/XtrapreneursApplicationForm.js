@@ -85,7 +85,7 @@ const XtrapreneursApplicationForm = ({ profile, cohort, onSubmit, onClose, open 
   
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="sm:max-w-[600px] z-[200]">
+      <DialogContent className="sm:max-w-[600px]">
         <Card className="w-full border-0 shadow-none">
           <CardHeader className="px-0 pt-0">
             <CardTitle>Xtrapreneurs Application</CardTitle>
