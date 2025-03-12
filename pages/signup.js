@@ -35,6 +35,7 @@ export default function SignUp() {
     firstName: "",
     lastName: "",
     graduationYear: "",
+    graduationSemester: "",
     degreeType: "",
     referralSource: ""
   });
@@ -131,7 +132,9 @@ export default function SignUp() {
             firstName: metadata.firstName || '',
             lastName: metadata.lastName || '',
             graduationYear: metadata.graduationYear || '',
-            degreeType: metadata.degreeType || formData.degreeType
+            graduationSemester: metadata.graduationSemester || '',
+            degreeType: metadata.degreeType || formData.degreeType,
+            referralSource: metadata.referralSource || formData.referralSource
           };
           
           console.log("Prefilling form data:", updatedFormData);
@@ -216,6 +219,7 @@ export default function SignUp() {
       institutionId: institution?.id || "",
       degreeType: formData.degreeType,
       graduationYear: formData.graduationYear,
+      graduationSemester: formData.graduationSemester,
       firstName: formData.firstName,
       lastName: formData.lastName,
       referralSource: formData.referralSource,
@@ -523,23 +527,42 @@ export default function SignUp() {
                         </div>
                         
                         <div className="space-y-2">
-                          <Label htmlFor="degreeType">Degree Type</Label>
+                          <Label htmlFor="graduationSemester">Graduation Semester</Label>
                           <Select
-                            name="degreeType"
-                            value={formData.degreeType}
-                            onValueChange={(value) => handleInputChange({ target: { name: 'degreeType', value }})}
+                            name="graduationSemester"
+                            value={formData.graduationSemester}
+                            onValueChange={(value) => handleInputChange({ target: { name: 'graduationSemester', value }})}
                           >
                             <SelectTrigger className="h-12">
-                              <SelectValue placeholder="Select Degree Type" />
+                              <SelectValue placeholder="Select Semester" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="Undergraduate">Undergraduate</SelectItem>
-                              <SelectItem value="Graduate">Graduate</SelectItem>
-                              <SelectItem value="Doctorate">Doctorate</SelectItem>
-                              <SelectItem value="Certificate">Certificate</SelectItem>
+                              <SelectItem value="Fall">Fall</SelectItem>
+                              <SelectItem value="Spring">Spring</SelectItem>
+                              <SelectItem value="Summer">Summer</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
+                      </div>
+                      
+                      {/* Degree Type */}
+                      <div className="space-y-2">
+                        <Label htmlFor="degreeType">Degree Type</Label>
+                        <Select
+                          name="degreeType"
+                          value={formData.degreeType}
+                          onValueChange={(value) => handleInputChange({ target: { name: 'degreeType', value }})}
+                        >
+                          <SelectTrigger className="h-12">
+                            <SelectValue placeholder="Select Degree Type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Undergraduate">Undergraduate</SelectItem>
+                            <SelectItem value="Graduate">Graduate</SelectItem>
+                            <SelectItem value="Doctorate">Doctorate</SelectItem>
+                            <SelectItem value="Certificate">Certificate</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       
                       {/* Referral Field */}
@@ -577,7 +600,7 @@ export default function SignUp() {
                         
                         <Button 
                           onClick={handleGoogleSignup}
-                          disabled={!formData.firstName || !formData.lastName || !formData.graduationYear || !formData.degreeType}
+                          disabled={!formData.firstName || !formData.lastName || !formData.graduationYear || !formData.graduationSemester || !formData.degreeType}
                           className="h-12 md:flex-2 bg-gold text-eden hover:bg-gold/90"
                         >
                           <div className="flex items-center">

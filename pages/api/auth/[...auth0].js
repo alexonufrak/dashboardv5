@@ -45,6 +45,7 @@ const afterCallback = async (req, res, session, state) => {
         degreeType: degreeType || "",
         major: major || "",
         graduationYear: graduationYear || "",
+        graduationSemester: req.query.graduationSemester || "",
       }
     }
     
@@ -90,6 +91,7 @@ const afterCallback = async (req, res, session, state) => {
         ...(institutionId ? { institutionId } : {}),
         ...(degreeType ? { degreeType } : {}),
         ...(graduationYear ? { graduationYear } : {}),
+        ...(req.query.graduationSemester ? { graduationSemester: req.query.graduationSemester } : {}),
         ...(major ? { major } : {}),
         
         // Additional metadata

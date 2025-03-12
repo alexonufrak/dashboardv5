@@ -131,6 +131,8 @@ async function handler(req, res) {
         // Use programId (the ID reference) instead of text value for Major
         Major: updateData.major,  // This should be a record ID from the Programs table
         GraduationYear: updateData.graduationYear,
+        GraduationSemester: updateData.graduationSemester,
+        ReferralSource: updateData.referralSource,
         InstitutionId: updateData.institutionId,
         educationId: updateData.educationId, // Include education record ID for updating
       }
