@@ -403,11 +403,15 @@ const ProgramApplicationHandler = ({
         teams={activeTeamSelectDialog?.teams || []}
       />
       
-      {/* Team creation dialog */}
+      {/* Team creation/join dialog */}
       <TeamCreateDialog 
         open={activeTeamCreateDialog}
         onClose={() => cancelApplicationProcess()}
         onCreateTeam={handleTeamCreated}
+        onJoinTeam={handleTeamApplicationSubmitted}
+        cohortId={cohort?.id}
+        profile={profile}
+        cohort={cohort}
       />
       
       {/* Initiative Conflict Dialog */}

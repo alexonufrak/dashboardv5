@@ -17,7 +17,6 @@ import TeamSelectDialog from '@/components/teams/TeamSelectDialog'
 import TeamCreateDialog from '@/components/teams/TeamCreateDialog'
 import InitiativeConflictDialog from './InitiativeConflictDialog'
 import XtrapreneursApplicationForm from '@/components/program/xtrapreneurs/XtrapreneursApplicationForm'
-import TeamJoinHandler from '@/components/program/TeamJoinHandler'
 
 /**
  * A shared cohort card component to display cohort/initiative information
@@ -33,7 +32,6 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   const [activeTeamSelectDialog, setActiveTeamSelectDialog] = useState(null)
   const [activeTeamCreateDialog, setActiveTeamCreateDialog] = useState(false)
   const [showXtrapreneursForm, setShowXtrapreneursForm] = useState(false)
-  const [showTeamJoinHandler, setShowTeamJoinHandler] = useState(false)
   const [userTeams, setUserTeams] = useState([])
   const [isLoadingTeams, setIsLoadingTeams] = useState(false)
   const [selectedCohort, setSelectedCohort] = useState(null)
@@ -128,9 +126,9 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   const [showInitiativeConflictDialog, setShowInitiativeConflictDialog] = useState(false)
   const [conflictDetails, setConflictDetails] = useState(null)
   
-  // We're removing the useEffect that automatically closes all dialogs
-  // when isApplying is false, as this is causing unwanted dialog reopening
-  // Each dialog will now manage its own state independently
+  // We no longer need the useEffect that automatically closes all dialogs
+  // as it was causing unwanted dialog reopening
+  // Each dialog now manages its own state independently
   
   // Check if a user is already part of an initiative or if their team is part of a cohort
   const checkInitiativeRestrictions = async () => {
@@ -240,10 +238,10 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
         return; // Exit early
       }
       
-      // Handle Xperience and Horizons Challenge with specialized team join flow
+      // Handle Xperience and Horizons Challenge by showing the team create/join dialog
       if (initiativeName.includes("xperience") || initiativeName.includes("horizons challenge")) {
-        console.log("Xperience/Horizons Challenge application detected - using specialized team join flow");
-        setShowTeamJoinHandler(true);
+        console.log("Xperience/Horizons Challenge application detected - using team create/join dialog");
+        setActiveTeamCreateDialog(true);
         setIsApplying(false); // Reset button state
         return; // Exit early
       }
@@ -496,14 +494,18 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
         teams={activeTeamSelectDialog?.teams || []}
       />
       
-      {/* Team creation dialog */}
+      {/* Team creation/join dialog */}
       <TeamCreateDialog 
         open={activeTeamCreateDialog}
         onClose={() => setActiveTeamCreateDialog(false)}
         onCreateTeam={handleTeamCreated}
+        onJoinTeam={handleTeamApplicationSubmitted}
+        cohortId={cohort.id}
+        profile={profile}
+        cohort={cohort}
       />
       
-      {/* Initiative Conflict Dialog (using the new component) */}
+      {/* Initiative Conflict Dialog */}
       <InitiativeConflictDialog
         open={showInitiativeConflictDialog}
         onClose={() => setShowInitiativeConflictDialog(false)}
@@ -518,15 +520,6 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
         onSubmit={handleXtrapreneursFormSubmit}
         cohort={cohort}
         profile={profile}
-      />
-      
-      {/* Team Join Handler for Xperience/Horizons Challenge */}
-      <TeamJoinHandler
-        cohort={cohort}
-        profile={profile}
-        isActive={showTeamJoinHandler}
-        onComplete={onApplySuccess}
-        onCancel={() => setShowTeamJoinHandler(false)}
       />
     </>
   )
