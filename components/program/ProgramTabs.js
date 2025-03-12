@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, Suspense } from 'react'
+import React, { useState, useRef, useEffect, Suspense } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PROGRAM_TYPES, getProgramType } from '@/lib/programComponents'
 import { ProgramOverview, ProgramTeam, ProgramMilestones, ProgramActivity } from './index'
@@ -17,6 +17,13 @@ export default function ProgramTabs({
   initialTab = "overview"
 }) {
   const [activeTab, setActiveTab] = useState(initialTab)
+  const [contentHeight, setContentHeight] = useState("auto")
+  const contentRefs = {
+    overview: useRef(null),
+    milestones: useRef(null),
+    team: useRef(null),
+    activity: useRef(null)
+  }
   
   // Determine program type
   const programType = getProgramType({
@@ -55,6 +62,43 @@ export default function ProgramTabs({
     visible: { opacity: 1, y: 0, transition: { duration: 0.15, ease: "easeOut" } },
     exit: { opacity: 0, y: -8, transition: { duration: 0.1, ease: "easeIn" } }
   }
+  
+  // Update container height when active tab changes
+  useEffect(() => {
+    // Get the right ref key based on active tab
+    let refKey = activeTab;
+    
+    // Handle the milestones/bounties case which uses a dynamic key
+    if (activeTab === (programType === PROGRAM_TYPES.XTRAPRENEURS ? "bounties" : "milestones")) {
+      refKey = "milestones";
+    }
+    
+    // Update height with a slight delay to allow DOM to render
+    const updateHeight = () => {
+      const ref = contentRefs[refKey];
+      if (ref?.current) {
+        const height = ref.current.offsetHeight;
+        if (height > 0) {
+          setContentHeight(`${height}px`);
+        }
+      }
+    };
+
+    // Set an initial height immediately and then update after animation completes
+    updateHeight();
+    const timer = setTimeout(updateHeight, 200);
+    
+    return () => clearTimeout(timer);
+  }, [activeTab, programType]);
+  
+  // Prevent layout shifts by adding overflow handling
+  const containerStyle = {
+    overflowX: "hidden", // Prevent horizontal scrollbar
+    overflowY: "hidden", // Prevent vertical scrollbar flash during transitions
+    position: "relative", // Required for absolute positioning of children
+    minHeight: "200px",   // Ensure container has minimum size to reduce layout shift
+    height: contentHeight // Dynamic height based on active tab content
+  }
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
@@ -67,7 +111,7 @@ export default function ProgramTabs({
         <TabsTrigger value="activity">{tabLabels.activity}</TabsTrigger>
       </TabsList>
       
-      <div className="relative">
+      <div style={containerStyle} className="relative">
         <AnimatePresence mode="wait">
           {activeTab === "overview" && (
             <motion.div
@@ -77,6 +121,7 @@ export default function ProgramTabs({
               exit="exit"
               variants={tabContentVariants}
               className="w-full"
+              ref={contentRefs.overview}
             >
               <Suspense fallback={<div>Loading overview...</div>}>
                 <ProgramOverview
@@ -100,6 +145,7 @@ export default function ProgramTabs({
               exit="exit"
               variants={tabContentVariants}
               className="w-full"
+              ref={contentRefs.milestones}
             >
               <Suspense fallback={<div>Loading milestones...</div>}>
                 <ProgramMilestones
@@ -122,6 +168,7 @@ export default function ProgramTabs({
               exit="exit"
               variants={tabContentVariants}
               className="w-full"
+              ref={contentRefs.team}
             >
               <Suspense fallback={<div>Loading team...</div>}>
                 <ProgramTeam
@@ -143,6 +190,7 @@ export default function ProgramTabs({
               exit="exit"
               variants={tabContentVariants}
               className="w-full"
+              ref={contentRefs.activity}
             >
               <Suspense fallback={<div>Loading activity...</div>}>
                 <ProgramActivity team={team} />
