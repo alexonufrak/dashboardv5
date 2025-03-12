@@ -25,14 +25,26 @@ const TeamJoinHandler = ({ cohort, profile, isActive = false, onComplete, onCanc
   // Start the process when isActive changes to true
   // Also handle resetting state when isActive becomes false
   useEffect(() => {
+    let stateResetTimer;
+    
     if (isActive && cohort) {
       startTeamJoinProcess()
     } else if (!isActive) {
-      // Reset all internal state when component becomes inactive
-      setShowJoinList(false)
-      setShowCreateTeam(false)
-      setError(null)
+      // Add a delay to prevent UI flicker when switching between dialogs
+      stateResetTimer = setTimeout(() => {
+        // Double-check we're still inactive before resetting state
+        if (!isActive) {
+          setShowJoinList(false)
+          setShowCreateTeam(false)
+          setError(null)
+        }
+      }, 150); // Small delay to allow any new dialog to open first
     }
+    
+    // Clean up the timer on unmount or when dependencies change
+    return () => {
+      if (stateResetTimer) clearTimeout(stateResetTimer);
+    };
   }, [isActive, cohort])
   
   // Start the team join process

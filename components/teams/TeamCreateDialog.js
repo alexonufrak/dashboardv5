@@ -76,15 +76,22 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, cohortId }) => {
     }
   }
   
-  const handleClose = () => {
-    // Reset form
-    setTeamName('')
-    setTeamDescription('')
-    setError('')
+  const handleClose = (isOpen) => {
+    // Only handle dialog closing (isOpen = false)
+    if (isOpen !== false) return;
     
-    if (onClose) {
-      onClose()
-    }
+    // Add a small delay before resetting state and calling onClose
+    // to prevent UI flicker when another dialog is opening
+    setTimeout(() => {
+      // Reset form
+      setTeamName('')
+      setTeamDescription('')
+      setError('')
+      
+      if (onClose) {
+        onClose()
+      }
+    }, 50);
   }
 
   return (

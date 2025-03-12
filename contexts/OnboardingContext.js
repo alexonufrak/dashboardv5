@@ -44,13 +44,28 @@ export function OnboardingProvider({ children }) {
     setCompletionPercentage(percentage)
   }, [steps])
   
+  // Create a ref to track if we're already processing an onboarding check
+  const processingRef = React.useRef(false);
+  
   // Check onboarding status using the profile data from Airtable
   // This avoids a separate API call since the profile already has the onboarding status
   const checkOnboardingStatus = async (profileData) => {
-    setIsLoading(true)
+    // If we're already processing an onboarding check, don't start another one
+    if (processingRef.current) {
+      console.log("Already checking onboarding status, skipping duplicate call");
+      return;
+    }
+    
+    // Mark that we're processing a check
+    processingRef.current = true;
+    
+    // Set loading state only if not already loading
+    if (!isLoading) {
+      setIsLoading(true)
+    }
     
     try {
-      console.log("Checking onboarding status from profile:", profileData)
+      console.log("Checking onboarding status from profile:", profileData?.contactId || "unknown")
       
       // If we have a profile with onboarding data
       if (profileData) {
@@ -190,6 +205,9 @@ export function OnboardingProvider({ children }) {
       console.error("Error checking onboarding status:", error)
     } finally {
       setIsLoading(false)
+      
+      // Reset processing state so future calls can proceed
+      processingRef.current = false;
     }
   }
   

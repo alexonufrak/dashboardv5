@@ -129,15 +129,30 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   const [conflictDetails, setConflictDetails] = useState(null)
   
   // Reset application state when not actively applying
+  // Use a timeout to prevent the dialogs from closing immediately
+  // which may cause UI flickers when one dialog is being replaced by another
   useEffect(() => {
+    let resetTimer;
+    
     if (!isApplying) {
-      // Make sure all application dialogs are closed when not actively applying
-      setShowTeamJoinHandler(false)
-      setShowXtrapreneursForm(false)
-      setActiveTeamSelectDialog(null)
-      setActiveTeamCreateDialog(false)
-      setActiveFilloutForm(null)
+      // Use a small delay before closing dialogs to prevent 
+      // UI flickers when another dialog needs to open
+      resetTimer = setTimeout(() => {
+        // Only close dialogs if we're still not applying
+        if (!isApplying) {
+          setShowTeamJoinHandler(false)
+          setShowXtrapreneursForm(false)
+          setActiveTeamSelectDialog(null)
+          setActiveTeamCreateDialog(false)
+          setActiveFilloutForm(null)
+        }
+      }, 150); // Short delay to allow any new dialog to open first
     }
+    
+    // Clean up timer if component unmounts or isApplying changes
+    return () => {
+      if (resetTimer) clearTimeout(resetTimer);
+    };
   }, [isApplying])
   
   // Check if a user is already part of an initiative or if their team is part of a cohort

@@ -327,14 +327,21 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
     setShowCreateTeamDialog(true)
   }
   
-  const handleClose = () => {
-    // Reset states
-    setSelectedTeamId('')
-    setError('')
+  const handleClose = (isOpen) => {
+    // Only handle dialog closing (isOpen = false)
+    if (isOpen !== false) return;
     
-    if (onClose) {
-      onClose()
-    }
+    // Add a small delay before resetting state and calling onClose
+    // to prevent UI flicker when another dialog is opening
+    setTimeout(() => {
+      // Reset states
+      setSelectedTeamId('')
+      setError('')
+      
+      if (onClose) {
+        onClose()
+      }
+    }, 50);
   }
 
   // Extract initiative details

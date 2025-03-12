@@ -115,23 +115,38 @@ const JoinableTeamsList = ({ teams = [], cohort, profile, onApplySuccess, onClos
     return team.memberCount || team.members?.length || 0
   }
   
-  // Reset state when dialog is closed
+  // Reset state when dialog is closed, with a small delay
   useEffect(() => {
+    let resetTimer;
+    
     if (!open) {
-      setSelectedTeam(null)
-      setShowJoinDialog(false)
-      setJoinMessage('')
-      setError('')
+      // Add a delay to prevent issues with unmounting while transitioning
+      resetTimer = setTimeout(() => {
+        if (!open) { // Double-check we're still closed
+          setSelectedTeam(null)
+          setShowJoinDialog(false)
+          setJoinMessage('')
+          setError('')
+        }
+      }, 150);
     }
+    
+    return () => {
+      if (resetTimer) clearTimeout(resetTimer);
+    };
   }, [open])
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) {
-        // When closing, make sure to call the onClose callback
-        if (onClose) onClose();
-      }
-    }}>
+    <Dialog 
+      open={open} 
+      onOpenChange={(isOpen) => {
+        // Only handle the close event (isOpen = false)
+        // Don't immediately call onClose to prevent race conditions
+        if (!isOpen && onClose) {
+          // Small delay to prevent UI flickers
+          setTimeout(() => onClose(), 50);
+        }
+      }}>
       <DialogContent className="sm:max-w-4xl z-[200]">
         <DialogHeader>
           <DialogTitle>Join a Team for {cohort.name || "this cohort"}</DialogTitle>

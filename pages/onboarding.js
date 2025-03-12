@@ -38,51 +38,96 @@ function Onboarding() {
   const [applications, setApplications] = useState([])
   const [isLoadingApplications, setIsLoadingApplications] = useState(false)
   
-  // Fetch user profile data
+  // Fetch user profile data - only once on mount
   useEffect(() => {
+    // Add a flag to prevent duplicate calls and race conditions
+    let isMounted = true;
+    let profileFetched = false;
+    
     const fetchProfileData = async () => {
-      setIsLoading(true)
+      // Prevent duplicate fetches
+      if (!isMounted || profileFetched) return;
+      
+      // Set the flag to prevent re-entry
+      profileFetched = true;
+      setIsLoading(true);
       
       try {
         // Fetch user profile
-        const profileResponse = await fetch('/api/user/profile')
+        const profileResponse = await fetch('/api/user/profile');
         
         if (!profileResponse.ok) {
-          throw new Error('Failed to fetch profile data')
+          throw new Error('Failed to fetch profile data');
         }
         
-        const profileData = await profileResponse.json()
-        setProfile(profileData)
+        const profileData = await profileResponse.json();
+        if (!isMounted) return;
+        setProfile(profileData);
         
-        // Check onboarding status
-        await checkOnboardingStatus(profileData)
-        
-        // If onboarding is completed, redirect to dashboard
-        if (profileData.Onboarding === "Applied" || 
-            profileData.hasActiveParticipation || 
-            (profileData.applications && profileData.applications.length > 0)) {
-          router.push('/dashboard')
-          return
-        }
-        
-        // Fetch applications
-        setIsLoadingApplications(true)
-        const applicationsResponse = await fetch('/api/user/check-application')
-        
-        if (applicationsResponse.ok) {
-          const applicationsData = await applicationsResponse.json()
-          setApplications(applicationsData.applications || [])
+        // Explicitly check only once, then immediately do the redirect check
+        // Use a stable reference to the function to prevent rerendering
+        if (isMounted) {
+          // Pass profile data to onboarding context but don't include
+          // in dependency array to prevent loop
+          await checkOnboardingStatus(profileData);
+          
+          // If onboarding is completed, redirect to dashboard
+          if (profileData.Onboarding === "Applied" || 
+              profileData.hasActiveParticipation || 
+              (profileData.applications && profileData.applications.length > 0)) {
+            router.push('/dashboard');
+            return;
+          }
+          
+          // Fetch applications with timeout to prevent Vercel 504s
+          setIsLoadingApplications(true);
+          
+          try {
+            // Create an AbortController to enable timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+            
+            const applicationsResponse = await fetch('/api/user/check-application', {
+              signal: controller.signal
+            }).catch(error => {
+              console.log('Applications fetch timed out or failed:', error.message);
+              return { ok: false };
+            });
+            
+            clearTimeout(timeoutId);
+            
+            if (applicationsResponse.ok && isMounted) {
+              const applicationsData = await applicationsResponse.json();
+              setApplications(applicationsData.applications || []);
+            } else {
+              // If we can't get applications, just proceed with an empty array
+              console.log('Using empty applications array due to fetch failure');
+              setApplications([]);
+            }
+          } catch (appError) {
+            console.error('Error fetching applications:', appError);
+            // Continue without applications data
+            setApplications([]);
+          }
         }
       } catch (error) {
-        console.error('Error fetching profile data:', error)
+        console.error('Error fetching profile data:', error);
       } finally {
-        setIsLoading(false)
-        setIsLoadingApplications(false)
+        if (isMounted) {
+          setIsLoading(false);
+          setIsLoadingApplications(false);
+        }
       }
-    }
+    };
     
-    fetchProfileData()
-  }, [router, checkOnboardingStatus])
+    // Immediately fetch on mount, but only once
+    fetchProfileData();
+    
+    // Cleanup function to prevent state updates after unmount
+    return () => {
+      isMounted = false;
+    };
+  }, [router]) // Intentionally omitting checkOnboardingStatus to prevent loops
   
   // Redirect if onboarding is completed
   useEffect(() => {
