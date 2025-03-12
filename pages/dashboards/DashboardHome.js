@@ -14,6 +14,7 @@ const DashboardHomeContent = dynamic(() => Promise.resolve(DashboardHomeInner), 
 
 // Import components
 import TeamCard from "@/components/teams/TeamCard"
+import TeamJoinRequests from "@/components/teams/TeamJoinRequests"
 import EmailMismatchAlert from "@/components/auth/EmailMismatchAlert"
 import TeamInviteSuccessAlert from "@/components/teams/TeamInviteSuccessAlert"
 import CohortGrid from "@/components/cohorts/CohortGrid"
@@ -199,6 +200,16 @@ function DashboardHomeInner({ onNavigate }) {
           ) : (
             <TeamCard team={null} />
           )}
+          
+          {/* Team Join Requests Section */}
+          <TeamJoinRequests 
+            applications={applications} 
+            isLoading={isLoadingApplications}
+            teams={teamsData?.reduce((acc, team) => {
+              acc[team.id] = team;
+              return acc;
+            }, {})}
+          />
         </section>
       </div>
       

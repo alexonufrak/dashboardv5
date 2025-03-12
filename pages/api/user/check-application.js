@@ -124,7 +124,11 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
           id: record.id,
           cohortId: recordCohortId,
           status: record.fields.Status || 'Submitted',
-          createdAt: record.fields.Created || record._rawJson.createdTime
+          createdAt: record.fields.Created || record._rawJson.createdTime,
+          // Add team join specific fields
+          'Team to Join': record.fields['Team to Join'] || null,
+          joinTeamMessage: record.fields['Join Team Message'] || record.fields['Xperience/Join Team Message'] || null,
+          applicationType: record.fields['Type'] || (record.fields['Team to Join'] ? 'joinTeam' : null)
         };
         
         // If we have a cohort ID, fetch cohort details too
@@ -216,7 +220,11 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
                   id: appRecord.id,
                   cohortId: appCohortId,
                   status: appRecord.fields.Status || 'Submitted',
-                  createdAt: appRecord.fields.Created || appRecord._rawJson.createdTime
+                  createdAt: appRecord.fields.Created || appRecord._rawJson.createdTime,
+                  // Add team join specific fields
+                  'Team to Join': appRecord.fields['Team to Join'] || null,
+                  joinTeamMessage: appRecord.fields['Join Team Message'] || appRecord.fields['Xperience/Join Team Message'] || null,
+                  applicationType: appRecord.fields['Type'] || (appRecord.fields['Team to Join'] ? 'joinTeam' : null)
                 };
                 
                 // If we have a cohort ID, fetch cohort details too
