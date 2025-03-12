@@ -199,6 +199,7 @@
     font-family: var(--font-custom);
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
   }
 
   a {

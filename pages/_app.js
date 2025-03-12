@@ -27,23 +27,27 @@ class ErrorBoundary extends React.Component {
   }
 
   render() {
+    const { className = "" } = this.props;
+    
     if (this.state.hasError) {
       return (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 mx-auto max-w-lg my-6">
-          <h2 className="text-red-800 text-xl font-semibold mb-4">Something went wrong</h2>
-          <div className="bg-white p-4 rounded border border-red-100 mb-4">
-            <p className="text-red-700">{this.state.error?.message || "An error occurred"}</p>
+        <div className={`bg-white dark:bg-gray-900 min-h-screen ${className}`}>
+          <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded-lg p-6 mx-auto max-w-lg my-6">
+            <h2 className="text-red-800 dark:text-red-200 text-xl font-semibold mb-4">Something went wrong</h2>
+            <div className="bg-white dark:bg-gray-800 p-4 rounded border border-red-100 dark:border-red-700 mb-4">
+              <p className="text-red-700 dark:text-red-300">{this.state.error?.message || "An error occurred"}</p>
+            </div>
+            <button 
+              onClick={() => window.location.href = '/dashboard'} 
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
+              Go to Dashboard
+            </button>
           </div>
-          <button 
-            onClick={() => window.location.href = '/dashboard'} 
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Go to Dashboard
-          </button>
         </div>
       );
     }
-    return this.props.children;
+    return <div className={`bg-white dark:bg-gray-900 min-h-screen ${className}`}>{this.props.children}</div>;
   }
 }
 
@@ -94,14 +98,17 @@ function MyApp({ Component, pageProps }) {
   useEffect(() => {
     setMounted(true);
 
-    // Setup router events to handle loading state
+    // Setup router events to handle loading state with immediate effect
     const handleStart = (url) => {
       // Only show loading state for dashboard-related routes
       if (url.includes('/dashboard') || 
           url.includes('/profile') || 
           url.includes('/program/') ||
           url.includes('/program-new/')) {
-        setPageLoading(true);
+        // Use requestAnimationFrame to ensure this runs before the browser repaints
+        requestAnimationFrame(() => {
+          setPageLoading(true);
+        });
       }
     };
     
@@ -121,10 +128,10 @@ function MyApp({ Component, pageProps }) {
   // Basic app shell when not mounted yet (server-side rendering)
   if (!mounted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
         <div className="text-center">
-          <h1 className="text-xl font-semibold text-gray-800 mb-2">xFoundry Dashboard</h1>
-          <p className="text-gray-600">Loading...</p>
+          <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">xFoundry Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
     );
@@ -140,17 +147,15 @@ function MyApp({ Component, pageProps }) {
         attribute="class"
         defaultTheme="system"
         enableSystem
-        disableTransitionOnChange
       >
         <UserProvider>
           <OnboardingProvider>
-            <ErrorBoundary>
+            <ErrorBoundary className="bg-white dark:bg-gray-900">
               <AppContent Component={Component} pageProps={pageProps} router={router} />
-              {showLoadingOverlay && (
-                <div className="fixed inset-0 bg-white dark:bg-gray-900 bg-opacity-70 dark:bg-opacity-70 z-50 flex items-center justify-center pointer-events-none">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
-                </div>
-              )}
+              {/* Always present background, changes opacity when loading */}
+              <div className={`fixed inset-0 bg-white dark:bg-gray-900 z-50 flex items-center justify-center pointer-events-none transition-opacity duration-200 ${showLoadingOverlay ? 'opacity-100' : 'opacity-0'}`}>
+                <div className={`animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 ${showLoadingOverlay ? 'opacity-100' : 'opacity-0'}`}></div>
+              </div>
               <Analytics />
             </ErrorBoundary>
           </OnboardingProvider>
