@@ -153,24 +153,29 @@ const InitiativeConflictDialog = ({
             {(conflictType === "initiative_conflict" || conflictType === "team_initiative_conflict") && (
               <>
                 <p className="text-base">
-                  You are trying to apply to a team program while you are already in a team program.
+                  You are currently an active member of the <strong>{details.conflictingInitiative || details.teamInitiative || "Current Program"}</strong> initiative.
                 </p>
                 
                 <Alert variant="outline" className="border-amber-200 bg-amber-50">
                   <AlertDescription className="py-2">
-                    <div className="mb-2"><span className="text-muted-foreground">Current program:</span> <strong>{details.conflictingInitiative || details.teamInitiative || "Current Program"}</strong></div>
-                    <div><span className="text-muted-foreground">Program you're applying to:</span> <strong>{details.currentInitiative || details.appliedProgram || "New Program"}</strong></div>
+                    <div className="mb-2"><span className="text-muted-foreground">Your active initiative:</span> <strong>{details.conflictingInitiative || details.teamInitiative || "Current Program"}</strong></div>
+                    <div><span className="text-muted-foreground">Initiative you're applying to:</span> <strong>{details.currentInitiative || details.appliedProgram || "New Program"}</strong></div>
+                    <div className="mt-2 pt-2 border-t border-amber-200">
+                      <span className="font-medium text-amber-800">Initiative Conflict</span>
+                    </div>
                   </AlertDescription>
                 </Alert>
                 
                 <div className="space-y-3">
                   <p>
-                    Users can only participate in one team program at a time. If you want to apply to this
-                    program, you'll need to exit your current team program first.
+                    You can only participate in one team-based initiative at a time. To join <strong>{details.currentInitiative || details.appliedProgram || "this new initiative"}</strong>, 
+                    you must leave your current initiative first.
+                  </p>
+                  <p className="font-medium text-gray-800 dark:text-gray-200">
+                    This means you will leave your current team and no longer have access to team resources.
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    If you want to participate in this program without leaving your current program, 
-                    you may need to create a new team or join a different team.
+                    If you prefer not to leave your current initiative, you would need to use a different account.
                   </p>
                 </div>
               </>
@@ -203,24 +208,29 @@ const InitiativeConflictDialog = ({
             {conflictType === "team_program_conflict" && (
               <>
                 <p className="text-base">
-                  You are trying to apply to a team program while you are already in a team program.
+                  You are currently an active member of the <strong>{details.currentProgram || "Current Program"}</strong> initiative.
                 </p>
                 
                 <Alert variant="outline" className="border-amber-200 bg-amber-50">
                   <AlertDescription className="py-2">
-                    <div className="mb-2"><span className="text-muted-foreground">Current program:</span> <strong>{details.currentProgram}</strong></div>
-                    <div><span className="text-muted-foreground">Program you're applying to:</span> <strong>{details.appliedProgram}</strong></div>
+                    <div className="mb-2"><span className="text-muted-foreground">Your active initiative:</span> <strong>{details.currentProgram}</strong></div>
+                    <div><span className="text-muted-foreground">Initiative you're applying to:</span> <strong>{details.appliedProgram}</strong></div>
+                    <div className="mt-2 pt-2 border-t border-amber-200">
+                      <span className="font-medium text-amber-800">Initiative Conflict</span>
+                    </div>
                   </AlertDescription>
                 </Alert>
                 
                 <div className="space-y-3">
                   <p>
-                    Users can only participate in one team program at a time. If you want to apply to this
-                    program, you'll need to exit your current team program first.
+                    You can only participate in one team-based initiative at a time. To join <strong>{details.appliedProgram || "this new initiative"}</strong>, 
+                    you must leave your current initiative first.
+                  </p>
+                  <p className="font-medium text-gray-800 dark:text-gray-200">
+                    This means you will leave your current team and no longer have access to team resources.
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    If you want to participate in this program without leaving your current program, 
-                    you may need to create a new team or join a different team.
+                    If you prefer not to leave your current initiative, you would need to use a different account.
                   </p>
                 </div>
               </>
@@ -238,7 +248,7 @@ const InitiativeConflictDialog = ({
               onClick={() => setShowLeaveConfirmation(true)}
             >
               <LogOut className="h-4 w-4" />
-              Leave Team
+              Leave Team & Initiative
             </Button>
             
             {conflictType === "team_initiative_conflict" && (
@@ -265,17 +275,17 @@ const InitiativeConflictDialog = ({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <LogOut className="h-5 w-5" />
-              Leave Team Confirmation
+              Leave Team & Initiative Confirmation
             </DialogTitle>
             <DialogDescription className="pt-2">
-              Are you sure you want to leave <strong>{teamName}</strong>?
+              Are you sure you want to leave <strong>{teamName}</strong> and the <strong>{details.conflictingInitiative || details.currentProgram || "current"}</strong> initiative?
             </DialogDescription>
           </DialogHeader>
 
           <div className="my-4 space-y-4">
             <Alert variant="destructive" className="bg-red-50">
               <AlertDescription className="py-2">
-                <p className="font-medium">If you leave this team, you will lose access to:</p>
+                <p className="font-medium">If you leave, you will lose access to:</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li>Team resources related to the initiative</li>
                   <li>Team communication channels</li>
@@ -295,7 +305,7 @@ const InitiativeConflictDialog = ({
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleLeaveTeam}>
-              Yes, Leave Team
+              Yes, Leave Team & Initiative
             </Button>
           </DialogFooter>
         </DialogContent>
