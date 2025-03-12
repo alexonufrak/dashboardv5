@@ -69,7 +69,32 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
       // First check if we can get teams directly from the cohort
       if (Array.isArray(cohort.teams) && cohort.teams.length > 0) {
         console.log("Found teams array directly in cohort:", cohort.teams);
-        setJoinableTeams(cohort.teams);
+        // Make sure each team has a name property - Name is the correct field according to schema
+        const teamsWithNames = cohort.teams.map(team => {
+          console.log("Team object:", team);
+          // Check for Airtable fields format
+          if (team.fields) {
+            return { 
+              ...team, 
+              id: team.id || team.recordId,
+              name: team.fields.Name || team.name || "Unnamed Team",
+              description: team.fields.Description || team.description,
+              members: team.fields.Members || team.members || [],
+              memberCount: team.fields["Count (Members)"] || 0,
+              institution: team.fields.Institution ? {
+                id: Array.isArray(team.fields.Institution) ? team.fields.Institution[0] : team.fields.Institution,
+                name: team.fields["Institution Name"] || "Unknown Institution"
+              } : null,
+              displayMembers: team.fields["Contact (from Members)"] || []
+            };
+          }
+          // Standard properties
+          return { 
+            ...team,
+            name: team.Name || team.name || "Unnamed Team" 
+          };
+        });
+        setJoinableTeams(teamsWithNames);
         setIsLoadingTeams(false);
         return;
       }
@@ -85,7 +110,37 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
             const teamsData = await teamsResponse.json();
             console.log("Fetched teams details:", teamsData);
             if (Array.isArray(teamsData.teams)) {
-              setJoinableTeams(teamsData.teams);
+              // Process teams to ensure they have name property
+              const processedTeams = teamsData.teams.map(team => {
+                // If team has standard expected format, return it
+                if (team.name) return team;
+                
+                // Check if this is an Airtable record format
+                if (team.fields) {
+                  return {
+                    ...team,
+                    id: team.id || team.recordId,
+                    name: team.fields.Name || "Unnamed Team",
+                    description: team.fields.Description || "",
+                    members: team.fields.Members || [],
+                    memberCount: team.fields["Count (Members)"] || 0,
+                    institution: team.fields.Institution ? {
+                      id: Array.isArray(team.fields.Institution) ? team.fields.Institution[0] : team.fields.Institution,
+                      name: team.fields["Institution Name"] || "Unknown Institution"
+                    } : null,
+                    displayMembers: team.fields["Contact (from Members)"] || [],
+                    joinable: team.fields.Joinable || team.fields["Joinable (Yes No)"] === "Yes" || true
+                  };
+                }
+                
+                // Fallback
+                return {
+                  ...team,
+                  name: team.Name || "Unnamed Team"
+                };
+              });
+              
+              setJoinableTeams(processedTeams);
               setIsLoadingTeams(false);
               return;
             }
@@ -110,7 +165,38 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
         const fetchedTeams = data.teams || [];
         
         console.log("Fetched joinable teams from API:", fetchedTeams);
-        setJoinableTeams(fetchedTeams);
+        
+        // Process fetched teams to ensure they have required properties
+        const processedTeams = fetchedTeams.map(team => {
+          // If team has standard expected format, return it
+          if (team.name) return team;
+          
+          // Check if this is an Airtable record format
+          if (team.fields) {
+            return {
+              ...team,
+              id: team.id || team.recordId,
+              name: team.fields.Name || "Unnamed Team",
+              description: team.fields.Description || "",
+              members: team.fields.Members || [],
+              memberCount: team.fields["Count (Members)"] || 0,
+              institution: team.fields.Institution ? {
+                id: Array.isArray(team.fields.Institution) ? team.fields.Institution[0] : team.fields.Institution,
+                name: team.fields["Institution Name"] || "Unknown Institution"
+              } : null,
+              displayMembers: team.fields["Contact (from Members)"] || [],
+              joinable: team.fields.Joinable || team.fields["Joinable (Yes No)"] === "Yes" || true
+            };
+          }
+          
+          // Fallback
+          return {
+            ...team,
+            name: team.Name || "Unnamed Team"
+          };
+        });
+        
+        setJoinableTeams(processedTeams);
       } else {
         console.log("No institution ID available in profile, can't fetch joinable teams");
         setJoinableTeams([]);
