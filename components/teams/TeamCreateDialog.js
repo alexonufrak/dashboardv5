@@ -74,10 +74,14 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
           console.log("Team object:", team);
           // Check for Airtable fields format
           if (team.fields) {
+            // Try to use the correct Airtable field name for team name: "Team Name" or "Name"
+            const teamName = team.fields["Team Name"] || team.fields.Name || team.name || "Unnamed Team";
+            console.log("Using team name:", teamName);
+            
             return { 
               ...team, 
               id: team.id || team.recordId,
-              name: team.fields.Name || team.name || "Unnamed Team",
+              name: teamName,
               description: team.fields.Description || team.description,
               members: team.fields.Members || team.members || [],
               memberCount: team.fields["Count (Members)"] || 0,
@@ -91,7 +95,7 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
           // Standard properties
           return { 
             ...team,
-            name: team.Name || team.name || "Unnamed Team" 
+            name: team["Team Name"] || team.Name || team.name || "Unnamed Team" 
           };
         });
         setJoinableTeams(teamsWithNames);
@@ -117,10 +121,14 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
                 
                 // Check if this is an Airtable record format
                 if (team.fields) {
+                  // Try to use the correct Airtable field name for team name: "Team Name" or "Name"
+                  const teamName = team.fields["Team Name"] || team.fields.Name || "Unnamed Team";
+                  console.log("Using team name from API response:", teamName);
+                  
                   return {
                     ...team,
                     id: team.id || team.recordId,
-                    name: team.fields.Name || "Unnamed Team",
+                    name: teamName,
                     description: team.fields.Description || "",
                     members: team.fields.Members || [],
                     memberCount: team.fields["Count (Members)"] || 0,
@@ -173,10 +181,14 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
           
           // Check if this is an Airtable record format
           if (team.fields) {
+            // Try to use the correct Airtable field name for team name: "Team Name" or "Name"
+            const teamName = team.fields["Team Name"] || team.fields.Name || "Unnamed Team";
+            console.log("Using team name from joinable API:", teamName);
+            
             return {
               ...team,
               id: team.id || team.recordId,
-              name: team.fields.Name || "Unnamed Team",
+              name: teamName,
               description: team.fields.Description || "",
               members: team.fields.Members || [],
               memberCount: team.fields["Count (Members)"] || 0,
@@ -192,7 +204,7 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
           // Fallback
           return {
             ...team,
-            name: team.Name || "Unnamed Team"
+            name: team["Team Name"] || team.Name || team.name || "Unnamed Team"
           };
         });
         
