@@ -54,6 +54,7 @@ function AppContent({ Component, pageProps, router }) {
     router.pathname === '/dashboard' || 
     router.pathname === '/dashboard-new' || 
     router.pathname === '/profile' || 
+    router.pathname === '/onboarding' ||
     router.pathname.startsWith('/program/') ||
     router.pathname.startsWith('/program-new/') ||
     router.pathname.startsWith('/dashboard/') ||
