@@ -84,11 +84,16 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     // Initialize the applications table
     const applicationsTable = base(applicationsTableId)
     
-    // Create the application record
-    console.log(`Creating application for contact ${userProfile.contactId}, cohort ${cohortId}, team ${teamId}`)
+    // Check if we need to create an application record
+    console.log(`Evaluating application record creation for contact ${userProfile.contactId}, cohort ${cohortId}, team ${teamId}`)
     
-    // First, check if the cohort's initiative has "Immediate" enrollment
+    // Fetch initiative details to determine if we need to create an application
+    let shouldCreateApplication = false;
     let applicationStatus = 'Submitted';
+    let initiativeName = "";
+    let isTeamBasedInitiative = false;
+    let participationResult = null;
+    
     try {
       // Get the cohort record
       const cohortsTable = base(process.env.AIRTABLE_COHORTS_TABLE_ID);
@@ -101,19 +106,82 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
         const initiative = await initiativesTable.find(initiativeId);
         
         if (initiative) {
+          initiativeName = initiative.fields.Name || "Unknown Initiative";
           const enrollmentType = initiative.fields["Enrollment Type"] || "Review";
-          console.log(`Initiative ${initiative.fields.Name} has enrollment type: ${enrollmentType}`);
+          const participationType = initiative.fields["Participation Type"] || "Individual";
+          
+          // Check if this is a team-based participation
+          isTeamBasedInitiative = 
+            participationType.toLowerCase().includes("team") ||
+            participationType.toLowerCase() === "teams" ||
+            participationType.toLowerCase() === "group" ||
+            participationType.toLowerCase().includes("collaborative");
+            
+          console.log(`Initiative ${initiativeName} has enrollment type: ${enrollmentType}, participation type: ${participationType}`);
+          
+          // Determine if this is a special case where we need a formal application
+          // 1. Xperiment initiatives always need applications
+          // 2. Team join requests always need applications
+          // 3. Any program with "Review" enrollment that requires approval needs applications
+          
+          const isXperiment = initiativeName.toLowerCase().includes("xperiment");
           
           // Set application status to "Accepted" if enrollment type is "Immediate"
           if (enrollmentType === "Immediate") {
             applicationStatus = 'Accepted';
             console.log(`Setting application status to "Accepted" for immediate enrollment`);
           }
+          
+          // Determine if we should create an application record
+          if (isXperiment) {
+            console.log("Creating application for Xperiment (always requires approval)");
+            shouldCreateApplication = true;
+          } else if (applicationType === 'joinTeam') {
+            console.log("Creating application for team join request (always requires approval)");
+            shouldCreateApplication = true;
+          } else if (isTeamBasedInitiative && enrollmentType === "Review") {
+            console.log("Creating application for team-based initiative with Review enrollment");
+            shouldCreateApplication = true;
+          } else {
+            console.log("Skipping application creation - this is a direct join program");
+            shouldCreateApplication = false;
+            
+            // For direct join programs, create participation record directly
+            try {
+              participationResult = await createParticipationRecord(userProfile.contactId, cohortId);
+              console.log("Direct join participation record creation result:", participationResult);
+            } catch (participationError) {
+              console.error("Error creating direct join participation record:", participationError);
+            }
+          }
         }
       }
     } catch (error) {
-      console.error("Error checking enrollment type:", error);
-      // Continue with default 'Submitted' status if there's an error
+      console.error("Error checking initiative details:", error);
+      // Default to creating application if we can't determine
+      shouldCreateApplication = true;
+    }
+    
+    // If we're not creating an application, return success with participation result
+    if (!shouldCreateApplication) {
+      // Also update the user's Onboarding status in Airtable to "Joined"
+      try {
+        await contactsTable.update(userProfile.contactId, {
+          "Onboarding": "Joined"
+        });
+        console.log(`Updated contact ${userProfile.contactId} Onboarding status to "Joined" for direct join`);
+      } catch (onboardingError) {
+        console.error("Error updating onboarding status:", onboardingError);
+      }
+      
+      return res.status(200).json({
+        success: true,
+        message: "Direct join program - created participation record without application",
+        contactId: userProfile.contactId,
+        cohortId: cohortId,
+        teamId: teamId,
+        participation: participationResult || null
+      });
     }
     
     // Prepare application data - using only the current field names
@@ -269,9 +337,18 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
         created: false, 
         message: "Team join request - participation record will be created when approved"
       };
+    } else if (initiativeName.toLowerCase().includes("xperiment")) {
+      // Skip participation record creation for Xperiment which requires approval
+      console.log("Skipping participation record creation for Xperiment - requires approval");
+      participationResult = { 
+        success: true, 
+        created: false, 
+        message: "Xperiment program - participation record will be created upon approval" 
+      };
     } else {
       // For other application types, proceed with normal participation record creation
-      // This is based on the initiative's enrollment type (Immediate vs. Review)
+      // Our createParticipationRecord function now handles the logic for which programs get
+      // immediate participation records
       try {
         participationResult = await createParticipationRecord(userProfile.contactId, cohortId);
         console.log("Participation record creation result:", participationResult);

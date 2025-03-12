@@ -42,7 +42,13 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   const topics = cohort.topicNames || []
   // Access status field consistently - cohort.Status is the correct property
   const status = cohort.Status || "Unknown"
-  const actionButtonText = cohort["Action Button"] || "Apply Now"
+  // Set action button text based on initiative type
+  const isXperimentOrTeamJoin = 
+    (initiativeName.toLowerCase().includes("xperiment")) || 
+    (participationType.toLowerCase().includes("team"));
+  const actionButtonText = isXperimentOrTeamJoin ? 
+    (cohort["Action Button"] || "Apply Now") : 
+    (cohort["Action Button"] || "Join Now");
   const filloutFormId = cohort["Application Form ID (Fillout)"]
   // Check if cohort is open for applications
   const isOpen = status === "Applications Open"
