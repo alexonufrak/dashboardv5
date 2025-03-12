@@ -128,6 +128,18 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   const [showInitiativeConflictDialog, setShowInitiativeConflictDialog] = useState(false)
   const [conflictDetails, setConflictDetails] = useState(null)
   
+  // Reset application state when not actively applying
+  useEffect(() => {
+    if (!isApplying) {
+      // Make sure all application dialogs are closed when not actively applying
+      setShowTeamJoinHandler(false)
+      setShowXtrapreneursForm(false)
+      setActiveTeamSelectDialog(null)
+      setActiveTeamCreateDialog(false)
+      setActiveFilloutForm(null)
+    }
+  }, [isApplying])
+  
   // Check if a user is already part of an initiative or if their team is part of a cohort
   const checkInitiativeRestrictions = async () => {
     try {

@@ -23,9 +23,15 @@ const TeamJoinHandler = ({ cohort, profile, isActive = false, onComplete, onCanc
   const [error, setError] = useState(null)
   
   // Start the process when isActive changes to true
+  // Also handle resetting state when isActive becomes false
   useEffect(() => {
     if (isActive && cohort) {
       startTeamJoinProcess()
+    } else if (!isActive) {
+      // Reset all internal state when component becomes inactive
+      setShowJoinList(false)
+      setShowCreateTeam(false)
+      setError(null)
     }
   }, [isActive, cohort])
   

@@ -115,8 +115,23 @@ const JoinableTeamsList = ({ teams = [], cohort, profile, onApplySuccess, onClos
     return team.memberCount || team.members?.length || 0
   }
   
+  // Reset state when dialog is closed
+  useEffect(() => {
+    if (!open) {
+      setSelectedTeam(null)
+      setShowJoinDialog(false)
+      setJoinMessage('')
+      setError('')
+    }
+  }, [open])
+
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) {
+        // When closing, make sure to call the onClose callback
+        if (onClose) onClose();
+      }
+    }}>
       <DialogContent className="sm:max-w-4xl z-[200]">
         <DialogHeader>
           <DialogTitle>Join a Team for {cohort.name || "this cohort"}</DialogTitle>
