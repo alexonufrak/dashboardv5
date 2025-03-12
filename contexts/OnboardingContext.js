@@ -12,7 +12,7 @@ export function OnboardingProvider({ children }) {
   const [hasApplications, setHasApplications] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
-  // Force dialog to stay open if onboarding isn't completed
+  // Dialog functionality is now disabled - always set to false
   const [forceDialogOpen, setForceDialogOpen] = useState(false)
   
   // Track steps completion
@@ -196,11 +196,12 @@ export function OnboardingProvider({ children }) {
           return
         }
         
-        // If we reach here, user needs to complete onboarding
-        console.log("User needs to complete onboarding, forcing dialog open")
+        // If we reach here, user needs to complete onboarding, but we no longer force open the dialog
+        console.log("User needs to complete onboarding, but dialog is disabled")
         setOnboardingCompleted(false)
-        setForceDialogOpen(true) // Force dialog to open and stay open
-        setDialogOpen(true) // Open the dialog immediately
+        // Dialog functionality disabled - no longer force it open
+        setForceDialogOpen(false)
+        setDialogOpen(false)
         
         // Mark register step as completed (always true since they're registered)
         setSteps(prevSteps => ({
