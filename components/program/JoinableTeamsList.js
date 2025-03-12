@@ -30,8 +30,9 @@ const JoinableTeamsList = ({ teams = [], cohort, profile, onApplySuccess, onClos
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   
-  // Check if there are teams available to join
-  const hasJoinableTeams = teams.some(team => team.joinable)
+  // For now, treat all teams as joinable
+  // This is a temporary fix until the joinable flag is properly set in Airtable 
+  const hasJoinableTeams = teams.length > 0
   
   // Handle selection of a team to join
   const handleSelectTeam = (team) => {
@@ -139,7 +140,7 @@ const JoinableTeamsList = ({ teams = [], cohort, profile, onApplySuccess, onClos
           {hasJoinableTeams && (
             <ScrollArea className="max-h-[400px] pr-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {teams.filter(team => team.joinable).map(team => (
+                {teams.map(team => (
                   <Card key={team.id} className="hover:shadow-md transition-shadow">
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-start">
@@ -149,11 +150,19 @@ const JoinableTeamsList = ({ teams = [], cohort, profile, onApplySuccess, onClos
                           {getTeamMembersCount(team)}
                         </Badge>
                       </div>
-                      {team.institution && (
-                        <CardDescription className="text-xs">
-                          {team.institution.name}
-                        </CardDescription>
-                      )}
+                      <div className="flex flex-col gap-1">
+                        {team.institution && (
+                          <CardDescription className="text-xs">
+                            {team.institution.name}
+                          </CardDescription>
+                        )}
+                        {team.displayMembers && team.displayMembers.length > 0 && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            <span className="font-medium">Members:</span> {team.displayMembers.join(", ")}
+                            {team.hasMoreMembers && ` +${team.additionalMembersCount} more`}
+                          </div>
+                        )}
+                      </div>
                     </CardHeader>
                     <CardContent className="text-sm">
                       <p className="line-clamp-3">{team.description || "Team description not available."}</p>

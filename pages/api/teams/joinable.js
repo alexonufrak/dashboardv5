@@ -44,11 +44,9 @@ export default withApiAuthRequired(async function joinableTeamsHandler(req, res)
     // Get the Teams table
     const teamsTable = base(process.env.AIRTABLE_TEAMS_TABLE_ID)
     
-    // Build the formula based on provided parameters
-    let formula = "Joinable = TRUE()"
-    
-    // Add cohort filter
-    formula = `AND(${formula}, FIND('${cohortId}', ARRAYJOIN({Cohorts}, ',')) > 0)`
+    // For now, get all teams in the cohort regardless of joinable status
+    // This is temporary to ensure we're getting teams
+    let formula = `FIND('${cohortId}', ARRAYJOIN({Cohorts}, ',')) > 0`
     
     // Add institution filter
     formula = `AND(${formula}, {Institution} = '${instId}')`
@@ -62,20 +60,28 @@ export default withApiAuthRequired(async function joinableTeamsHandler(req, res)
     
     // Process teams
     const formattedTeams = teams.map(team => {
+      // Format member data for display
+      const memberCount = team.fields['Count (Members)'] || 0;
+      const memberNames = team.fields['Name (from Contact) (from Members)'] || [];
+      const displayMembers = memberNames.slice(0, 3); // Take up to 3 members to display
+      
       return {
         id: team.id,
-        name: team.fields.Name,
-        description: team.fields.Description,
+        name: team.fields.Name || "Unnamed Team",
+        description: team.fields.Description || "No description available",
         institution: team.fields.Institution?.[0] ? {
           id: team.fields.Institution[0],
           name: team.fields['Name (from Institution)']?.[0] || 'Unknown Institution'
         } : null,
         members: team.fields['Contact (from Members)'] || [],
-        memberNames: team.fields['Name (from Contact) (from Members)'] || [],
-        memberEmails: team.fields['Email (from Contact) (from Members)'] || [],
+        memberNames: memberNames,
+        displayMembers: displayMembers,
         cohortIds: team.fields.Cohorts || [],
-        memberCount: team.fields['Count (Members)'] || 0,
-        joinable: true // These are all joinable teams
+        memberCount: memberCount,
+        joinable: !!team.fields.Joinable, // Keep the real joinable status for reference
+        // Include the real joinable status and any additional useful info
+        hasMoreMembers: memberNames.length > 3,
+        additionalMembersCount: Math.max(0, memberNames.length - 3)
       }
     })
     
