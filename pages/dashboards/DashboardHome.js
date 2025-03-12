@@ -156,19 +156,6 @@ function DashboardHomeInner({ onNavigate }) {
               }).catch(err => {
                 console.error("Error updating onboarding status after application:", err);
               });
-              
-              // Also update Auth0 metadata for backwards compatibility
-              fetch('/api/user/metadata', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  onboarding: ['register', 'selectCohort']
-                })
-              }).catch(err => {
-                console.error("Error updating steps after application:", err);
-              });
             }}
           />
         </section>

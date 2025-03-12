@@ -75,34 +75,12 @@ export function OnboardingProvider({ children }) {
           }
         }))
         
-        // Check if user has any applications
-        const hasApplications = Array.isArray(profileData.applications) && 
-                               profileData.applications.length > 0
+        // Check if user has any participation records (this is already checked in airtable.js)
+        // If they have participation, the onboardingStatus would already be "Applied"
+        // So we don't need to do anything additional here
         
-        // Update application status
-        setHasApplications(hasApplications)
-        
-        // If user has applications, mark the selectCohort step as completed
-        if (hasApplications) {
-          setSteps(prevSteps => ({
-            ...prevSteps,
-            selectCohort: {
-              ...prevSteps.selectCohort,
-              completed: true
-            }
-          }))
-          
-          // Also update Airtable Onboarding status to "Applied" if they have applications
-          // but their status is still "Registered" - this ensures consistency
-          if (onboardingStatus !== "Applied") {
-            try {
-              await fetch('/api/user/onboarding-completed', { method: 'POST' })
-              console.log("Updated onboarding status to Applied based on existing applications")
-            } catch (error) {
-              console.error("Error updating onboarding status:", error)
-            }
-          }
-        }
+        // For the selectCohort step, we'll only mark it as completed if they have participation
+        // (Which means their onboardingStatus would be "Applied", which we already checked above)
       }
       
       // By default, show the onboarding banner for new users
