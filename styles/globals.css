@@ -4,6 +4,20 @@
 
 @custom-variant dark (&:is(.dark *));
 
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+  
+  /* Dark theme overrides */
+  --header-bg: #1e293b;
+  --subtitle-color: #cbd5e1;
+  --alert-bg: #422006;
+  --alert-color: #fbbf24;
+}
+
 @theme {
   --color-primary: #24a9e0;
   --color-primary-dark: #0e445a;
@@ -14,6 +28,12 @@
   --color-eden: #0e445a;
   --color-curious: #24a9e0;
   --color-gold: #ffd200;
+  
+  /* Theme-aware colors for dashboard components */
+  --header-bg: #f8f9fa;
+  --subtitle-color: #555;
+  --alert-bg: #fff4ce;
+  --alert-color: #815001;
 
   --color-sidebar: hsl(var(--sidebar));
   --color-sidebar-foreground: hsl(var(--sidebar-foreground));

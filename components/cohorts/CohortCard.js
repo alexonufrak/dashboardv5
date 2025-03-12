@@ -327,14 +327,14 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
       <>
         <div 
           key={cohort.id} 
-          className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-200 bg-white hover:bg-gray-50 shadow-sm transition-all mr-2 mb-2 cursor-pointer group"
+          className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-neutral-900 hover:bg-gray-50 dark:hover:bg-neutral-800 shadow-sm transition-all mr-2 mb-2 cursor-pointer group"
           onClick={handleViewDetails}
         >
           <div className="flex items-center gap-2 pointer-events-none">
             <span className="font-medium text-sm">{initiativeName}</span>
             
             {(Array.isArray(topics) && topics.length > 0) && (
-              <Badge variant="secondary" className="text-xs bg-cyan-50 text-cyan-800 border-0">
+              <Badge variant="secondary" className="text-xs dark:bg-cyan-900 dark:text-cyan-100 bg-cyan-50 text-cyan-800 border-0">
                 {topics[0].length > 15 ? topics[0].substring(0, 15) + '...' : topics[0]}
                 {cohort.className && ` - ${cohort.className}`}
               </Badge>
@@ -363,7 +363,7 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
           <div className="flex flex-wrap gap-2 mt-2">
             {Array.isArray(topics) && topics.length > 0 && 
               topics.slice(0, 2).map((topic, index) => (
-                <Badge key={`topic-${index}`} variant="secondary" className="bg-cyan-50 text-cyan-800">
+                <Badge key={`topic-${index}`} variant="secondary" className="bg-cyan-50 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-100">
                   {topic} {cohort.className && index === 0 ? `- ${cohort.className}` : ''}
                 </Badge>
               ))
@@ -384,8 +384,8 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
           <div className="mt-3">
             <Badge variant="outline" className={
               participationType.toLowerCase().includes('team') ? 
-              "bg-purple-50 text-purple-800 border-purple-200" : 
-              "bg-blue-50 text-blue-800 border-blue-200"
+              "bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-900 dark:text-purple-100 dark:border-purple-800" : 
+              "bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-100 dark:border-blue-800"
             }>
               {participationType}
             </Badge>

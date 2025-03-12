@@ -34,9 +34,10 @@ const DashboardHeader = ({ profile }) => {
   )
 }
 
+// Using CSS custom properties for theme-aware colors
 const styles = {
   header: {
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "var(--header-bg, #f8f9fa)",
     borderRadius: "8px",
     padding: "30px 20px",
     marginBottom: "30px",
@@ -53,12 +54,12 @@ const styles = {
   },
   subtitle: {
     fontSize: "1.1rem",
-    color: "#555",
+    color: "var(--subtitle-color, #555)",
     marginBottom: "20px",
   },
   alert: {
-    backgroundColor: "#fff4ce",
-    color: "#815001",
+    backgroundColor: "var(--alert-bg, #fff4ce)",
+    color: "var(--alert-color, #815001)",
     padding: "15px",
     borderRadius: "8px",
     display: "flex",

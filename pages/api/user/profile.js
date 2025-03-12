@@ -6,32 +6,72 @@ async function handler(req, res) {
   // Record start time for performance monitoring
   const startTime = Date.now();
   
-  const session = await getSession(req, res)
-  if (!session || !session.user) {
-    return res.status(401).json({ error: "Not authenticated" })
-  }
-
   try {
+    const session = await getSession(req, res)
+    if (!session || !session.user) {
+      return res.status(401).json({ error: "Not authenticated" })
+    }
+  
     if (req.method === "GET") {
-      // Fetch the enhanced user profile
-      const profile = await getCompleteUserProfile(session.user)
+      // Add timeout control to prevent hanging requests
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Profile fetch timed out")), 9000)
+      );
       
-      // Calculate processing time
-      const processingTime = Date.now() - startTime;
-      console.log(`User profile fetched in ${processingTime}ms`);
-      
-      // Set cache control headers - cache for 5 minutes (300 seconds)
-      // Client caching for 1 minute, CDN/edge caching for 5 minutes
-      res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
-      
-      // Include processing metadata in response
-      return res.status(200).json({
-        ...profile,
-        _meta: {
-          processingTime,
-          timestamp: new Date().toISOString()
+      try {
+        // Race the profile fetch against a timeout
+        const profile = await Promise.race([
+          getCompleteUserProfile(session.user),
+          timeoutPromise
+        ]);
+        
+        if (!profile) {
+          console.log("No profile data returned, sending minimal response");
+          return res.status(404).json({
+            auth0Id: session.user.sub,
+            email: session.user.email,
+            name: session.user.name,
+            picture: session.user.picture,
+            isProfileComplete: false,
+            _meta: {
+              error: "No profile data found",
+              timestamp: new Date().toISOString()
+            }
+          });
         }
-      })
+        
+        // Calculate processing time
+        const processingTime = Date.now() - startTime;
+        console.log(`User profile fetched in ${processingTime}ms`);
+        
+        // Set cache control headers - cache for 5 minutes (300 seconds)
+        // Client caching for 1 minute, CDN/edge caching for 5 minutes
+        res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
+        
+        // Include processing metadata in response
+        return res.status(200).json({
+          ...profile,
+          _meta: {
+            processingTime,
+            timestamp: new Date().toISOString()
+          }
+        });
+      } catch (profileError) {
+        console.error("Error fetching complete profile:", profileError);
+        
+        // Return a basic profile with auth0 data as fallback
+        return res.status(200).json({
+          auth0Id: session.user.sub,
+          email: session.user.email,
+          name: session.user.name,
+          picture: session.user.picture,
+          isProfileComplete: false,
+          _meta: {
+            error: profileError.message,
+            timestamp: new Date().toISOString()
+          }
+        });
+      }
     } else if (req.method === "PUT") {
       const { contactId, ...updateData } = req.body
 
@@ -81,16 +121,71 @@ async function handler(req, res) {
       // Debug the data being sent
       console.log("Updating user profile with data:", JSON.stringify(airtableData, null, 2));
 
-      const updatedProfile = await updateUserProfile(contactId, airtableData)
-      const completeProfile = await getCompleteUserProfile(session.user)
-
-      return res.status(200).json(completeProfile)
+      try {
+        // Add timeout for update operation
+        const updateTimeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Profile update timed out")), 9000)
+        );
+        
+        // Race the update against a timeout
+        const updatedProfile = await Promise.race([
+          updateUserProfile(contactId, airtableData),
+          updateTimeoutPromise
+        ]);
+        
+        // Return a simplified profile if complete profile fetch fails
+        try {
+          const completeProfile = await Promise.race([
+            getCompleteUserProfile(session.user),
+            new Promise((_, reject) => setTimeout(() => 
+              reject(new Error("Complete profile fetch timed out")), 5000))
+          ]);
+          
+          return res.status(200).json(completeProfile);
+        } catch (fetchError) {
+          console.error("Error fetching complete profile after update:", fetchError);
+          
+          // Return basic updated profile info
+          return res.status(200).json({
+            contactId,
+            ...updateData,
+            auth0Id: session.user.sub,
+            email: session.user.email,
+            _meta: {
+              partial: true,
+              error: "Partial profile returned - complete profile fetch failed",
+              timestamp: new Date().toISOString()
+            }
+          });
+        }
+      } catch (updateError) {
+        console.error("Error updating profile:", updateError);
+        return res.status(500).json({ 
+          error: "Failed to update profile", 
+          message: updateError.message 
+        });
+      }
     } else {
       return res.status(405).json({ error: "Method not allowed" })
     }
   } catch (error) {
-    console.error("Error in profile API:", error)
-    return res.status(500).json({ error: "Internal server error" })
+    console.error("Error in profile API:", error);
+    // Provide basic user data from auth0 even in error case
+    if (req.method === "GET" && error.session && error.session.user) {
+      return res.status(200).json({
+        auth0Id: error.session.user.sub,
+        email: error.session.user.email,
+        name: error.session.user.name,
+        picture: error.session.user.picture,
+        isProfileComplete: false,
+        _meta: {
+          error: error.message,
+          timestamp: new Date().toISOString(),
+          fallback: true
+        }
+      });
+    }
+    return res.status(500).json({ error: "Internal server error", message: error.message })
   }
 }
 

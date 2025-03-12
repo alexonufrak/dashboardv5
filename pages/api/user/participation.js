@@ -19,17 +19,59 @@ export default withApiAuthRequired(async function handler(req, res) {
       return res.status(401).json({ error: "Not authenticated" })
     }
     
-    // Get the user profile using the email
-    const profile = await getUserProfile(null, session.user.email)
-    if (!profile || !profile.contactId) {
-      return res.status(404).json({ error: "User profile not found" })
+    // Add timeout control
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Participation fetch timed out")), 9000)
+    );
+    
+    // Get the user profile using the email with timeout
+    let profile = null;
+    try {
+      profile = await Promise.race([
+        getUserProfile(null, session.user.email),
+        timeoutPromise
+      ]);
+      
+      if (!profile || !profile.contactId) {
+        console.warn("User profile not found or missing contactId");
+        return res.status(200).json({ 
+          participation: [],
+          hasData: false,
+          recordCount: 0,
+          _meta: {
+            error: "User profile not found",
+            timestamp: new Date().toISOString()
+          }
+        });
+      }
+    } catch (profileError) {
+      console.error("Error fetching user profile:", profileError);
+      return res.status(200).json({ 
+        participation: [],
+        hasData: false,
+        recordCount: 0,
+        _meta: {
+          error: profileError.message,
+          timestamp: new Date().toISOString()
+        }
+      });
     }
     
     console.log(`Looking up participation for contact ID: "${profile.contactId}"`)
     
-    // Use our optimized getParticipationRecords function to get enhanced records
-    const enhancedRecords = await getParticipationRecords(profile.contactId);
-    console.log(`Retrieved ${enhancedRecords.length} participation records`);
+    // Use our optimized getParticipationRecords function with timeout
+    let enhancedRecords = [];
+    try {
+      enhancedRecords = await Promise.race([
+        getParticipationRecords(profile.contactId),
+        new Promise((_, reject) => setTimeout(() => 
+          reject(new Error("Participation records fetch timed out")), 8000))
+      ]);
+      console.log(`Retrieved ${enhancedRecords.length} participation records`);
+    } catch (participationError) {
+      console.error("Error fetching participation records:", participationError);
+      enhancedRecords = [];
+    }
     
     // Transform the enhanced records to maintain backward compatibility
     const processedParticipation = enhancedRecords.map(record => {

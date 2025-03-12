@@ -20,17 +20,22 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
     
     const userEmail = session.user.email.toLowerCase();
     
-    // Get user profile to get the contact ID
-    const userProfile = await getCompleteUserProfile(session.user);
+    // Try to get user profile to get the contact ID, but handle errors gracefully
+    let userProfile = null;
+    let contactId = null;
     
-    if (!userProfile) {
-      return res.status(404).json({ 
-        error: 'User profile not found',
-        applications: []
-      });
+    try {
+      userProfile = await getCompleteUserProfile(session.user);
+      contactId = userProfile?.contactId;
+      console.log(`Retrieved user profile with contactId: ${contactId || 'not found'}`);
+    } catch (profileError) {
+      console.error("Error fetching user profile:", profileError);
+      // Instead of failing, we'll try a direct lookup by email below
     }
     
-    const contactId = userProfile.contactId;
+    if (!userProfile) {
+      console.log("User profile not found, will try direct email lookup");
+    }
     
     // Initialize Airtable tables
     const contactsTable = process.env.AIRTABLE_CONTACTS_TABLE_ID 
