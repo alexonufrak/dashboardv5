@@ -125,9 +125,12 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
       // The 'Created' field is automatically handled by Airtable
     }
     
-    // If team ID is provided, add it to the application
+    // If team ID is provided for a regular application, we DON'T add it to Team to Join
+    // Only join team requests should use Team to Join field
+    // For regular team applications, we don't set any team field in the application data
     if (teamId) {
-      applicationData['Team'] = [teamId]
+      // Don't add any team field for regular applications
+      // The Team field no longer exists in schema and Team to Join is for join requests only
       
       // Also update the team with the cohort ID - this is a critical addition
       try {
@@ -213,8 +216,12 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
       // We're removing 'Xperience/Team to Join' and 'Xperience/Join Team Message' which may no longer exist in schema
       applicationData['Join Team Message'] = joinTeamMessage;
       
-      // Also add the proper Team field for consistent behavior
-      applicationData['Team'] = [targetTeamId];
+      // Log the application data structure before creating
+      console.log("Final application data fields:", Object.keys(applicationData));
+      
+      // Use "Team to Join" field which exists in the Airtable schema
+      // The field name "Team" doesn't exist in the current Airtable schema
+      applicationData['Team to Join'] = [targetTeamId];
       
       console.log('Creating team join request with data:', {
         teamId: targetTeamId,
