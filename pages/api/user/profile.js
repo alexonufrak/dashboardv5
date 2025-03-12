@@ -3,6 +3,9 @@ import { getCompleteUserProfile } from "../../../lib/userProfile"
 import { updateUserProfile } from "../../../lib/airtable"
 
 async function handler(req, res) {
+  // Record start time for performance monitoring
+  const startTime = Date.now();
+  
   const session = await getSession(req, res)
   if (!session || !session.user) {
     return res.status(401).json({ error: "Not authenticated" })
@@ -10,8 +13,25 @@ async function handler(req, res) {
 
   try {
     if (req.method === "GET") {
+      // Fetch the enhanced user profile
       const profile = await getCompleteUserProfile(session.user)
-      return res.status(200).json(profile)
+      
+      // Calculate processing time
+      const processingTime = Date.now() - startTime;
+      console.log(`User profile fetched in ${processingTime}ms`);
+      
+      // Set cache control headers - cache for 5 minutes (300 seconds)
+      // Client caching for 1 minute, CDN/edge caching for 5 minutes
+      res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
+      
+      // Include processing metadata in response
+      return res.status(200).json({
+        ...profile,
+        _meta: {
+          processingTime,
+          timestamp: new Date().toISOString()
+        }
+      })
     } else if (req.method === "PUT") {
       const { contactId, ...updateData } = req.body
 

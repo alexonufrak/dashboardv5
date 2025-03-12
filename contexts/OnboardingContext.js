@@ -54,17 +54,35 @@ export function OnboardingProvider({ children }) {
       
       // If we have a profile with onboarding data
       if (profileData) {
-        // Check for participation records - they could exist in different properties
-        const participations = profileData.participations || profileData.Participation;
+        // Get participation data from all possible locations - this is CRITICAL for proper evaluation
+        // The participation data might be in different locations depending on the context/loading state
+        
+        // 1. Check directly on profile (participations, Participation arrays)
+        const participationArrays = profileData.participations || profileData.Participation;
+        
+        // 2. Check participationData.participation (nested from API/context)
+        const nestedParticipations = 
+          profileData.participationData && 
+          profileData.participationData.participation &&
+          Array.isArray(profileData.participationData.participation) ? 
+            profileData.participationData.participation : [];
+        
+        // Log detailed participation data for debugging
+        console.log("Detailed participation check:", {
+          directArrays: participationArrays ? 
+            (Array.isArray(participationArrays) ? participationArrays.length : "not array") : "not found",
+          nestedArray: nestedParticipations.length,
+          nestedFound: profileData.participationData ? "yes" : "no",
+          hasActiveFlag: profileData.hasActiveParticipation
+        });
+        
+        // Combine all participation checks - if ANY of them indicate participation, the user has participated
         const hasParticipationRecords = (
-          // Check the participations array (usually set by enhanced profile)
-          (participations && Array.isArray(participations) && participations.length > 0) ||
-          // Check participationData that might be in the profile
-          (profileData.participationData && 
-           profileData.participationData.participation && 
-           Array.isArray(profileData.participationData.participation) && 
-           profileData.participationData.participation.length > 0) ||
-          // Check hasActiveParticipation flag that might be set
+          // Direct arrays on profile
+          (participationArrays && Array.isArray(participationArrays) && participationArrays.length > 0) ||
+          // Nested participation data
+          (nestedParticipations.length > 0) ||
+          // Flag explicitly set on profile
           profileData.hasActiveParticipation === true
         );
         

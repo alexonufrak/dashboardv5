@@ -48,7 +48,9 @@ function DashboardHomeInner({ onNavigate }) {
     isLoadingApplications,
     isEditModalOpen, 
     setIsEditModalOpen,
-    handleProfileUpdate
+    handleProfileUpdate,
+    participationData,
+    isProgramLoading
   } = useDashboard()
   
   // Get onboarding functions from onboarding context
@@ -58,30 +60,36 @@ function DashboardHomeInner({ onNavigate }) {
   const onboardingInitializedRef = useRef(false);
   
   useEffect(() => {
-    // Only check onboarding status once when profile and participation data are available
-    // and prevent infinite loops by using the ref
-    if (profile && !onboardingInitializedRef.current) {
-      console.log("Checking onboarding status on dashboard load with profile data", {
+    // Only run this once all data is available and not yet initialized
+    if (profile && !onboardingInitializedRef.current && !isProgramLoading) {
+      console.log("Checking onboarding status with all data loaded", {
         "Onboarding status": profile.Onboarding || "Not set",
         "Has applications": applications?.length > 0,
         "Has participation": profile.hasActiveParticipation || false,
-        "Profile ID": profile?.contactId
-      })
+        "Has participation records": participationData?.participation?.length > 0,
+        "Profile ID": profile?.contactId,
+        "Program data loaded": !isProgramLoading && !!participationData
+      });
       
-      // Wait a bit for all data to be loaded properly - especially participationData
+      // Wait for everything to be fully loaded
       setTimeout(() => {
-        // Pass the full profile with all related data
+        // Pass ALL available data for most accurate onboarding check
         checkOnboardingStatus({
           ...profile,
           applications: applications,
-          participationData: teamsData?.participationData || profile?.participationData
+          participationData: participationData,
+          // Add explicit participation property to match what's expected in Airtable
+          Participation: participationData?.participation || [],
+          // Extract nested values to match the enhanced profile format
+          hasActiveParticipation: participationData?.participation?.length > 0 || 
+                                profile.hasActiveParticipation || false
         });
         
         // Mark as initialized to prevent unnecessary rechecks
         onboardingInitializedRef.current = true;
-      }, 300); 
+      }, 500); 
     }
-  }, [profile, applications, teamsData])
+  }, [profile, applications, participationData, isProgramLoading])
   
   // Handler functions
   const handleEditClick = () => {
