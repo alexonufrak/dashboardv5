@@ -110,9 +110,9 @@ export default function OnboardingDialog({ profile, applications, isLoadingAppli
         height: '100vh'
       }}
     >
-      <div className="bg-background rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-6 border-b flex justify-between items-center">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
           <h2 className="text-xl font-semibold text-foreground">Complete Your Onboarding</h2>
           {!forceDialogOpen && (
             <Button 
@@ -340,7 +340,7 @@ export default function OnboardingDialog({ profile, applications, isLoadingAppli
         </div>
         
         {/* Footer */}
-        <div className="p-6 border-t flex justify-between items-center gap-4">
+        <div className="p-6 border-t border-gray-200 dark:border-gray-800 flex justify-between items-center gap-4">
           <span className="text-sm text-muted-foreground">
             {completionPercentage}% complete
           </span>
