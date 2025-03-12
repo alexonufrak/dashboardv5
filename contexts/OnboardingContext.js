@@ -94,7 +94,8 @@ export function OnboardingProvider({ children }) {
         // Log the participation status for debugging
         console.log("Participation status check:", {
           hasParticipationRecords,
-          participationsDirect: participations ? participations.length : 0,
+          participationsDirect: participationArrays ? 
+            (Array.isArray(participationArrays) ? participationArrays.length : 0) : 0,
           participationsNested: profileData.participationData && 
                                profileData.participationData.participation ? 
                                profileData.participationData.participation.length : 0,
@@ -111,7 +112,7 @@ export function OnboardingProvider({ children }) {
         console.log("Full profile data properties for onboarding:", {
           hasOnboardingField: profileData.hasOwnProperty('Onboarding'),
           onboardingValue: profileData.Onboarding,
-          hasParticipationsArray: Boolean(participations),
+          hasParticipationsArray: Boolean(participationArrays),
           participationsProperty: Boolean(profileData.hasOwnProperty('participations')),
           participationProperty: Boolean(profileData.hasOwnProperty('Participation')),
           hasParticipationData: Boolean(profileData.participationData),
