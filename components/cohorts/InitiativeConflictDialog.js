@@ -156,24 +156,26 @@ const InitiativeConflictDialog = ({
                   You are currently an active member of the <strong>{details.conflictingInitiative || details.teamInitiative || "Current Program"}</strong> initiative.
                 </p>
                 
-                <Alert variant="outline" className="border-amber-200 bg-amber-50">
+                <Alert variant="outline" className="border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30">
                   <AlertDescription className="py-2">
-                    <div className="mb-2"><span className="text-muted-foreground">Your active initiative:</span> <strong>{details.conflictingInitiative || details.teamInitiative || "Current Program"}</strong></div>
-                    <div><span className="text-muted-foreground">Initiative you're applying to:</span> <strong>{details.currentInitiative || details.appliedProgram || "New Program"}</strong></div>
-                    <div className="mt-2 pt-2 border-t border-amber-200">
-                      <span className="font-medium text-amber-800">Initiative Conflict</span>
+                    <div className="mb-2"><span className="text-muted-foreground">Your active initiative:</span> <strong className="text-foreground">{details.conflictingInitiative || details.teamInitiative || "Current Program"}</strong></div>
+                    <div><span className="text-muted-foreground">Initiative you're applying to:</span> <strong className="text-foreground">{details.currentInitiative || details.appliedProgram || "New Program"}</strong></div>
+                    <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-800/50">
+                      <span className="font-medium text-amber-800 dark:text-amber-500">Initiative Conflict</span>
                     </div>
                   </AlertDescription>
                 </Alert>
                 
                 <div className="space-y-3">
                   <p>
-                    You can only participate in one team-based initiative at a time. To join <strong>{details.currentInitiative || details.appliedProgram || "this new initiative"}</strong>, 
+                    You can only participate in one team-based initiative at a time. To join <strong className="text-foreground">{details.currentInitiative || details.appliedProgram || "this new initiative"}</strong>, 
                     you must leave your current initiative first.
                   </p>
-                  <p className="font-medium text-gray-800 dark:text-gray-200">
-                    This means you will leave your current team and no longer have access to team resources.
-                  </p>
+                  <div className="p-3 rounded-md bg-secondary/50 border border-border">
+                    <p className="font-medium text-foreground">
+                      This means you will leave your current team and no longer have access to team resources.
+                    </p>
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     If you prefer not to leave your current initiative, you would need to use a different account.
                   </p>
@@ -187,10 +189,13 @@ const InitiativeConflictDialog = ({
                   This team is already participating in an Xperiment cohort with a different topic.
                 </p>
                 
-                <Alert variant="outline" className="border-amber-200 bg-amber-50">
+                <Alert variant="outline" className="border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30">
                   <AlertDescription className="py-2">
-                    <div className="mb-2"><span className="text-muted-foreground">Current team topic:</span> <strong>{details.teamTopic}</strong></div>
-                    <div><span className="text-muted-foreground">New cohort topic:</span> <strong>{details.currentTopic}</strong></div>
+                    <div className="mb-2"><span className="text-muted-foreground">Current team topic:</span> <strong className="text-foreground">{details.teamTopic}</strong></div>
+                    <div><span className="text-muted-foreground">New cohort topic:</span> <strong className="text-foreground">{details.currentTopic}</strong></div>
+                    <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-800/50">
+                      <span className="font-medium text-amber-800 dark:text-amber-500">Topic Mismatch</span>
+                    </div>
                   </AlertDescription>
                 </Alert>
                 
@@ -211,24 +216,26 @@ const InitiativeConflictDialog = ({
                   You are currently an active member of the <strong>{details.currentProgram || "Current Program"}</strong> initiative.
                 </p>
                 
-                <Alert variant="outline" className="border-amber-200 bg-amber-50">
+                <Alert variant="outline" className="border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30">
                   <AlertDescription className="py-2">
-                    <div className="mb-2"><span className="text-muted-foreground">Your active initiative:</span> <strong>{details.currentProgram}</strong></div>
-                    <div><span className="text-muted-foreground">Initiative you're applying to:</span> <strong>{details.appliedProgram}</strong></div>
-                    <div className="mt-2 pt-2 border-t border-amber-200">
-                      <span className="font-medium text-amber-800">Initiative Conflict</span>
+                    <div className="mb-2"><span className="text-muted-foreground">Your active initiative:</span> <strong className="text-foreground">{details.currentProgram}</strong></div>
+                    <div><span className="text-muted-foreground">Initiative you're applying to:</span> <strong className="text-foreground">{details.appliedProgram}</strong></div>
+                    <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-800/50">
+                      <span className="font-medium text-amber-800 dark:text-amber-500">Initiative Conflict</span>
                     </div>
                   </AlertDescription>
                 </Alert>
                 
                 <div className="space-y-3">
                   <p>
-                    You can only participate in one team-based initiative at a time. To join <strong>{details.appliedProgram || "this new initiative"}</strong>, 
+                    You can only participate in one team-based initiative at a time. To join <strong className="text-foreground">{details.appliedProgram || "this new initiative"}</strong>, 
                     you must leave your current initiative first.
                   </p>
-                  <p className="font-medium text-gray-800 dark:text-gray-200">
-                    This means you will leave your current team and no longer have access to team resources.
-                  </p>
+                  <div className="p-3 rounded-md bg-secondary/50 border border-border">
+                    <p className="font-medium text-foreground">
+                      This means you will leave your current team and no longer have access to team resources.
+                    </p>
+                  </div>
                   <p className="text-sm text-muted-foreground">
                     If you prefer not to leave your current initiative, you would need to use a different account.
                   </p>
@@ -273,7 +280,7 @@ const InitiativeConflictDialog = ({
       <Dialog open={showLeaveConfirmation} onOpenChange={() => setShowLeaveConfirmation(false)}>
         <DialogContent className="sm:max-w-md z-[200]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
+            <DialogTitle className="flex items-center gap-2 text-destructive dark:text-red-400">
               <LogOut className="h-5 w-5" />
               Leave Team & Initiative Confirmation
             </DialogTitle>
@@ -283,9 +290,9 @@ const InitiativeConflictDialog = ({
           </DialogHeader>
 
           <div className="my-4 space-y-4">
-            <Alert variant="destructive" className="bg-red-50">
+            <Alert variant="destructive" className="bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900">
               <AlertDescription className="py-2">
-                <p className="font-medium">If you leave, you will lose access to:</p>
+                <p className="font-medium text-foreground">If you leave, you will lose access to:</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li>Team resources related to the initiative</li>
                   <li>Team communication channels</li>
