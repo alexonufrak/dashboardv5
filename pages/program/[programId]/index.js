@@ -44,7 +44,8 @@ function ProgramPage() {
     cohort,
     milestones,
     submissions,
-    bounties
+    bounties,
+    refreshData
   } = useDashboard()
   
   const [pageTitle, setPageTitle] = useState("Program Dashboard")
