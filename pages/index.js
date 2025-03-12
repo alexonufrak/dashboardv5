@@ -47,7 +47,7 @@ export default function Home() {
         <meta name="description" content="xFoundry is an education innovation platform that connects students across disciplines" />
       </Head>
 
-      <div className="fixed top-4 right-4 z-50">
+      <div className="fixed top-4 right-4 z-50 pointer-events-auto">
         <ThemeToggle />
       </div>
       
@@ -63,8 +63,8 @@ export default function Home() {
         interactive={true}
         className="h-screen w-screen dark:bg-gradient-to-b dark:from-gray-900 dark:to-gray-800"
       >
-        <div className="h-full w-full flex flex-col items-center justify-center">
-          <div className="relative z-10 max-w-md mx-auto px-4 text-center">
+        <div className="h-full w-full flex flex-col items-center justify-center pointer-events-none">
+          <div className="relative z-10 max-w-md mx-auto px-4 text-center pointer-events-auto">
             <div className="mb-8">
               <Logo 
                 variant="horizontal" 
