@@ -89,7 +89,7 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, cohortId }) => {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] z-[200]">
         <DialogHeader>
           <DialogTitle>Create a New Team</DialogTitle>
           <DialogDescription>
