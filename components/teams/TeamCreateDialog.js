@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { 
   Dialog, 
@@ -13,13 +13,16 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { AlertCircle, Users, UserPlus, Plus } from 'lucide-react'
+import { AlertCircle, Users, UserPlus, Plus, Upload, Image, X } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useCreateTeam } from '@/lib/useDataFetching'
+import { useDropzone } from 'react-dropzone'
+import { upload } from '@vercel/blob/client'
+import { toast } from 'sonner'
 
 /**
  * Combined dialog for creating a new team or joining an existing team
@@ -46,8 +49,104 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
   const [showJoinDialog, setShowJoinDialog] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   
+  // Team header image upload states
+  const [headerImage, setHeaderImage] = useState(null)
+  const [headerImageUrl, setHeaderImageUrl] = useState(null)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [isUploading, setIsUploading] = useState(false)
+  
   // Use our createTeam mutation hook
   const createTeamMutation = useCreateTeam()
+  
+  // Handle file drop for header image
+  const onDrop = useCallback(acceptedFiles => {
+    // Only use the first file if multiple files are dropped
+    const file = acceptedFiles[0]
+    
+    if (!file) return
+    
+    // Validate file type (only images)
+    if (!file.type.startsWith('image/')) {
+      toast.error('Only image files are allowed for team headers')
+      return
+    }
+    
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image is too large. Maximum size is 2MB')
+      return
+    }
+    
+    // Create and store preview URL
+    const previewUrl = URL.createObjectURL(file)
+    setHeaderImageUrl(previewUrl)
+    setHeaderImage(file)
+  }, [])
+  
+  // Configure react-dropzone
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.jpeg', '.jpg', '.png', '.webp', '.gif']
+    },
+    maxFiles: 1,
+    multiple: false
+  })
+  
+  // Handle header image upload to Vercel Blob
+  const uploadHeaderImage = async () => {
+    if (!headerImage) return null
+    
+    try {
+      setIsUploading(true)
+      const toastId = toast.loading(`Uploading team header image...`)
+      
+      // Create a unique folder path for the team header
+      const timestamp = Date.now()
+      const folderPath = `team-headers/${timestamp}`
+      
+      // Clean up the file name
+      const safeFilename = headerImage.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+      
+      // Create a payload with metadata
+      const clientPayload = JSON.stringify({
+        type: 'team-header',
+        timestamp
+      })
+      
+      // Upload the file to Vercel Blob
+      const blob = await upload(`${folderPath}/${safeFilename}`, headerImage, {
+        access: 'public',
+        handleUploadUrl: '/api/upload',
+        clientPayload,
+        onUploadProgress: ({ percentage }) => {
+          setUploadProgress(percentage)
+          toast.loading(`Uploading team header image... ${Math.round(percentage)}%`, { id: toastId })
+        }
+      })
+      
+      toast.success('Team header image uploaded', { id: toastId })
+      setIsUploading(false)
+      
+      // Return the public URL of the uploaded image
+      return blob.url
+    } catch (error) {
+      console.error('Error uploading team header:', error)
+      toast.error(`Failed to upload image: ${error.message || 'Unknown error'}`)
+      setIsUploading(false)
+      return null
+    }
+  }
+  
+  // Clear the selected image
+  const clearHeaderImage = () => {
+    if (headerImageUrl) {
+      URL.revokeObjectURL(headerImageUrl)
+    }
+    setHeaderImage(null)
+    setHeaderImageUrl(null)
+    setUploadProgress(0)
+  }
 
   // Fetch joinable teams when the dialog opens
   useEffect(() => {
@@ -244,13 +343,21 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
     }
     
     setError('')
+    setIsSubmitting(true)
     
     try {
+      // Upload header image if one is provided
+      let imageUrl = null
+      if (headerImage) {
+        imageUrl = await uploadHeaderImage()
+      }
+      
       // Prepare team data
       const teamData = {
         name: teamName.trim(),
         description: teamDescription.trim(),
-        joinable: teamIsJoinable // Add the joinable field to be sent to the API
+        joinable: teamIsJoinable, // Add the joinable field to be sent to the API
+        image: imageUrl // Add the header image URL if available
       }
       
       // Call our mutation function
@@ -267,6 +374,7 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
       // Reset form
       setTeamName('')
       setTeamDescription('')
+      clearHeaderImage()
       
       // Close dialog
       if (onClose) {
@@ -274,6 +382,8 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
       }
     } catch (error) {
       setError(error.message || 'An error occurred while creating the team')
+    } finally {
+      setIsSubmitting(false)
     }
   }
   
@@ -404,6 +514,9 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
       setJoinMessage('')
       setShowJoinDialog(false)
       
+      // Clean up image resources
+      clearHeaderImage()
+      
       if (onClose) {
         onClose()
       }
@@ -474,6 +587,57 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
                   </p>
                 </div>
                 
+                {/* Team Header Image Upload */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Team Header Image (optional)
+                  </label>
+                  
+                  {headerImageUrl ? (
+                    <div className="relative mt-2 rounded-md overflow-hidden border border-border">
+                      <img 
+                        src={headerImageUrl} 
+                        alt="Team header preview" 
+                        className="w-full h-32 object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/80 hover:bg-background"
+                        onClick={clearHeaderImage}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div
+                      {...getRootProps()}
+                      className={`mt-1 flex justify-center rounded-md border-2 border-dashed border-border px-6 py-8 cursor-pointer hover:bg-accent transition-colors ${
+                        isDragActive ? 'border-primary bg-accent' : ''
+                      }`}
+                    >
+                      <div className="space-y-1 text-center">
+                        <Image className="mx-auto h-12 w-12 text-muted-foreground" />
+                        <div className="text-sm text-muted-foreground">
+                          <input {...getInputProps()} />
+                          <p>Drag and drop an image here, or click to select</p>
+                          <p className="text-xs">PNG, JPG, WEBP, GIF up to 2MB</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {uploadProgress > 0 && uploadProgress < 100 && (
+                    <div className="w-full bg-muted rounded-full h-2.5 mt-2">
+                      <div 
+                        className="bg-primary h-2.5 rounded-full" 
+                        style={{width: `${uploadProgress}%`}}
+                      ></div>
+                    </div>
+                  )}
+                </div>
+                
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
@@ -492,15 +656,17 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
                     type="button" 
                     variant="outline" 
                     onClick={() => handleClose(false)}
-                    disabled={createTeamMutation.isPending}
+                    disabled={isSubmitting || createTeamMutation.isPending || isUploading}
                   >
                     Cancel
                   </Button>
                   <Button 
                     type="submit" 
-                    disabled={createTeamMutation.isPending || !teamName.trim()}
+                    disabled={isSubmitting || createTeamMutation.isPending || isUploading || !teamName.trim()}
                   >
-                    {createTeamMutation.isPending ? 'Creating...' : 'Create Team'}
+                    {isUploading ? 'Uploading Image...' : 
+                     createTeamMutation.isPending ? 'Creating Team...' : 
+                     isSubmitting ? 'Processing...' : 'Create Team'}
                   </Button>
                 </DialogFooter>
               </form>

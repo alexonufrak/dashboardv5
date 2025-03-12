@@ -74,9 +74,11 @@ export default withApiAuthRequired(async function handler(req, res) {
             metadata = JSON.parse(clientPayload);
             console.log('Upload metadata:', metadata);
             
-            // Validate payload has expected fields when uploading milestone submissions
+            // Validate payload has expected fields based on upload type
             if (metadata.teamId && metadata.milestoneId) {
               console.log(`Processing upload for team ${metadata.teamId}, milestone ${metadata.milestoneId}`);
+            } else if (metadata.type === 'team-header') {
+              console.log(`Processing team header image upload, timestamp: ${metadata.timestamp}`);
             } else {
               console.warn("Missing expected metadata fields in upload request");
             }
