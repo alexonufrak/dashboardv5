@@ -54,16 +54,75 @@ export function OnboardingProvider({ children }) {
       
       // If we have a profile with onboarding data
       if (profileData) {
+        // Check if the user has participation records directly
+        const hasParticipationRecords = profileData.Participation && 
+                                       Array.isArray(profileData.Participation) && 
+                                       profileData.Participation.length > 0;
+                                       
+        // Check if the user has applications records
+        const hasApplicationsRecords = profileData.applications && 
+                                     Array.isArray(profileData.applications) && 
+                                     profileData.applications.length > 0;
+                                     
+        // Log the participation status for debugging
+        console.log("Participation status check:", {
+          hasParticipationRecords,
+          participationCount: hasParticipationRecords ? profileData.Participation.length : 0,
+          hasApplicationsRecords,
+          applicationCount: hasApplicationsRecords ? profileData.applications.length : 0
+        });
+        
         // Get onboarding status directly from the profile
         const onboardingStatus = profileData.Onboarding || "Registered" // Default to "Registered" if not set
         console.log("Onboarding status from profile:", onboardingStatus)
         
-        // If status is "Applied", mark onboarding as completed
-        if (onboardingStatus === "Applied") {
-          console.log("Onboarding marked as completed (status: Applied)")
+        // User has completed onboarding if:
+        // 1. Onboarding status is "Applied" OR
+        // 2. They have participation records OR
+        // 3. They have applications
+        if (onboardingStatus === "Applied" || hasParticipationRecords || hasApplicationsRecords) {
+          console.log("Onboarding considered completed because:", {
+            statusIsApplied: onboardingStatus === "Applied",
+            hasParticipationRecords,
+            hasApplicationsRecords
+          })
+          
+          // Set state for completed onboarding
           setOnboardingCompleted(true)
           setForceDialogOpen(false) // Don't force dialog for completed users
           setDialogOpen(false) // Close dialog if it was open
+          
+          // Mark both steps as completed
+          setSteps(prevSteps => ({
+            ...prevSteps,
+            register: {
+              ...prevSteps.register,
+              completed: true
+            },
+            selectCohort: {
+              ...prevSteps.selectCohort,
+              completed: true
+            }
+          }))
+          
+          // If they have participation/applications but their status isn't "Applied",
+          // update it in the background for consistency
+          if (onboardingStatus !== "Applied" && (hasParticipationRecords || hasApplicationsRecords)) {
+            console.log("Updating onboarding status to 'Applied' for user with participation/applications")
+            // Update Airtable in the background (no await to prevent blocking)
+            fetch('/api/user/onboarding-completed', { method: 'POST' })
+              .then(response => {
+                if (response.ok) {
+                  console.log("Successfully updated Airtable onboarding status to 'Applied'")
+                } else {
+                  console.warn("Failed to update Airtable onboarding status")
+                }
+              })
+              .catch(error => {
+                console.error("Error updating Airtable onboarding status:", error)
+              })
+          }
+          
           setIsLoading(false)
           return
         }
@@ -82,13 +141,6 @@ export function OnboardingProvider({ children }) {
             completed: true
           }
         }))
-        
-        // Check if user has any participation records (this is already checked in airtable.js)
-        // If they have participation, the onboardingStatus would already be "Applied"
-        // So we don't need to do anything additional here
-        
-        // For the selectCohort step, we'll only mark it as completed if they have participation
-        // (Which means their onboardingStatus would be "Applied", which we already checked above)
       }
     } catch (error) {
       console.error("Error checking onboarding status:", error)

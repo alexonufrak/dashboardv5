@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { useOnboarding } from "@/contexts/OnboardingContext"
 import { toast } from "sonner"
@@ -54,10 +54,13 @@ function DashboardHomeInner({ onNavigate }) {
   // Get onboarding functions from onboarding context
   const { checkOnboardingStatus } = useOnboarding()
   
-  // Initialize onboarding on component mount - high priority useEffect
+  // Initialize onboarding on component mount - use a ref to prevent infinite loop
+  const onboardingInitializedRef = useRef(false);
+  
   useEffect(() => {
-    // Check onboarding status as soon as profile data is available
-    if (profile) {
+    // Only check onboarding status once when profile and applications data are available
+    // and prevent infinite loops by using the ref
+    if (profile && !onboardingInitializedRef.current) {
       console.log("Checking onboarding status on dashboard load with profile data", {
         "Onboarding status": profile.Onboarding || "Not set",
         "Has applications": applications?.length > 0,
@@ -68,9 +71,12 @@ function DashboardHomeInner({ onNavigate }) {
       checkOnboardingStatus({
         ...profile,
         applications: applications
-      })
+      });
+      
+      // Mark as initialized to prevent unnecessary rechecks
+      onboardingInitializedRef.current = true;
     }
-  }, [profile, applications, checkOnboardingStatus])
+  }, [profile, applications])
   
   // Handler functions
   const handleEditClick = () => {
