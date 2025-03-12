@@ -3,6 +3,7 @@ export { default as ProgramOverview } from './ProgramOverview';
 export { default as ProgramTeam } from './ProgramTeam';
 export { default as ProgramMilestones } from './ProgramMilestones';
 export { default as ProgramActivity } from './ProgramActivity';
+export { default as ProgramSettings } from './ProgramSettings';
 export { default as ProgramTabs } from './ProgramTabs';
 export { default as ProgramDashboard } from './ProgramDashboard';
 

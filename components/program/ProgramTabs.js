@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, Suspense } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PROGRAM_TYPES, getProgramType } from '@/lib/programComponents'
-import { ProgramOverview, ProgramTeam, ProgramMilestones, ProgramActivity } from './index'
+import { ProgramOverview, ProgramTeam, ProgramMilestones, ProgramActivity, ProgramSettings } from './index'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function ProgramTabs({
@@ -22,7 +22,8 @@ export default function ProgramTabs({
     overview: useRef(null),
     milestones: useRef(null),
     team: useRef(null),
-    activity: useRef(null)
+    activity: useRef(null),
+    settings: useRef(null)
   }
   
   // Determine program type
@@ -36,7 +37,8 @@ export default function ProgramTabs({
       milestones: programType === PROGRAM_TYPES.XTRAPRENEURS ? 'Bounties' : 'Milestones',
       team: 'Team Members',
       overview: 'Overview',
-      activity: 'Activity'
+      activity: 'Activity',
+      settings: 'Settings'
     }
   }
   
@@ -162,6 +164,7 @@ export default function ProgramTabs({
         </TabsTrigger>
         {isTeamProgram && <TabsTrigger value="team">{tabLabels.team}</TabsTrigger>}
         <TabsTrigger value="activity">{tabLabels.activity}</TabsTrigger>
+        <TabsTrigger value="settings">{tabLabels.settings}</TabsTrigger>
       </TabsList>
       
       <div style={containerStyle} className="relative">
@@ -247,6 +250,26 @@ export default function ProgramTabs({
             >
               <Suspense fallback={<div>Loading activity...</div>}>
                 <ProgramActivity team={team} />
+              </Suspense>
+            </motion.div>
+          )}
+          
+          {activeTab === "settings" && (
+            <motion.div
+              key="settings-tab"
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={tabContentVariants}
+              className="w-full"
+              ref={contentRefs.settings}
+            >
+              <Suspense fallback={<div>Loading settings...</div>}>
+                <ProgramSettings 
+                  programData={programData}
+                  team={team}
+                  isTeamProgram={isTeamProgram}
+                />
               </Suspense>
             </motion.div>
           )}
