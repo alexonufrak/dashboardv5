@@ -327,34 +327,37 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     
     // Step 4: After application is created, try to create a participation record
     // But skip for team join requests - we only create participation when the request is approved
-    let participationResult = null;
+    // Note: We already might have participationResult from the direct join path
     
-    // Check if this is a team join request - if so, don't create participation record yet
-    if (applicationType === 'joinTeam') {
-      console.log("Skipping participation record creation for team join request - will be created when approved");
-      participationResult = { 
-        success: true, 
-        created: false, 
-        message: "Team join request - participation record will be created when approved"
-      };
-    } else if (initiativeName.toLowerCase().includes("xperiment")) {
-      // Skip participation record creation for Xperiment which requires approval
-      console.log("Skipping participation record creation for Xperiment - requires approval");
-      participationResult = { 
-        success: true, 
-        created: false, 
-        message: "Xperiment program - participation record will be created upon approval" 
-      };
-    } else {
-      // For other application types, proceed with normal participation record creation
-      // Our createParticipationRecord function now handles the logic for which programs get
-      // immediate participation records
-      try {
-        participationResult = await createParticipationRecord(userProfile.contactId, cohortId);
-        console.log("Participation record creation result:", participationResult);
-      } catch (participationError) {
-        // Log but don't fail if participation creation fails
-        console.error("Error creating participation record:", participationError);
+    // Only process this section if we haven't already created a participation record
+    if (!participationResult) {
+      // Check if this is a team join request - if so, don't create participation record yet
+      if (applicationType === 'joinTeam') {
+        console.log("Skipping participation record creation for team join request - will be created when approved");
+        participationResult = { 
+          success: true, 
+          created: false, 
+          message: "Team join request - participation record will be created when approved"
+        };
+      } else if (initiativeName.toLowerCase().includes("xperiment")) {
+        // Skip participation record creation for Xperiment which requires approval
+        console.log("Skipping participation record creation for Xperiment - requires approval");
+        participationResult = { 
+          success: true, 
+          created: false, 
+          message: "Xperiment program - participation record will be created upon approval" 
+        };
+      } else {
+        // For other application types, proceed with normal participation record creation
+        // Our createParticipationRecord function now handles the logic for which programs get
+        // immediate participation records
+        try {
+          participationResult = await createParticipationRecord(userProfile.contactId, cohortId);
+          console.log("Participation record creation result:", participationResult);
+        } catch (participationError) {
+          // Log but don't fail if participation creation fails
+          console.error("Error creating participation record:", participationError);
+        }
       }
     }
     
