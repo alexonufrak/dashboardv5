@@ -205,6 +205,11 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
         return res.status(400).json({ error: 'Join team message is required' });
       }
       
+      // Override status to always be 'Submitted' for team join requests, regardless of enrollment type
+      // This ensures team join requests are always reviewed by admins
+      applicationData['Status'] = 'Submitted';
+      console.log("Overriding status to 'Submitted' for team join request");
+      
       // Log team join request details for debugging
       console.log("Processing team join request with:", {
         targetTeamId,
@@ -226,7 +231,7 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
       console.log('Creating team join request with data:', {
         teamId: targetTeamId,
         joinTeamMessage,
-        status: applicationStatus,
+        status: 'Submitted', // Always Submitted for team join requests
         contactId: userProfile.contactId,
         cohortId
       });
