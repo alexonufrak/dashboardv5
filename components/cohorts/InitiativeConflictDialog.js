@@ -44,6 +44,12 @@ const InitiativeConflictDialog = ({
   } else if (conflictType === "team_program_conflict") {
     title = "Team Program Conflict";
   }
+  
+  // Determine the context of what user is leaving
+  const isLeavingTeam = details.teamId && details.teamId !== 'unknown';
+  const isLeavingInitiative = details.conflictingInitiative || details.currentProgram;
+  const leavingContext = isLeavingTeam && isLeavingInitiative ? "team & initiative" : 
+                        isLeavingTeam ? "team" : "initiative";
 
   // Handle leave team confirmation
   const handleLeaveTeam = async () => {
@@ -101,15 +107,34 @@ const InitiativeConflictDialog = ({
         // Non-blocking error - we'll still proceed with page reload
       }
       
-      // Show success toast
+      // Show contextual success toast
       // Get team name for the success message
       const teamNameForMessage = details.teamName || 
                                 details.conflictingInitiative || 
                                 "your team";
       
+      const initiativeNameForMessage = details.conflictingInitiative || 
+                                      details.currentProgram || 
+                                      "the initiative";
+      
+      // Determine toast content based on what the user is leaving
+      let toastTitle = "";
+      let toastDescription = "";
+      
+      if (isLeavingTeam && isLeavingInitiative) {
+        toastTitle = "Team & Initiative Left Successfully";
+        toastDescription = `You have left ${teamNameForMessage} and ${initiativeNameForMessage}.`;
+      } else if (isLeavingTeam) {
+        toastTitle = "Team Left Successfully";
+        toastDescription = `You have left ${teamNameForMessage}.`;
+      } else {
+        toastTitle = "Initiative Left Successfully";
+        toastDescription = `You have left ${initiativeNameForMessage}.`;
+      }
+      
       toast({
-        title: "Team Left Successfully",
-        description: `You have left ${teamNameForMessage}.`,
+        title: toastTitle,
+        description: toastDescription,
         variant: "default",
       });
       
@@ -173,7 +198,11 @@ const InitiativeConflictDialog = ({
                   </p>
                   <div className="p-3 rounded-md bg-secondary/50 border border-border">
                     <p className="font-medium text-foreground">
-                      This means you will leave your current team and no longer have access to team resources.
+                      {isLeavingTeam && isLeavingInitiative ?
+                        "This means you will leave your current team and initiative, no longer having access to their resources." :
+                       isLeavingTeam ?
+                        "This means you will leave your current team and no longer have access to team resources." :
+                        "This means you will leave your current initiative and no longer have access to initiative resources."}
                     </p>
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -233,7 +262,11 @@ const InitiativeConflictDialog = ({
                   </p>
                   <div className="p-3 rounded-md bg-secondary/50 border border-border">
                     <p className="font-medium text-foreground">
-                      This means you will leave your current team and no longer have access to team resources.
+                      {isLeavingTeam && isLeavingInitiative ?
+                        "This means you will leave your current team and initiative, no longer having access to their resources." :
+                       isLeavingTeam ?
+                        "This means you will leave your current team and no longer have access to team resources." :
+                        "This means you will leave your current initiative and no longer have access to initiative resources."}
                     </p>
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -255,7 +288,8 @@ const InitiativeConflictDialog = ({
               onClick={() => setShowLeaveConfirmation(true)}
             >
               <LogOut className="h-4 w-4" />
-              Leave Team & Initiative
+              {isLeavingTeam && isLeavingInitiative ? "Leave Team & Initiative" :
+               isLeavingTeam ? "Leave Team" : "Leave Initiative"}
             </Button>
             
             {conflictType === "team_initiative_conflict" && (
@@ -276,16 +310,21 @@ const InitiativeConflictDialog = ({
         </DialogContent>
       </Dialog>
 
-      {/* Leave team confirmation dialog */}
+      {/* Leave confirmation dialog */}
       <Dialog open={showLeaveConfirmation} onOpenChange={() => setShowLeaveConfirmation(false)}>
         <DialogContent className="sm:max-w-md z-[200]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive dark:text-red-400">
               <LogOut className="h-5 w-5" />
-              Leave Team & Initiative Confirmation
+              {isLeavingTeam && isLeavingInitiative ? "Leave Team & Initiative Confirmation" :
+               isLeavingTeam ? "Leave Team Confirmation" : "Leave Initiative Confirmation"}
             </DialogTitle>
             <DialogDescription className="pt-2">
-              Are you sure you want to leave <strong>{teamName}</strong> and the <strong>{details.conflictingInitiative || details.currentProgram || "current"}</strong> initiative?
+              {isLeavingTeam && isLeavingInitiative ? 
+                `Are you sure you want to leave ${teamName} and the ${details.conflictingInitiative || details.currentProgram || "current"} initiative?` :
+               isLeavingTeam ? 
+                `Are you sure you want to leave ${teamName}?` :
+                `Are you sure you want to leave the ${details.conflictingInitiative || details.currentProgram || "current"} initiative?`}
             </DialogDescription>
           </DialogHeader>
 
@@ -294,16 +333,28 @@ const InitiativeConflictDialog = ({
               <AlertDescription className="py-2">
                 <p className="font-medium text-foreground">If you leave, you will lose access to:</p>
                 <ul className="list-disc pl-5 mt-2 space-y-1">
-                  <li>Team resources related to the initiative</li>
-                  <li>Team communication channels</li>
-                  <li>Team submissions and milestones</li>
-                  <li>Any other team-specific data</li>
+                  {isLeavingTeam && (
+                    <>
+                      <li>Team resources related to the initiative</li>
+                      <li>Team communication channels</li>
+                      <li>Team submissions and milestones</li>
+                    </>
+                  )}
+                  {isLeavingInitiative && (
+                    <>
+                      <li>Initiative-specific resources and benefits</li>
+                      <li>Initiative progress and achievements</li>
+                    </>
+                  )}
+                  <li>Any other {isLeavingTeam ? "team" : "initiative"}-specific data</li>
                 </ul>
               </AlertDescription>
             </Alert>
             
             <p className="text-sm text-muted-foreground">
-              This action cannot be undone. You will need to be invited back to the team if you want to rejoin.
+              {isLeavingTeam ? 
+               "This action cannot be undone. You will need to be invited back to the team if you want to rejoin." :
+               "This action cannot be undone. You will need to apply again if you want to rejoin this initiative."}
             </p>
           </div>
 
@@ -312,7 +363,8 @@ const InitiativeConflictDialog = ({
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleLeaveTeam}>
-              Yes, Leave Team & Initiative
+              {isLeavingTeam && isLeavingInitiative ? "Yes, Leave Team & Initiative" :
+               isLeavingTeam ? "Yes, Leave Team" : "Yes, Leave Initiative"}
             </Button>
           </DialogFooter>
         </DialogContent>
