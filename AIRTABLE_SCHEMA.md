@@ -7,7 +7,7 @@ Table Summary
 Table Name	Fields	Primary Field
 Contacts	91	-
 Education	21	-
-Applications	54	-
+Applications ⭐	55	-
 Applicants	10	-
 Participation	11	-
 Initiatives	9	-
@@ -43,9 +43,69 @@ Rewards Claimed	7	-
 Rubric Submissions	30	-
 Notes	5	-
 Activity	4	-
-Detailed Table Schemas
-Showing 15 of 38 tables
+Applications Table (Complete Schema)
+Fields: 55
 
+Field Name	Type	Required	Description
+Additional Documents	multipleAttachments		
+Applicants	multipleRecordLinks		Links to: Applicants (Multiple)
+Application ID	formula		
+Are you aware that this program will require you to actively compete in and meet milestones of the 2025-2026 Mental Health Competition?	multilineText		
+Are you aware that this program will require you to be physically present during class hours for the Spring 2025, Fall 2025, and Spring 2026 semesters?	multilineText		
+circleMemberID (from Contact)	multipleLookupValues		
+Cohort	multipleRecordLinks		Links to: Cohorts (Single)
+cohortShortName	multipleLookupValues		
+Contact	multipleRecordLinks		Links to: Contacts (Multiple)
+Contact (from Applicants)	multipleLookupValues		
+Created	createdTime		
+Created By	createdBy		
+Degree Type (from Education) (from Contact)	multipleLookupValues		
+Describe your desired career path and explain why you chose your current degree program. Include specific goals and motivations.	multilineText		
+Email	email		
+Email (from Contact)	multipleLookupValues		
+First Name	singleLineText		
+GPA	number		
+Graduation Semester	singleSelect		Options: Fall, Spring, Summer, Winter
+Graduation Year	number		
+Graduation Year (from Education) (from Contact)	multipleLookupValues		
+Hubspot Cohort	singleLineText		
+Hubspot ID	singleLineText		
+hubspotCohortSyncCheck	formula		
+ID	autoNumber		
+Identify and elaborate on three specific skills and experiences you possess that will contribute to creating an innovative and effective solution in the Xperience program.	multilineText		
+Initiative (from Cohort)	multipleLookupValues		
+Institution	multipleRecordLinks		Links to: Institutions (Single)
+Last Modified	lastModifiedTime		
+Last Name	singleLineText		
+Major	multipleRecordLinks		Links to: Programs (Single)
+Matched Team	multipleRecordLinks		Links to: Teams (Single)
+Memberstack ID (from Contact)	multipleLookupValues		
+Name (from Cohort)	multipleLookupValues		
+Outline your strategy for managing approximately 20 hours per week for the Xperience competition over the next 15 months while maintaining your other commitments.	multilineText		
+Phone	phoneNumber		
+Provide a specific example of a technical challenge you faced, describe your approach to solving it, and explain the result.	multilineText		
+Record ID (from Contact)	multipleLookupValues		
+Resume	multipleAttachments		
+Source	singleSelect		Options: Campus calendar, Newsletter, Social media (e.g., LinkedIn, Facebook, Instagram, X/Twitter), Search engine (e.g., Google, Bing), Word of mouth (e.g. From a friend), Direct email (e.g. from Jasmine Kelly), Event or conference, xFoundry email
+Status	singleSelect		Options: Submitted, In Review, Interview Requested, Interview Scheduled, Interview Completed, Accepted, Enrolled, Withdrawn, Denied After Interview, Denied
+Submission Confirmation Sent	checkbox		
+UID	number		
+Unofficial Transcript	multipleAttachments		
+What are you looking to gain as a result of participating in Xperience?	multilineText		
+What's something outside of your work/degree that you are passionate about?	multilineText		
+Xperience/Description	multilineText		
+Xperience/Header Image	multipleAttachments		
+Xperience/Join Team Message	multilineText		
+Xperience/Looking for Additional Members	checkbox		
+Xperience/Team Name	singleLineText		
+Xperience/Team to Join	multipleRecordLinks		Links to: Teams (Single)
+Xperience/Terms and Conditions	checkbox		
+Xtrapreneurs/Commitment	singleSelect		Options: Weekly, Monthly, Occasionally
+Xtrapreneurs/Reason	multilineText		
+Example:
+
+let applicationsRecords = await base.getTable("Applications").selectRecordsAsync();
+Other Table Schemas
 Contacts
 Fields: 91 (showing 25 of 91)
 
@@ -106,38 +166,6 @@ Second Major	multipleRecordLinks		Links to: Programs (Single)
 Example:
 
 let educationRecords = await base.getTable("Education").selectRecordsAsync();
-Applications
-Fields: 54 (showing 25 of 54)
-
-Field Name	Type	Required	Description
-Additional Documents	multipleAttachments		
-Applicants	multipleRecordLinks		Links to: Applicants (Multiple)
-Application ID	formula		
-Are you aware that this program will require you to actively compete in and meet milestones of the 2025-2026 Mental Health Competition?	multilineText		
-Are you aware that this program will require you to be physically present during class hours for the Spring 2025, Fall 2025, and Spring 2026 semesters?	multilineText		
-circleMemberID (from Contact)	multipleLookupValues		
-Cohort	multipleRecordLinks		Links to: Cohorts (Single)
-cohortShortName	multipleLookupValues		
-Contact	multipleRecordLinks		Links to: Contacts (Multiple)
-Contact (from Applicants)	multipleLookupValues		
-Created	createdTime		
-Created By	createdBy		
-Degree Type (from Education) (from Contact)	multipleLookupValues		
-Describe your desired career path and explain why you chose your current degree program. Include specific goals and motivations.	multilineText		
-Email	email		
-Email (from Contact)	multipleLookupValues		
-First Name	singleLineText		
-GPA	number		
-Graduation Semester	singleSelect		Options: Fall, Spring, Summer, ...
-Graduation Year	number		
-Graduation Year (from Education) (from Contact)	multipleLookupValues		
-Hubspot Cohort	singleLineText		
-Hubspot ID	singleLineText		
-hubspotCohortSyncCheck	formula		
-ID	autoNumber		
-Example:
-
-let applicationsRecords = await base.getTable("Applications").selectRecordsAsync();
 Cohorts
 Fields: 22
 
@@ -768,7 +796,7 @@ Machine-Readable Schema
   {
    "id": "tblEBxKJdK8tgsS6P",
    "name": "Applications",
-   "fieldCount": 54,
+   "fieldCount": 55,
    "fields": [
     {
      "name": "Additional Documents",
@@ -784,7 +812,10 @@ Machine-Readable Schema
     },
     {
      "name": "Application ID",
-     "type": "formula"
+     "type": "formula",
+     "options": {
+      "formula": "\"APP\"&{fldUnrRhIZ64zssgo}"
+     }
     },
     {
      "name": "Are you aware that this program will require you to actively compete in and meet milestones of the 2025-2026 Mental Health Competition?",
@@ -866,7 +897,7 @@ Machine-Readable Schema
        "Fall",
        "Spring",
        "Summer",
-       "..."
+       "Winter"
       ]
      }
     },
@@ -891,11 +922,189 @@ Machine-Readable Schema
     },
     {
      "name": "hubspotCohortSyncCheck",
-     "type": "formula"
+     "type": "formula",
+     "options": {
+      "formula": "IF(\n  {fldVRNAp3yBjB3JRl} != {fldevhkgOAfn7bvDy},\n  FALSE(),\n  TRUE()\n)"
+     }
     },
     {
      "name": "ID",
      "type": "autoNumber"
+    },
+    {
+     "name": "Identify and elaborate on three specific skills and experiences you possess that will contribute to creating an innovative and effective solution in the Xperience program.",
+     "type": "multilineText"
+    },
+    {
+     "name": "Initiative (from Cohort)",
+     "type": "multipleLookupValues"
+    },
+    {
+     "name": "Institution",
+     "type": "multipleRecordLinks",
+     "options": {
+      "linkedTableName": "Institutions",
+      "recordSelectivity": "Single"
+     }
+    },
+    {
+     "name": "Last Modified",
+     "type": "lastModifiedTime"
+    },
+    {
+     "name": "Last Name",
+     "type": "singleLineText"
+    },
+    {
+     "name": "Major",
+     "type": "multipleRecordLinks",
+     "options": {
+      "linkedTableName": "Programs",
+      "recordSelectivity": "Single"
+     }
+    },
+    {
+     "name": "Matched Team",
+     "type": "multipleRecordLinks",
+     "options": {
+      "linkedTableName": "Teams",
+      "recordSelectivity": "Single"
+     }
+    },
+    {
+     "name": "Memberstack ID (from Contact)",
+     "type": "multipleLookupValues"
+    },
+    {
+     "name": "Name (from Cohort)",
+     "type": "multipleLookupValues"
+    },
+    {
+     "name": "Outline your strategy for managing approximately 20 hours per week for the Xperience competition over the next 15 months while maintaining your other commitments.",
+     "type": "multilineText"
+    },
+    {
+     "name": "Phone",
+     "type": "phoneNumber"
+    },
+    {
+     "name": "Provide a specific example of a technical challenge you faced, describe your approach to solving it, and explain the result.",
+     "type": "multilineText"
+    },
+    {
+     "name": "Record ID (from Contact)",
+     "type": "multipleLookupValues"
+    },
+    {
+     "name": "Resume",
+     "type": "multipleAttachments"
+    },
+    {
+     "name": "Source",
+     "type": "singleSelect",
+     "options": {
+      "choiceCount": 8,
+      "choices": [
+       "Campus calendar",
+       "Newsletter",
+       "Social media (e.g., LinkedIn, Facebook, Instagram, X/Twitter)",
+       "Search engine (e.g., Google, Bing)",
+       "Word of mouth (e.g. From a friend)",
+       "Direct email (e.g. from Jasmine Kelly)",
+       "Event or conference",
+       "xFoundry email"
+      ]
+     }
+    },
+    {
+     "name": "Status",
+     "type": "singleSelect",
+     "options": {
+      "choiceCount": 10,
+      "choices": [
+       "Submitted",
+       "In Review",
+       "Interview Requested",
+       "Interview Scheduled",
+       "Interview Completed",
+       "Accepted",
+       "Enrolled",
+       "Withdrawn",
+       "Denied After Interview",
+       "Denied"
+      ]
+     }
+    },
+    {
+     "name": "Submission Confirmation Sent",
+     "type": "checkbox"
+    },
+    {
+     "name": "UID",
+     "type": "number",
+     "options": {
+      "precision": 0
+     }
+    },
+    {
+     "name": "Unofficial Transcript",
+     "type": "multipleAttachments"
+    },
+    {
+     "name": "What are you looking to gain as a result of participating in Xperience?",
+     "type": "multilineText"
+    },
+    {
+     "name": "What's something outside of your work/degree that you are passionate about?",
+     "type": "multilineText"
+    },
+    {
+     "name": "Xperience/Description",
+     "type": "multilineText"
+    },
+    {
+     "name": "Xperience/Header Image",
+     "type": "multipleAttachments"
+    },
+    {
+     "name": "Xperience/Join Team Message",
+     "type": "multilineText"
+    },
+    {
+     "name": "Xperience/Looking for Additional Members",
+     "type": "checkbox"
+    },
+    {
+     "name": "Xperience/Team Name",
+     "type": "singleLineText"
+    },
+    {
+     "name": "Xperience/Team to Join",
+     "type": "multipleRecordLinks",
+     "options": {
+      "linkedTableName": "Teams",
+      "recordSelectivity": "Single"
+     }
+    },
+    {
+     "name": "Xperience/Terms and Conditions",
+     "type": "checkbox"
+    },
+    {
+     "name": "Xtrapreneurs/Commitment",
+     "type": "singleSelect",
+     "options": {
+      "choiceCount": 3,
+      "choices": [
+       "Weekly",
+       "Monthly",
+       "Occasionally"
+      ]
+     }
+    },
+    {
+     "name": "Xtrapreneurs/Reason",
+     "type": "multilineText"
     }
    ]
   },
@@ -2681,9 +2890,10 @@ Machine-Readable Schema
  ]
 }
 Notes for AI Code Generation
-This schema documentation was optimized for size. Only the most important tables and fields are shown in detail. When writing code that interacts with this Airtable base:
+This schema documentation prioritizes the Applications table with complete field information. Other tables may have abbreviated schemas to save space. When writing code that interacts with this Airtable base:
 
 Use the table and field names exactly as shown (case-sensitive)
 For record links, check the "recordSelectivity" to determine if it accepts single or multiple records
 Verify field types before operations (e.g., don't perform math on text fields)
 Primary fields (🔑) are generally used as identifiers
+Complete field information is provided for the Applications table

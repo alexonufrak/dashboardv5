@@ -28,7 +28,10 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
       applicationType,
       // Additional fields for Xtrapreneurs applications
       reason,
-      commitment
+      commitment,
+      // Fields for team join requests (Xperience and Horizons Challenge)
+      teamToJoin,
+      joinTeamMessage
     } = req.body
     
     if (!cohortId) {
@@ -172,6 +175,29 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
         reason,
         commitment,
         status: 'Accepted',
+        contactId: userProfile.contactId,
+        cohortId
+      });
+    }
+    
+    // Add join team request data if applicable
+    if (applicationType === 'joinTeam') {
+      if (!teamToJoin) {
+        return res.status(400).json({ error: 'Team to join is required for join team requests' });
+      }
+      
+      if (!joinTeamMessage) {
+        return res.status(400).json({ error: 'Join team message is required' });
+      }
+      
+      // Add team join specific fields
+      applicationData['Xperience/Team to Join'] = [teamToJoin];
+      applicationData['Xperience/Join Team Message'] = joinTeamMessage;
+      
+      console.log('Creating team join request with data:', {
+        teamToJoin,
+        joinTeamMessage,
+        status: applicationStatus,
         contactId: userProfile.contactId,
         cohortId
       });

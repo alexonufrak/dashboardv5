@@ -17,6 +17,7 @@ import TeamSelectDialog from '@/components/teams/TeamSelectDialog'
 import TeamCreateDialog from '@/components/teams/TeamCreateDialog'
 import InitiativeConflictDialog from './InitiativeConflictDialog'
 import XtrapreneursApplicationForm from '@/components/program/xtrapreneurs/XtrapreneursApplicationForm'
+import TeamJoinHandler from '@/components/program/TeamJoinHandler'
 
 /**
  * A shared cohort card component to display cohort/initiative information
@@ -32,6 +33,7 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   const [activeTeamSelectDialog, setActiveTeamSelectDialog] = useState(null)
   const [activeTeamCreateDialog, setActiveTeamCreateDialog] = useState(false)
   const [showXtrapreneursForm, setShowXtrapreneursForm] = useState(false)
+  const [showTeamJoinHandler, setShowTeamJoinHandler] = useState(false)
   const [userTeams, setUserTeams] = useState([])
   const [isLoadingTeams, setIsLoadingTeams] = useState(false)
   const [selectedCohort, setSelectedCohort] = useState(null)
@@ -221,14 +223,21 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
         return;
       }
       
-      // Check if this is Xtrapreneurs initiative
-      const isXtrapreneurs = cohort.initiativeDetails?.name?.toLowerCase().includes("xtrapreneurs");
+      // Check initiative type for special handling
+      const initiativeName = cohort.initiativeDetails?.name?.toLowerCase() || "";
       
       // Handle Xtrapreneurs application differently
-      if (isXtrapreneurs) {
+      if (initiativeName.includes("xtrapreneurs")) {
         console.log("Xtrapreneurs application detected - using custom form");
         // Show custom Xtrapreneurs application form
         setShowXtrapreneursForm(true);
+        return; // Exit early
+      }
+      
+      // Handle Xperience and Horizons Challenge with specialized team join flow
+      if (initiativeName.includes("xperience") || initiativeName.includes("horizons challenge")) {
+        console.log("Xperience/Horizons Challenge application detected - using specialized team join flow");
+        setShowTeamJoinHandler(true);
         return; // Exit early
       }
       
@@ -502,6 +511,15 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
         onSubmit={handleXtrapreneursFormSubmit}
         cohort={cohort}
         profile={profile}
+      />
+      
+      {/* Team Join Handler for Xperience/Horizons Challenge */}
+      <TeamJoinHandler
+        cohort={cohort}
+        profile={profile}
+        isActive={showTeamJoinHandler}
+        onComplete={onApplySuccess}
+        onCancel={() => setShowTeamJoinHandler(false)}
       />
     </>
   )
