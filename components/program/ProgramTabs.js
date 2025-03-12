@@ -4,6 +4,7 @@ import React, { useState, Suspense } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PROGRAM_TYPES, getProgramType } from '@/lib/programComponents'
 import { ProgramOverview, ProgramTeam, ProgramMilestones, ProgramActivity } from './index'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function ProgramTabs({
   programData,
@@ -48,6 +49,13 @@ export default function ProgramTabs({
     setActiveTab("team")
   }
   
+  // Animation variants for smooth tab transitions
+  const tabContentVariants = {
+    hidden: { opacity: 0, y: 8 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.15, ease: "easeOut" } },
+    exit: { opacity: 0, y: -8, transition: { duration: 0.1, ease: "easeIn" } }
+  }
+
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
       <TabsList className="w-full md:w-auto">
@@ -59,52 +67,90 @@ export default function ProgramTabs({
         <TabsTrigger value="activity">{tabLabels.activity}</TabsTrigger>
       </TabsList>
       
-      <TabsContent value="overview">
-        <Suspense fallback={<div>Loading overview...</div>}>
-          <ProgramOverview
-            programData={programData}
-            milestones={milestones}
-            submissions={submissions}
-            bounties={bounties}
-            team={team}
-            onViewMilestones={handleViewMilestones}
-            onViewMembers={handleViewMembers}
-          />
-        </Suspense>
-      </TabsContent>
-      
-      <TabsContent value={programType === PROGRAM_TYPES.XTRAPRENEURS ? "bounties" : "milestones"}>
-        <Suspense fallback={<div>Loading milestones...</div>}>
-          <ProgramMilestones
-            programData={programData}
-            milestones={milestones}
-            submissions={submissions}
-            bounties={bounties}
-            team={team}
-            programId={programId}
-          />
-        </Suspense>
-      </TabsContent>
-      
-      {isTeamProgram && (
-        <TabsContent value="team">
-          <Suspense fallback={<div>Loading team...</div>}>
-            <ProgramTeam
-              programData={programData}
-              team={team}
-              bounties={bounties}
-              milestones={milestones}
-              onInviteMember={() => console.log('Invite member')} // Replace with actual handler
-            />
-          </Suspense>
-        </TabsContent>
-      )}
-      
-      <TabsContent value="activity">
-        <Suspense fallback={<div>Loading activity...</div>}>
-          <ProgramActivity team={team} />
-        </Suspense>
-      </TabsContent>
+      <div className="relative">
+        <AnimatePresence mode="wait">
+          {activeTab === "overview" && (
+            <motion.div
+              key="overview-tab"
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={tabContentVariants}
+              className="w-full"
+            >
+              <Suspense fallback={<div>Loading overview...</div>}>
+                <ProgramOverview
+                  programData={programData}
+                  milestones={milestones}
+                  submissions={submissions}
+                  bounties={bounties}
+                  team={team}
+                  onViewMilestones={handleViewMilestones}
+                  onViewMembers={handleViewMembers}
+                />
+              </Suspense>
+            </motion.div>
+          )}
+          
+          {activeTab === (programType === PROGRAM_TYPES.XTRAPRENEURS ? "bounties" : "milestones") && (
+            <motion.div
+              key="milestones-tab"
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={tabContentVariants}
+              className="w-full"
+            >
+              <Suspense fallback={<div>Loading milestones...</div>}>
+                <ProgramMilestones
+                  programData={programData}
+                  milestones={milestones}
+                  submissions={submissions}
+                  bounties={bounties}
+                  team={team}
+                  programId={programId}
+                />
+              </Suspense>
+            </motion.div>
+          )}
+          
+          {isTeamProgram && activeTab === "team" && (
+            <motion.div
+              key="team-tab"
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={tabContentVariants}
+              className="w-full"
+            >
+              <Suspense fallback={<div>Loading team...</div>}>
+                <ProgramTeam
+                  programData={programData}
+                  team={team}
+                  bounties={bounties}
+                  milestones={milestones}
+                  onInviteMember={() => console.log('Invite member')} // Replace with actual handler
+                />
+              </Suspense>
+            </motion.div>
+          )}
+          
+          {activeTab === "activity" && (
+            <motion.div
+              key="activity-tab"
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              variants={tabContentVariants}
+              className="w-full"
+            >
+              <Suspense fallback={<div>Loading activity...</div>}>
+                <ProgramActivity team={team} />
+              </Suspense>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </Tabs>
   )
 }
