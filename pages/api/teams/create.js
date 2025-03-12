@@ -73,7 +73,13 @@ export default withApiAuthRequired(async function createTeamHandler(req, res) {
     // Add image URL if provided
     if (image) {
       console.log(`Adding team header image: ${image}`)
-      teamData['Image'] = image
+      // Format image as an Airtable attachment object with url and filename
+      teamData['Image'] = [
+        {
+          url: image,
+          filename: `team_header_${Date.now()}`
+        }
+      ]
     }
     
     // Add cohort ID to team if provided
