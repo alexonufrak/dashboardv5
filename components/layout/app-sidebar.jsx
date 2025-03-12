@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useRouter } from "next/router"
 import Link from "next/link"
-import { Home, ExternalLink, LogOut, Command, Compass } from "lucide-react"
+import { Home, ExternalLink, LogOut, Command, Compass, Blocks } from "lucide-react"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { ROUTES } from '@/lib/routing'
@@ -58,8 +58,9 @@ export function AppSidebar({
     );
   };
 
-  // Create base navigation for main section (Dashboard only)
+  // Create base navigation for main section (Dashboard and Programs)
   const isDashboardActive = router.pathname === ROUTES.DASHBOARD && !router.query.programId;
+  const isProgramsActive = router.pathname === ROUTES.PROGRAMS;
 
   const navMainItems = [
     {
@@ -67,6 +68,12 @@ export function AppSidebar({
       url: ROUTES.DASHBOARD,
       icon: Home,
       isActive: isDashboardActive
+    },
+    {
+      title: "Programs",
+      url: ROUTES.PROGRAMS,
+      icon: Blocks,
+      isActive: isProgramsActive
     }
   ];
 

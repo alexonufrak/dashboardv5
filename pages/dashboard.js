@@ -12,7 +12,8 @@ import {
   isProgramRoute, 
   navigateToProgram, 
   navigateToDashboard,
-  navigateToProfile
+  navigateToProfile,
+  navigateToPrograms
 } from '@/lib/routing'
 
 // Dynamically import dashboard pages
@@ -25,6 +26,10 @@ const ProgramDashboard = dynamic(() => import("@/components/program/ProgramDashb
 })
 
 const ProfilePage = dynamic(() => import("@/pages/dashboards/ProfilePage"), {
+  loading: () => <PageSkeleton />
+})
+
+const ProgramsPage = dynamic(() => import("@/pages/dashboard/programs"), {
   loading: () => <PageSkeleton />
 })
 
@@ -86,7 +91,12 @@ function Dashboard() {
     else if (path === "/profile") {
       setActivePage("profile");
       setTitle("Your Profile");
-    } 
+    }
+    // Handle programs page
+    else if (path === "/dashboard/programs") {
+      setActivePage("programs");
+      setTitle("Programs");
+    }
     // Handle main dashboard
     else if (path === "/dashboard-new" || path === "/dashboard") {
       setActivePage("dashboard");
@@ -133,6 +143,10 @@ function Dashboard() {
           setTitle("Your Profile");
           navigateToProfile(router, { shallow: true });
           break;
+        case "programs":
+          setTitle("Programs");
+          navigateToPrograms(router, { shallow: true });
+          break;
         default:
           setTitle("xFoundry Hub");
           navigateToDashboard(router, { shallow: true });
@@ -159,6 +173,8 @@ function Dashboard() {
         return <DashboardHome onNavigate={handleNavigation} />
       case "profile":
         return <ProfilePage onNavigate={handleNavigation} />
+      case "programs":
+        return <ProgramsPage onNavigate={handleNavigation} />
       default:
         return <DashboardHome onNavigate={handleNavigation} />
     }
