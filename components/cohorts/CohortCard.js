@@ -42,6 +42,11 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
   const topics = cohort.topicNames || []
   // Access status field consistently - cohort.Status is the correct property
   const status = cohort.Status || "Unknown"
+  // Extract participation type first to use it in button text logic
+  const participationType = cohort.participationType || 
+                          cohort.initiativeDetails?.["Participation Type"] || 
+                          "Individual";
+                          
   // Set action button text based on initiative type
   const isXperimentOrTeamJoin = 
     (initiativeName.toLowerCase().includes("xperiment")) || 
@@ -77,10 +82,8 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
     (isOpen ? "bg-green-50 text-green-800" : "bg-blue-50 text-blue-800") : 
     (isOpen ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800")
   
-  // Extract participation type
-  const participationType = cohort.participationType || 
-                           cohort.initiativeDetails?.["Participation Type"] || 
-                           "Individual"
+  // We've already extracted participation type above
+  // This comment is kept as a reference for code readability
   
   // Handle team creation
   const handleTeamCreated = (team) => {
