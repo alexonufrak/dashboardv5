@@ -38,23 +38,19 @@ function Onboarding() {
   const [applications, setApplications] = useState([])
   const [isLoadingApplications, setIsLoadingApplications] = useState(false)
   
-  // Fetch user profile data - only once on mount
+  // Fetch minimal profile data - only once on mount
   useEffect(() => {
     // Add a flag to prevent duplicate calls and race conditions
     let isMounted = true;
-    let profileFetched = false;
     
-    const fetchProfileData = async () => {
-      // Prevent duplicate fetches
-      if (!isMounted || profileFetched) return;
-      
-      // Set the flag to prevent re-entry
-      profileFetched = true;
+    const fetchMinimalData = async () => {
+      // Set loading state
       setIsLoading(true);
       
       try {
-        // Fetch user profile
-        const profileResponse = await fetch('/api/user/profile');
+        // Step 1: Only fetch the essential profile data first
+        console.log("Fetching minimal profile data...");
+        const profileResponse = await fetch('/api/user/profile?minimal=true');
         
         if (!profileResponse.ok) {
           throw new Error('Failed to fetch profile data');
@@ -62,35 +58,48 @@ function Onboarding() {
         
         const profileData = await profileResponse.json();
         if (!isMounted) return;
+        
+        // Set the profile data
         setProfile(profileData);
         
-        // Explicitly check only once, then immediately do the redirect check
-        // Use a stable reference to the function to prevent rerendering
-        if (isMounted) {
-          // Pass profile data to onboarding context but don't include
-          // in dependency array to prevent loop
-          await checkOnboardingStatus(profileData);
+        // Step 2: Check if onboarding is already complete
+        const onboardingStatus = profileData.Onboarding || "Registered";
+        const hasParticipation = profileData.hasActiveParticipation === true;
+        const hasApps = profileData.applications && profileData.applications.length > 0;
+        
+        console.log("Quick onboarding check:", { 
+          onboardingStatus, 
+          hasParticipation, 
+          hasApps 
+        });
+                
+        // If already onboarded, redirect to dashboard
+        if (onboardingStatus === "Applied" || hasParticipation || hasApps) {
+          console.log("Onboarding already complete, redirecting to dashboard");
+          router.push('/dashboard');
+          return;
+        }
+        
+        // Step 3: Update the onboarding context ONCE
+        await checkOnboardingStatus(profileData);
+        
+        // Step 4: For new users, DON'T fetch applications - they won't have any yet
+        // Only fetch applications if we think they might have some
+        if (profileData.hasOwnProperty('applications') && 
+            profileData.applications && 
+            profileData.applications.length > 0) {
           
-          // If onboarding is completed, redirect to dashboard
-          if (profileData.Onboarding === "Applied" || 
-              profileData.hasActiveParticipation || 
-              (profileData.applications && profileData.applications.length > 0)) {
-            router.push('/dashboard');
-            return;
-          }
-          
-          // Fetch applications with timeout to prevent Vercel 504s
+          console.log("User may have applications, fetching them...");
           setIsLoadingApplications(true);
           
           try {
-            // Create an AbortController to enable timeout
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 3000); // shorter timeout
             
             const applicationsResponse = await fetch('/api/user/check-application', {
               signal: controller.signal
             }).catch(error => {
-              console.log('Applications fetch timed out or failed:', error.message);
+              console.log('Applications fetch aborted or failed:', error.message);
               return { ok: false };
             });
             
@@ -100,34 +109,38 @@ function Onboarding() {
               const applicationsData = await applicationsResponse.json();
               setApplications(applicationsData.applications || []);
             } else {
-              // If we can't get applications, just proceed with an empty array
+              // If we can't get applications, just use an empty array
               console.log('Using empty applications array due to fetch failure');
               setApplications([]);
             }
           } catch (appError) {
-            console.error('Error fetching applications:', appError);
-            // Continue without applications data
+            console.warn('Error fetching applications:', appError.message);
             setApplications([]);
+          } finally {
+            if (isMounted) setIsLoadingApplications(false);
           }
+        } else {
+          // User definitely has no applications, skip the fetch
+          console.log("New user, skipping applications fetch");
+          setApplications([]);
         }
       } catch (error) {
-        console.error('Error fetching profile data:', error);
+        console.error('Error in onboarding data fetch:', error);
       } finally {
         if (isMounted) {
           setIsLoading(false);
-          setIsLoadingApplications(false);
         }
       }
     };
     
-    // Immediately fetch on mount, but only once
-    fetchProfileData();
+    // Fetch data immediately but only once
+    fetchMinimalData();
     
-    // Cleanup function to prevent state updates after unmount
+    // Cleanup function
     return () => {
       isMounted = false;
     };
-  }, [router]) // Intentionally omitting checkOnboardingStatus to prevent loops
+  }, [router]) // Intentionally omitting checkOnboardingStatus from deps
   
   // Redirect if onboarding is completed
   useEffect(() => {

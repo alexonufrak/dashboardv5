@@ -13,15 +13,32 @@ async function handler(req, res) {
     }
   
     if (req.method === "GET") {
+      // Check if minimal mode is requested (for onboarding flow)
+      const minimal = req.query.minimal === 'true';
+      
+      // Set shorter timeout for minimal mode
+      const timeoutDuration = minimal ? 3000 : 9000;
+      
       // Add timeout control to prevent hanging requests
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Profile fetch timed out")), 9000)
+        setTimeout(() => reject(new Error("Profile fetch timed out")), timeoutDuration)
       );
       
       try {
+        // For minimal mode, use a special function or add a parameter
+        let profilePromise;
+        
+        if (minimal) {
+          console.log("Fetching minimal profile for onboarding");
+          // Only fetch essential fields for onboarding check
+          profilePromise = getCompleteUserProfile(session.user, { minimal: true });
+        } else {
+          profilePromise = getCompleteUserProfile(session.user);
+        }
+        
         // Race the profile fetch against a timeout
         const profile = await Promise.race([
-          getCompleteUserProfile(session.user),
+          profilePromise,
           timeoutPromise
         ]);
         
