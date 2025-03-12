@@ -484,7 +484,8 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
                   <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
-                      No teams are currently looking for members. You can create your own team instead.
+                      No teams are currently looking for members. 
+                      You can create your own team by clicking the "Create a New Team" button below.
                     </AlertDescription>
                   </Alert>
                 </div>
@@ -541,12 +542,13 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
                 >
                   Cancel
                 </Button>
-                <Button 
-                  onClick={() => setActiveTab("create")}
-                  disabled={isLoadingTeams}
-                >
-                  Create a New Team
-                </Button>
+                {joinableTeams.length === 0 && !isLoadingTeams && (
+                  <Button 
+                    onClick={() => setActiveTab("create")}
+                  >
+                    Create a New Team
+                  </Button>
+                )}
               </DialogFooter>
             </TabsContent>
           </Tabs>
