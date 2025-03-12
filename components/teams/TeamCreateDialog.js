@@ -13,14 +13,14 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { AlertCircle, Users, UserPlus, Plus, Upload, Image, X } from 'lucide-react'
+import { Dropzone } from '@/components/ui/dropzone'
+import { AlertCircle, Users, UserPlus, Plus } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useCreateTeam } from '@/lib/useDataFetching'
-import { useDropzone } from 'react-dropzone'
 import { upload } from '@vercel/blob/client'
 import { toast } from 'sonner'
 
@@ -51,47 +51,10 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
   
   // Team header image upload states
   const [headerImage, setHeaderImage] = useState(null)
-  const [headerImageUrl, setHeaderImageUrl] = useState(null)
-  const [uploadProgress, setUploadProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
   
   // Use our createTeam mutation hook
   const createTeamMutation = useCreateTeam()
-  
-  // Handle file drop for header image
-  const onDrop = useCallback(acceptedFiles => {
-    // Only use the first file if multiple files are dropped
-    const file = acceptedFiles[0]
-    
-    if (!file) return
-    
-    // Validate file type (only images)
-    if (!file.type.startsWith('image/')) {
-      toast.error('Only image files are allowed for team headers')
-      return
-    }
-    
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image is too large. Maximum size is 2MB')
-      return
-    }
-    
-    // Create and store preview URL
-    const previewUrl = URL.createObjectURL(file)
-    setHeaderImageUrl(previewUrl)
-    setHeaderImage(file)
-  }, [])
-  
-  // Configure react-dropzone
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.webp', '.gif']
-    },
-    maxFiles: 1,
-    multiple: false
-  })
   
   // Handle header image upload to Vercel Blob
   const uploadHeaderImage = async () => {
@@ -120,7 +83,6 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
         handleUploadUrl: '/api/upload',
         clientPayload,
         onUploadProgress: ({ percentage }) => {
-          setUploadProgress(percentage)
           toast.loading(`Uploading team header image... ${Math.round(percentage)}%`, { id: toastId })
         }
       })
@@ -136,16 +98,6 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
       setIsUploading(false)
       return null
     }
-  }
-  
-  // Clear the selected image
-  const clearHeaderImage = () => {
-    if (headerImageUrl) {
-      URL.revokeObjectURL(headerImageUrl)
-    }
-    setHeaderImage(null)
-    setHeaderImageUrl(null)
-    setUploadProgress(0)
   }
 
   // Fetch joinable teams when the dialog opens
@@ -513,9 +465,7 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
       setSelectedTeam(null)
       setJoinMessage('')
       setShowJoinDialog(false)
-      
-      // Clean up image resources
-      clearHeaderImage()
+      setHeaderImage(null)
       
       if (onClose) {
         onClose()
@@ -593,49 +543,19 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
                     Team Header Image (optional)
                   </label>
                   
-                  {headerImageUrl ? (
-                    <div className="relative mt-2 rounded-md overflow-hidden border border-border">
-                      <img 
-                        src={headerImageUrl} 
-                        alt="Team header preview" 
-                        className="w-full h-32 object-cover"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 h-8 w-8 rounded-full bg-background/80 hover:bg-background"
-                        onClick={clearHeaderImage}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div
-                      {...getRootProps()}
-                      className={`mt-1 flex justify-center rounded-md border-2 border-dashed border-border px-6 py-8 cursor-pointer hover:bg-accent transition-colors ${
-                        isDragActive ? 'border-primary bg-accent' : ''
-                      }`}
-                    >
-                      <div className="space-y-1 text-center">
-                        <Image className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <div className="text-sm text-muted-foreground">
-                          <input {...getInputProps()} />
-                          <p>Drag and drop an image here, or click to select</p>
-                          <p className="text-xs">PNG, JPG, WEBP, GIF up to 2MB</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {uploadProgress > 0 && uploadProgress < 100 && (
-                    <div className="w-full bg-muted rounded-full h-2.5 mt-2">
-                      <div 
-                        className="bg-primary h-2.5 rounded-full" 
-                        style={{width: `${uploadProgress}%`}}
-                      ></div>
-                    </div>
-                  )}
+                  <Dropzone
+                    maxFiles={1}
+                    maxSize={2 * 1024 * 1024} // 2MB
+                    accept={{
+                      'image/*': ['.jpeg', '.jpg', '.png', '.webp', '.gif', '.svg']
+                    }}
+                    prompt="Drag & drop a header image, or click to browse"
+                    subPrompt="PNG, JPG, SVG, WEBP, GIF up to 2MB"
+                    onDrop={(file) => setHeaderImage(file)}
+                    onFileRemove={() => setHeaderImage(null)}
+                    disabled={isSubmitting || createTeamMutation.isPending || isUploading}
+                    currentFiles={headerImage ? [headerImage] : []}
+                  />
                 </div>
                 
                 <div className="flex items-center space-x-2">
