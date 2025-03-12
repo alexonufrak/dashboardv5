@@ -1,6 +1,7 @@
 "use client"
 
 import React from 'react'
+import Image from 'next/image'
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -122,58 +123,76 @@ function ProgramBanner({ programCohort, programInitiativeName, milestones }) {
  */
 function TeamInfoSection({ team, onInviteClick, onEditTeamClick }) {
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
-      <div className="flex items-center gap-3">
-        <Avatar className="h-12 w-12 border">
-          <AvatarImage src={team.image} alt={team.name} />
-          <AvatarFallback>{team.name?.substring(0, 2).toUpperCase() || "TM"}</AvatarFallback>
-        </Avatar>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{team.name || "Your Team"}</h1>
-          
-          {/* Team Description */}
-          {team.description && (
-            <p className="text-sm text-muted-foreground mt-1 mb-2 line-clamp-2">
-              {team.description}
-            </p>
-          )}
-          
-          {/* Team stats */}
-          <div className="flex items-center text-muted-foreground">
-            {/* Member count with very basic output - zero JS operations */}
-            <Users className="h-4 w-4 mr-1" />
-            <span data-testid="member-count">
-              {team.members?.length} member{team.members?.length !== 1 ? 's' : ''}
-            </span>
+    <div className="flex flex-col w-full">
+      {/* Team Header Image */}
+      {team.image && (
+        <Card className="overflow-hidden mb-4 p-0 border">
+          <div className="w-full h-48 relative">
+            <Image 
+              src={team.image}
+              alt={`${team.name} header`}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 1200px"
+              priority
+            />
+          </div>
+        </Card>
+      )}
+      
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-12 w-12 border">
+            <AvatarImage src={team.image} alt={team.name} />
+            <AvatarFallback>{team.name?.substring(0, 2).toUpperCase() || "TM"}</AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{team.name || "Your Team"}</h1>
             
-            {team.points > 0 && (
-              <>
-                <span className="mx-2">•</span>
-                <Award className="h-4 w-4 mr-1" />
-                <span data-testid="team-points">
-                  {team.points} point{team.points !== 1 ? 's' : ''}
-                </span>
-              </>
+            {/* Team Description */}
+            {team.description && (
+              <p className="text-sm text-muted-foreground mt-1 mb-2 line-clamp-2">
+                {team.description}
+              </p>
             )}
+            
+            {/* Team stats */}
+            <div className="flex items-center text-muted-foreground">
+              {/* Member count with very basic output - zero JS operations */}
+              <Users className="h-4 w-4 mr-1" />
+              <span data-testid="member-count">
+                {team.members?.length} member{team.members?.length !== 1 ? 's' : ''}
+              </span>
+              
+              {team.points > 0 && (
+                <>
+                  <span className="mx-2">•</span>
+                  <Award className="h-4 w-4 mr-1" />
+                  <span data-testid="team-points">
+                    {team.points} point{team.points !== 1 ? 's' : ''}
+                  </span>
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-      <div className="flex gap-2">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={onInviteClick}
-        >
-          <Users className="h-4 w-4 mr-2" />
-          Invite Members
-        </Button>
-        <Button 
-          size="sm"
-          onClick={onEditTeamClick}
-        >
-          <Edit className="h-4 w-4 mr-2" />
-          Edit Team
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onInviteClick}
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Invite Members
+          </Button>
+          <Button 
+            size="sm"
+            onClick={onEditTeamClick}
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Team
+          </Button>
+        </div>
       </div>
     </div>
   )

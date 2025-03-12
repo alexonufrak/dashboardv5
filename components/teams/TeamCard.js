@@ -1,6 +1,7 @@
 // components/TeamCard.js
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import Image from "next/image";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -89,7 +90,18 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
   return (
     <>
       <Card className="mb-5">
-        <CardHeader>
+        <CardHeader className="flex flex-col gap-4">
+          {currentTeam.image && (
+            <div className="w-full h-40 relative rounded-md overflow-hidden -mt-3 -mx-6 px-6 pt-3">
+              <Image 
+                src={currentTeam.image}
+                alt={`${currentTeam.name} header`}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 600px"
+              />
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">{currentTeam.name}</CardTitle>
             <Badge className="ml-2">

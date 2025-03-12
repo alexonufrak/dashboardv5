@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -61,6 +62,18 @@ const TeamDetailModal = ({ team, isOpen, onClose, onTeamUpdated }) => {
       <Dialog open={isOpen} onOpenChange={onClose} className="transition-all duration-300 ease-in-out">
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
+            {team.image && (
+              <div className="w-full h-48 relative rounded-md overflow-hidden -mt-6 -mx-6 px-6 pt-6 mb-3">
+                <Image 
+                  src={team.image}
+                  alt={`${team.name} header`}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 500px"
+                  priority
+                />
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <DialogTitle className="text-xl flex items-center">
                 {team.name}
