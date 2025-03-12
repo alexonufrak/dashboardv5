@@ -86,7 +86,7 @@ export default function Home() {
                 </Button>
               </Link>
               <Link href="/signup">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 border-white text-white hover:bg-white/20 font-medium">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto h-12 px-8 font-medium dark:border-white dark:text-white dark:hover:bg-white/20">
                   Create Account
                 </Button>
               </Link>
