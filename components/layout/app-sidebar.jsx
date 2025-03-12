@@ -195,7 +195,7 @@ export function AppSidebar({
           {isLoading || programLoading ? (
             <NavProjectsSkeleton />
           ) : programInitiatives.length > 0 ? (
-            <NavProjects projects={programInitiatives} groupLabel="Programs" />
+            <NavProjects projects={programInitiatives} groupLabel="Your Programs" />
           ) : null}
           
           {/* Add spacer to push secondary links to bottom */}

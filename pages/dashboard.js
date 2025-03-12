@@ -29,7 +29,7 @@ const ProfilePage = dynamic(() => import("@/pages/dashboards/ProfilePage"), {
   loading: () => <PageSkeleton />
 })
 
-const ProgramsPage = dynamic(() => import("@/pages/dashboard/programs"), {
+const ProgramsPage = dynamic(() => import("@/pages/dashboard/programs/index"), {
   loading: () => <PageSkeleton />
 })
 
