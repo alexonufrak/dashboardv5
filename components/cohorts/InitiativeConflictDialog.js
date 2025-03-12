@@ -140,7 +140,7 @@ const InitiativeConflictDialog = ({
     <>
       {/* Main conflict dialog */}
       <Dialog open={open && !showLeaveConfirmation} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md z-[200]">
           <DialogHeader className="mb-4">
             <DialogTitle className="flex items-center gap-2 text-amber-800">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
@@ -261,7 +261,7 @@ const InitiativeConflictDialog = ({
 
       {/* Leave team confirmation dialog */}
       <Dialog open={showLeaveConfirmation} onOpenChange={() => setShowLeaveConfirmation(false)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md z-[200]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <LogOut className="h-5 w-5" />
