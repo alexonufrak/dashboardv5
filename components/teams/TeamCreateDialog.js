@@ -90,8 +90,13 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
       toast.success('Team header image uploaded', { id: toastId })
       setIsUploading(false)
       
-      // Return the public URL of the uploaded image
-      return blob.url
+      // Return an object with the necessary file information for Airtable
+      return {
+        url: blob.url,
+        filename: headerImage.name || safeFilename,
+        contentType: headerImage.type,
+        size: headerImage.size
+      }
     } catch (error) {
       console.error('Error uploading team header:', error)
       toast.error(`Failed to upload image: ${error.message || 'Unknown error'}`)
@@ -299,9 +304,9 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
     
     try {
       // Upload header image if one is provided
-      let imageUrl = null
+      let fileInfo = null
       if (headerImage) {
-        imageUrl = await uploadHeaderImage()
+        fileInfo = await uploadHeaderImage()
       }
       
       // Prepare team data
@@ -309,7 +314,12 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
         name: teamName.trim(),
         description: teamDescription.trim(),
         joinable: teamIsJoinable, // Add the joinable field to be sent to the API
-        image: imageUrl // Add the header image URL if available
+      }
+      
+      // Add header image if uploaded successfully
+      if (fileInfo) {
+        // Using the same pattern as milestone submissions
+        teamData.fileInfo = fileInfo
       }
       
       // Call our mutation function
@@ -326,7 +336,7 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
       // Reset form
       setTeamName('')
       setTeamDescription('')
-      clearHeaderImage()
+      setHeaderImage(null)
       
       // Close dialog
       if (onClose) {
@@ -547,14 +557,21 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
                     maxFiles={1}
                     maxSize={2 * 1024 * 1024} // 2MB
                     accept={{
-                      'image/*': ['.jpeg', '.jpg', '.png', '.webp', '.gif', '.svg']
+                      'image/jpeg': ['.jpg', '.jpeg'],
+                      'image/png': ['.png'],
+                      'image/gif': ['.gif'],
+                      'image/svg+xml': ['.svg'],
+                      'image/webp': ['.webp'],
+                      'image/x-icon': ['.ico'],
+                      'image/vnd.microsoft.icon': ['.ico']
                     }}
                     prompt="Drag & drop a header image, or click to browse"
-                    subPrompt="PNG, JPG, SVG, WEBP, GIF up to 2MB"
+                    subPrompt="PNG, JPG, SVG, WEBP, GIF, ICO up to 2MB"
                     onDrop={(file) => setHeaderImage(file)}
                     onFileRemove={() => setHeaderImage(null)}
                     disabled={isSubmitting || createTeamMutation.isPending || isUploading}
                     currentFiles={headerImage ? [headerImage] : []}
+                    variant={headerImage ? "success" : "default"}
                   />
                 </div>
                 

@@ -107,7 +107,9 @@ export default withApiAuthRequired(async function handler(req, res) {
             'image/gif',
             'application/zip',
             'text/plain',
-            'image/svg+xml'
+            'image/svg+xml',
+            'image/x-icon',
+            'image/vnd.microsoft.icon'
           ],
           maximumSizeInBytes: 5 * 1024 * 1024, // 5MB
           validUntil,

@@ -21,9 +21,15 @@ export default withApiAuthRequired(async function createTeamHandler(req, res) {
     }
     
     // Get the request body containing team data
-    const { name, description, joinable, image } = req.body
+    const { name, description, joinable, fileInfo } = req.body.teamData || req.body
     
-    console.log("Team creation request:", { name, description, joinable, hasImage: !!image })
+    console.log("Team creation request:", { 
+      name, 
+      description, 
+      joinable, 
+      hasFileInfo: !!fileInfo,
+      fileInfoDetails: fileInfo ? `${fileInfo.filename}, ${fileInfo.contentType}` : null
+    })
     
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Team name is required' })
@@ -70,14 +76,14 @@ export default withApiAuthRequired(async function createTeamHandler(req, res) {
       'Joinable': joinable !== undefined ? joinable : true
     }
     
-    // Add image URL if provided
-    if (image) {
-      console.log(`Adding team header image: ${image}`)
+    // Add file attachment if provided
+    if (fileInfo && fileInfo.url) {
+      console.log(`Adding team header image: ${fileInfo.url}`)
       // Format image as an Airtable attachment object with url and filename
       teamData['Image'] = [
         {
-          url: image,
-          filename: `team_header_${Date.now()}`
+          url: fileInfo.url,
+          filename: fileInfo.filename || `team_header_${Date.now()}`
         }
       ]
     }
@@ -88,7 +94,32 @@ export default withApiAuthRequired(async function createTeamHandler(req, res) {
       teamData['Cohorts'] = [cohortId]
     }
     
-    const teamRecord = await teamsTable.create(teamData)
+    // Create the team record with error handling for attachments
+    let teamRecord;
+    try {
+      teamRecord = await teamsTable.create(teamData);
+    } catch (createError) {
+      // Check if the error is related to attachments
+      if (createError.error === 'INVALID_ATTACHMENT_OBJECT' || 
+          (createError.message && createError.message.includes('attachment'))) {
+        console.log("Detected attachment error, attempting team creation without image");
+        
+        // Remove the Image field and try again
+        delete teamData['Image'];
+        
+        // Include the image URL in the description for reference
+        if (fileInfo && fileInfo.url) {
+          teamData['Description'] = (teamData['Description'] || "") + 
+            `\n\n[Note: Team image was uploaded but couldn't be attached directly. Access it at: ${fileInfo.url}]`;
+        }
+        
+        // Try again without the attachment
+        teamRecord = await teamsTable.create(teamData);
+      } else {
+        // If it's not an attachment issue, rethrow the error
+        throw createError;
+      }
+    }
     
     // Create a member record for the user
     console.log(`Creating member record for contact ${userProfile.contactId} in team ${teamRecord.id}`)
@@ -127,14 +158,21 @@ export default withApiAuthRequired(async function createTeamHandler(req, res) {
     console.error('Error details:', error.message, error.stack)
     
     // Check for specific Airtable error types for better error messages
-    if (error.statusCode === 422) {
-      return res.status(422).json({ error: 'Invalid field data in team creation. Please check field names match the Airtable schema.' })
+    if (error.statusCode === 422 || error.error === 'INVALID_ATTACHMENT_OBJECT') {
+      return res.status(422).json({ 
+        error: 'Invalid data in team creation. Please check file uploads and field formats.',
+        details: error.message || 'Unknown validation error'
+      })
     } else if (error.statusCode === 404) {
       return res.status(404).json({ error: 'Teams table not found. Please check environment variables.' })
     } else if (error.statusCode === 403) {
       return res.status(403).json({ error: 'Permission denied to create team. Please check API key permissions.' })
     }
     
-    return res.status(500).json({ error: 'Failed to create team: ' + error.message })
+    return res.status(500).json({ 
+      error: 'Failed to create team',
+      details: error.message || 'Unknown error',
+      code: error.error || error.code || 'TEAM_CREATION_FAILED'
+    })
   }
 })

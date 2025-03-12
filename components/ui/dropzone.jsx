@@ -54,7 +54,7 @@ const Dropzone = React.forwardRef((
     filePreview = true,
     children,
     prompt = "Drag & drop your file here, or click to browse",
-    subPrompt = "Maximum file size: 2MB",
+    subPrompt,
     currentFiles = [],
     onFileRemove,
     ...props 
@@ -118,13 +118,6 @@ const Dropzone = React.forwardRef((
     multiple: maxFiles !== 1,
   })
 
-  // Determine variant based on state
-  const currentVariant = 
-    disabled ? 'disabled' : 
-    error ? 'error' : 
-    files.length > 0 ? 'success' : 
-    variant
-
   // Helper to format file size
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes'
@@ -133,6 +126,16 @@ const Dropzone = React.forwardRef((
     const i = Math.floor(Math.log(bytes) / Math.log(k))
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
   }
+
+  // Calculate default subPrompt if not provided
+  const defaultSubPrompt = `Maximum file size: ${formatFileSize(maxSize)}${maxFiles === 1 ? '' : `, up to ${maxFiles} files`}`
+  
+  // Determine variant based on state
+  const currentVariant = 
+    disabled ? 'disabled' : 
+    error ? 'error' : 
+    files.length > 0 ? 'success' : 
+    variant
 
   // Handle removing a file
   const handleRemoveFile = (e, fileIndex) => {
@@ -278,7 +281,7 @@ const Dropzone = React.forwardRef((
                       )} 
                     />
                     <p className="text-sm font-medium">{prompt}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{subPrompt}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{subPrompt || defaultSubPrompt}</p>
                   </>
                 )}
               </motion.div>
