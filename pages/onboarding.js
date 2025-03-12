@@ -12,6 +12,9 @@ import CohortGrid from '@/components/cohorts/CohortGrid'
 import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist"
 import { Skeleton } from "@/components/ui/skeleton"
 import Logo from "@/components/common/Logo"
+import { ThemeToggle } from "@/components/theme-toggle"
+import { Card } from "@/components/ui/card"
+import Head from "next/head"
 
 function Onboarding() {
   const { user } = useUser()
@@ -183,40 +186,43 @@ function Onboarding() {
   // Show loading skeleton while fetching data
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
-        <header className="border-b border-border p-6">
-          <Logo variant="horizontal" height={40} />
-        </header>
-        <main className="flex-1 container max-w-screen-xl py-8 px-4">
-          <div className="max-w-4xl mx-auto">
-            <Skeleton className="h-8 w-64 mb-4" />
-            <Skeleton className="h-4 w-full max-w-md mb-8" />
-            
-            <Skeleton className="h-4 w-32 mb-2" />
-            <Skeleton className="h-2 w-full mb-6" />
-            
-            <div className="space-y-6">
-              <Skeleton className="h-40 w-full rounded-lg" />
-              <Skeleton className="h-40 w-full rounded-lg" />
-            </div>
+      <>
+        <div className="fixed top-4 right-4 z-50">
+          <ThemeToggle />
+        </div>
+        <div className="flex min-h-screen w-full items-center justify-center py-10 px-4 bg-background">
+          <div className="w-full max-w-md">
+            <Skeleton className="h-12 w-48 mx-auto mb-8" />
+            <Skeleton className="h-[600px] w-full rounded-lg" />
           </div>
-        </main>
-      </div>
+        </div>
+      </>
     )
   }
   
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 flex flex-col">
-      <header className="border-b border-border p-6">
-        <div className="container max-w-screen-xl mx-auto">
-          <Logo variant="horizontal" height={40} />
-        </div>
-      </header>
-      
-      <main className="flex-1 container max-w-screen-xl py-8 px-4">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-2xl font-semibold mb-2">Welcome to xFoundry</h1>
-          <p className="text-muted-foreground mb-8">Complete these steps to get started with your journey.</p>
+    <>
+      <Head>
+        <title>Complete Onboarding - xFoundry</title>
+      </Head>
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+      <div className="container mx-auto flex flex-col items-center justify-center py-12 px-4 lg:px-8 bg-background min-h-screen">
+        <div className="max-w-5xl w-full">
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <Logo variant="horizontal" color="auto" height={50} />
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl text-primary dark:text-primary">
+              Welcome to xFoundry
+            </h1>
+            <p className="mt-3 text-xl text-muted-foreground">
+              Complete these steps to get started with your journey
+            </p>
+          </div>
+          
+          <Card className="p-6 md:p-8 shadow-lg border-0 bg-white dark:bg-gray-900 rounded-xl">
           
           {/* Progress indicator */}
           <div className="mb-6">
@@ -436,11 +442,12 @@ function Onboarding() {
                   className={`
                     transition-all duration-200
                     ${isCompleting 
-                      ? 'bg-green-500 dark:bg-green-600 animate-pulse' 
-                      : 'bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600'
+                      ? 'bg-primary/80 animate-pulse' 
+                      : 'bg-primary hover:bg-primary/90'
                     } 
                     text-white
                   `}
+                  size="lg"
                   onClick={handleCompleteOnboarding}
                   disabled={isCompleting}
                 >
@@ -449,9 +456,10 @@ function Onboarding() {
               )}
             </div>
           </div>
+          </Card>
         </div>
-      </main>
-    </div>
+      </div>
+    </>
   )
 }
 
