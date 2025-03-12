@@ -68,13 +68,13 @@
   }
   @keyframes moveHorizontal {
     0% {
-      transform: translateX(-50%) translateY(-10%);
+      transform: translateX(-35%) translateY(-10%);
     }
     50% {
-      transform: translateX(50%) translateY(10%);
+      transform: translateX(35%) translateY(10%);
     }
     100% {
-      transform: translateX(-50%) translateY(-10%);
+      transform: translateX(-35%) translateY(-10%);
     }
   }
   @keyframes moveInCircle {
@@ -90,13 +90,13 @@
   }
   @keyframes moveVertical {
     0% {
-      transform: translateY(-50%);
+      transform: translateY(-25%);
     }
     50% {
-      transform: translateY(50%);
+      transform: translateY(25%);
     }
     100% {
-      transform: translateY(-50%);
+      transform: translateY(-25%);
     }
   }
 }

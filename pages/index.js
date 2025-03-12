@@ -59,6 +59,7 @@ export default function Home() {
         thirdColor="255, 210, 0" // Gold
         fourthColor="22, 163, 74" // Green
         fifthColor="36, 169, 224" // Curious Blue
+        size="120%"
         interactive={true}
         className="h-screen w-screen dark:bg-gradient-to-b dark:from-gray-900 dark:to-gray-800"
       >
