@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { useDashboard } from "@/contexts/DashboardContext"
-import ProperDashboardLayout from "@/components/dashboard/ProperDashboardLayout"
 import CohortGrid from "@/components/cohorts/CohortGrid"
 import { toast } from "sonner"
 
@@ -14,7 +13,7 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Blocks, Building2, ArrowRight, Compass, GraduationCap } from "lucide-react"
 
-function ProgramsPage() {
+export default function ProgramsPage({ onNavigate }) {
   // Get data from dashboard context
   const { 
     profile, 
@@ -166,15 +165,6 @@ function ProgramsPage() {
       )}
     </div>
   );
-}
-
-// Wrap with dashboard layout
-export default function ProgramsPageWithLayout() {
-  return (
-    <ProperDashboardLayout title="Programs | xFoundry Dashboard">
-      <ProgramsPage />
-    </ProperDashboardLayout>
-  )
 }
 
 export const getServerSideProps = withPageAuthRequired();
