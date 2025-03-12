@@ -227,7 +227,7 @@ export default function Login() {
                 <div className="space-y-3">
                   {/* User exists message */}
                   {userExists === true && institutionStatus === "success" && (
-                    <Alert variant="default" className="bg-green-50 text-green-800 border-green-200">
+                    <Alert variant="default" className="bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800">
                       <CheckCircle className="h-4 w-4 mr-2" />
                       <AlertDescription>
                         Welcome back! Your account was found.
@@ -237,7 +237,7 @@ export default function Login() {
                   
                   {/* User doesn't exist message */}
                   {userExists === false && institutionStatus === "success" && (
-                    <Alert variant="default" className="bg-blue-50 text-blue-800 border-blue-200">
+                    <Alert variant="default" className="bg-blue-50 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800">
                       <AlertCircle className="h-4 w-4 mr-2" />
                       <AlertDescription>
                         No account found with this email. We'll help you create one.
@@ -257,7 +257,7 @@ export default function Login() {
                   
                   {/* Institution verification success */}
                   {institutionStatus === "success" && (
-                    <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200 px-3 py-1.5">
+                    <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800 px-3 py-1.5">
                       <CheckCircle className="h-3.5 w-3.5 mr-1.5" />
                       {institution.name}
                     </Badge>
