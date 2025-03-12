@@ -202,9 +202,16 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
         return res.status(400).json({ error: 'Join team message is required' });
       }
       
-      // Add team join specific fields - Use the teamId for both fields to ensure compatibility
-      applicationData['Xperience/Team to Join'] = [targetTeamId];
-      applicationData['Xperience/Join Team Message'] = joinTeamMessage;
+      // Log team join request details for debugging
+      console.log("Processing team join request with:", {
+        targetTeamId,
+        joinTeamMessage,
+        fields: Object.keys(applicationData)
+      });
+      
+      // Add join team message - just use the standard field name
+      // We're removing 'Xperience/Team to Join' and 'Xperience/Join Team Message' which may no longer exist in schema
+      applicationData['Join Team Message'] = joinTeamMessage;
       
       // Also add the proper Team field for consistent behavior
       applicationData['Team'] = [targetTeamId];

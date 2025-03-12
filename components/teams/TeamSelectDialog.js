@@ -186,21 +186,13 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
         return { allowed: true };
       }
       
-      // If team already has any cohorts, show a conflict message
-      if (teamCohorts.length > 0) {
-        const teamCohort = teamCohorts[0]; // Use the first team cohort for the message
-        console.log(`Team program conflict: team "${teamId}" is already in cohort "${teamCohort.name}"`);
-        return {
-          allowed: false,
-          reason: "initiative_conflict", // Change to initiative_conflict for consistent handling
-          details: {
-            conflictingInitiative: teamCohort.name || teamCohort.initiativeDetails?.name || "Current Program",
-            currentInitiative: currentInitiative,
-            teamId: teamId,
-            teamName: userTeams.find(t => t.id === teamId)?.name || "Current Team"
-          }
-        };
-      }
+      // We no longer check team cohorts directly - we rely on participation records instead
+      // This is to avoid conflicts with previous programs that the team was part of
+      // but that the current user wasn't participating in
+      console.log(`Skipping team cohort check for teamId=${teamId} - we rely on participation records now`);
+      
+      // REMOVED: Team cohort conflict checking (it could lead to false positives)
+      // If additional conflict checks are needed, they should be done at the participation level
       
       console.log("No team program conflicts found, allowing application");
       return { allowed: true };

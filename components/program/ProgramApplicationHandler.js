@@ -221,49 +221,19 @@ const ProgramApplicationHandler = ({
         console.error("Error in API conflict check:", error);
       }
       
-      // Fallback to checking profile data (teams-based check)
-      // Check if we have profile data
-      if (!profile) {
-        console.warn("Profile data not available for team program conflict check");
-        return { allowed: true }; // Allow if profile is not available
-      }
+      // We no longer check team cohorts directly - only participation records
+      // This avoids conflicts with previous programs that the team was part of
+      console.log("Skipping team cohort check - we rely only on participation records now");
       
-      // Log the teams from the profile for debugging
+      // REMOVED: Team cohort conflict checking (it could lead to false positives)
+      // All conflict checks should be done at the participation level for consistency
+      
+      // Log the teams from the profile for debugging only
       console.log(`User has ${profile.teams?.length || 0} teams in their profile`);
       if (profile.teams && profile.teams.length > 0) {
         profile.teams.forEach(team => {
           console.log(`Team: ${team.name}, CohortIds: ${team.cohortIds?.length || 0}`);
         });
-      }
-      
-      // Check if the user is already in a team program
-      if (profile.teams && profile.teams.length > 0) {
-        // Check if any of the user's teams are in a team program
-        const userTeams = profile.teams;
-        
-        for (const team of userTeams) {
-          if (team.cohortIds && team.cohortIds.length > 0) {
-            // The user is already in a team that has cohorts
-            console.log(`Team program conflict detected: User is already in team program ${team.name}`);
-            
-            // Make sure we have valid teamId and teamName values
-            const teamId = team.id || "unknown";
-            const teamName = team.name || "Your Current Team";
-            
-            console.log(`Using team ID: ${teamId}, team name: ${teamName}`);
-            
-            return {
-              allowed: false,
-              reason: "initiative_conflict", // Use initiative_conflict for consistent handling
-              details: {
-                conflictingInitiative: team.name || "Current Team Program",
-                currentInitiative: currentInitiativeName,
-                teamId: teamId,
-                teamName: teamName
-              }
-            };
-          }
-        }
       }
       
       console.log("No team program conflicts found, allowing application");

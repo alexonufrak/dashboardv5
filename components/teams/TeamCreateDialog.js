@@ -70,20 +70,24 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
       // First check if we can get teams directly from the cohort
       if (Array.isArray(cohort.teams) && cohort.teams.length > 0) {
         console.log("Found teams array directly in cohort:", cohort.teams);
-        // Make sure each team has a name property - Name is the correct field according to schema
+        // Make sure each team has a name property - "Team Name" is the correct field according to schema
         const teamsWithNames = cohort.teams.map(team => {
           console.log("Team object:", team);
-          // Check for Airtable fields format
+          
+          // Check if this is an Airtable record format or standard format
+          let processedTeam = { ...team };
+          
+          // Ensure team has a correct name regardless of format
           if (team.fields) {
-            // Try to use the correct Airtable field name for team name: "Team Name" or "Name"
+            // Prioritize "Team Name" field which is the correct field name in Airtable
             const teamName = team.fields["Team Name"] || team.fields.Name || team.name || "Unnamed Team";
             console.log("Using team name:", teamName);
             
-            return { 
+            processedTeam = { 
               ...team, 
               id: team.id || team.recordId,
-              name: teamName,
-              description: team.fields.Description || team.description,
+              name: teamName, // Ensure proper name field
+              description: team.fields.Description || team.description || "",
               members: team.fields.Members || team.members || [],
               memberCount: team.fields["Count (Members)"] || 0,
               institution: team.fields.Institution ? {
@@ -92,12 +96,15 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
               } : null,
               displayMembers: team.fields["Contact (from Members)"] || []
             };
+          } else if (!team.name) {
+            // Handle non-Airtable format teams that lack a name property
+            processedTeam.name = team["Team Name"] || team.Name || "Unnamed Team";
           }
-          // Standard properties
-          return { 
-            ...team,
-            name: team["Team Name"] || team.Name || team.name || "Unnamed Team" 
-          };
+          
+          // Log the processed team for debugging
+          console.log(`Processed cohort team ${processedTeam.id}: Name=${processedTeam.name}`);
+          
+          return processedTeam;
         });
         setJoinableTeams(teamsWithNames);
         setIsLoadingTeams(false);
@@ -117,19 +124,19 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
             if (Array.isArray(teamsData.teams)) {
               // Process teams to ensure they have name property
               const processedTeams = teamsData.teams.map(team => {
-                // If team has standard expected format, return it
-                if (team.name) return team;
+                // Check if this is an Airtable record format or standard format
+                let processedTeam = { ...team };
                 
-                // Check if this is an Airtable record format
+                // Ensure team has a correct name regardless of format
+                // Prioritize "Team Name" field which is the correct field name in Airtable
                 if (team.fields) {
-                  // Try to use the correct Airtable field name for team name: "Team Name" or "Name"
-                  const teamName = team.fields["Team Name"] || team.fields.Name || "Unnamed Team";
+                  const teamName = team.fields["Team Name"] || team.fields.Name || team.name || "Unnamed Team";
                   console.log("Using team name from API response:", teamName);
                   
-                  return {
+                  processedTeam = {
                     ...team,
                     id: team.id || team.recordId,
-                    name: teamName,
+                    name: teamName, // Ensure proper name field
                     description: team.fields.Description || "",
                     members: team.fields.Members || [],
                     memberCount: team.fields["Count (Members)"] || 0,
@@ -140,13 +147,15 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
                     displayMembers: team.fields["Contact (from Members)"] || [],
                     joinable: team.fields.Joinable || team.fields["Joinable (Yes No)"] === "Yes" || true
                   };
+                } else if (!team.name) {
+                  // Handle non-Airtable format teams that lack a name property
+                  processedTeam.name = team["Team Name"] || team.Name || "Unnamed Team";
                 }
                 
-                // Fallback
-                return {
-                  ...team,
-                  name: team.Name || "Unnamed Team"
-                };
+                // Log the processed team for debugging
+                console.log(`Processed team ${processedTeam.id}: Name=${processedTeam.name}`);
+                
+                return processedTeam;
               });
               
               setJoinableTeams(processedTeams);
@@ -177,19 +186,19 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
         
         // Process fetched teams to ensure they have required properties
         const processedTeams = fetchedTeams.map(team => {
-          // If team has standard expected format, return it
-          if (team.name) return team;
+          // Check if this is an Airtable record format or standard format
+          let processedTeam = { ...team };
           
-          // Check if this is an Airtable record format
+          // Ensure team has a correct name regardless of format
+          // Prioritize "Team Name" field which is the correct field name in Airtable
           if (team.fields) {
-            // Try to use the correct Airtable field name for team name: "Team Name" or "Name"
-            const teamName = team.fields["Team Name"] || team.fields.Name || "Unnamed Team";
+            const teamName = team.fields["Team Name"] || team.fields.Name || team.name || "Unnamed Team";
             console.log("Using team name from joinable API:", teamName);
             
-            return {
+            processedTeam = {
               ...team,
               id: team.id || team.recordId,
-              name: teamName,
+              name: teamName, // Ensure proper name field
               description: team.fields.Description || "",
               members: team.fields.Members || [],
               memberCount: team.fields["Count (Members)"] || 0,
@@ -200,13 +209,15 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
               displayMembers: team.fields["Contact (from Members)"] || [],
               joinable: team.fields.Joinable || team.fields["Joinable (Yes No)"] === "Yes" || true
             };
+          } else if (!team.name) {
+            // Handle non-Airtable format teams that lack a name property
+            processedTeam.name = team["Team Name"] || team.Name || "Unnamed Team";
           }
           
-          // Fallback
-          return {
-            ...team,
-            name: team["Team Name"] || team.Name || team.name || "Unnamed Team"
-          };
+          // Log the processed team for debugging
+          console.log(`Processed joinable team ${processedTeam.id}: Name=${processedTeam.name}`);
+          
+          return processedTeam;
         });
         
         setJoinableTeams(processedTeams);
