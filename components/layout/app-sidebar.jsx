@@ -170,13 +170,10 @@ export function AppSidebar({
                     </div>
                   </SidebarMenuButton>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm text-muted-foreground">Verified Institution</h4>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{institutionName}</span>
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                    </div>
+                <PopoverContent>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{institutionName}</span>
+                    <CheckCircle className="h-4 w-4 text-green-500" />
                   </div>
                 </PopoverContent>
               </Popover>
