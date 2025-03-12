@@ -8,11 +8,12 @@ const OnboardingContext = createContext(null)
 // Export the provider component
 export function OnboardingProvider({ children }) {
   // Core state
-  const [showOnboarding, setShowOnboarding] = useState(false)
   const [onboardingCompleted, setOnboardingCompleted] = useState(false)
   const [hasApplications, setHasApplications] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
+  // Force dialog to stay open if onboarding isn't completed
+  const [forceDialogOpen, setForceDialogOpen] = useState(false)
   
   // Track steps completion
   const [steps, setSteps] = useState({
@@ -57,14 +58,21 @@ export function OnboardingProvider({ children }) {
         const onboardingStatus = profileData.Onboarding || "Registered" // Default to "Registered" if not set
         console.log("Onboarding status from profile:", onboardingStatus)
         
-        // If status is "Applied", hide onboarding
+        // If status is "Applied", mark onboarding as completed
         if (onboardingStatus === "Applied") {
           console.log("Onboarding marked as completed (status: Applied)")
           setOnboardingCompleted(true)
-          setShowOnboarding(false)
+          setForceDialogOpen(false) // Don't force dialog for completed users
+          setDialogOpen(false) // Close dialog if it was open
           setIsLoading(false)
           return
         }
+        
+        // If we reach here, user needs to complete onboarding
+        console.log("User needs to complete onboarding, forcing dialog open")
+        setOnboardingCompleted(false)
+        setForceDialogOpen(true) // Force dialog to open and stay open
+        setDialogOpen(true) // Open the dialog immediately
         
         // Mark register step as completed (always true since they're registered)
         setSteps(prevSteps => ({
@@ -82,9 +90,6 @@ export function OnboardingProvider({ children }) {
         // For the selectCohort step, we'll only mark it as completed if they have participation
         // (Which means their onboardingStatus would be "Applied", which we already checked above)
       }
-      
-      // By default, show the onboarding banner for new users
-      setShowOnboarding(true)
     } catch (error) {
       console.error("Error checking onboarding status:", error)
     } finally {
@@ -142,7 +147,8 @@ export function OnboardingProvider({ children }) {
         if (result.success) {
           // Update local state
           setOnboardingCompleted(true)
-          setShowOnboarding(false)
+          setForceDialogOpen(false) // No longer force the dialog open
+          setDialogOpen(false) // Close the dialog
           return true
         } else {
           console.error("Failed to update onboarding status:", result.error)
@@ -163,14 +169,18 @@ export function OnboardingProvider({ children }) {
     setDialogOpen(true)
   }
   
-  // Close onboarding dialog
+  // Close onboarding dialog - but only if we're not forcing it open
   const closeOnboardingDialog = () => {
-    setDialogOpen(false)
+    // Only allow closing if not forcing the dialog open
+    if (!forceDialogOpen) {
+      setDialogOpen(false)
+    } else {
+      console.log("Dialog close prevented - onboarding not completed yet")
+    }
   }
   
   // The contextValue contains all functions and state we want to expose
   const contextValue = {
-    showOnboarding,
     onboardingCompleted,
     hasApplications,
     isLoading,
@@ -178,6 +188,7 @@ export function OnboardingProvider({ children }) {
     completionPercentage,
     allStepsCompleted,
     dialogOpen,
+    forceDialogOpen,
     checkOnboardingStatus,
     markStepComplete,
     completeOnboarding,

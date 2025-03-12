@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { CheckCircle, ChevronDown, ChevronUp, Compass, ExternalLink, ArrowRight } from "lucide-react"
 import CohortGrid from '@/components/cohorts/CohortGrid'
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function OnboardingDialog({ profile, applications, isLoadingApplications = false }) {
   const { user } = useUser()
@@ -17,7 +17,8 @@ export default function OnboardingDialog({ profile, applications, isLoadingAppli
     completionPercentage, 
     markStepComplete, 
     completeOnboarding, 
-    allStepsCompleted 
+    allStepsCompleted,
+    forceDialogOpen
   } = useOnboarding()
   
   // State for expanding/collapsing sections
@@ -27,6 +28,20 @@ export default function OnboardingDialog({ profile, applications, isLoadingAppli
   // UI state
   const [isLoading, setIsLoading] = useState(false)
   const [isCompleting, setIsCompleting] = useState(false)
+  
+  // Add event listener to prevent closing with Escape key when forced
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && forceDialogOpen) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Escape key blocked - onboarding must be completed');
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [forceDialogOpen]);
   
   // Handlers
   const handleCohortApply = (cohort) => {
@@ -73,19 +88,32 @@ export default function OnboardingDialog({ profile, applications, isLoadingAppli
     return null
   }
   
+  // Handle a click on the backdrop - only close if not forced
+  const handleBackdropClick = (e) => {
+    // If the click is on the backdrop and not forced, close the dialog
+    if (e.target === e.currentTarget && !forceDialogOpen) {
+      closeOnboardingDialog();
+    }
+  };
+  
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div 
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      onClick={handleBackdropClick}
+    >
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
           <h2 className="text-xl font-semibold">Complete Your Onboarding</h2>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={closeOnboardingDialog}
-          >
-            <ChevronDown className="h-5 w-5" />
-          </Button>
+          {!forceDialogOpen && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={closeOnboardingDialog}
+            >
+              <ChevronDown className="h-5 w-5" />
+            </Button>
+          )}
         </div>
         
         {/* Content */}
@@ -284,26 +312,32 @@ export default function OnboardingDialog({ profile, applications, isLoadingAppli
           </span>
           
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={closeOnboardingDialog}
-            >
-              Close
-            </Button>
+            {!forceDialogOpen && (
+              <Button
+                variant="outline"
+                onClick={closeOnboardingDialog}
+              >
+                Close
+              </Button>
+            )}
             
-            {/* If all steps are completed, show Done button instead of Complete Onboarding */}
-            {allStepsCompleted ? (
+            {/* If all steps are completed, show Complete Onboarding button */}
+            {allStepsCompleted && (
               <Button
                 className={`
                   transition-all duration-200
                   ${isCompleting ? 'bg-green-500 animate-pulse' : 'bg-green-600 hover:bg-green-700'} 
                   text-white
                 `}
-                onClick={closeOnboardingDialog}
+                onClick={async () => {
+                  setIsCompleting(true);
+                  await completeOnboarding();
+                  setIsCompleting(false);
+                }}
               >
-                Done
+                Complete Onboarding
               </Button>
-            ) : null}
+            )}
           </div>
         </div>
       </div>

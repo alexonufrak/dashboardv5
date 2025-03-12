@@ -18,7 +18,6 @@ import EmailMismatchAlert from "@/components/auth/EmailMismatchAlert"
 import TeamInviteSuccessAlert from "@/components/teams/TeamInviteSuccessAlert"
 import CohortGrid from "@/components/cohorts/CohortGrid"
 import ProfileEditModal from "@/components/profile/ProfileEditModal"
-import OnboardingBanner from "@/components/onboarding/OnboardingBanner"
 import OnboardingDialog from "@/components/onboarding/OnboardingDialog"
 
 // Import UI components
@@ -55,18 +54,23 @@ function DashboardHomeInner({ onNavigate }) {
   // Get onboarding functions from onboarding context
   const { checkOnboardingStatus } = useOnboarding()
   
-  // Initialize onboarding on component mount
+  // Initialize onboarding on component mount - high priority useEffect
   useEffect(() => {
-    // Check onboarding status when dashboard loads
-    if (profile && !isLoading) {
-      console.log("Checking onboarding status on dashboard load with profile data")
+    // Check onboarding status as soon as profile data is available
+    if (profile) {
+      console.log("Checking onboarding status on dashboard load with profile data", {
+        "Onboarding status": profile.Onboarding || "Not set",
+        "Has applications": applications?.length > 0,
+        "Profile ID": profile?.contactId
+      })
+      
       // Pass the full profile with applications data
       checkOnboardingStatus({
         ...profile,
         applications: applications
       })
     }
-  }, [profile, isLoading, applications, checkOnboardingStatus])
+  }, [profile, applications, checkOnboardingStatus])
   
   // Handler functions
   const handleEditClick = () => {
@@ -115,8 +119,7 @@ function DashboardHomeInner({ onNavigate }) {
       {user?.emailMismatch && <EmailMismatchAlert emailMismatch={user.emailMismatch} />}
       <TeamInviteSuccessAlert />
       
-      {/* Onboarding components */}
-      <OnboardingBanner />
+      {/* Onboarding dialog - banner removed */}
       <OnboardingDialog 
         profile={profile}
         applications={applications}
