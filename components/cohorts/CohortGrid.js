@@ -28,8 +28,8 @@ const CohortGrid = ({
   // If loading, show skeleton
   if (isLoading) {
     return (
-      <div className={`grid grid-cols-${columns.default} md:grid-cols-${columns.md} lg:grid-cols-${columns.lg} gap-5 w-full`}>
-        {[...Array(columns.lg)].map((_, index) => (
+      <div className={`grid grid-cols-1 ${columns.md > 1 ? `md:grid-cols-${columns.md}` : ''} ${columns.lg > 1 ? `lg:grid-cols-${columns.lg}` : ''} gap-5 w-full`}>
+        {[...Array(columns.lg || 2)].map((_, index) => (
           <Skeleton key={index} className="h-[250px] rounded-lg" />
         ))}
       </div>
@@ -39,7 +39,7 @@ const CohortGrid = ({
   // If no cohorts, show empty message
   if (!cohorts || cohorts.length === 0) {
     return (
-      <Card>
+      <Card className="border-border bg-card text-card-foreground">
         <CardContent className="text-center py-12 text-muted-foreground italic">
           <p>{emptyMessage}</p>
           <p className="text-sm mt-2">Check back later for updates.</p>
@@ -65,7 +65,7 @@ const CohortGrid = ({
   
   return (
     <>
-      <div className={`grid grid-cols-${columns.default} md:grid-cols-${columns.md} lg:grid-cols-${columns.lg} gap-5 w-full`}>
+      <div className={`grid grid-cols-1 ${columns.md > 1 ? `md:grid-cols-${columns.md}` : ''} ${columns.lg > 1 ? `lg:grid-cols-${columns.lg}` : ''} gap-5 w-full`}>
         {enhancedCohorts.map(cohort => (
           <CohortCard 
             key={cohort.id} 
