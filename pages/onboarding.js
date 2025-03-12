@@ -48,8 +48,8 @@ function Onboarding() {
       setIsLoading(true);
       
       try {
-        // Step 1: Only fetch the essential profile data first
-        console.log("Fetching minimal profile data...");
+        // Step 1: Fetch minimal profile data with cohorts
+        console.log("Fetching minimal profile data with cohorts...");
         const profileResponse = await fetch('/api/user/profile?minimal=true');
         
         if (!profileResponse.ok) {

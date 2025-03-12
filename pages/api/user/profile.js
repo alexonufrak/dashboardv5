@@ -29,8 +29,8 @@ async function handler(req, res) {
         let profilePromise;
         
         if (minimal) {
-          console.log("Fetching minimal profile for onboarding");
-          // Only fetch essential fields for onboarding check
+          console.log("Fetching minimal profile with cohorts for onboarding");
+          // Fetch essential fields plus cohorts for onboarding
           profilePromise = getCompleteUserProfile(session.user, { minimal: true });
         } else {
           profilePromise = getCompleteUserProfile(session.user);

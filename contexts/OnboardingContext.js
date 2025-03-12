@@ -46,10 +46,18 @@ export function OnboardingProvider({ children }) {
   
   // Create a ref to track if we're already processing an onboarding check
   const processingRef = React.useRef(false);
+  // Track repeated calls with the same profileData
+  const processedDataRef = React.useRef(null);
   
   // Check onboarding status using the profile data from Airtable
   // This avoids a separate API call since the profile already has the onboarding status
   const checkOnboardingStatus = async (profileData) => {
+    // Don't process the same profile data twice (prevents loops)
+    if (processedDataRef.current === profileData) {
+      console.log("Already checked this exact profile data, skipping");
+      return;
+    }
+    
     // If we're already processing an onboarding check, don't start another one
     if (processingRef.current) {
       console.log("Already checking onboarding status, skipping duplicate call");
@@ -58,6 +66,8 @@ export function OnboardingProvider({ children }) {
     
     // Mark that we're processing a check
     processingRef.current = true;
+    // Store reference to this profileData to avoid processing it again
+    processedDataRef.current = profileData;
     
     // Set loading state only if not already loading
     if (!isLoading) {
@@ -208,6 +218,7 @@ export function OnboardingProvider({ children }) {
       
       // Reset processing state so future calls can proceed
       processingRef.current = false;
+      // Don't reset processedDataRef to continue preventing repeated processing
     }
   }
   
