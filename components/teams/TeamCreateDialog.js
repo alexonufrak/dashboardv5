@@ -323,7 +323,8 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
           cohortId: cohortId,
           participationType: 'Team',
           applicationType: 'joinTeam',
-          teamToJoin: selectedTeam.id, // Make sure we're using the correct ID field
+          teamId: selectedTeam.id, // Changed from teamToJoin to teamId to match API expectations
+          teamToJoin: selectedTeam.id, // Keep this for backward compatibility
           joinTeamMessage: joinMessage
         })
       })

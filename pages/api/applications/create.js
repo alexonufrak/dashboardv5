@@ -34,6 +34,15 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
       joinTeamMessage
     } = req.body
     
+    console.log("Application create request:", {
+      cohortId,
+      teamId,
+      participationType,
+      applicationType,
+      teamToJoin,
+      hasJoinMessage: !!joinTeamMessage
+    });
+    
     if (!cohortId) {
       return res.status(400).json({ error: 'Cohort ID is required' })
     }
@@ -182,7 +191,10 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     
     // Add join team request data if applicable
     if (applicationType === 'joinTeam') {
-      if (!teamToJoin) {
+      // Get teamToJoin from either teamId (new way) or teamToJoin (old way)
+      const targetTeamId = teamId || teamToJoin;
+      
+      if (!targetTeamId) {
         return res.status(400).json({ error: 'Team to join is required for join team requests' });
       }
       
@@ -190,12 +202,15 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
         return res.status(400).json({ error: 'Join team message is required' });
       }
       
-      // Add team join specific fields
-      applicationData['Xperience/Team to Join'] = [teamToJoin];
+      // Add team join specific fields - Use the teamId for both fields to ensure compatibility
+      applicationData['Xperience/Team to Join'] = [targetTeamId];
       applicationData['Xperience/Join Team Message'] = joinTeamMessage;
       
+      // Also add the proper Team field for consistent behavior
+      applicationData['Team'] = [targetTeamId];
+      
       console.log('Creating team join request with data:', {
-        teamToJoin,
+        teamId: targetTeamId,
         joinTeamMessage,
         status: applicationStatus,
         contactId: userProfile.contactId,
