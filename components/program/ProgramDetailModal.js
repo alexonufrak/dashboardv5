@@ -74,17 +74,12 @@ const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply, profile, applica
       setIsApplying(true)
       setShowApplicationHandler(true)
     } else {
-      // Otherwise navigate to the application page
-      import('next/router').then(({ useRouter }) => {
-        const router = useRouter.router || useRouter().router;
-        
-        // Import dynamically to avoid circular dependencies
-        import('@/lib/routing').then(({ navigateToProgramApplication }) => {
-          // Navigate to application page with initiativeName for a nice slug
-          navigateToProgramApplication(router, cohort.programId, cohort.id, {
-            initiativeName: cohort.initiativeDetails?.name
-          });
-        });
+      // Otherwise navigate to the application page using the programs/apply route
+      // Import dynamically to avoid circular dependencies
+      import('@/lib/routing').then((routing) => {
+        // Navigate to application page with initiative name
+        const applicationUrl = routing.ROUTES.PROGRAMS_APPLY(cohort.id, cohort.initiativeDetails?.name);
+        window.location.href = applicationUrl;
       });
     }
   }

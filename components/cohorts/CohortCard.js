@@ -235,27 +235,32 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
         return;
       }
       
-      // Navigate to the application page
-      import('next/router').then(module => {
-        const useRouter = module.useRouter;
-        const router = useRouter();
-        
-        // Import dynamically to avoid circular dependencies
-        import('@/lib/routing').then(routing => {
-          // Navigate to application page with initiativeName for a nice slug
-          const programId = cohort.programId || cohort.initiativeDetails?.id;
-          routing.navigateToProgramApplication(router, programId, cohort.id, {
-            initiativeName: cohort.initiativeDetails?.name
-          });
-        });
-      });
+      // Get cohort ID for navigation
+      const cohortId = cohort.id;
+      
+      if (!cohortId) {
+        console.error("Missing cohortId for application navigation");
+        setIsApplying(false);
+        return;
+      }
+      
+      // Get the initiative name for the URL
+      const initiativeName = cohort.initiativeDetails?.name || '';
+      
+      // Import the routing utilities dynamically to use ROUTES
+      const routing = await import('@/lib/routing');
+      
+      // Get application URL from centralized routing
+      const applicationUrl = routing.ROUTES.PROGRAMS_APPLY(cohortId, initiativeName);
+      
+      // Navigate directly to the application page
+      window.location.href = applicationUrl;
       
     } catch (error) {
       console.error("Error in application process:", error);
-    } finally {
-      // Reset loading state after everything is done
       setIsApplying(false);
     }
+    // Note: We don't reset isApplying in finally block because we're navigating away
   }
   
   // Handle view details click
