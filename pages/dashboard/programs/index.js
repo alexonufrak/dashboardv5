@@ -6,6 +6,8 @@ import { useDashboard } from "@/contexts/DashboardContext"
 import CohortGrid from "@/components/cohorts/CohortGrid"
 import { toast } from "sonner"
 import dynamic from "next/dynamic"
+import { useRouter } from "next/router"
+import ProperDashboardLayout from "@/components/dashboard/ProperDashboardLayout"
 
 // UI Components
 import { Skeleton } from "@/components/ui/skeleton"
@@ -169,14 +171,34 @@ function ProgramsPageContent({ onNavigate }) {
   );
 }
 
-// Use dynamic import with SSR disabled to prevent context errors during build
-const ProgramsPageDynamic = dynamic(() => Promise.resolve(ProgramsPageContent), { 
-  ssr: false 
-})
-
-// Export the dynamic component that doesn't require context during build
-export default function ProgramsPage(props) {
-  return <ProgramsPageDynamic {...props} />
+// Main Programs Page component
+function ProgramsPage(props) {
+  const router = useRouter()
+  const { 
+    profile, 
+    isLoading, 
+    error
+  } = useDashboard()
+  
+  const [pageTitle] = useState("Available Programs")
+  
+  // Use dynamic import with SSR disabled to prevent context errors
+  const ProgramsPageDynamic = dynamic(() => Promise.resolve(ProgramsPageContent), { 
+    ssr: false 
+  })
+  
+  return (
+    <ProperDashboardLayout
+      title={pageTitle}
+      profile={profile}
+      currentPage="programs"
+      onNavigate={(route) => router.push(route)}
+    >
+      <ProgramsPageDynamic {...props} />
+    </ProperDashboardLayout>
+  )
 }
 
 export const getServerSideProps = withPageAuthRequired();
+
+export default ProgramsPage;
