@@ -80,29 +80,72 @@ const TeamJoinHandler = ({ cohort, profile, isActive = false, onComplete, onCanc
         return
       }
       
-      // Fetch the joinable teams specifically for this cohort and institution
-      const response = await fetch(`/api/teams/joinable?institutionId=${institutionId}&cohortId=${cohort.id}`)
+      // Generate cache key for this request
+      const cacheKey = `joinable-teams-${cohort.id}-${institutionId}`
       
-      if (!response.ok) {
-        throw new Error(`Failed to fetch teams: ${response.status} ${response.statusText}`)
+      // Check for cached data first
+      const cachedData = sessionStorage.getItem(cacheKey)
+      let fetchedTeams = []
+      
+      if (cachedData) {
+        try {
+          const parsedData = JSON.parse(cachedData)
+          // Check if cache is still valid (less than 5 minutes old)
+          const cacheTime = new Date(parsedData._meta?.timestamp || 0)
+          const now = new Date()
+          const cacheAgeMs = now - cacheTime
+          
+          if (cacheAgeMs < 5 * 60 * 1000) { // 5 minutes in milliseconds
+            console.log("Using cached joinable teams data", {
+              cacheAge: `${Math.round(cacheAgeMs / 1000)} seconds`,
+              teams: parsedData.teams.length
+            })
+            fetchedTeams = parsedData.teams || []
+          } else {
+            console.log("Cache expired, fetching fresh data")
+          }
+        } catch (cacheError) {
+          console.error("Error parsing cached data:", cacheError)
+          // Continue with API request on cache error
+        }
       }
       
-      const data = await response.json()
-      const fetchedTeams = data.teams || []
+      // If cache was not valid or not found, fetch from API
+      if (fetchedTeams.length === 0) {
+        // Fetch the joinable teams specifically for this cohort and institution
+        const response = await fetch(`/api/teams/joinable?institutionId=${institutionId}&cohortId=${cohort.id}`)
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch teams: ${response.status} ${response.statusText}`)
+        }
+        
+        const data = await response.json()
+        fetchedTeams = data.teams || []
+        
+        // Cache the response for future use
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify(data))
+        } catch (cacheError) {
+          console.error("Error caching team data:", cacheError)
+          // Continue even if caching fails
+        }
+        
+        console.log("Fetched joinable teams from API:", {
+          count: fetchedTeams.length,
+          firstTeamName: fetchedTeams[0]?.name || "N/A"
+        })
+      }
       
-      console.log("Fetched joinable teams:", fetchedTeams)
+      // Update state with fetched teams
       setTeams(fetchedTeams)
       
-      // Check if there are any joinable teams
-      const hasJoinableTeams = fetchedTeams.some(team => team.joinable)
-      
-      // Show the join list if there are joinable teams, otherwise show create dialog
-      if (hasJoinableTeams) {
-        setShowJoinList(true)
-      } else {
-        // Still show the join list, which will display a message that no teams are available
-        setShowJoinList(true)
+      // Debug log team names
+      if (fetchedTeams.length > 0) {
+        console.log("Team names:", fetchedTeams.map(team => team.name || "Unnamed"))
       }
+      
+      // For now, always show the join list regardless of team availability
+      setShowJoinList(true)
     } catch (error) {
       console.error("Error fetching joinable teams:", error)
       setError("Failed to fetch teams. Please try again later.")

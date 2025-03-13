@@ -34,6 +34,17 @@ const JoinableTeamsList = ({ teams = [], cohort, profile, onApplySuccess, onClos
   // This is a temporary fix until the joinable flag is properly set in Airtable 
   const hasJoinableTeams = teams.length > 0
   
+  // Debug team names
+  useEffect(() => {
+    if (teams.length > 0) {
+      console.log("Teams in JoinableTeamsList:", teams.map(team => ({
+        id: team.id,
+        name: team.name || "Unnamed",
+        memberCount: team.memberCount || 0
+      })))
+    }
+  }, [teams])
+  
   // Handle selection of a team to join
   const handleSelectTeam = (team) => {
     setSelectedTeam(team)
@@ -174,7 +185,9 @@ const JoinableTeamsList = ({ teams = [], cohort, profile, onApplySuccess, onClos
                   <Card key={team.id} className="hover:shadow-md transition-shadow">
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-start">
-                        <CardTitle className="text-base">{team.name}</CardTitle>
+                        <CardTitle className="text-base font-bold text-primary">
+                          {team.name || "Unnamed Team"}
+                        </CardTitle>
                         <Badge variant="outline" className="flex items-center gap-1">
                           <Users className="h-3 w-3" />
                           {getTeamMembersCount(team)}

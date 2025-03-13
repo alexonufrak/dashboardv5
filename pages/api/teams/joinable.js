@@ -94,9 +94,19 @@ export default withApiAuthRequired(async function joinableTeamsHandler(req, res)
       const memberNames = team.fields['Name (from Contact) (from Members)'] || [];
       const displayMembers = memberNames.slice(0, 3); // Take up to 3 members to display
       
+      // Make sure to get the team name, with fallbacks to "Team Name" field and ID
+      const teamName = team.fields.Name || team.fields['Team Name'] || `Team ${team.id.slice(-5)}`;
+      
+      console.log(`Processing team: ${team.id}`, {
+        nameField: team.fields.Name,
+        teamNameField: team.fields['Team Name'],
+        finalName: teamName,
+        hasMembers: Boolean(memberNames.length)
+      });
+      
       return {
         id: team.id,
-        name: team.fields.Name || "Unnamed Team",
+        name: teamName,
         description: team.fields.Description || "No description available",
         institution: team.fields.Institution?.[0] ? {
           id: team.fields.Institution[0],
@@ -116,7 +126,19 @@ export default withApiAuthRequired(async function joinableTeamsHandler(req, res)
     
     console.log(`Found ${formattedTeams.length} joinable teams for cohort ${cohortId} and institution ${instId}`)
     
-    return res.status(200).json({ teams: formattedTeams })
+    // Add cache headers to improve performance
+    // Cache for 5 minutes on server, 2 minutes on client, allow stale-while-revalidate for 10 minutes
+    res.setHeader('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=600');
+    
+    return res.status(200).json({ 
+      teams: formattedTeams,
+      _meta: {
+        timestamp: new Date().toISOString(),
+        count: formattedTeams.length,
+        cohortId,
+        institutionId: instId
+      }
+    })
   } catch (error) {
     console.error('Error fetching joinable teams:', error)
     return res.status(500).json({ error: 'Failed to fetch joinable teams' })
