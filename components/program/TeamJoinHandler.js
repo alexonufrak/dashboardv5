@@ -61,7 +61,40 @@ const TeamJoinHandler = ({ cohort, profile, isActive = false, onComplete, onCanc
       return
     }
     
-    // Fetch joinable teams for this cohort
+    // Log cohort teams if they exist
+    if (cohort.Teams && cohort.Teams.length > 0) {
+      console.log("Found team IDs in cohort.Teams:", cohort.Teams);
+      
+      // First try to fetch team details directly from the Teams array if available
+      try {
+        // Directly fetch team details for teams linked to the cohort
+        const teamIds = cohort.Teams.join(',');
+        console.log(`Directly fetching teams with IDs: ${teamIds}`);
+        
+        const response = await fetch(`/api/teams?ids=${teamIds}`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Fetched teams details:", data);
+          
+          if (data.teams && data.teams.length > 0) {
+            // Log individual team info for debugging
+            data.teams.forEach(team => {
+              console.log(`Processed team ${team.id}: Name=${team.name || team.teamName || "Unnamed Team"}`);
+            });
+            
+            // Update the teams state
+            setTeams(data.teams);
+            setShowJoinList(true);
+            return; // Exit early since we have the teams
+          }
+        }
+      } catch (directError) {
+        console.error("Error fetching teams directly:", directError);
+        // Continue to fallback approach
+      }
+    }
+    
+    // Fallback: fetch joinable teams for this cohort
     await fetchJoinableTeams()
   }
   

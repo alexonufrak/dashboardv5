@@ -11,6 +11,42 @@ import { UserPlus, Users, AlertCircle } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 /**
+ * Helper function to format the cohort display name with initiative, topic, and class
+ * @param {Object} cohort - The cohort object
+ * @returns {string} - Formatted cohort display name
+ */
+const formatCohortDisplayName = (cohort) => {
+  if (!cohort) return "this cohort";
+  
+  // Start with the initiative name
+  const initiativeName = cohort.initiativeDetails?.name || "Program";
+  
+  // Get topic and class names if available
+  const topicName = cohort.topicNames && cohort.topicNames.length > 0 
+    ? cohort.topicNames[0]
+    : null;
+    
+  const className = cohort.classNames && cohort.classNames.length > 0
+    ? cohort.classNames[0]
+    : null;
+  
+  // Combine parts with proper formatting
+  let displayName = initiativeName;
+  
+  // Add topic name if available
+  if (topicName) {
+    displayName += `: ${topicName}`;
+  }
+  
+  // Add class name if available
+  if (className) {
+    displayName += topicName ? ` (${className})` : `: ${className}`;
+  }
+  
+  return displayName;
+};
+
+/**
  * A component that displays a list of joinable teams for a cohort
  * Used for Xperience and Horizons Challenge initiatives
  * 
@@ -34,8 +70,20 @@ const JoinableTeamsList = ({ teams = [], cohort, profile, onApplySuccess, onClos
   // This is a temporary fix until the joinable flag is properly set in Airtable 
   const hasJoinableTeams = teams.length > 0
   
-  // Debug team names
+  // Format cohort display name
+  const cohortDisplayName = formatCohortDisplayName(cohort);
+  
+  // Debug team and cohort info
   useEffect(() => {
+    // Log cohort display name
+    console.log("Cohort display name:", {
+      formatted: cohortDisplayName,
+      initiative: cohort?.initiativeDetails?.name,
+      topics: cohort?.topicNames,
+      classes: cohort?.classNames
+    });
+    
+    // Log team details
     if (teams.length > 0) {
       console.log("Teams in JoinableTeamsList:", teams.map(team => ({
         id: team.id,
@@ -43,7 +91,7 @@ const JoinableTeamsList = ({ teams = [], cohort, profile, onApplySuccess, onClos
         memberCount: team.memberCount || 0
       })))
     }
-  }, [teams])
+  }, [teams, cohort, cohortDisplayName])
   
   // Handle selection of a team to join
   const handleSelectTeam = (team) => {
@@ -160,7 +208,9 @@ const JoinableTeamsList = ({ teams = [], cohort, profile, onApplySuccess, onClos
       }}>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
-          <DialogTitle>Join a Team for {cohort.name || "this cohort"}</DialogTitle>
+          <DialogTitle>
+            Join a Team for {cohortDisplayName}
+          </DialogTitle>
           <DialogDescription>
             {hasJoinableTeams 
               ? "These teams are looking for new members. Select a team to join or create your own team."
@@ -181,18 +231,34 @@ const JoinableTeamsList = ({ teams = [], cohort, profile, onApplySuccess, onClos
           {hasJoinableTeams && (
             <ScrollArea className="max-h-[400px] pr-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {teams.map(team => (
-                  <Card key={team.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-base font-bold text-primary">
-                          {team.name || "Unnamed Team"}
-                        </CardTitle>
-                        <Badge variant="outline" className="flex items-center gap-1">
-                          <Users className="h-3 w-3" />
-                          {getTeamMembersCount(team)}
-                        </Badge>
-                      </div>
+                {teams.map(team => {
+                  console.log(`Rendering team card for ${team.id}:`, {
+                    name: team.name || team.teamName || "Unnamed Team",
+                    nameType: typeof team.name,
+                    teamNameType: typeof team.teamName,
+                    members: getTeamMembersCount(team)
+                  });
+                  
+                  // Get the best team name using multiple fallbacks
+                  const displayName = 
+                    team.name || 
+                    team.teamName || 
+                    team._debug?.originalName || 
+                    team._debug?.teamNameField || 
+                    `Team ${team.id.slice(-5)}`;
+                  
+                  return (
+                    <Card key={team.id} className="hover:shadow-md transition-shadow">
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-base font-bold text-primary">
+                            {displayName}
+                          </CardTitle>
+                          <Badge variant="outline" className="flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            {getTeamMembersCount(team)}
+                          </Badge>
+                        </div>
                       <div className="flex flex-col gap-1">
                         {team.institution && (
                           <CardDescription className="text-xs">
