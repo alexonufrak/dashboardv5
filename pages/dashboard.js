@@ -73,15 +73,12 @@ function Dashboard() {
     const path = router.pathname;
     const query = router.query;
     
-    console.log(`Setting active page based on URL path: ${path}`, query);
-    
     // Check if this is a program route
     if (isProgramRoute(router)) {
       // Get the program ID from the URL
       const programId = query.programId;
       
       if (programId) {
-        console.log(`Program route with ID: ${programId}`);
         setActivePage("program");
         setActiveProgramId(programId);
         setTitle("Program Dashboard"); // Generic title, will be updated later

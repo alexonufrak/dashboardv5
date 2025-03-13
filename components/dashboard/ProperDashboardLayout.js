@@ -29,13 +29,8 @@ const ProperDashboardLayout = ({
                       router.pathname === "/program-dashboard" ||
                       isProgramRoute(router) ||
                       router.pathname.startsWith("/program/") ||
+                      router.pathname.startsWith("/dashboard/program/") ||
                       router.pathname.startsWith("/dashboard/")
-  
-  // Debug information
-  console.log(`Current pathname: ${router.pathname}`);
-  console.log(`startsWith /dashboard/: ${router.pathname.startsWith("/dashboard/")}`);
-  console.log(`isDashboard: ${isDashboard}`);
-  console.log(`user: ${!!user}`);
                       
   const showSidebar = isDashboard && user
   
@@ -43,6 +38,7 @@ const ProperDashboardLayout = ({
   const showBreadcrumbs = router.pathname !== "/dashboard" && 
                           router.pathname !== "/program-dashboard" && 
                           !router.pathname.startsWith("/program/[programId]") &&
+                          !router.pathname.startsWith("/dashboard/program/[programId]") &&
                           router.pathname !== "/dashboard/programs" &&  // Hide breadcrumbs on programs page
                           showSidebar
 

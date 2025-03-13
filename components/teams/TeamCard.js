@@ -60,12 +60,12 @@ const TeamCard = ({ team, profile, onTeamUpdated }) => {
   // Handle program dashboard navigation
   const handleProgramDashboardClick = (cohort) => {
     if (cohort && cohort.initiativeDetails && cohort.initiativeDetails.id) {
-      router.push(`/program/${cohort.initiativeDetails.id}`, undefined, { shallow: true });
+      router.push(`/dashboard/program/${cohort.initiativeDetails.id}`, undefined, { shallow: true });
     } else {
       // Fallback to first cohort's initiative if available
       const firstCohort = teamCohorts && teamCohorts.length > 0 ? teamCohorts[0] : null;
       if (firstCohort && firstCohort.initiativeDetails && firstCohort.initiativeDetails.id) {
-        router.push(`/program/${firstCohort.initiativeDetails.id}`, undefined, { shallow: true });
+        router.push(`/dashboard/program/${firstCohort.initiativeDetails.id}`, undefined, { shallow: true });
       } else {
         // No specific program found, redirect to dashboard
         router.push("/dashboard", undefined, { shallow: true });

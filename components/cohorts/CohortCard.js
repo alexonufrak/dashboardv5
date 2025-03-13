@@ -333,7 +333,7 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
       cohort.onViewDetails(cohort)
     } else if (cohort.initiativeDetails?.id) {
       // Navigate to program dashboard using new URL structure
-      window.location.href = `/program/${cohort.initiativeDetails.id}`
+      window.location.href = `/dashboard/program/${cohort.initiativeDetails.id}`
     }
   }
   

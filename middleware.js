@@ -11,22 +11,22 @@ export async function middleware(request) {
   
   // Legacy routes that need to be redirected
   
-  // 1. Handle dashboard?program=X -> /program/X
+  // 1. Handle dashboard?program=X -> /dashboard/program/X
   if (pathname === '/dashboard' && search.includes('program=')) {
     const params = new URLSearchParams(search);
     const programId = params.get('program');
     
     if (programId) {
       return NextResponse.redirect(
-        new URL(`/program/${encodeURIComponent(programId)}`, request.url)
+        new URL(`/dashboard/program/${encodeURIComponent(programId)}`, request.url)
       );
     }
   }
   
-  // 2. Handle /program-dashboard -> /program (will be handled by program/index.js)
+  // 2. Handle /program-dashboard -> /dashboard/program
   if (pathname === '/program-dashboard') {
     return NextResponse.redirect(
-      new URL('/program', request.url)
+      new URL('/dashboard/program', request.url)
     );
   }
   
@@ -34,6 +34,14 @@ export async function middleware(request) {
   if (pathname === '/dashboard-shell') {
     return NextResponse.redirect(
       new URL('/dashboard', request.url)
+    );
+  }
+  
+  // 4. Handle /program/[id] -> /dashboard/program/[id]
+  if (pathname.startsWith('/program/') && !pathname.startsWith('/program-dashboard')) {
+    const programPath = pathname.replace('/program/', '');
+    return NextResponse.redirect(
+      new URL(`/dashboard/program/${programPath}${search}`, request.url)
     );
   }
   
@@ -79,5 +87,6 @@ export const config = {
     '/dashboard',
     '/dashboard-shell',
     '/program-dashboard',
+    '/program/:path*', // Add this to handle any program route
   ],
 };
