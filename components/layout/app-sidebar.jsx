@@ -94,7 +94,7 @@ export function AppSidebar({
           uniqueInitiativeIds.add(initiativeId);
           
           // Use updated program URL structure
-          const programUrl = `/program/${initiativeId}`;
+          const programUrl = ROUTES.PROGRAM.DETAIL(initiativeId);
           
           initiatives.push({
             name: p.cohort.initiativeDetails.name || "Unknown Program",

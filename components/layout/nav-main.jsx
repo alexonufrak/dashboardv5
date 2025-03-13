@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/router"
 import Link from "next/link"
 import {
   SidebarGroup,
@@ -11,6 +12,14 @@ import {
 export function NavMain({
   items
 }) {
+  const router = useRouter()
+
+  // Function to handle client-side navigation
+  const handleNavigation = (e, url) => {
+    e.preventDefault() // Prevent default link behavior
+    router.push(url, undefined, { shallow: true })
+  }
+
   return (
     (<SidebarGroup>
       <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
@@ -18,18 +27,25 @@ export function NavMain({
         {items.map((item) => (
           <SidebarMenuItem key={item.title}>
             {item.isActive ? (
-              <SidebarMenuButton asChild isActive tooltip={item.title}>
-                <Link href={item.url}>
-                  <item.icon className="mr-2 h-4 w-4" />
-                  <span>{item.title}</span>
-                </Link>
+              <SidebarMenuButton 
+                as="a" 
+                href={item.url} 
+                onClick={(e) => handleNavigation(e, item.url)}
+                isActive 
+                tooltip={item.title}
+              >
+                <item.icon className="mr-2 h-4 w-4" />
+                <span>{item.title}</span>
               </SidebarMenuButton>
             ) : (
-              <SidebarMenuButton asChild tooltip={item.title}>
-                <Link href={item.url}>
-                  <item.icon className="mr-2 h-4 w-4" />
-                  <span>{item.title}</span>
-                </Link>
+              <SidebarMenuButton 
+                as="a" 
+                href={item.url} 
+                onClick={(e) => handleNavigation(e, item.url)}
+                tooltip={item.title}
+              >
+                <item.icon className="mr-2 h-4 w-4" />
+                <span>{item.title}</span>
               </SidebarMenuButton>
             )}
           </SidebarMenuItem>
