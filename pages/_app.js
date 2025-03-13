@@ -82,7 +82,7 @@ function AppContent({ Component, pageProps, router }) {
 function MyApp({ Component, pageProps }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [pageLoading, setPageLoading] = useState(false);
+  // Removed pageLoading state as we've removed the loading overlay
   
   // Create a client for React Query with persistent cache
   const [queryClient] = useState(() => new QueryClient({
@@ -98,34 +98,8 @@ function MyApp({ Component, pageProps }) {
   // Only show the application after mounted on client side
   useEffect(() => {
     setMounted(true);
-
-    // Setup router events to handle loading state with immediate effect
-    const handleStart = (url) => {
-      // Only show loading state for dashboard-related routes
-      if (url.includes('/dashboard') || 
-          url.includes('/profile') || 
-          url.includes('/program/') ||
-          url.includes('/program-new/') ||
-          url.includes('/programs/')) {
-        // Use requestAnimationFrame to ensure this runs before the browser repaints
-        requestAnimationFrame(() => {
-          setPageLoading(true);
-        });
-      }
-    };
-    
-    const handleComplete = () => setPageLoading(false);
-    
-    router.events.on('routeChangeStart', handleStart);
-    router.events.on('routeChangeComplete', handleComplete);
-    router.events.on('routeChangeError', handleComplete);
-    
-    return () => {
-      router.events.off('routeChangeStart', handleStart);
-      router.events.off('routeChangeComplete', handleComplete);
-      router.events.off('routeChangeError', handleComplete);
-    };
-  }, [router]);
+    // We've removed the loading overlay logic
+  }, []);
 
   // Basic app shell when not mounted yet (server-side rendering)
   if (!mounted) {
@@ -139,9 +113,6 @@ function MyApp({ Component, pageProps }) {
     );
   }
 
-  // Show loading overlay during page transitions
-  const showLoadingOverlay = pageLoading;
-
   // Client-side rendered app with all providers
   return (
     <QueryClientProvider client={queryClient}>
@@ -154,10 +125,6 @@ function MyApp({ Component, pageProps }) {
           <OnboardingProvider>
             <ErrorBoundary className="bg-white dark:bg-gray-900">
               <AppContent Component={Component} pageProps={pageProps} router={router} />
-              {/* Always present background, changes opacity when loading */}
-              <div className={`fixed inset-0 bg-white dark:bg-gray-900 z-50 flex items-center justify-center pointer-events-none transition-opacity duration-200 ${showLoadingOverlay ? 'opacity-100' : 'opacity-0'}`}>
-                <div className={`animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400 ${showLoadingOverlay ? 'opacity-100' : 'opacity-0'}`}></div>
-              </div>
               <Analytics />
             </ErrorBoundary>
           </OnboardingProvider>
