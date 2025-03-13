@@ -36,7 +36,8 @@ const MainDashboardLayout = ({
                       router.pathname === "/program-dashboard" ||
                       isProgramRoute(router) ||
                       router.pathname.startsWith("/program/") ||
-                      router.pathname.startsWith("/dashboard/program/")
+                      router.pathname.startsWith("/dashboard/program/") ||
+                      router.pathname.startsWith("/dashboard/programs/")
                       
   const showSidebar = isDashboard && user
   
@@ -46,6 +47,7 @@ const MainDashboardLayout = ({
                           router.pathname !== "/program-dashboard" && 
                           !router.pathname.startsWith("/program/[programId]") &&
                           !router.pathname.startsWith("/dashboard/program/[programId]") &&
+                          !router.pathname.startsWith("/dashboard/programs/apply") &&
                           showSidebar
 
   useEffect(() => {

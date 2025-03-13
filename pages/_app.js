@@ -62,6 +62,7 @@ function AppContent({ Component, pageProps, router }) {
     router.pathname.startsWith('/program/') ||
     router.pathname.startsWith('/program-new/') ||
     router.pathname.startsWith('/dashboard/') ||
+    router.pathname.startsWith('/programs/') ||
     router.pathname === '/program-dashboard';
 
   // If not a dashboard route, render Component directly
@@ -104,7 +105,8 @@ function MyApp({ Component, pageProps }) {
       if (url.includes('/dashboard') || 
           url.includes('/profile') || 
           url.includes('/program/') ||
-          url.includes('/program-new/')) {
+          url.includes('/program-new/') ||
+          url.includes('/programs/')) {
         // Use requestAnimationFrame to ensure this runs before the browser repaints
         requestAnimationFrame(() => {
           setPageLoading(true);

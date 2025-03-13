@@ -20,9 +20,9 @@ import MainDashboardLayout from '@/components/layout/MainDashboardLayout'
 
 // Animation variants for the page transitions
 const pageVariants = {
-  initial: { opacity: 0, y: 10 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -10 }
+  initial: { opacity: 0, x: 40 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -40 }
 }
 
 /**
@@ -198,14 +198,18 @@ const ProgramsApplicationPage = () => {
   const programId = cohort?.programId || cohort?.initiativeDetails?.id || ''
   
   return (
-    <MainDashboardLayout title={`Apply to ${initiativeName}`}>
+    <MainDashboardLayout 
+      title={`Apply to ${initiativeName}`}
+      currentPage="programs"
+      showBreadcrumbs={false}
+    >
       <motion.div
         variants={pageVariants}
         initial="initial"
         animate="animate"
         exit="exit"
-        transition={{ duration: 0.3 }}
-        className="container py-6 max-w-4xl"
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        className="py-6 max-w-4xl"
       >
         {/* Breadcrumb Navigation */}
         <Breadcrumb className="mb-6">
