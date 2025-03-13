@@ -65,8 +65,28 @@ const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply, profile, applica
   
   // Handle the apply button click
   const handleApplyClick = () => {
-    setIsApplying(true)
-    setShowApplicationHandler(true)
+    // Check if we should use the fillout form in a popup or navigate to application page
+    const useFilloutPopup = cohort?.["Application Form ID (Fillout)"] && 
+                          cohort?.filloutDisplayMode === "popup";
+    
+    if (useFilloutPopup) {
+      // Use popup dialog for fillout forms that should display in popups
+      setIsApplying(true)
+      setShowApplicationHandler(true)
+    } else {
+      // Otherwise navigate to the application page
+      import('next/router').then(({ useRouter }) => {
+        const router = useRouter.router || useRouter().router;
+        
+        // Import dynamically to avoid circular dependencies
+        import('@/lib/routing').then(({ navigateToProgramApplication }) => {
+          // Navigate to application page with initiativeName for a nice slug
+          navigateToProgramApplication(router, cohort.programId, cohort.id, {
+            initiativeName: cohort.initiativeDetails?.name
+          });
+        });
+      });
+    }
   }
   
   // Handle the application process completion

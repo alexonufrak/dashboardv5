@@ -11,9 +11,16 @@ import { Dialog, DialogContent } from "@/components/ui/dialog"
 
 /**
  * Application form component for Xtrapreneurs program
- * Used as a dialog within the cohort application process
+ * Can be used as a dialog or within a page layout
+ * @param {Object} props - Component props
+ * @param {Object} props.profile - User profile data
+ * @param {Object} props.cohort - Cohort data
+ * @param {Function} props.onSubmit - Function to call when form is submitted
+ * @param {Function} props.onClose - Function to call when form is closed (for dialog mode)
+ * @param {boolean} props.open - Whether the dialog is open (for dialog mode)
+ * @param {boolean} props.isPage - Whether the form is displayed on a page (not in a dialog)
  */
-const XtrapreneursApplicationForm = ({ profile, cohort, onSubmit, onClose, open }) => {
+const XtrapreneursApplicationForm = ({ profile, cohort, onSubmit, onClose, open, isPage = false }) => {
   const [formData, setFormData] = useState({
     name: profile?.name || '',
     email: profile?.email || '',
@@ -83,18 +90,17 @@ const XtrapreneursApplicationForm = ({ profile, cohort, onSubmit, onClose, open 
     }))
   }
   
-  return (
-    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="sm:max-w-[600px]">
-        <Card className="w-full border-0 shadow-none">
-          <CardHeader className="px-0 pt-0">
-            <CardTitle>Xtrapreneurs Application</CardTitle>
-            <CardDescription>
-              Apply to join the {cohort?.name || 'Xtrapreneurs'} cohort
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4 px-0">
+  // Render differently based on whether we're in a dialog or page
+  const renderFormContent = () => (
+    <Card className={isPage ? "border-0 shadow-none" : "w-full border-0 shadow-none"}>
+      <CardHeader className={isPage ? "px-0 pt-0" : "px-0 pt-0"}>
+        <CardTitle>Xtrapreneurs Application</CardTitle>
+        <CardDescription>
+          Apply to join the {cohort?.name || 'Xtrapreneurs'} cohort
+        </CardDescription>
+      </CardHeader>
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4 px-0">
               <div className="space-y-1">
                 <Label htmlFor="name">Full Name</Label>
                 <Input 
@@ -190,13 +196,15 @@ const XtrapreneursApplicationForm = ({ profile, cohort, onSubmit, onClose, open 
             </CardContent>
             
             <CardFooter className="flex justify-end gap-2 px-0">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onClose}
-              >
-                Cancel
-              </Button>
+              {!isPage && (
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={onClose}
+                >
+                  Cancel
+                </Button>
+              )}
               <Button 
                 type="submit" 
                 disabled={isSubmitting}
@@ -206,6 +214,18 @@ const XtrapreneursApplicationForm = ({ profile, cohort, onSubmit, onClose, open 
             </CardFooter>
           </form>
         </Card>
+  )
+  
+  // If we're in page mode, just render the form directly
+  if (isPage) {
+    return renderFormContent();
+  }
+  
+  // Otherwise, wrap it in a dialog
+  return (
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
+      <DialogContent className="sm:max-w-[600px]">
+        {renderFormContent()}
       </DialogContent>
     </Dialog>
   )
