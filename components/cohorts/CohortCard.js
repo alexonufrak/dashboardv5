@@ -235,89 +235,21 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
         return;
       }
       
-      // Check initiative type for special handling
-      const initiativeName = cohort.initiativeDetails?.name?.toLowerCase() || "";
-      
-      // Handle Xtrapreneurs application differently
-      if (initiativeName.includes("xtrapreneurs")) {
-        console.log("Xtrapreneurs application detected - using custom form");
-        // Show custom Xtrapreneurs application form
-        setShowXtrapreneursForm(true);
-        setIsApplying(false); // Reset button state
-        return; // Exit early
-      }
-      
-      // Handle Xperience and Horizons Challenge by showing the team create/join dialog
-      if (initiativeName.includes("xperience") || initiativeName.includes("horizons challenge")) {
-        console.log("Xperience/Horizons Challenge application detected - using team create/join dialog");
-        setActiveTeamCreateDialog(true);
-        setIsApplying(false); // Reset button state
-        return; // Exit early
-      }
-      
-      // For all other initiatives, use the original logic
-      const isTeamApplication = 
-        participationType.toLowerCase() === "team" || 
-        participationType.toLowerCase().includes("team") ||
-        participationType.toLowerCase() === "teams";
-      
-      if (isTeamApplication) {
-        console.log("Team participation detected")
+      // Navigate to the application page
+      import('next/router').then(module => {
+        const useRouter = module.useRouter;
+        const router = useRouter();
         
-        // Check if we need to fetch teams
-        if (userTeams.length === 0 && !isLoadingTeams) {
-          try {
-            setIsLoadingTeams(true)
-            const response = await fetch('/api/teams')
-            if (response.ok) {
-              const data = await response.json()
-              const fetchedTeams = data.teams || []
-              console.log("Fetched teams:", fetchedTeams)
-              setUserTeams(fetchedTeams)
-              
-              if (fetchedTeams.length === 0) {
-                // User doesn't have any teams - show team creation dialog
-                setActiveTeamCreateDialog(true)
-                setSelectedCohort(cohort.id)
-              } else {
-                // User has teams - show team selection dialog
-                setActiveTeamSelectDialog({
-                  cohort: cohort,
-                  teams: fetchedTeams
-                })
-              }
-            }
-          } catch (error) {
-            console.error("Error fetching teams:", error)
-          } finally {
-            setIsLoadingTeams(false)
-          }
-        } else if (userTeams.length === 0) {
-          // User doesn't have any teams - show team creation dialog
-          setActiveTeamCreateDialog(true)
-          setSelectedCohort(cohort.id)
-        } else {
-          // User has teams - show team selection dialog
-          setActiveTeamSelectDialog({
-            cohort: cohort,
-            teams: userTeams
-          })
-        }
-      } else {
-        // Individual participation - use Fillout form
-        console.log("Individual participation detected")
-        if (cohort && cohort["Application Form ID (Fillout)"]) {
-          console.log(`Using Fillout form ID: ${cohort["Application Form ID (Fillout)"]}`);
-          
-          setActiveFilloutForm({
-            formId: cohort["Application Form ID (Fillout)"],
-            cohortId: cohort.id,
-            initiativeName: cohort.initiativeDetails?.name || "Program Application"
+        // Import dynamically to avoid circular dependencies
+        import('@/lib/routing').then(routing => {
+          // Navigate to application page with initiativeName for a nice slug
+          const programId = cohort.programId || cohort.initiativeDetails?.id;
+          routing.navigateToProgramApplication(router, programId, cohort.id, {
+            initiativeName: cohort.initiativeDetails?.name
           });
-        } else {
-          console.error("No Fillout form ID found for individual participation");
-        }
-      }
+        });
+      });
+      
     } catch (error) {
       console.error("Error in application process:", error);
     } finally {
