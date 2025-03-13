@@ -20,9 +20,9 @@ import MainDashboardLayout from '@/components/layout/MainDashboardLayout'
 
 // Animation variants for the page transitions
 const pageVariants = {
-  initial: { opacity: 0, x: 40 },
+  initial: { opacity: 0, x: 20 },
   animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -40 }
+  exit: { opacity: 0, x: -20 }
 }
 
 /**
@@ -32,7 +32,7 @@ const pageVariants = {
 const ProgramsApplicationPage = () => {
   const router = useRouter()
   const { user, error: userError, isLoading: userLoading } = useUser()
-  const { cohortId, initiative } = router.query
+  const { cohortId } = router.query
   
   // State to manage application data and UI
   const [isLoading, setIsLoading] = useState(true)
@@ -46,37 +46,44 @@ const ProgramsApplicationPage = () => {
   
   // Fetch cohort and profile data
   useEffect(() => {
-    // Only fetch data when cohortId is available
-    if (cohortId && user) {
+    // Only fetch data when cohortId is available and user is loaded
+    if (cohortId && user && !userLoading) {
       setIsLoading(true)
+      setError(null) // Clear any previous errors
       
-      // Fetch profile data
-      fetch('/api/user/profile')
-        .then(res => res.json())
-        .then(data => {
-          if (data.profile) {
-            setProfile(data.profile)
-          } else {
-            setError('Failed to load user profile')
+      // Fetch data in sequence to avoid race conditions
+      const fetchData = async () => {
+        try {
+          // Step 1: Fetch user profile
+          const profileResponse = await fetch('/api/user/profile')
+          const profileData = await profileResponse.json()
+          
+          if (!profileResponse.ok) {
+            throw new Error('Failed to load user profile')
           }
-        })
-        .catch(err => {
-          console.error('Error fetching profile:', err)
-          setError('Failed to load user profile')
-        })
-      
-      // Fetch cohort data
-      fetch(`/api/cohorts/${cohortId}/details`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.cohort) {
-            setCohort(data.cohort)
+          
+          if (profileData.profile) {
+            setProfile(profileData.profile)
+          } else {
+            throw new Error('Failed to load user profile data')
+          }
+          
+          // Step 2: Fetch cohort data
+          const cohortResponse = await fetch(`/api/cohorts/${cohortId}/details`)
+          const cohortData = await cohortResponse.json()
+          
+          if (!cohortResponse.ok) {
+            throw new Error('Failed to load cohort data')
+          }
+          
+          if (cohortData.cohort) {
+            setCohort(cohortData.cohort)
             
             // Determine application type
-            const initiativeName = data.cohort.initiativeDetails?.name || ''
-            const participationType = data.cohort.participationType || 
-                                   data.cohort.initiativeDetails?.["Participation Type"] || 
-                                   "Individual"
+            const initiativeName = cohortData.cohort.initiativeDetails?.name || ''
+            const participationType = cohortData.cohort.participationType || 
+                                    cohortData.cohort.initiativeDetails?.["Participation Type"] || 
+                                    "Individual"
             
             // Check for Xtrapreneurs
             if (initiativeName.toLowerCase().includes('xtrapreneur')) {
@@ -96,18 +103,19 @@ const ProgramsApplicationPage = () => {
               setApplicationType('standard')
             }
           } else {
-            setError('Failed to load cohort data')
+            throw new Error('Failed to load cohort details')
           }
-        })
-        .catch(err => {
-          console.error('Error fetching cohort:', err)
-          setError('Failed to load cohort data')
-        })
-        .finally(() => {
+        } catch (error) {
+          console.error('Error loading application data:', error)
+          setError(error.message || 'An error occurred loading application data')
+        } finally {
           setIsLoading(false)
-        })
+        }
+      }
+      
+      fetchData()
     }
-  }, [cohortId, user])
+  }, [cohortId, user, userLoading])
   
   // Handle Fillout form submission
   const handleFilloutSubmit = async (submissionId) => {

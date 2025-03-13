@@ -75,11 +75,11 @@ const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply, profile, applica
       setShowApplicationHandler(true)
     } else {
       // Otherwise navigate to the application page using the programs/apply route
-      // Import dynamically to avoid circular dependencies
-      import('@/lib/routing').then((routing) => {
-        // Navigate to application page with initiative name
-        const applicationUrl = routing.ROUTES.PROGRAMS_APPLY(cohort.id, cohort.initiativeDetails?.name);
-        window.location.href = applicationUrl;
+      // Import next/router for client-side navigation
+      import('next/router').then(({ useRouter }) => {
+        const router = useRouter();
+        // Navigate to application URL without the initiative name in query params
+        router.push(`/dashboard/programs/apply/${encodeURIComponent(cohort.id)}`);
       });
     }
   }

@@ -244,17 +244,12 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
         return;
       }
       
-      // Get the initiative name for the URL
-      const initiativeName = cohort.initiativeDetails?.name || '';
+      // Import next/router for client-side navigation
+      const { useRouter } = await import('next/router');
+      const router = useRouter();
       
-      // Import the routing utilities dynamically to use ROUTES
-      const routing = await import('@/lib/routing');
-      
-      // Get application URL from centralized routing
-      const applicationUrl = routing.ROUTES.PROGRAMS_APPLY(cohortId, initiativeName);
-      
-      // Navigate directly to the application page
-      window.location.href = applicationUrl;
+      // Navigate to application URL without the initiative name in query params
+      router.push(`/dashboard/programs/apply/${encodeURIComponent(cohortId)}`);
       
     } catch (error) {
       console.error("Error in application process:", error);
