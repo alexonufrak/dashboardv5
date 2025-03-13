@@ -1,5 +1,5 @@
 import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0'
-import { getUserProfile, getTeamById, updateTeam } from '@/lib/airtable'
+import { getUserProfile, getTeamById, updateTeam, base } from '@/lib/airtable'
 
 /**
  * API handler to get or update a specific team
@@ -35,6 +35,29 @@ export default withApiAuthRequired(async function teamHandler(req, res) {
       
       if (!team) {
         return res.status(404).json({ error: 'Team not found' })
+      }
+      
+      // Log team details for debugging
+      console.log(`Team ${teamId} details:`, {
+        id: team.id,
+        name: team.name,
+        institution: team.institution,
+        memberCount: team.members.length
+      })
+      
+      // If we have an institution ID, try to look up directly
+      if (team.institution?.id && process.env.AIRTABLE_INSTITUTIONS_TABLE_ID) {
+        try {
+          const institutionsTable = base(process.env.AIRTABLE_INSTITUTIONS_TABLE_ID)
+          const institution = await institutionsTable.find(team.institution.id)
+          console.log(`Direct institution lookup for ${team.institution.id}:`, {
+            name: institution.fields.Name,
+            domains: institution.fields.Domains,
+            allFields: Object.keys(institution.fields)
+          })
+        } catch (err) {
+          console.error(`Error fetching institution ${team.institution.id}:`, err.message)
+        }
       }
       
       return res.status(200).json({ team })

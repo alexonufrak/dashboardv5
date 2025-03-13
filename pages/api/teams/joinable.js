@@ -88,7 +88,7 @@ export default withApiAuthRequired(async function joinableTeamsHandler(req, res)
     const finalTeams = filteredTeams.length > 0 ? filteredTeams : teams
     
     // Process teams
-    const formattedTeams = finalTeams.map(team => {
+    const formattedTeams = await Promise.all(finalTeams.map(async team => {
       // Format member data for display
       const memberCount = team.fields['Count (Members)'] || 0;
       const memberNames = team.fields['Name (from Contact) (from Members)'] || [];
@@ -101,19 +101,61 @@ export default withApiAuthRequired(async function joinableTeamsHandler(req, res)
         nameField: team.fields.Name,
         teamNameField: team.fields['Team Name'],
         finalName: teamName,
-        hasMembers: Boolean(memberNames.length)
+        hasMembers: Boolean(memberNames.length),
+        institutionId: team.fields.Institution?.[0] || null,
+        institutionName: team.fields['Institution Name'],
+        nameFromInstitution: team.fields['Name (from Institution)']
       });
+      
+      // Handle institution data with direct lookup if needed
+      let institutionData = null;
+      if (team.fields.Institution?.[0]) {
+        const instId = team.fields.Institution[0];
+        
+        // First try to get from team record
+        const nameFromTeamRecord = team.fields['Institution Name'] || 
+                                  (Array.isArray(team.fields['Name (from Institution)']) ? 
+                                  team.fields['Name (from Institution)'][0] : 
+                                  team.fields['Name (from Institution)']);
+        
+        if (nameFromTeamRecord) {
+          institutionData = {
+            id: instId,
+            name: nameFromTeamRecord
+          };
+        }
+        // If no name in team record, lookup directly in institutions table
+        else if (process.env.AIRTABLE_INSTITUTIONS_TABLE_ID) {
+          try {
+            const institutionsTable = base(process.env.AIRTABLE_INSTITUTIONS_TABLE_ID);
+            const institution = await institutionsTable.find(instId);
+            
+            if (institution && institution.fields.Name) {
+              institutionData = {
+                id: instId,
+                name: institution.fields.Name
+              };
+              console.log(`Found institution name via direct lookup: ${institution.fields.Name}`);
+            }
+          } catch (err) {
+            console.error(`Error fetching institution ${instId}:`, err.message);
+          }
+        }
+        
+        // If we still don't have institution data, set the default
+        if (!institutionData) {
+          institutionData = {
+            id: instId,
+            name: 'Unknown Institution'
+          };
+        }
+      }
       
       return {
         id: team.id,
         name: teamName,
         description: team.fields.Description || "No description available",
-        institution: team.fields.Institution?.[0] ? {
-          id: team.fields.Institution[0],
-          name: team.fields['Institution Name'] || 
-                (Array.isArray(team.fields['Name (from Institution)']) ? team.fields['Name (from Institution)'][0] : team.fields['Name (from Institution)']) || 
-                'Unknown Institution'
-        } : null,
+        institution: institutionData,
         members: team.fields['Contact (from Members)'] || [],
         memberNames: memberNames,
         displayMembers: displayMembers,
@@ -124,7 +166,7 @@ export default withApiAuthRequired(async function joinableTeamsHandler(req, res)
         hasMoreMembers: memberNames.length > 3,
         additionalMembersCount: Math.max(0, memberNames.length - 3)
       }
-    })
+    }))
     
     console.log(`Found ${formattedTeams.length} joinable teams for cohort ${cohortId} and institution ${instId}`)
     
