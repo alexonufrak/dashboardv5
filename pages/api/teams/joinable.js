@@ -110,7 +110,9 @@ export default withApiAuthRequired(async function joinableTeamsHandler(req, res)
         description: team.fields.Description || "No description available",
         institution: team.fields.Institution?.[0] ? {
           id: team.fields.Institution[0],
-          name: team.fields['Name (from Institution)']?.[0] || 'Unknown Institution'
+          name: team.fields['Institution Name'] || 
+                (Array.isArray(team.fields['Name (from Institution)']) ? team.fields['Name (from Institution)'][0] : team.fields['Name (from Institution)']) || 
+                'Unknown Institution'
         } : null,
         members: team.fields['Contact (from Members)'] || [],
         memberNames: memberNames,
