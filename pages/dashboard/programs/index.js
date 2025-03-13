@@ -5,6 +5,7 @@ import { withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { useDashboard } from "@/contexts/DashboardContext"
 import CohortGrid from "@/components/cohorts/CohortGrid"
 import { toast } from "sonner"
+import dynamic from "next/dynamic"
 
 // UI Components
 import { Skeleton } from "@/components/ui/skeleton"
@@ -13,7 +14,8 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Blocks, Building2, ArrowRight, Compass, GraduationCap } from "lucide-react"
 
-export default function ProgramsPage({ onNavigate }) {
+// Inner component that uses dashboard context
+function ProgramsPageContent({ onNavigate }) {
   // Get data from dashboard context
   const { 
     profile, 
@@ -165,6 +167,16 @@ export default function ProgramsPage({ onNavigate }) {
       )}
     </div>
   );
+}
+
+// Use dynamic import with SSR disabled to prevent context errors during build
+const ProgramsPageDynamic = dynamic(() => Promise.resolve(ProgramsPageContent), { 
+  ssr: false 
+})
+
+// Export the dynamic component that doesn't require context during build
+export default function ProgramsPage(props) {
+  return <ProgramsPageDynamic {...props} />
 }
 
 export const getServerSideProps = withPageAuthRequired();
