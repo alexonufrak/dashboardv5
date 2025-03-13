@@ -135,7 +135,7 @@ function ProgramsPageContent({ onNavigate }) {
                       <div className="flex items-center gap-2">
                         <GraduationCap className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm">
-                          {participation.cohort?.name || "Current Cohort"}
+                          {participation.cohort?.shortName || participation.cohort?.name || "Current Cohort"}
                         </span>
                       </div>
                       {participation.team && (
@@ -143,6 +143,22 @@ function ProgramsPageContent({ onNavigate }) {
                           <Blocks className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm">
                             Team: {participation.team.name}
+                          </span>
+                        </div>
+                      )}
+                      {participation.cohort?.topicNames && participation.cohort.topicNames.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Compass className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {participation.cohort.topicNames.join(", ")}
+                          </span>
+                        </div>
+                      )}
+                      {participation.cohort?.classNames && participation.cohort.classNames.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            Class: {participation.cohort.classNames.join(", ")}
                           </span>
                         </div>
                       )}

@@ -98,6 +98,8 @@ export default withApiAuthRequired(async function handler(req, res) {
           } : null,
           // Include topic names if available
           topicNames: record.cohort.topicNames || [],
+          // Include class names if available
+          classNames: record.cohort.classNames || [],
           // Add participationType directly to cohort for backward compatibility
           participationType: record.initiative ? record.initiative["Participation Type"] : "Individual"
         },

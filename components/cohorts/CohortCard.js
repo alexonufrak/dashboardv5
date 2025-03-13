@@ -381,6 +381,11 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
               className={statusClass}>
               {status}
             </Badge>
+            {cohort.shortName || cohort.Short_Name ? (
+              <div className="mt-1 text-sm text-muted-foreground">
+                {cohort.shortName || cohort.Short_Name}
+              </div>
+            ) : null}
           </div>
           
           <div className="flex flex-wrap gap-2 mt-2">
