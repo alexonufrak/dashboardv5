@@ -27,10 +27,15 @@ const ProperDashboardLayout = ({
   const isDashboard = router.pathname === "/dashboard" || 
                       router.pathname === "/profile" || 
                       router.pathname === "/program-dashboard" ||
-                      router.pathname === "/dashboard/programs" || // Explicitly include programs page
                       isProgramRoute(router) ||
                       router.pathname.startsWith("/program/") ||
                       router.pathname.startsWith("/dashboard/")
+  
+  // Debug information
+  console.log(`Current pathname: ${router.pathname}`);
+  console.log(`startsWith /dashboard/: ${router.pathname.startsWith("/dashboard/")}`);
+  console.log(`isDashboard: ${isDashboard}`);
+  console.log(`user: ${!!user}`);
                       
   const showSidebar = isDashboard && user
   

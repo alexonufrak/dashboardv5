@@ -17,16 +17,16 @@ import {
 } from '@/lib/routing'
 
 // Dynamically import dashboard pages
-const DashboardHome = dynamic(() => import("@/pages/dashboards/DashboardHome"), {
+const DashboardHome = dynamic(() => import("@/pages/dashboard/DashboardHome"), {
   loading: () => <PageSkeleton />
 })
 
-const ProgramDashboard = dynamic(() => import("@/pages/dashboards/ProgramDashboard"), {
+const ProgramDashboard = dynamic(() => import("@/pages/dashboard/ProgramDashboard"), {
   loading: () => <PageSkeleton />
 })
 
 // Placeholder for other dashboard pages
-const ProfilePage = dynamic(() => import("@/pages/dashboards/ProfilePage"), {
+const ProfilePage = dynamic(() => import("@/pages/dashboard/ProfilePage"), {
   loading: () => <PageSkeleton />
 })
 
