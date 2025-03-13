@@ -244,9 +244,16 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
         return;
       }
       
-      // Use direct window location navigation to avoid React hooks issues
-      // This is more reliable and avoids the "Minified React error #321" with useRouter()
-      window.location.href = `/dashboard/programs/apply/${encodeURIComponent(cohortId)}`;
+      // Import next/router for navigation
+      // We need to use dynamic import to avoid React hooks issues
+      import('next/router').then(module => {
+        const router = module.default || module;
+        // Use the router.push with shallow:false to ensure data is loaded
+        // but with a custom handler for the transition
+        router.push(`/dashboard/programs/apply/${encodeURIComponent(cohortId)}`, undefined, {
+          scroll: false // Prevent scrolling to top on navigation
+        });
+      });
       
     } catch (error) {
       console.error("Error in application process:", error);

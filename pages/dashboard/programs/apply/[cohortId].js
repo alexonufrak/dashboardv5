@@ -17,13 +17,7 @@ import Link from 'next/link'
 import { ROUTES } from '@/lib/routing'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import MainDashboardLayout from '@/components/layout/MainDashboardLayout'
-
-// Animation variants for the page transitions
-const pageVariants = {
-  initial: { opacity: 0, x: 20 },
-  animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -20 }
-}
+import TransitionLayout from '@/components/common/TransitionLayout'
 
 /**
  * Program application page component from the /programs route
@@ -196,9 +190,10 @@ const ProgramsApplicationPage = () => {
     }
   }
   
-  // Handle going back to the programs page
-  const handleGoBack = () => {
-    router.push(ROUTES.PROGRAMS)
+  // Handle going back to the programs page with smooth transition
+  const handleGoBack = (e) => {
+    if (e) e.preventDefault();
+    router.push(ROUTES.PROGRAMS, undefined, { scroll: false })
   }
   
   // Determine initiative name for breadcrumb and title
@@ -211,14 +206,8 @@ const ProgramsApplicationPage = () => {
       currentPage="programs"
       showBreadcrumbs={false}
     >
-      <motion.div
-        variants={pageVariants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="py-6 max-w-4xl"
-      >
+      <TransitionLayout routePattern="/dashboard/programs" className="w-full">
+        <div className="py-6 max-w-4xl">
         {/* Breadcrumb Navigation */}
         <Breadcrumb className="mb-6">
           <BreadcrumbList>
@@ -392,7 +381,8 @@ const ProgramsApplicationPage = () => {
             </Card>
           </div>
         )}
-      </motion.div>
+      </div>
+      </TransitionLayout>
     </MainDashboardLayout>
   )
 }

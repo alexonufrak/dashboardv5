@@ -74,9 +74,14 @@ const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply, profile, applica
       setIsApplying(true)
       setShowApplicationHandler(true)
     } else {
-      // Navigate directly to avoid React hooks issues
-      // This is more reliable and avoids the "Minified React error #321" with useRouter()
-      window.location.href = `/dashboard/programs/apply/${encodeURIComponent(cohort.id)}`;
+      // Import next/router for navigation with better transitions
+      import('next/router').then(module => {
+        const router = module.default || module;
+        // Use router.push with scroll: false to prevent scrolling to top during navigation
+        router.push(`/dashboard/programs/apply/${encodeURIComponent(cohort.id)}`, undefined, {
+          scroll: false
+        });
+      });
     }
   }
   

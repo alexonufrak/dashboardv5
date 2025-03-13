@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/router"
 import ProperDashboardLayout from "@/components/dashboard/ProperDashboardLayout"
+import TransitionLayout from "@/components/common/TransitionLayout"
 
 // UI Components
 import { Skeleton } from "@/components/ui/skeleton"
@@ -61,16 +62,17 @@ function ProgramsPageContent({ onNavigate }) {
                          "Your Institution";
 
   return (
-    <div className="space-y-8">
-      {/* Page Header */}
-      <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Available Programs
-        </h1>
-        <p className="text-muted-foreground">
-          Browse and apply to xFoundry programs available at {institutionName}
-        </p>
-      </div>
+    <TransitionLayout routePattern="/dashboard/programs" className="w-full">
+      <div className="space-y-8">
+        {/* Page Header */}
+        <div className="flex flex-col space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Available Programs
+          </h1>
+          <p className="text-muted-foreground">
+            Browse and apply to xFoundry programs available at {institutionName}
+          </p>
+        </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="md:col-span-3">
@@ -86,6 +88,7 @@ function ProgramsPageContent({ onNavigate }) {
             </div>
           </CardHeader>
           <CardContent>
+            {/* Wrap the cohort grid in a TransitionLayout for smooth program transitions */}
             <CohortGrid 
               cohorts={profile?.cohorts || []}
               profile={profile}
@@ -184,6 +187,7 @@ function ProgramsPageContent({ onNavigate }) {
         </div>
       )}
     </div>
+    </TransitionLayout>
   );
 }
 
