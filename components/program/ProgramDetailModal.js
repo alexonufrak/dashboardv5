@@ -74,13 +74,9 @@ const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply, profile, applica
       setIsApplying(true)
       setShowApplicationHandler(true)
     } else {
-      // Otherwise navigate to the application page using the programs/apply route
-      // Import next/router for client-side navigation
-      import('next/router').then(({ useRouter }) => {
-        const router = useRouter();
-        // Navigate to application URL without the initiative name in query params
-        router.push(`/dashboard/programs/apply/${encodeURIComponent(cohort.id)}`);
-      });
+      // Navigate directly to avoid React hooks issues
+      // This is more reliable and avoids the "Minified React error #321" with useRouter()
+      window.location.href = `/dashboard/programs/apply/${encodeURIComponent(cohort.id)}`;
     }
   }
   

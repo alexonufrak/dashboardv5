@@ -244,12 +244,9 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
         return;
       }
       
-      // Import next/router for client-side navigation
-      const { useRouter } = await import('next/router');
-      const router = useRouter();
-      
-      // Navigate to application URL without the initiative name in query params
-      router.push(`/dashboard/programs/apply/${encodeURIComponent(cohortId)}`);
+      // Use direct window location navigation to avoid React hooks issues
+      // This is more reliable and avoids the "Minified React error #321" with useRouter()
+      window.location.href = `/dashboard/programs/apply/${encodeURIComponent(cohortId)}`;
       
     } catch (error) {
       console.error("Error in application process:", error);
