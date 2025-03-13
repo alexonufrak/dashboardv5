@@ -30,15 +30,14 @@ const MainDashboardLayout = ({
   const router = useRouter()
   const { user } = useUser()
   
-  // Check if current route is a dashboard route - include dynamic program routes
-  const isDashboard = router.pathname === "/dashboard" || 
+  // All paths under /dashboard should be considered dashboard routes
+  const isDashboard = router.pathname.startsWith("/dashboard") || 
                       router.pathname === "/profile" || 
                       router.pathname === "/program-dashboard" ||
                       isProgramRoute(router) ||
-                      router.pathname.startsWith("/program/") ||
-                      router.pathname.startsWith("/dashboard/program/") ||
-                      router.pathname.startsWith("/dashboard/programs/")
+                      router.pathname.startsWith("/program/")
                       
+  // Always show sidebar on dashboard routes if user is logged in
   const showSidebar = isDashboard && user
   
   // Determine whether to show breadcrumbs
@@ -119,6 +118,9 @@ const MainDashboardLayout = ({
 
 // Internal layout shell component
 function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcrumbs }) {
+  // For dashboard pages, always show the sidebar if the user is logged in
+  const renderWithSidebar = showSidebar; 
+
   return (
     <>
       <Head>
@@ -128,7 +130,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      {showSidebar ? (
+      {renderWithSidebar ? (
         <SidebarProvider defaultOpen>
           {/* Mobile Header - Only visible on mobile */}
           <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-background border-b py-3 px-4 flex justify-between items-center shadow-xs">
