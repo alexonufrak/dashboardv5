@@ -138,9 +138,18 @@ export default withApiAuthRequired(async function handler(req, res) {
       }
     })
     
+    // Add cache control headers - cache for 10 minutes on server, 5 minutes on client
+    // Milestones rarely change, so longer caching is appropriate
+    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=1800');
+    
     // Return the formatted milestones
     return res.status(200).json({
-      milestones: formattedMilestones
+      milestones: formattedMilestones,
+      _meta: {
+        timestamp: new Date().toISOString(),
+        cohortId,
+        count: formattedMilestones.length
+      }
     })
   } catch (error) {
     console.error("Error fetching milestones:", error)

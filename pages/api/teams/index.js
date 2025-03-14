@@ -70,7 +70,18 @@ export default withApiAuthRequired(async function teamsHandler(req, res) {
     }]
     
     console.log('Teams API response:', { count: formattedTeams.length })
-    return res.status(200).json({ teams: formattedTeams })
+    
+    // Add cache control headers - cache for 5 minutes on server, 1 minute on client
+    // stale-while-revalidate allows serving stale content while fetching fresh data
+    res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
+    
+    return res.status(200).json({ 
+      teams: formattedTeams,
+      _meta: {
+        timestamp: new Date().toISOString(),
+        count: formattedTeams.length
+      }
+    })
   } catch (error) {
     console.error('Error fetching teams:', error)
     return res.status(500).json({ error: 'Failed to fetch teams' })

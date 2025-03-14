@@ -61,8 +61,19 @@ export default withApiAuthRequired(async function handler(req, res) {
       visibility: record.fields['Visibility'],
     }))
 
+    // Add cache control headers - cache for 10 minutes on server, 5 minutes on client
+    // Bounties don't change frequently
+    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=1800');
+    
     // Send the response
-    res.status(200).json({ data: bounties })
+    res.status(200).json({ 
+      data: bounties,
+      _meta: {
+        timestamp: new Date().toISOString(),
+        programId,
+        count: bounties.length
+      }
+    })
   } catch (error) {
     console.error('Error fetching bounties:', error)
     res.status(500).json({ error: 'Failed to fetch bounties', details: error.message })

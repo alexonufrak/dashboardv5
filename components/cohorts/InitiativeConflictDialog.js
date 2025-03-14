@@ -10,9 +10,10 @@ import {
   DialogDescription
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { AlertTriangle, LogOut } from "lucide-react"
+import { AlertTriangle, LogOut, RefreshCw } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/use-toast"
+import { useQueryClient } from "@tanstack/react-query"
 
 /**
  * A dialog that explains initiative conflicts to users
@@ -31,7 +32,37 @@ const InitiativeConflictDialog = ({
   conflictType = "initiative_conflict"
 }) => {
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // Function to refresh initiative conflict data
+  const refreshConflictData = async () => {
+    setIsRefreshing(true);
+    try {
+      // Invalidate the initiative conflicts cache
+      await queryClient.invalidateQueries(['initiativeConflicts']);
+      
+      // Notify the user
+      toast({
+        title: "Status refreshed",
+        description: "Initiative status has been updated with the latest information.",
+        variant: "default"
+      });
+      
+      // Close the dialog to allow the parent component to fetch fresh data
+      onClose();
+    } catch (error) {
+      console.error("Error refreshing conflict data:", error);
+      toast({
+        title: "Refresh failed",
+        description: "Could not refresh initiative status. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
   
   if (!details) return null;
 
@@ -280,6 +311,16 @@ const InitiativeConflictDialog = ({
           <DialogFooter className="flex flex-col sm:flex-row gap-3 pt-4">
             <Button variant="outline" onClick={onClose}>
               Go Back
+            </Button>
+            
+            <Button 
+              variant="secondary" 
+              className="flex items-center gap-2"
+              onClick={refreshConflictData}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? "Refreshing..." : "Refresh Status"}
             </Button>
             
             <Button 

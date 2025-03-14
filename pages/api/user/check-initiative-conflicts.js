@@ -53,7 +53,8 @@ export default withApiAuthRequired(async function checkInitiativeConflictsHandle
     
     // Add cache control headers - cache for 1 hour (3600 seconds)
     // Client caching for 30 minutes, CDN/edge caching for 1 hour
-    res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=3600, stale-while-revalidate=7200');
+    // Adding must-revalidate to force checking with server on page refresh
+    res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=3600, stale-while-revalidate=7200, must-revalidate');
     
     // Return conflict status with details if there's a conflict
     return res.status(200).json({

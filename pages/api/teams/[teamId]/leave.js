@@ -306,11 +306,14 @@ export default withApiAuthRequired(async function leaveTeamHandler(req, res) {
       // Don't fail the whole operation if updating participation records fails
     }
 
+    // Set cache-control header to prevent caching on this mutation endpoint
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    
     // Respond with success - include cache invalidation info
     return res.status(200).json({
       success: true,
       message: 'Successfully left the team',
-      invalidateCaches: ['participation', 'teams'] // Include which caches should be invalidated by the client
+      invalidateCaches: ['participation', 'teams', 'initiativeConflicts'] // Include which caches should be invalidated by the client
     })
   } catch (error) {
     console.error(`Error leaving team ${teamId}:`, error)
