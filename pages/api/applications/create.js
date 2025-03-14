@@ -166,10 +166,17 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     if (!shouldCreateApplication) {
       // Also update the user's Onboarding status in Airtable to "Joined"
       try {
-        await contactsTable.update(userProfile.contactId, {
-          "Onboarding": "Joined"
-        });
-        console.log(`Updated contact ${userProfile.contactId} Onboarding status to "Joined" for direct join`);
+        // Initialize the contacts table
+        const contactsTableId = process.env.AIRTABLE_CONTACTS_TABLE_ID;
+        if (!contactsTableId) {
+          console.error('Contacts table ID not configured');
+        } else {
+          const contactsTable = base(contactsTableId);
+          await contactsTable.update(userProfile.contactId, {
+            "Onboarding": "Joined"
+          });
+          console.log(`Updated contact ${userProfile.contactId} Onboarding status to "Joined" for direct join`);
+        }
       } catch (onboardingError) {
         console.error("Error updating onboarding status:", onboardingError);
       }
@@ -315,11 +322,18 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     
     // Step 3: Update the user's Onboarding status in Airtable to "Applied"
     try {
-      // Update the contact record with the new onboarding status
-      await contactsTable.update(userProfile.contactId, {
-        "Onboarding": "Applied"
-      });
-      console.log(`Updated contact ${userProfile.contactId} Onboarding status to "Applied"`);
+      // Initialize the contacts table
+      const contactsTableId = process.env.AIRTABLE_CONTACTS_TABLE_ID;
+      if (!contactsTableId) {
+        console.error('Contacts table ID not configured');
+      } else {
+        const contactsTable = base(contactsTableId);
+        // Update the contact record with the new onboarding status
+        await contactsTable.update(userProfile.contactId, {
+          "Onboarding": "Applied"
+        });
+        console.log(`Updated contact ${userProfile.contactId} Onboarding status to "Applied"`);
+      }
     } catch (onboardingError) {
       // Log but don't fail if onboarding update fails
       console.error("Error updating onboarding status:", onboardingError);
