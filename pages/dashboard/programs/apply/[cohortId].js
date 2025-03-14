@@ -59,6 +59,17 @@ const ProgramsApplicationPage = () => {
           
           if (profileData.profile) {
             setProfile(profileData.profile)
+          } else if (profileData.auth0Id) {
+            // Use the basic profile info if it's available
+            setProfile({
+              ...profileData,
+              // Add any missing fields that might be needed
+              contactId: profileData.contactId || null,
+              email: profileData.email || user.email,
+              firstName: profileData.firstName || user.given_name || user.name?.split(' ')[0] || '',
+              lastName: profileData.lastName || user.family_name || user.name?.split(' ').slice(1).join(' ') || '',
+              institutionName: profileData.institutionName || profileData.institution?.name || ''
+            })
           } else {
             throw new Error('Failed to load user profile data')
           }

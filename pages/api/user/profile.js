@@ -67,7 +67,7 @@ async function handler(req, res) {
         
         // Include processing metadata in response
         return res.status(200).json({
-          ...profile,
+          profile: profile, // Wrap the profile in a profile key for consistency
           _meta: {
             processingTime,
             timestamp: new Date().toISOString()
@@ -76,13 +76,15 @@ async function handler(req, res) {
       } catch (profileError) {
         console.error("Error fetching complete profile:", profileError);
         
-        // Return a basic profile with auth0 data as fallback
+        // Return a basic profile with auth0 data as fallback, wrapped in a profile key
         return res.status(200).json({
-          auth0Id: session.user.sub,
-          email: session.user.email,
-          name: session.user.name,
-          picture: session.user.picture,
-          isProfileComplete: false,
+          profile: {
+            auth0Id: session.user.sub,
+            email: session.user.email,
+            name: session.user.name,
+            picture: session.user.picture,
+            isProfileComplete: false,
+          },
           _meta: {
             error: profileError.message,
             timestamp: new Date().toISOString()
@@ -189,14 +191,16 @@ async function handler(req, res) {
     }
   } catch (error) {
     console.error("Error in profile API:", error);
-    // Provide basic user data from auth0 even in error case
+    // Provide basic user data from auth0 even in error case, wrapped in profile key
     if (req.method === "GET" && error.session && error.session.user) {
       return res.status(200).json({
-        auth0Id: error.session.user.sub,
-        email: error.session.user.email,
-        name: error.session.user.name,
-        picture: error.session.user.picture,
-        isProfileComplete: false,
+        profile: {
+          auth0Id: error.session.user.sub,
+          email: error.session.user.email,
+          name: error.session.user.name,
+          picture: error.session.user.picture,
+          isProfileComplete: false,
+        },
         _meta: {
           error: error.message,
           timestamp: new Date().toISOString(),
