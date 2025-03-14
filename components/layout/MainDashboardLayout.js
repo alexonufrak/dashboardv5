@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import Head from "next/head"
+import Link from "next/link"
 import { AppSidebar } from "./app-sidebar"
 import Breadcrumbs from "@/components/common/Breadcrumbs"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
@@ -12,6 +13,17 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Toaster } from "sonner"
 import ProfileEditModal from "@/components/profile/ProfileEditModal"
 import { useDashboard } from "@/contexts/DashboardContext"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { LogOut, Edit } from "lucide-react"
 
 /**
  * Main dashboard layout component for all dashboard views
@@ -116,7 +128,8 @@ const MainDashboardLayout = ({
     return (
       <LayoutShell 
         title={title} 
-        profile={profile} 
+        profile={profile}
+        user={user}
         showSidebar={showSidebar}
         shouldShowBreadcrumbs={shouldShowBreadcrumbs}
       >
@@ -174,7 +187,8 @@ const MainDashboardLayout = ({
     <>
       <LayoutShell 
         title={title} 
-        profile={profile} 
+        profile={profile}
+        user={user}
         showSidebar={showSidebar}
         shouldShowBreadcrumbs={shouldShowBreadcrumbs}
         onNavigate={onNavigate}
@@ -196,7 +210,7 @@ const MainDashboardLayout = ({
 }
 
 // Internal layout shell component
-function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcrumbs, onNavigate }) {
+function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcrumbs, onNavigate, user }) {
   // For dashboard pages, always show the sidebar if the user is logged in
   const renderWithSidebar = showSidebar; 
 
@@ -212,15 +226,53 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
       {renderWithSidebar ? (
         <SidebarProvider defaultOpen>
           {/* Mobile Header - Only visible on mobile */}
-          <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-background border-b py-3 px-4 flex justify-between items-center shadow-xs">
+          <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-primary text-primary-foreground py-3 px-4 flex justify-between items-center shadow-sm">
             <div className="flex items-center">
               <div className="w-10"></div> {/* Placeholder for alignment */}
-              <h2 className="text-lg font-bold tracking-tight text-primary ml-4">
+              <h2 className="text-lg font-bold tracking-tight ml-4">
                 xFoundry Hub
               </h2>
             </div>
-            <div className="text-xs text-muted-foreground">
-              {profile?.institutionName || "Institution"}
+            
+            {/* User Avatar with Dropdown */}
+            <div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary-foreground/10">
+                    <Avatar className="h-8 w-8 rounded-full border-2 border-primary-foreground/20">
+                      <AvatarImage src={profile?.picture || user?.picture} alt={profile?.firstName || user?.name || "User"} />
+                      <AvatarFallback>
+                        {profile?.firstName?.[0]}{profile?.lastName?.[0] || 
+                         (user?.name ? user.name.split(" ").map(n => n[0]).join("").slice(0, 2) : "U")}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {profile?.firstName} {profile?.lastName || (user?.name || "User")}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user?.email || profile?.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setIsEditModalOpen?.(true)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    <span>Edit Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/api/auth/logout">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign Out
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           
@@ -229,7 +281,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
           
           {/* Main Content */}
           <SidebarInset className="bg-background">
-            <div className="pt-[60px] md:pt-4 overflow-x-hidden h-full">
+            <div className="pt-[64px] md:pt-4 overflow-x-hidden h-full">
               <div className="mx-auto max-w-6xl px-4 md:px-6 h-full">
                 {shouldShowBreadcrumbs && <Breadcrumbs />}
                 
