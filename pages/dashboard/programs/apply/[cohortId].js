@@ -216,7 +216,7 @@ const ProgramsApplicationPage = () => {
     <MainDashboardLayout 
       title={`Apply to ${initiativeName}`}
       currentPage="programs"
-      showBreadcrumbs={false}
+      showBreadcrumbs={true}
     >
       <TransitionLayout 
         routePattern="/dashboard/programs" 
@@ -224,50 +224,7 @@ const ProgramsApplicationPage = () => {
         transitionType="application"
       >
         <div className="py-6 max-w-4xl">
-        {/* Breadcrumb Navigation */}
-        <Breadcrumb className="mb-6">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/dashboard">
-                  <HomeIcon className="h-3.5 w-3.5 mr-1" />
-                  Home
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            
-            <BreadcrumbItem>
-              <BreadcrumbSeparator>
-                <ChevronRight className="h-3.5 w-3.5" />
-              </BreadcrumbSeparator>
-              <BreadcrumbLink asChild>
-                <Link href={ROUTES.PROGRAMS}>
-                  Programs
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            
-            <BreadcrumbItem>
-              <BreadcrumbSeparator>
-                <ChevronRight className="h-3.5 w-3.5" />
-              </BreadcrumbSeparator>
-              <BreadcrumbLink className="font-medium">
-                Apply
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
         
-        {/* Back button */}
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={handleGoBack} 
-          className="mb-4"
-        >
-          <ChevronLeft className="h-4 w-4 mr-1" />
-          Back to Programs
-        </Button>
         
         {/* Loading state */}
         {isLoading && (

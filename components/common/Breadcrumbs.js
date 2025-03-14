@@ -84,7 +84,7 @@ const Breadcrumbs = () => {
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
             <Link href="/">
-              <HomeIcon className="h-3.5 w-3.5" />
+              Home
             </Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
