@@ -51,10 +51,8 @@ export default withApiAuthRequired(async function checkInitiativeConflictsHandle
     // Check for conflicts using the Participation table
     const conflictResult = await checkInitiativeConflicts(contactId, initiative);
     
-    // Add cache control headers - cache for 1 hour (3600 seconds)
-    // Client caching for 30 minutes, CDN/edge caching for 1 hour
-    // Adding must-revalidate to force checking with server on page refresh
-    res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=3600, stale-while-revalidate=7200, must-revalidate');
+    // Prevent caching for initiative conflicts to ensure we always get fresh data
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     
     // Return conflict status with details if there's a conflict
     return res.status(200).json({

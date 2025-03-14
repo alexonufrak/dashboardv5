@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import CohortCard from './CohortCard'
 import ProgramDetailModal from '../program/ProgramDetailModal'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
+import { useQueryClient } from '@tanstack/react-query'
 
 /**
  * A grid of cohort cards that can be used in various parts of the app
@@ -24,6 +25,53 @@ const CohortGrid = ({
   emptyMessage = "No programs are currently available for your institution."
 }) => {
   const [selectedProgram, setSelectedProgram] = useState(null)
+  const queryClient = useQueryClient()
+  
+  // Prefetch initiative conflict data for all cohorts when component mounts
+  useEffect(() => {
+    const prefetchInitiativeConflicts = async () => {
+      if (!profile?.contactId || !cohorts || cohorts.length === 0) return
+      
+      try {
+        console.log("Prefetching initiative conflicts for all cohorts")
+        
+        // Get all unique initiative names
+        const initiatives = cohorts
+          .filter(cohort => cohort.initiativeDetails?.name)
+          .map(cohort => cohort.initiativeDetails.name)
+          .filter((v, i, a) => a.indexOf(v) === i) // Get unique values
+        
+        console.log(`Found ${initiatives.length} unique initiatives to check`)
+        
+        // Prefetch in parallel (make sure API can handle multiple requests)
+        await Promise.all(initiatives.map(async (initiative) => {
+          // Create timestamp to bypass cache
+          const timestamp = Date.now()
+          const url = `/api/user/check-initiative-conflicts?contactId=${profile.contactId}&initiative=${encodeURIComponent(initiative)}&_t=${timestamp}`
+          
+          // Set the queryKey for later use
+          const queryKey = ['initiativeConflicts', profile.contactId, initiative]
+          
+          try {
+            // Fetch data
+            const response = await fetch(url)
+            const data = await response.json()
+            
+            // Store in React Query cache
+            queryClient.setQueryData(queryKey, data)
+            console.log(`Prefetched conflict data for initiative: ${initiative}`)
+          } catch (err) {
+            console.error(`Error prefetching initiative conflict for ${initiative}:`, err)
+          }
+        }))
+      } catch (error) {
+        console.error("Error prefetching initiative conflicts:", error)
+      }
+    }
+    
+    // Run the prefetch when the component mounts
+    prefetchInitiativeConflicts()
+  }, [cohorts, profile?.contactId, queryClient])
   
   // If loading, show skeleton
   if (isLoading) {

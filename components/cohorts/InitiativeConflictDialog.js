@@ -314,16 +314,6 @@ const InitiativeConflictDialog = ({
             </Button>
             
             <Button 
-              variant="secondary" 
-              className="flex items-center gap-2"
-              onClick={refreshConflictData}
-              disabled={isRefreshing}
-            >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? "Refreshing..." : "Refresh Status"}
-            </Button>
-            
-            <Button 
               variant="destructive" 
               className="flex items-center gap-2"
               onClick={() => setShowLeaveConfirmation(true)}
