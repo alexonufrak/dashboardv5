@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0/client"
 
-import ProperDashboardLayout from "@/components/dashboard/ProperDashboardLayout"
+import MainDashboardLayout from "@/components/layout/MainDashboardLayout"
 import Breadcrumbs from "@/components/common/Breadcrumbs"
 
 const Layout = ({ children, title = "xFoundry Hub", profile, onEditClick }) => {
@@ -32,15 +32,14 @@ const Layout = ({ children, title = "xFoundry Hub", profile, onEditClick }) => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <ProperDashboardLayout 
+      <MainDashboardLayout 
         title={title}
         profile={profile}
-        onEditClick={onEditClick}
         currentPage={router.pathname === "/profile" ? "profile" : "dashboard"}
+        showBreadcrumbs={showBreadcrumbs}
       >
-        {showBreadcrumbs && <Breadcrumbs />}
         {children}
-      </ProperDashboardLayout>
+      </MainDashboardLayout>
     </>
   )
 }

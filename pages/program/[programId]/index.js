@@ -7,7 +7,7 @@ import { withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
-import ProperDashboardLayout from "@/components/dashboard/ProperDashboardLayout"
+import MainDashboardLayout from "@/components/layout/MainDashboardLayout"
 import ProfileEditModal from "@/components/profile/ProfileEditModal"
 
 const ProgramDashboard = dynamic(() => import("@/components/program/ProgramDashboard"), {
@@ -90,59 +90,34 @@ function ProgramPage() {
     }
   }, [isEditModalOpen, setIsEditModalOpen])
   
+  // Create error handler with retry function
+  const errorWithRetry = error ? {
+    message: error,
+    onRetry: () => window.location.reload()
+  } : null;
+
   return (
-    <>
-      <ProperDashboardLayout
-        title={pageTitle}
-        profile={profile}
-        onEditClick={() => setIsEditModalOpen(true)}
-        currentPage="program"
+    <MainDashboardLayout
+      title={pageTitle}
+      profile={profile}
+      currentPage="program"
+      onNavigate={(route) => router.push(route)}
+      isLoading={showFullLoader}
+      error={errorWithRetry}
+    >
+      <ProgramDashboard 
+        programId={programId}
+        programData={getActiveProgramData ? getActiveProgramData(programId) : null}
+        teamData={teamData}
+        cohort={cohort}
+        milestones={milestones}
+        submissions={submissions}
+        bounties={bounties}
+        programError={error}
+        refreshData={refreshData}
         onNavigate={(route) => router.push(route)}
-      >
-        {showFullLoader ? (
-          <div className="flex justify-center items-center py-16">
-            <div className="text-center">
-              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Loading program dashboard...</p>
-            </div>
-          </div>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center min-h-[60vh]">
-            <div className="bg-destructive/10 text-destructive border border-destructive/20 rounded-lg p-6 max-w-md">
-              <h2 className="text-lg font-semibold mb-2">Error Loading Dashboard</h2>
-              <p className="mb-4">{error}</p>
-              <Button
-                onClick={() => window.location.reload()}
-              >
-                Retry
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <ProgramDashboard 
-            programId={programId}
-            programData={getActiveProgramData ? getActiveProgramData(programId) : null}
-            teamData={teamData}
-            cohort={cohort}
-            milestones={milestones}
-            submissions={submissions}
-            bounties={bounties}
-            programError={error}
-            refreshData={refreshData}
-            onNavigate={(route) => router.push(route)}
-          />
-        )}
-      </ProperDashboardLayout>
-      
-      {profile && isEditModalOpen && (
-        <ProfileEditModal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          profile={profile}
-          onSave={handleProfileUpdate}
-        />
-      )}
-    </>
+      />
+    </MainDashboardLayout>
   )
 }
 

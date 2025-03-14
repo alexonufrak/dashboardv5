@@ -82,6 +82,12 @@ const MainDashboardLayout = ({
 
   // Error state
   if (error) {
+    // Support both string errors and object errors with message and onRetry
+    const errorMessage = typeof error === 'string' ? error : error.message || 'Unknown error';
+    const handleRetry = typeof error === 'object' && error.onRetry 
+      ? error.onRetry 
+      : () => window.location.reload();
+    
     return (
       <LayoutShell 
         title={title} 
@@ -92,10 +98,10 @@ const MainDashboardLayout = ({
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
             <h2 className="text-lg font-semibold text-red-800 mb-2">Error Loading Dashboard</h2>
-            <p className="text-red-700 mb-4">{error}</p>
+            <p className="text-red-700 mb-4">{errorMessage}</p>
             <button 
               className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
-              onClick={() => window.location.reload()}
+              onClick={handleRetry}
             >
               Retry
             </button>

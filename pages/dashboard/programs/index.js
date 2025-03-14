@@ -7,7 +7,7 @@ import CohortGrid from "@/components/cohorts/CohortGrid"
 import { toast } from "sonner"
 import dynamic from "next/dynamic"
 import { useRouter } from "next/router"
-import ProperDashboardLayout from "@/components/dashboard/ProperDashboardLayout"
+import MainDashboardLayout from "@/components/layout/MainDashboardLayout"
 import TransitionLayout from "@/components/common/TransitionLayout"
 import { BlurFade } from "@/components/magicui/blur-fade"
 
@@ -23,39 +23,13 @@ function ProgramsPageContent({ onNavigate }) {
   // Get data from dashboard context
   const { 
     profile, 
-    isLoading, 
-    error,
     applications, 
     isLoadingApplications,
-    participationData,
-    isProgramLoading 
+    participationData 
   } = useDashboard()
 
-  // Show loading state
-  if (isLoading || !profile) {
-    return (
-      <div className="space-y-6 w-full py-6">
-        <Skeleton className="h-8 w-64 mb-6" />
-        <Skeleton className="h-48 w-full rounded-lg mb-6" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Skeleton className="h-32 rounded-lg" />
-          <Skeleton className="h-32 rounded-lg" />
-        </div>
-      </div>
-    )
-  }
-
-  // Show error message if there's an error
-  if (error) {
-    return (
-      <Alert variant="destructive" className="mt-6">
-        <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          {error}. Please try refreshing the page or contact support if the issue persists.
-        </AlertDescription>
-      </Alert>
-    )
-  }
+  // If no profile, don't render anything - parent component will handle loading state
+  if (!profile) return null;
 
   // Determine institution name
   const institutionName = profile?.institutionName || 
@@ -215,14 +189,16 @@ function ProgramsPage(props) {
   })
   
   return (
-    <ProperDashboardLayout
+    <MainDashboardLayout
       title={pageTitle}
       profile={profile}
       currentPage="programs"
       onNavigate={(route) => router.push(route)}
+      isLoading={isLoading && !profile}
+      error={error}
     >
       <ProgramsPageDynamic {...props} />
-    </ProperDashboardLayout>
+    </MainDashboardLayout>
   )
 }
 
