@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BlurFade } from "@/components/magicui/blur-fade";
@@ -15,50 +15,83 @@ const TransitionLayout = ({
   children, 
   className = '', 
   routePattern = '',
-  transitionType = 'default' // Options: 'default', 'application', 'programsList', 'initial'
+  transitionType = 'default' // Options: 'default', 'application', 'programsList'
 }) => {
   const router = useRouter();
-  const [isVisible, setIsVisible] = useState(true);
   const [displayedChildren, setDisplayedChildren] = useState(children);
   const [initialLoad, setInitialLoad] = useState(true);
-  const [transitionDirection, setTransitionDirection] = useState('right'); // 'left' or 'right'
+  const [isNavigating, setIsNavigating] = useState(false);
+  const hasRunBlurFadeRef = useRef(false);
+  
+  // Initialize transition direction based on the component type
+  const initialDirection = transitionType === 'application' ? 'left' : 'right';
+  const [transitionDirection, setTransitionDirection] = useState(initialDirection);
+  
+  // Store the last path for transition direction detection
   const [lastPath, setLastPath] = useState('');
   
-  // Check if current route matches the pattern
-  const isRouteMatching = () => {
-    if (!routePattern) return true;
-    return router.pathname.includes(routePattern);
-  };
-
-  // Determine transition direction based on navigation
+  // After first render, mark blur fade as run to prevent double animation
   useEffect(() => {
+    if (!hasRunBlurFadeRef.current) {
+      hasRunBlurFadeRef.current = true;
+    }
+    
+    // Only consider it an initial load if this is first page visit
+    if (window.performance) {
+      const navEntries = performance.getEntriesByType('navigation');
+      if (navEntries.length > 0 && navEntries[0].type === 'navigate') {
+        setInitialLoad(true);
+      } else {
+        setInitialLoad(false);
+      }
+    }
+    
+    // Clear initial load after a short delay to prevent double animation
+    const timer = setTimeout(() => {
+      setInitialLoad(false);
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // Determine transition direction based on navigation paths
+  useEffect(() => {
+    if (!router.pathname || !lastPath) {
+      setLastPath(router.pathname);
+      return;
+    }
+    
+    // Only update direction if this isn't the initial render
     if (lastPath) {
-      // Going from programs page to application
-      if (lastPath === '/dashboard/programs' && router.pathname.includes('/apply')) {
+      if (router.pathname.includes('/apply')) {
+        // Application page should always slide in from right
         setTransitionDirection('left');
-      } 
-      // Going from application back to programs page
-      else if (lastPath.includes('/apply') && router.pathname === '/dashboard/programs') {
+      } else if (lastPath.includes('/apply')) {
+        // Going back to programs should slide in from left
         setTransitionDirection('right');
       }
     }
     
     setLastPath(router.pathname);
   }, [router.pathname, lastPath]);
-
+  
   // Handle route changes
   useEffect(() => {
     const handleRouteChangeStart = (url) => {
-      // Only animate for specific routes
-      if (routePattern && (router.pathname.includes(routePattern) || url.includes(routePattern))) {
-        setIsVisible(false);
-        setInitialLoad(false);
+      setIsNavigating(true);
+      
+      // Determine direction based on URLs
+      if (url.includes('/apply')) {
+        setTransitionDirection('left');
+      } else if (router.pathname.includes('/apply')) {
+        setTransitionDirection('right');
       }
     };
 
     const handleRouteChangeComplete = () => {
-      setIsVisible(true);
+      setIsNavigating(false);
       setDisplayedChildren(children);
+      setInitialLoad(false);
     };
 
     router.events.on('routeChangeStart', handleRouteChangeStart);
@@ -68,23 +101,12 @@ const TransitionLayout = ({
       router.events.off('routeChangeStart', handleRouteChangeStart);
       router.events.off('routeChangeComplete', handleRouteChangeComplete);
     };
-  }, [router, routePattern, children]);
+  }, [router, children]);
 
   // Update displayed children when they change
   useEffect(() => {
-    if (isVisible) {
-      setDisplayedChildren(children);
-    }
-  }, [children, isVisible]);
-
-  // After component mounts, clear initial load state
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setInitialLoad(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
+    setDisplayedChildren(children);
+  }, [children]);
 
   // Animation variants for sliding effect
   const slideVariants = {
@@ -95,8 +117,8 @@ const TransitionLayout = ({
     exitRight: { x: '100%', opacity: 0 }
   };
 
-  // Use initial load animation (blur fade) or sliding animation
-  if (initialLoad && transitionType !== 'application') {
+  // Only use BlurFade for initial page load of program list, not during navigation
+  if (initialLoad && transitionType === 'programsList' && !hasRunBlurFadeRef.current) {
     return (
       <BlurFade delay={0.2} inView className={className}>
         {children}
@@ -104,22 +126,35 @@ const TransitionLayout = ({
     );
   }
 
+  // Use specific entrance/exit directions based on whether this is application or programs
+  const getInitialAnimState = () => {
+    if (transitionType === 'application') return 'hiddenRight';
+    return transitionDirection === 'left' ? 'hiddenRight' : 'hiddenLeft';
+  };
+  
+  const getExitAnimState = () => {
+    if (transitionType === 'application') return 'exitRight';
+    return transitionDirection === 'left' ? 'exitLeft' : 'exitRight';
+  };
+
   // For transitions between pages, use slide animations
   return (
     <AnimatePresence mode="wait">
-      {isRouteMatching() && (
-        <motion.div
-          key={router.asPath}
-          variants={slideVariants}
-          initial={transitionDirection === 'left' ? 'hiddenRight' : 'hiddenLeft'}
-          animate="visible"
-          exit={transitionDirection === 'left' ? 'exitLeft' : 'exitRight'}
-          transition={{ type: 'tween', ease: 'easeInOut', duration: 0.3 }}
-          className={className}
-        >
-          {displayedChildren}
-        </motion.div>
-      )}
+      <motion.div
+        key={router.asPath}
+        variants={slideVariants}
+        initial={getInitialAnimState()}
+        animate="visible"
+        exit={getExitAnimState()}
+        transition={{ 
+          type: 'tween', 
+          ease: 'easeInOut', 
+          duration: 0.3
+        }}
+        className={className}
+      >
+        {displayedChildren}
+      </motion.div>
     </AnimatePresence>
   );
 };
