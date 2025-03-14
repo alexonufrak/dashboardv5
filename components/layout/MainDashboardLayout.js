@@ -47,6 +47,14 @@ const MainDashboardLayout = ({
   const isEditModalOpen = dashboardContext?.isEditModalOpen || localEditModalOpen
   const setIsEditModalOpen = dashboardContext?.setIsEditModalOpen || setLocalEditModalOpen
   
+  // If onEditClick is provided as a prop, call it when the edit modal is opened
+  // This maintains compatibility with ProperDashboardLayout's API
+  useEffect(() => {
+    if (isEditModalOpen && onEditClick) {
+      onEditClick();
+    }
+  }, [isEditModalOpen, onEditClick]);
+  
   // All paths under /dashboard should be considered dashboard routes
   const isDashboard = router.pathname.startsWith("/dashboard") || 
                       router.pathname === "/profile" || 
@@ -58,12 +66,14 @@ const MainDashboardLayout = ({
   const showSidebar = isDashboard && user
   
   // Determine whether to show breadcrumbs
+  // Add programs page to the list of pages where breadcrumbs should be hidden
   const shouldShowBreadcrumbs = showBreadcrumbs && 
                           router.pathname !== "/dashboard" && 
                           router.pathname !== "/program-dashboard" && 
                           !router.pathname.startsWith("/program/[programId]") &&
                           !router.pathname.startsWith("/dashboard/program/[programId]") &&
                           !router.pathname.startsWith("/dashboard/programs/apply") &&
+                          router.pathname !== "/dashboard/programs" && // Hide breadcrumbs on programs page
                           showSidebar
 
   useEffect(() => {
@@ -161,6 +171,7 @@ const MainDashboardLayout = ({
         profile={profile} 
         showSidebar={showSidebar}
         shouldShowBreadcrumbs={shouldShowBreadcrumbs}
+        onNavigate={onNavigate}
       >
         {children}
       </LayoutShell>
@@ -179,7 +190,7 @@ const MainDashboardLayout = ({
 }
 
 // Internal layout shell component
-function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcrumbs }) {
+function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcrumbs, onNavigate }) {
   // For dashboard pages, always show the sidebar if the user is logged in
   const renderWithSidebar = showSidebar; 
 
@@ -217,7 +228,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
                 {shouldShowBreadcrumbs && <Breadcrumbs />}
                 
                 {/* Content wrapper with page transitions */}
-                <div className="main-dashboard-layout-content h-full">
+                <div className="main-dashboard-layout-content proper-dashboard-layout-content h-full">
                   {children}
                 </div>
               </div>
