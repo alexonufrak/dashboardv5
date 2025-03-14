@@ -72,6 +72,7 @@ const MainDashboardLayout = ({
                           router.pathname !== "/program-dashboard" && 
                           !router.pathname.startsWith("/program/[programId]") &&
                           !router.pathname.startsWith("/dashboard/program/[programId]") &&
+                          !router.pathname.startsWith("/dashboard/programs/apply/") && // Hide breadcrumbs on application page
                           router.pathname !== "/dashboard/programs" && // Hide breadcrumbs on programs page
                           showSidebar
 

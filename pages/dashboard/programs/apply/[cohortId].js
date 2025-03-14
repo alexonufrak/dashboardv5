@@ -19,6 +19,14 @@ import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import MainDashboardLayout from '@/components/layout/MainDashboardLayout'
 import TransitionLayout from '@/components/common/TransitionLayout'
 import { BlurFade } from "@/components/magicui/blur-fade"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
 
 /**
  * Program application page component from the /programs route
@@ -216,7 +224,7 @@ const ProgramsApplicationPage = () => {
     <MainDashboardLayout 
       title={`Apply to ${initiativeName}`}
       currentPage="programs"
-      showBreadcrumbs={true}
+      showBreadcrumbs={false} // Don't show default breadcrumbs, we have custom ones
     >
       <TransitionLayout 
         routePattern="/dashboard/programs" 
@@ -224,7 +232,24 @@ const ProgramsApplicationPage = () => {
         transitionType="application"
       >
         <div className="py-6 max-w-4xl">
-        
+          {/* Simple Programs > Initiative breadcrumbs */}
+          <Breadcrumb className="mb-6">
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link href={ROUTES.PROGRAMS}>
+                    Programs
+                  </Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="max-w-36 truncate md:max-w-none">
+                  {initiativeName}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         
         {/* Loading state */}
         {isLoading && (
