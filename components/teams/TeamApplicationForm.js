@@ -140,19 +140,26 @@ const TeamApplicationForm = ({ profile, cohort, onSubmit, isPage = false }) => {
       }
       
       // Call API to create team
-      const response = await fetch('/api/teams/create', {
+      // Get body parameters from the current profile and cohort
+      const requestBody = {
+        name: teamName.trim(),
+        description: teamDescription.trim(),
+        joinable: teamIsJoinable,
+        fileInfo: fileInfo
+      }
+      
+      // Add cohort ID as query parameter for cleaner separation
+      const url = cohort?.id ? 
+        `/api/teams/create?cohortId=${encodeURIComponent(cohort.id)}` : 
+        '/api/teams/create'
+      
+      // The user profile's institution is automatically used server-side to set the team's institution
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          name: teamName.trim(),
-          description: teamDescription.trim(),
-          joinable: teamIsJoinable,
-          institutionId: profile?.institution?.id,
-          cohortId: cohort?.id,
-          fileInfo: fileInfo
-        })
+        body: JSON.stringify(requestBody)
       })
       
       // Handle response
@@ -164,10 +171,10 @@ const TeamApplicationForm = ({ profile, cohort, onSubmit, isPage = false }) => {
       const data = await response.json()
       
       // If team creation was successful, submit the application
-      if (data.team) {
+      if (data.id) {
         // Prepare submission data
         const submissionData = {
-          teamId: data.team.id,
+          teamId: data.id,
           participationType: 'Team',
           applicationType: 'newTeam',
         }
@@ -205,12 +212,16 @@ const TeamApplicationForm = ({ profile, cohort, onSubmit, isPage = false }) => {
     
     try {
       // Prepare submission data for joining team
+      // For team join requests, the API expects:
+      // - teamId or teamToJoin (teamId takes precedence)
+      // - joinTeamMessage for the request message
+      // - applicationType set to 'joinTeam' to trigger the correct logic
       const submissionData = {
         cohortId: cohort.id,
         participationType: 'Team',
         applicationType: 'joinTeam',
         teamId: selectedTeam.id,
-        teamToJoin: selectedTeam.id,
+        teamToJoin: selectedTeam.id, // Include for backward compatibility
         joinTeamMessage: joinMessage
       }
       
