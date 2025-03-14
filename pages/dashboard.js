@@ -5,7 +5,7 @@ import { useDashboard } from "@/contexts/DashboardContext"
 import dynamic from "next/dynamic"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
-import ProfileEditModal from "@/components/profile/ProfileEditModal"
+// ProfileEditModal is now included in MainDashboardLayout
 import { Skeleton } from "@/components/ui/skeleton"
 import MainDashboardLayout from "@/components/layout/MainDashboardLayout"
 import { 

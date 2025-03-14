@@ -8,7 +8,7 @@ import { useDashboard } from "@/contexts/DashboardContext"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import MainDashboardLayout from "@/components/layout/MainDashboardLayout"
-import ProfileEditModal from "@/components/profile/ProfileEditModal"
+// ProfileEditModal is now included in MainDashboardLayout
 
 const ProgramDashboard = dynamic(() => import("@/components/program/ProgramDashboard"), {
   loading: () => <PageSkeleton />

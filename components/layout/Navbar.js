@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { useState, useEffect } from "react"
-import ProfileEditModal from "@/components/profile/ProfileEditModal"
+// ProfileEditModal is now included in MainDashboardLayout
 import Logo from "@/components/common/Logo"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -132,13 +132,7 @@ const Navbar = () => {
         </div>
       </nav>
       
-      {/* Always render the modal but control visibility with isOpen prop */}
-      <ProfileEditModal 
-        isOpen={isProfileModalOpen} 
-        onClose={handleCloseProfileModal} 
-        profile={profile}
-        onSave={handleProfileUpdate}
-      />
+      {/* Modal is now handled by MainDashboardLayout */}
     </>
   )
 }

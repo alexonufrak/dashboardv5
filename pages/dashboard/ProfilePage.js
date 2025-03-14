@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2, Mail, School, MapPin, Smartphone } from "lucide-react"
-import ProfileEditModal from "@/components/profile/ProfileEditModal"
+// ProfileEditModal is now included in MainDashboardLayout
 
 // Inner component that uses dashboard context
 function ProfilePageInner({ onNavigate }) {
@@ -322,13 +322,7 @@ function ProfilePageInner({ onNavigate }) {
         </div>
       </div>
       
-      {/* Always render the modal but control visibility with isOpen prop */}
-      <ProfileEditModal
-        isOpen={isEditModalOpen}
-        onClose={handleEditClose}
-        profile={profile}
-        onSave={handleProfileUpdate}
-      />
+      {/* Modal is now handled by MainDashboardLayout */}
     </div>
   )
 }

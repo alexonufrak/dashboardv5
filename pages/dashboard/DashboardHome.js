@@ -19,7 +19,7 @@ import TeamCard from "@/components/teams/TeamCard"
 import TeamJoinRequests from "@/components/teams/TeamJoinRequests"
 import EmailMismatchAlert from "@/components/auth/EmailMismatchAlert"
 import TeamInviteSuccessAlert from "@/components/teams/TeamInviteSuccessAlert"
-import ProfileEditModal from "@/components/profile/ProfileEditModal"
+// ProfileEditModal is now included in MainDashboardLayout
 
 // Import UI components
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
@@ -434,13 +434,7 @@ function DashboardHomeInner({ onNavigate }) {
         }, {})}
       />
       
-      {/* Modals - always render but control with isOpen prop */}
-      <ProfileEditModal
-        isOpen={isEditModalOpen}
-        onClose={handleEditClose}
-        profile={profile}
-        onSave={handleProfileUpdate}
-      />
+      {/* Modal is now handled by MainDashboardLayout */}
     </div>
   )
 }
