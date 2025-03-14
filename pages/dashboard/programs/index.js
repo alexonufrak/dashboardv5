@@ -44,128 +44,135 @@ function ProgramsPageContent({ onNavigate }) {
     >
       <div className="space-y-8">
         {/* Page Header */}
-        <div className="flex flex-col space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">
-            Available Programs
-          </h1>
-          <p className="text-muted-foreground">
-            Browse and apply to xFoundry programs available at {institutionName}
-          </p>
-        </div>
+        <BlurFade delay={0.1} direction="up">
+          <div className="flex flex-col space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight">
+              Available Programs
+            </h1>
+            <p className="text-muted-foreground">
+              Browse and apply to xFoundry programs available at {institutionName}
+            </p>
+          </div>
+        </BlurFade>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="md:col-span-3">
-          <CardHeader className="flex flex-row items-start justify-between pb-2">
-            <div className="space-y-1">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-primary" />
-                <span>Programs for {institutionName}</span>
-              </CardTitle>
-              <CardDescription>
-                Select a program to learn more or apply
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* Use BlurFade for initial cohort grid appearance */}
-            <BlurFade delay={0.3} inView>
-              <CohortGrid 
-                cohorts={profile?.cohorts || []}
-                profile={profile}
-                applications={applications}
-                isLoadingApplications={isLoadingApplications}
-                columns={{
-                  default: 1,
-                  md: 2,
-                  lg: 3
+      <BlurFade delay={0.2} direction="up">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="md:col-span-3">
+            <CardHeader className="flex flex-row items-start justify-between pb-2">
+              <div className="space-y-1">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-primary" />
+                  <span>Programs for {institutionName}</span>
+                </CardTitle>
+                <CardDescription>
+                  Select a program to learn more or apply
+                </CardDescription>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <BlurFade delay={0.3} inView>
+                <CohortGrid 
+                  cohorts={profile?.cohorts || []}
+                  profile={profile}
+                  applications={applications}
+                  isLoadingApplications={isLoadingApplications}
+                  columns={{
+                    default: 1,
+                    md: 2,
+                    lg: 3
+                  }}
+                onApplySuccess={(cohort) => {
+                  toast.success(`Applied to ${cohort.initiativeDetails?.name || 'program'} successfully!`);
+                  
+                  // Update onboarding status in Airtable to 'Applied'
+                  fetch('/api/user/onboarding-completed', {
+                    method: 'POST'
+                  }).catch(err => {
+                    console.error("Error updating onboarding status after application:", err);
+                  });
                 }}
-              onApplySuccess={(cohort) => {
-                toast.success(`Applied to ${cohort.initiativeDetails?.name || 'program'} successfully!`);
-                
-                // Update onboarding status in Airtable to 'Applied'
-                fetch('/api/user/onboarding-completed', {
-                  method: 'POST'
-                }).catch(err => {
-                  console.error("Error updating onboarding status after application:", err);
-                });
-              }}
-            />
-            </BlurFade>
-          </CardContent>
-        </Card>
-      </div>
+              />
+              </BlurFade>
+            </CardContent>
+          </Card>
+        </div>
+      </BlurFade>
 
       {/* Active Programs Section - Show if user is participating in any programs */}
       {participationData?.participation && participationData.participation.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-2xl font-semibold">Your Active Programs</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {participationData.participation.map((participation) => {
-              const initiative = participation.cohort?.initiativeDetails;
-              if (!initiative) return null;
-              
-              return (
-                <Card key={initiative.id} className="flex flex-col h-full">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span className="truncate">{initiative.name}</span>
-                    </CardTitle>
-                    <CardDescription>
-                      {initiative.shortDescription || "xFoundry Initiative"}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">
-                          {participation.cohort?.shortName || participation.cohort?.name || "Current Cohort"}
-                        </span>
-                      </div>
-                      {participation.team && (
-                        <div className="flex items-center gap-2">
-                          <Blocks className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">
-                            Team: {participation.team.name}
-                          </span>
+        <BlurFade delay={0.4} direction="up">
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold">Your Active Programs</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {participationData.participation.map((participation, index) => {
+                const initiative = participation.cohort?.initiativeDetails;
+                if (!initiative) return null;
+                
+                return (
+                  <BlurFade key={initiative.id} delay={0.5 + (index * 0.1)} direction="up">
+                    <Card className="flex flex-col h-full">
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                          <span className="truncate">{initiative.name}</span>
+                        </CardTitle>
+                        <CardDescription>
+                          {initiative.shortDescription || "xFoundry Initiative"}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="flex-grow">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">
+                              {participation.cohort?.shortName || participation.cohort?.name || "Current Cohort"}
+                            </span>
+                          </div>
+                          {participation.team && (
+                            <div className="flex items-center gap-2">
+                              <Blocks className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm">
+                                Team: {participation.team.name}
+                              </span>
+                            </div>
+                          )}
+                          {participation.cohort?.topicNames && participation.cohort.topicNames.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <Compass className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm">
+                                {participation.cohort.topicNames.join(", ")}
+                              </span>
+                            </div>
+                          )}
+                          {participation.cohort?.classNames && participation.cohort.classNames.length > 0 && (
+                            <div className="flex items-center gap-2">
+                              <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm">
+                                Class: {participation.cohort.classNames.join(", ")}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {participation.cohort?.topicNames && participation.cohort.topicNames.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          <Compass className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">
-                            {participation.cohort.topicNames.join(", ")}
-                          </span>
-                        </div>
-                      )}
-                      {participation.cohort?.classNames && participation.cohort.classNames.length > 0 && (
-                        <div className="flex items-center gap-2">
-                          <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">
-                            Class: {participation.cohort.classNames.join(", ")}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button 
-                      variant="default" 
-                      className="w-full"
-                      size="sm"
-                      asChild
-                    >
-                      <a href={`/dashboard/program/${initiative.id}`}>
-                        <span>Go to Program</span>
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </a>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              );
-            })}
+                      </CardContent>
+                      <CardFooter>
+                        <Button 
+                          variant="default" 
+                          className="w-full"
+                          size="sm"
+                          asChild
+                        >
+                          <a href={`/dashboard/program/${initiative.id}`}>
+                            <span>Go to Program</span>
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </a>
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  </BlurFade>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        </BlurFade>
       )}
     </div>
     </TransitionLayout>

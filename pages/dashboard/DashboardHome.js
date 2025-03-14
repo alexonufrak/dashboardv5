@@ -28,6 +28,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
+import { BlurFade } from "@/components/magicui/blur-fade"
 
 // Import icons
 import { 
@@ -196,71 +197,79 @@ function DashboardHomeInner({ onNavigate }) {
       <TeamInviteSuccessAlert />
       
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Your Hub</h1>
-          <p className="text-muted-foreground">
-            Welcome, {profile?.firstName || user?.name?.split(' ')[0] || 'Student'}
-          </p>
+      <BlurFade delay={0.1} direction="up">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Your Hub</h1>
+            <p className="text-muted-foreground">
+              Welcome, {profile?.firstName || user?.name?.split(' ')[0] || 'Student'}
+            </p>
+          </div>
         </div>
-      </div>
+      </BlurFade>
       
       {/* Main Content - Bento Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Programs Card */}
-        <Card className="col-span-1 md:col-span-2 lg:col-span-2">
-          <CardHeader className="flex flex-row items-start justify-between pb-2">
-            <div className="space-y-1">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-primary" />
-                <span>Programs</span>
-              </CardTitle>
-              <CardDescription>
-                Available and active programs for your institution
-              </CardDescription>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleViewAllPrograms}
-              className="h-8"
-            >
-              View All
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {profile?.cohorts?.slice(0, 4).map((cohort, idx) => (
-                <div 
-                  key={cohort.id || idx} 
-                  className="flex items-center space-x-4 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex-shrink-0 rounded-md bg-primary/10 p-2">
-                    <Blocks className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="flex-grow min-w-0">
-                    <h3 className="font-medium truncate text-sm">{cohort.initiativeDetails?.name || "Program"}</h3>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {cohort.name || "Current Cohort"}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              {(!profile?.cohorts || profile.cohorts.length === 0) && (
-                <div className="md:col-span-2 text-center py-6 text-muted-foreground">
-                  <p className="mb-2">No programs available for your institution</p>
-                  <Button variant="outline" size="sm" onClick={handleViewAllPrograms}>
-                    Check Programs Page
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <BlurFade delay={0.2} direction="up">
+          <Card className="col-span-1 md:col-span-2 lg:col-span-2">
+            <CardHeader className="flex flex-row items-start justify-between pb-2">
+              <div className="space-y-1">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-primary" />
+                  <span>Programs</span>
+                </CardTitle>
+                <CardDescription>
+                  Available and active programs for your institution
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleViewAllPrograms}
+                className="h-8"
+              >
+                View All
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {profile?.cohorts?.slice(0, 4).map((cohort, idx) => (
+                  <BlurFade key={cohort.id || idx} delay={0.3 + (idx * 0.1)} direction="up">
+                    <div 
+                      className="flex items-center space-x-4 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex-shrink-0 rounded-md bg-primary/10 p-2">
+                        <Blocks className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-grow min-w-0">
+                        <h3 className="font-medium truncate text-sm">{cohort.initiativeDetails?.name || "Program"}</h3>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {cohort.name || "Current Cohort"}
+                        </p>
+                      </div>
+                    </div>
+                  </BlurFade>
+                ))}
+                {(!profile?.cohorts || profile.cohorts.length === 0) && (
+                  <BlurFade delay={0.3} direction="up">
+                    <div className="md:col-span-2 text-center py-6 text-muted-foreground">
+                      <p className="mb-2">No programs available for your institution</p>
+                      <Button variant="outline" size="sm" onClick={handleViewAllPrograms}>
+                        Check Programs Page
+                      </Button>
+                    </div>
+                  </BlurFade>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </BlurFade>
 
         {/* Stats Card */}
-        <Card className="col-span-1">
+        <BlurFade delay={0.3} direction="up">
+          <Card className="col-span-1">
           <CardHeader className="pb-2">
             <CardTitle className="text-xl flex items-center gap-2">
               <BarChart2 className="h-5 w-5 text-primary" />
@@ -295,93 +304,101 @@ function DashboardHomeInner({ onNavigate }) {
             </div>
           </CardContent>
         </Card>
+        </BlurFade>
 
         {/* Teams Card */}
-        <Card className="col-span-1 md:col-span-2 lg:col-span-2">
-          <CardHeader className="flex flex-row items-start justify-between pb-2">
-            <div className="space-y-1">
-              <CardTitle className="text-xl flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                <span>Your Teams</span>
-              </CardTitle>
-              <CardDescription>
-                Teams you're participating in
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isTeamLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-16 w-full rounded-lg" />
-                <Skeleton className="h-16 w-full rounded-lg" />
+        <BlurFade delay={0.4} direction="up">
+          <Card className="col-span-1 md:col-span-2 lg:col-span-2">
+            <CardHeader className="flex flex-row items-start justify-between pb-2">
+              <div className="space-y-1">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  <span>Your Teams</span>
+                </CardTitle>
+                <CardDescription>
+                  Teams you're participating in
+                </CardDescription>
               </div>
-            ) : teamsData && teamsData.length > 0 ? (
-              <div className="space-y-3">
-                {teamsData.slice(0, 2).map((team) => (
-                  <div 
-                    key={team.id} 
-                    className="flex items-center space-x-4 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex-shrink-0 rounded-md bg-primary/10 p-2">
-                      <Users className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-grow min-w-0">
-                      <h3 className="font-medium">{team.name}</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {team.members?.length || 0} member{team.members?.length !== 1 ? 's' : ''}
-                      </p>
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      asChild 
-                    >
-                      <Link href={`/program/${team.cohortInitiativeId}`}>
-                        View
-                      </Link>
-                    </Button>
+            </CardHeader>
+            <CardContent>
+              {isTeamLoading ? (
+                <div className="space-y-2">
+                  <Skeleton className="h-16 w-full rounded-lg" />
+                  <Skeleton className="h-16 w-full rounded-lg" />
+                </div>
+              ) : teamsData && teamsData.length > 0 ? (
+                <div className="space-y-3">
+                  {teamsData.slice(0, 2).map((team, index) => (
+                    <BlurFade key={team.id} delay={0.5 + (index * 0.1)} direction="up">
+                      <div 
+                        className="flex items-center space-x-4 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex-shrink-0 rounded-md bg-primary/10 p-2">
+                          <Users className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex-grow min-w-0">
+                          <h3 className="font-medium">{team.name}</h3>
+                          <p className="text-xs text-muted-foreground">
+                            {team.members?.length || 0} member{team.members?.length !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          asChild 
+                        >
+                          <Link href={`/program/${team.cohortInitiativeId}`}>
+                            View
+                          </Link>
+                        </Button>
+                      </div>
+                    </BlurFade>
+                  ))}
+                </div>
+              ) : (
+                <BlurFade delay={0.5} direction="up">
+                  <div className="text-center py-6 text-muted-foreground">
+                    <p>You haven't joined any teams yet</p>
+                    <p className="text-sm mt-1">Join or create a team to get started</p>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-muted-foreground">
-                <p>You haven't joined any teams yet</p>
-                <p className="text-sm mt-1">Join or create a team to get started</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </BlurFade>
+              )}
+            </CardContent>
+          </Card>
+        </BlurFade>
 
         {/* Upcoming Milestones Card */}
-        <Card className="col-span-1">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xl flex items-center gap-2">
-              <ListTodo className="h-5 w-5 text-primary" />
-              <span>Upcoming</span>
-            </CardTitle>
-            <CardDescription>
-              Your upcoming deadlines
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {participationData?.participation?.length > 0 ? (
-              <div className="space-y-3">
-                {participationData.participation.flatMap(p => 
-                  (p.cohort?.milestones || [])
-                    .filter(m => 
-                      !m.submissions?.some(s => 
-                        s.teamId === (p.team?.id) && s.status === 'approved'
+        <BlurFade delay={0.5} direction="up">
+          <Card className="col-span-1">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xl flex items-center gap-2">
+                <ListTodo className="h-5 w-5 text-primary" />
+                <span>Upcoming</span>
+              </CardTitle>
+              <CardDescription>
+                Your upcoming deadlines
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {participationData?.participation?.length > 0 ? (
+                <div className="space-y-3">
+                  {participationData.participation.flatMap(p => 
+                    (p.cohort?.milestones || [])
+                      .filter(m => 
+                        !m.submissions?.some(s => 
+                          s.teamId === (p.team?.id) && s.status === 'approved'
+                        )
                       )
-                    )
-                    .map(m => ({
-                      ...m,
-                      initiative: p.cohort?.initiativeDetails?.name,
-                      teamId: p.team?.id
-                    }))
-                )
-                .slice(0, 3)
-                .map((milestone, idx) => (
-                  <div key={idx} className="flex items-start space-x-3 rounded-lg border p-3">
+                      .map(m => ({
+                        ...m,
+                        initiative: p.cohort?.initiativeDetails?.name,
+                        teamId: p.team?.id
+                      }))
+                  )
+                  .slice(0, 3)
+                  .map((milestone, idx) => (
+                    <BlurFade key={idx} delay={0.6 + (idx * 0.1)} direction="up">
+                      <div className="flex items-start space-x-3 rounded-lg border p-3">
                     <div className="flex-shrink-0 rounded-md bg-primary/10 p-2 mt-1">
                       <Milestone className="h-4 w-4 text-primary" />
                     </div>
@@ -400,6 +417,7 @@ function DashboardHomeInner({ onNavigate }) {
                       )}
                     </div>
                   </div>
+                    </BlurFade>
                 ))}
 
                 {participationData.participation.flatMap(p => 
@@ -410,29 +428,36 @@ function DashboardHomeInner({ onNavigate }) {
                       )
                     )
                 ).length === 0 && (
-                  <div className="text-center py-4 text-muted-foreground">
-                    <p className="text-sm">No upcoming milestones</p>
-                  </div>
+                  <BlurFade delay={0.6} direction="up">
+                    <div className="text-center py-4 text-muted-foreground">
+                      <p className="text-sm">No upcoming milestones</p>
+                    </div>
+                  </BlurFade>
                 )}
               </div>
             ) : (
-              <div className="text-center py-4 text-muted-foreground">
-                <p className="text-sm">No active programs with milestones</p>
-              </div>
+              <BlurFade delay={0.6} direction="up">
+                <div className="text-center py-4 text-muted-foreground">
+                  <p className="text-sm">No active programs with milestones</p>
+                </div>
+              </BlurFade>
             )}
           </CardContent>
         </Card>
+        </BlurFade>
       </div>
       
       {/* Team Join Requests Section */}
-      <TeamJoinRequests 
-        applications={applications} 
-        isLoading={isLoadingApplications}
-        teams={teamsData?.reduce((acc, team) => {
-          acc[team.id] = team;
-          return acc;
-        }, {})}
-      />
+      <BlurFade delay={0.7} direction="up">
+        <TeamJoinRequests 
+          applications={applications} 
+          isLoading={isLoadingApplications}
+          teams={teamsData?.reduce((acc, team) => {
+            acc[team.id] = team;
+            return acc;
+          }, {})}
+        />
+      </BlurFade>
       
       {/* Modal is now handled by MainDashboardLayout */}
     </div>
