@@ -18,6 +18,7 @@ import { ROUTES } from '@/lib/routing'
 import { withPageAuthRequired } from '@auth0/nextjs-auth0'
 import MainDashboardLayout from '@/components/layout/MainDashboardLayout'
 import TransitionLayout from '@/components/common/TransitionLayout'
+import { BlurFade } from "@/components/magicui/blur-fade"
 
 /**
  * Program application page component from the /programs route
@@ -206,7 +207,11 @@ const ProgramsApplicationPage = () => {
       currentPage="programs"
       showBreadcrumbs={false}
     >
-      <TransitionLayout routePattern="/dashboard/programs" className="w-full">
+      <TransitionLayout 
+        routePattern="/dashboard/programs" 
+        className="w-full"
+        transitionType="application"
+      >
         <div className="py-6 max-w-4xl">
         {/* Breadcrumb Navigation */}
         <Breadcrumb className="mb-6">

@@ -9,6 +9,7 @@ import dynamic from "next/dynamic"
 import { useRouter } from "next/router"
 import ProperDashboardLayout from "@/components/dashboard/ProperDashboardLayout"
 import TransitionLayout from "@/components/common/TransitionLayout"
+import { BlurFade } from "@/components/magicui/blur-fade"
 
 // UI Components
 import { Skeleton } from "@/components/ui/skeleton"
@@ -62,7 +63,11 @@ function ProgramsPageContent({ onNavigate }) {
                          "Your Institution";
 
   return (
-    <TransitionLayout routePattern="/dashboard/programs" className="w-full">
+    <TransitionLayout 
+      routePattern="/dashboard/programs" 
+      className="w-full"
+      transitionType="programsList"
+    >
       <div className="space-y-8">
         {/* Page Header */}
         <div className="flex flex-col space-y-2">
@@ -88,17 +93,18 @@ function ProgramsPageContent({ onNavigate }) {
             </div>
           </CardHeader>
           <CardContent>
-            {/* Wrap the cohort grid in a TransitionLayout for smooth program transitions */}
-            <CohortGrid 
-              cohorts={profile?.cohorts || []}
-              profile={profile}
-              applications={applications}
-              isLoadingApplications={isLoadingApplications}
-              columns={{
-                default: 1,
-                md: 2,
-                lg: 3
-              }}
+            {/* Use BlurFade for initial cohort grid appearance */}
+            <BlurFade delay={0.3} inView>
+              <CohortGrid 
+                cohorts={profile?.cohorts || []}
+                profile={profile}
+                applications={applications}
+                isLoadingApplications={isLoadingApplications}
+                columns={{
+                  default: 1,
+                  md: 2,
+                  lg: 3
+                }}
               onApplySuccess={(cohort) => {
                 toast.success(`Applied to ${cohort.initiativeDetails?.name || 'program'} successfully!`);
                 
@@ -110,6 +116,7 @@ function ProgramsPageContent({ onNavigate }) {
                 });
               }}
             />
+            </BlurFade>
           </CardContent>
         </Card>
       </div>
