@@ -91,11 +91,51 @@ function MyApp({ Component, pageProps }) {
     defaultOptions: {
       queries: {
         staleTime: 5 * 60 * 1000, // 5 minutes by default
+        cacheTime: 60 * 60 * 1000, // 1 hour - keep data in cache longer for page navigations
         retry: 1,
         refetchOnWindowFocus: false, // Disable refetching on window focus to prevent unnecessary API calls
+        refetchOnReconnect: true, // Refetch when reconnecting (useful after a page refresh)
       },
     },
   }));
+  
+  // Add listener for page refresh (not navigation) to clear initiative conflicts cache
+  useEffect(() => {
+    // This will run when the page is loaded for the first time
+    const handleBeforeUnload = () => {
+      // Mark this as the most recent unload time
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('lastPageUnload', Date.now().toString());
+      }
+    };
+    
+    // This will run when the page is loaded after a refresh
+    const checkIfRefreshed = () => {
+      if (typeof window !== 'undefined') {
+        const lastUnload = localStorage.getItem('lastPageUnload');
+        
+        if (lastUnload) {
+          const unloadTime = parseInt(lastUnload);
+          const loadTime = Date.now();
+          
+          // If the time between unload and reload is less than 2 seconds, it was likely a refresh
+          if (loadTime - unloadTime < 2000) {
+            console.log('Page was refreshed, clearing initiative conflicts cache');
+            queryClient.invalidateQueries(['initiativeConflicts']);
+          }
+        }
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    // Check if page was refreshed on mount
+    checkIfRefreshed();
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [queryClient]);
 
   // Only show the application after mounted on client side
   useEffect(() => {

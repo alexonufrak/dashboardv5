@@ -186,9 +186,10 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
       
       console.log(`Calling API to check participation records for contact ${profile.contactId}`);
       
-      // Add timestamp to bypass cache and ensure fresh data
-      const timestamp = Date.now();
-      const response = await fetch(`/api/user/check-initiative-conflicts?initiative=${encodeURIComponent(currentInitiativeName)}&_t=${timestamp}`);
+      // Use cache normally - only add timestamp if we need to force refresh
+      // This will leverage the cached data during page navigation
+      const url = `/api/user/check-initiative-conflicts?initiative=${encodeURIComponent(currentInitiativeName)}`;
+      const response = await fetch(url);
       
       if (!response.ok) {
         console.error("Error checking initiative conflicts:", response.statusText);
