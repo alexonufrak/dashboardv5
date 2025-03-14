@@ -136,6 +136,10 @@ export default async function handler(req, res) {
       console.log("Raw Airtable record sample:", JSON.stringify(records[0], null, 2));
     }
     
+    // Add cache control headers - cache for 1 hour (3600 seconds)
+    // Client caching for 30 minutes, CDN/edge caching for 1 hour
+    res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=3600, stale-while-revalidate=7200');
+    
     // Return the submissions we found
     return res.status(200).json({
       submissions,
@@ -144,7 +148,8 @@ export default async function handler(req, res) {
         filters: {
           teamId,
           milestoneId: milestoneId || null
-        }
+        },
+        timestamp: new Date().toISOString()
       }
     });
   } catch (error) {
