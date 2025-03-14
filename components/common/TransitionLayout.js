@@ -117,13 +117,23 @@ const TransitionLayout = ({
     exitRight: { x: '100%', opacity: 0 }
   };
 
-  // Only use BlurFade for initial page load of program list, not during navigation
-  if (initialLoad && transitionType === 'programsList' && !hasRunBlurFadeRef.current) {
-    return (
-      <BlurFade delay={0.2} inView className={className}>
-        {children}
-      </BlurFade>
-    );
+  // For the programs list page:
+  // 1. Use BlurFade for initial page load 
+  // 2. Skip animations entirely if not coming from an application page
+  if (transitionType === 'programsList') {
+    // If it's initial load, use BlurFade (only once)
+    if (initialLoad && !hasRunBlurFadeRef.current) {
+      return (
+        <BlurFade delay={0.2} inView className={className}>
+          {children}
+        </BlurFade>
+      );
+    }
+    
+    // If we're not coming from an application page, skip animation
+    if (!lastPath.includes('/apply')) {
+      return <div className={className}>{children}</div>;
+    }
   }
 
   // Use specific entrance/exit directions based on whether this is application or programs
