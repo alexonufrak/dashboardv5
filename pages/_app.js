@@ -63,7 +63,9 @@ function AppContent({ Component, pageProps, router }) {
     router.pathname.startsWith('/program-new/') ||
     router.pathname.startsWith('/dashboard/') ||
     router.pathname.startsWith('/programs/') ||
-    router.pathname === '/program-dashboard';
+    router.pathname === '/program-dashboard' ||
+    // Make sure all programs-related pages are included
+    router.pathname.includes('/programs/apply/');
 
   // If not a dashboard route, render Component directly
   if (!isDashboardRoute) {

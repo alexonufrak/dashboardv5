@@ -10,6 +10,8 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { isProgramRoute } from '@/lib/routing'
 import { Skeleton } from "@/components/ui/skeleton"
 import { Toaster } from "sonner"
+import ProfileEditModal from "@/components/profile/ProfileEditModal"
+import { useDashboard } from "@/contexts/DashboardContext"
 
 /**
  * Main dashboard layout component for all dashboard views
@@ -18,17 +20,32 @@ import { Toaster } from "sonner"
 const MainDashboardLayout = ({ 
   children, 
   title = "xFoundry Hub", 
-  profile, 
+  profile: propProfile, // Renamed to avoid conflicts with context profile
   onEditClick,
   currentPage,
   onNavigate,
-  isLoading = false,
-  error = null,
+  isLoading: propsLoading = false,
+  error: propsError = null,
   showBreadcrumbs = true
 }) => {
   const [currentYear, setCurrentYear] = useState("")
   const router = useRouter()
   const { user } = useUser()
+  
+  // Use dashboard context if available, or fall back to props
+  const dashboardContext = useDashboard()
+  
+  // Get profile from context if available, otherwise use props
+  const profile = dashboardContext?.profile || propProfile
+  const isLoading = dashboardContext?.isLoading || propsLoading
+  const error = dashboardContext?.error || propsError
+  
+  // Edit modal state (local fallback if context not available)
+  const [localEditModalOpen, setLocalEditModalOpen] = useState(false)
+  
+  // Use context state if available, otherwise use local state
+  const isEditModalOpen = dashboardContext?.isEditModalOpen || localEditModalOpen
+  const setIsEditModalOpen = dashboardContext?.setIsEditModalOpen || setLocalEditModalOpen
   
   // All paths under /dashboard should be considered dashboard routes
   const isDashboard = router.pathname.startsWith("/dashboard") || 
@@ -104,15 +121,60 @@ const MainDashboardLayout = ({
   }
 
   // Normal content state
+  // Define update profile handler
+  const handleProfileUpdate = async (updatedProfile) => {
+    try {
+      if (dashboardContext?.updateProfile) {
+        // Use context handler if available
+        await dashboardContext.updateProfile(updatedProfile);
+      } else {
+        // Otherwise fallback to API call
+        const response = await fetch('/api/user/profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updatedProfile),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to update profile');
+        }
+      }
+      
+      // Close modal after updating
+      setIsEditModalOpen(false);
+      
+      // Reload page to show updated profile if needed
+      if (!dashboardContext) {
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    }
+  };
+
   return (
-    <LayoutShell 
-      title={title} 
-      profile={profile} 
-      showSidebar={showSidebar}
-      shouldShowBreadcrumbs={shouldShowBreadcrumbs}
-    >
-      {children}
-    </LayoutShell>
+    <>
+      <LayoutShell 
+        title={title} 
+        profile={profile} 
+        showSidebar={showSidebar}
+        shouldShowBreadcrumbs={shouldShowBreadcrumbs}
+      >
+        {children}
+      </LayoutShell>
+      
+      {/* Add profile edit modal to all dashboard pages */}
+      {profile && (
+        <ProfileEditModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          profile={profile}
+          onSave={handleProfileUpdate}
+        />
+      )}
+    </>
   )
 }
 

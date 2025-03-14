@@ -142,7 +142,11 @@ export function AppSidebar({
       email: user.email,
       avatar: profile.headshot || user.picture || '/placeholder-user.jpg',
       // Pass the onEditClick handler to open profile modal
-      onEditClick: () => setIsEditModalOpen(true)
+      // Add a null check to prevent errors if setIsEditModalOpen is not available
+      onEditClick: setIsEditModalOpen ? () => setIsEditModalOpen(true) : () => {
+        // Fallback: If context not available, navigate to profile page
+        window.location.href = '/profile';
+      }
     };
   }, [user, profile, setIsEditModalOpen]);
 
