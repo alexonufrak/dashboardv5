@@ -17,7 +17,21 @@ export function BlurFade({
 }) {
   const ref = useRef(null);
   const inViewResult = useInView(ref, { once: true, margin: inViewMargin });
-  const isInView = !inView || inViewResult;
+  
+  // Use a ref to track if the animation has already played
+  const hasPlayed = useRef(false);
+  
+  // Only trigger the animation if:
+  // 1. inView prop is false (meaning we don't care about viewport) OR
+  // 2. inView is true AND the element is actually in view AND we haven't played the animation yet
+  const shouldAnimate = !inView || (inViewResult && !hasPlayed.current);
+  
+  // Once we've decided to animate, mark it as played
+  if (shouldAnimate) {
+    hasPlayed.current = true;
+  }
+  
+  const isInView = shouldAnimate;
   const defaultVariants = {
     hidden: {
       [direction === "left" || direction === "right" ? "x" : "y"]:
