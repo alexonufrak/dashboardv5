@@ -7,7 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { LogOut, AlertTriangle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
-import InitiativeConflictDialog from "@/components/cohorts/InitiativeConflictDialog"
+import LeaveProgramDialog from "./LeaveProgramDialog"
 
 /**
  * Program Settings component that allows users to manage their program participation
@@ -22,24 +22,8 @@ const ProgramSettings = ({
   const { toast } = useToast()
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false)
 
-  // Prepare conflict details based on context
-  const getConflictDetails = () => {
-    return {
-      // Team-related details
-      teamId: team?.id || "unknown",
-      teamName: team?.name || programData?.initiativeName || "your team",
-      
-      // Initiative-related details
-      conflictingInitiative: programData?.initiativeName || "",
-      currentProgram: programData?.initiativeName || "",
-      
-      // Callback for after leaving (handled by dialog itself)
-      onLeaveTeam: () => {
-        // Redirect happens automatically via page reload in dialog
-        console.log("Left team/initiative via settings")
-      }
-    }
-  }
+  // Get the cohort ID from the programData
+  const cohortId = programData?.cohort?.id
 
   // Determine what the user can leave (team, initiative or both)
   const isInTeam = !!team?.id
@@ -116,12 +100,16 @@ const ProgramSettings = ({
         </CardContent>
       </Card>
       
-      {/* Leave Confirmation Dialog */}
-      <InitiativeConflictDialog
+      {/* Leave Program Dialog */}
+      <LeaveProgramDialog
         open={showLeaveConfirmation}
         onClose={() => setShowLeaveConfirmation(false)}
-        details={getConflictDetails()}
-        conflictType="team_program_conflict"
+        programName={programData?.initiativeName}
+        programId={programData?.initiativeId}
+        cohortId={cohortId}
+        teamId={team?.id}
+        teamName={team?.name}
+        isTeamProgram={isTeamProgram}
       />
     </div>
   )

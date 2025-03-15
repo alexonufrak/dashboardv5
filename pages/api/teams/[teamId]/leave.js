@@ -28,6 +28,10 @@ export default withApiAuthRequired(async function leaveTeamHandler(req, res) {
     if (!userProfile || !userProfile.contactId) {
       return res.status(404).json({ error: 'User profile not found' })
     }
+    
+    // Get specific cohort ID from request body if available
+    const { cohortId, programId } = req.body || {}
+    console.log(`Request includes specific cohortId: ${cohortId}, programId: ${programId}`)
 
     // Define variables we'll need to handle both flows
     let memberRecord;
@@ -243,12 +247,25 @@ export default withApiAuthRequired(async function leaveTeamHandler(req, res) {
         for (const record of participationRecords) {
           // Check if this participation record is linked to an active cohort
           const recordCohorts = record.fields.Cohorts || [];
-          const hasActiveCohort = recordCohorts.some(cohortId => activeCohortIds.includes(cohortId));
           
-          // If we have active cohort IDs and this record doesn't link to any, skip it
-          if (activeCohortIds.length > 0 && !hasActiveCohort) {
-            console.log(`Skipping participation record ${record.id} - not linked to any active cohorts`);
-            continue;
+          // If a specific cohort ID was provided in the request, only update that participation record
+          if (cohortId) {
+            // Check if this participation record is linked to the specified cohort
+            if (!recordCohorts.includes(cohortId)) {
+              console.log(`Skipping participation record ${record.id} - not linked to the specified cohort ${cohortId}`);
+              continue;
+            } else {
+              console.log(`Found participation record ${record.id} linked to the specified cohort ${cohortId}`);
+            }
+          } else {
+            // Otherwise, use the active cohorts filter
+            const hasActiveCohort = recordCohorts.some(id => activeCohortIds.includes(id));
+            
+            // If we have active cohort IDs and this record doesn't link to any, skip it
+            if (activeCohortIds.length > 0 && !hasActiveCohort) {
+              console.log(`Skipping participation record ${record.id} - not linked to any active cohorts`);
+              continue;
+            }
           }
           
           // Update the record to inactive
@@ -276,20 +293,34 @@ export default withApiAuthRequired(async function leaveTeamHandler(req, res) {
               
               // Only update if it's a Participant record
               if (record.fields.Capacity === "Participant") {
-                // Check if linked to any active cohorts, if we have active cohort data
+                // Check if this record is linked to the specified cohort
                 const recordCohorts = record.fields.Cohorts || [];
-                const hasActiveCohort = activeCohortIds.length === 0 || 
-                                        recordCohorts.some(cohortId => activeCohortIds.includes(cohortId));
                 
-                if (hasActiveCohort) {
-                  await participationTable.update(participationId, {
-                    'Status': 'Inactive'
-                  });
-                  console.log(`Updated participation record ${participationId} to inactive (from profile)`);
-                  updatedCount++;
+                // If a specific cohort ID was provided, only update that participation record
+                if (cohortId) {
+                  // Check if this participation record is linked to the specified cohort
+                  if (!recordCohorts.includes(cohortId)) {
+                    console.log(`Skipping participation record ${participationId} - not linked to the specified cohort ${cohortId}`);
+                    continue;
+                  } else {
+                    console.log(`Found participation record ${participationId} for the specified cohort ${cohortId}`);
+                  }
                 } else {
-                  console.log(`Skipping participation record ${participationId} - not linked to active cohorts`);
+                  // Check if linked to any active cohorts, if we have active cohort data
+                  const hasActiveCohort = activeCohortIds.length === 0 || 
+                                          recordCohorts.some(id => activeCohortIds.includes(id));
+                  
+                  if (!hasActiveCohort) {
+                    console.log(`Skipping participation record ${participationId} - not linked to active cohorts`);
+                    continue;
+                  }
                 }
+                
+                await participationTable.update(participationId, {
+                  'Status': 'Inactive'
+                });
+                console.log(`Updated participation record ${participationId} to inactive (from profile)`);
+                updatedCount++;
               } else {
                 console.log(`Skipping participation record ${participationId} - not a Participant record`);
               }
