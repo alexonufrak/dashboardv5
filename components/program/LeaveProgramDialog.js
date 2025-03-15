@@ -69,14 +69,23 @@ const LeaveProgramDialog = ({
       
       // Update participation record if this user is in a program
       if (isInProgram) {
-        console.log(`Attempting to leave program participation for cohort ${cohortId}, program ${programId}`)
-        console.log('Debug - Program data available:', { programName, programId, cohortId })
+        // CRITICAL FIX: Make sure cohortId is a string to match Airtable IDs
+        const formattedCohortId = cohortId?.toString();
+        const formattedProgramId = programId?.toString();
+        
+        console.log(`Attempting to leave program participation for cohort ${formattedCohortId}, program ${formattedProgramId}`)
+        console.log('Debug - Program data available:', { 
+          programName, 
+          programId: formattedProgramId, 
+          cohortId: formattedCohortId,
+          teamId: teamId?.toString()
+        })
         
         // Call the participation leave API endpoint
         try {
           const requestBody = {
-            cohortId,
-            programId
+            cohortId: formattedCohortId,
+            programId: formattedProgramId
           }
           console.log('Sending request to participation leave API:', requestBody)
           
