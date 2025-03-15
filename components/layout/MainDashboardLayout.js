@@ -23,7 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { LogOut, Edit } from "lucide-react"
+import { LogOut, Edit, Search } from "lucide-react"
 
 /**
  * Main dashboard layout component for all dashboard views
@@ -231,54 +231,10 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
           {/* Mobile Header - Only visible on mobile */}
           <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-background text-foreground py-3 px-4 flex justify-between items-center shadow-sm border-b">
             <div className="flex items-center">
+              <SidebarTrigger className="mr-2" aria-label="Toggle navigation sidebar" />
               <h2 className="text-lg font-bold tracking-tight">
                 xFoundry Hub
               </h2>
-            </div>
-            
-            {/* User Avatar with Dropdown */}
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
-                <Search className="h-4 w-4" />
-                <span className="sr-only">Search</span>
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <Avatar className="h-8 w-8 rounded-full">
-                      <AvatarImage src={profile?.picture || user?.picture} alt={profile?.firstName || user?.name || "User"} />
-                      <AvatarFallback>
-                        {profile?.firstName?.[0]}{profile?.lastName?.[0] || 
-                         (user?.name ? user.name.split(" ").map(n => n[0]).join("").slice(0, 2) : "U")}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {profile?.firstName} {profile?.lastName || (user?.name || "User")}
-                      </p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user?.email || profile?.email}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setIsEditModalOpen?.(true)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    <span>Edit Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/api/auth/logout">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign Out
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
           </div>
           

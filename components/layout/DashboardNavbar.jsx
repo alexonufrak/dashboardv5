@@ -39,14 +39,24 @@ import { Button } from '@/components/ui/button'
 import { useIsMobile } from '@/hooks/use-mobile' 
 import { BellIcon, Search, MoreHorizontal, LogOut, Edit, Settings, User, Moon, Sun } from 'lucide-react'
 
-// Enhanced route map with display names
+// Enhanced route map with display names for breadcrumbs
 const routeMap = {
+  '/': 'Home',
   '/dashboard': 'Dashboard',
   '/dashboard/programs': 'Programs',
   '/dashboard/program': 'Program',
+  '/dashboard/program/[programId]': 'Program Details',
+  '/dashboard/program/[programId]/milestones': 'Milestones',
+  '/dashboard/program/[programId]/team': 'Team',
+  '/dashboard/program/[programId]/bounties': 'Bounties',
+  '/dashboard/programs/apply/[cohortId]': 'Program Application',
+  '/dashboard/profile': 'Profile',
   '/profile': 'Profile',
   '/settings': 'Settings',
   '/program': 'Programs',
+  '/program/[programId]': 'Program Details',
+  // Legacy routes
+  '/program-dashboard': 'Program Dashboard',
 }
 
 const ITEMS_TO_DISPLAY = 3
@@ -74,20 +84,35 @@ export function DashboardNavbar({ title, showBreadcrumbs = true }) {
     updateProfile 
   } = useDashboard()
   
-  // Handle theme switching
-  const [theme, setTheme] = React.useState(() => {
-    if (typeof window !== 'undefined') {
-      return document.documentElement.classList.contains('dark') ? 'dark' : 'light'
-    }
-    return 'light'
-  })
+  // Handle theme
+  const [theme, setTheme] = React.useState('light')
   
+  // Get initial theme on mount
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // Check both localStorage and class presence for theme
+      const savedTheme = localStorage.getItem('theme')
+      const isDarkMode = document.documentElement.classList.contains('dark')
+      setTheme(savedTheme === 'dark' || isDarkMode ? 'dark' : 'light')
+    }
+  }, [])
+  
+  // Toggle theme with consistent approach
   const toggleTheme = React.useCallback(() => {
     const newTheme = theme === 'light' ? 'dark' : 'light'
+    
     if (typeof window !== 'undefined') {
-      document.documentElement.classList.toggle('dark')
+      // Update DOM
+      if (newTheme === 'dark') {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+      
+      // Save preference
       localStorage.setItem('theme', newTheme)
     }
+    
     setTheme(newTheme)
   }, [theme])
   
@@ -95,6 +120,30 @@ export function DashboardNavbar({ title, showBreadcrumbs = true }) {
   const navigateTo = React.useCallback((url) => {
     router.push(url, undefined, { shallow: true })
   }, [router])
+  
+  // Prefetch common routes for faster navigation
+  React.useEffect(() => {
+    // Common routes that should be prefetched
+    const routesToPrefetch = [
+      ROUTES.DASHBOARD,
+      ROUTES.PROGRAMS,
+      ROUTES.PROFILE
+    ]
+    
+    // Add program routes if available
+    if (participationData?.participation) {
+      participationData.participation.forEach(p => {
+        if (p.cohort?.initiativeDetails?.id) {
+          routesToPrefetch.push(ROUTES.PROGRAM.DETAIL(p.cohort.initiativeDetails.id))
+        }
+      })
+    }
+    
+    // Prefetch all routes
+    routesToPrefetch.forEach(route => {
+      router.prefetch(route)
+    })
+  }, [router, participationData])
   
   // Check if we're on a program page
   const programId = isProgramRoute(router) ? getProgramIdFromUrl(router) : null
@@ -185,7 +234,7 @@ export function DashboardNavbar({ title, showBreadcrumbs = true }) {
   return (
     <header className="flex h-16 shrink-0 items-center border-b mb-4">
       <div className="flex items-center gap-2 px-2 flex-1">
-        <SidebarTrigger className="-ml-1 md:hidden" />
+        <SidebarTrigger className="-ml-1 md:hidden" aria-label="Toggle navigation sidebar" />
         {shouldShowBreadcrumbs && (
           <>
             <Separator orientation="vertical" className="mr-2 h-6 hidden md:block" />
@@ -307,7 +356,7 @@ export function DashboardNavbar({ title, showBreadcrumbs = true }) {
       
       {/* Right-side actions with user profile */}
       <div className="flex-shrink-0 flex items-center gap-2 pr-2">
-        <Button variant="ghost" size="icon" className="h-9 w-9">
+        <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Search">
           <Search className="h-4 w-4" />
           <span className="sr-only">Search</span>
         </Button>
@@ -315,10 +364,18 @@ export function DashboardNavbar({ title, showBreadcrumbs = true }) {
         {/* User profile dropdown */}
         <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full h-9 w-9"
+              aria-label="User menu"
+            >
               <Avatar className="h-8 w-8">
-                <AvatarImage src={profile?.picture || user?.picture} alt={profile?.firstName || user?.name || "User"} />
-                <AvatarFallback>
+                <AvatarImage 
+                  src={profile?.picture || user?.picture} 
+                  alt={`${profile?.firstName || ''} ${profile?.lastName || user?.name || 'User'}`} 
+                />
+                <AvatarFallback aria-hidden="true">
                   {profile?.firstName?.[0]}{profile?.lastName?.[0] || 
                    (user?.name ? user.name.split(" ").map(n => n?.[0] || '').join("").slice(0, 2) : "U")}
                 </AvatarFallback>
