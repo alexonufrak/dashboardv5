@@ -5,7 +5,7 @@ import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import Head from "next/head"
 import Link from "next/link"
-import { AppSidebar } from "@/components/layout/app-sidebar"
+import { AppSidebar } from "@/components/app-sidebar"
 import { DashboardNavbar } from "@/components/layout/DashboardNavbar"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { isProgramRoute } from '@/lib/routing'
