@@ -70,28 +70,47 @@ const LeaveProgramDialog = ({
       // Update participation record if this user is in a program
       if (isInProgram) {
         console.log(`Attempting to leave program participation for cohort ${cohortId}, program ${programId}`)
+        console.log('Debug - Program data available:', { programName, programId, cohortId })
         
         // Call the participation leave API endpoint
-        const participationResponse = await fetch('/api/participation/unknown/leave', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        try {
+          const requestBody = {
             cohortId,
             programId
-          })
-        })
-        
-        if (!participationResponse.ok) {
-          const errorData = await participationResponse.json()
-          console.error("Error leaving program participation:", errorData)
-          warnings.push("There was an issue updating your program participation. Contact support if needed.")
-        } else {
-          const responseData = await participationResponse.json()
-          if (responseData.warning) {
-            console.warn("Warning from participation leave:", responseData.warning)
-            warnings.push(responseData.warning)
           }
-          console.log('Program participation leave successful')
+          console.log('Sending request to participation leave API:', requestBody)
+          
+          const participationResponse = await fetch('/api/participation/unknown/leave', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBody)
+          })
+          
+          console.log('Participation leave API response status:', participationResponse.status)
+          
+          if (!participationResponse.ok) {
+            const errorData = await participationResponse.json()
+            console.error("Error leaving program participation:", errorData)
+            warnings.push("There was an issue updating your program participation. Contact support if needed.")
+          } else {
+            const responseData = await participationResponse.json()
+            console.log('Participation leave API response data:', responseData)
+            
+            if (responseData.warning) {
+              console.warn("Warning from participation leave:", responseData.warning)
+              warnings.push(responseData.warning)
+            }
+            
+            if (responseData.recordsUpdated === 0) {
+              console.warn("No participation records were updated")
+              warnings.push("No participation records were found to update. Your program participation may not have been fully removed.")
+            } else {
+              console.log(`Updated ${responseData.recordsUpdated} participation records successfully`)
+            }
+          }
+        } catch (error) {
+          console.error('Error making participation leave API request:', error)
+          warnings.push("Error communicating with the server when leaving program participation.")
         }
       }
       
