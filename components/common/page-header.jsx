@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { AspectRatio } from '@/components/ui/aspect-ratio'
 import { ChevronLeft } from 'lucide-react'
 
 /**
@@ -62,19 +63,18 @@ export function PageHeader({
   
   return (
     <div className={cn('space-y-4', className)}>
-      {/* Banner Image */}
+      {/* Banner Image with AspectRatio */}
       {bannerImage && (
-        <div 
-          className="relative w-full rounded-lg overflow-hidden mb-4" 
-          style={{ height: `${bannerHeight}px` }}
-        >
-          <Image 
-            src={bannerImage} 
-            alt={title || "Page banner"} 
-            fill 
-            className="object-cover" 
-            priority
-          />
+        <div className="w-full rounded-lg overflow-hidden mb-4 bg-muted">
+          <AspectRatio ratio={21/9}>
+            <Image 
+              src={bannerImage} 
+              alt={title || "Page banner"} 
+              fill 
+              className="object-cover" 
+              priority
+            />
+          </AspectRatio>
         </div>
       )}
       
@@ -108,17 +108,18 @@ export function PageHeader({
           {(image || icon) && (
             <div className="flex-shrink-0">
               {image ? (
-                <div className="relative overflow-hidden rounded-md" style={{ width: imageSize, height: imageSize }}>
-                  <Image 
-                    src={image} 
-                    alt={title || "Header image"} 
-                    width={imageSize} 
-                    height={imageSize} 
-                    className="object-cover"
-                  />
+                <div className="overflow-hidden rounded-md bg-muted/50" style={{ width: imageSize, height: imageSize }}>
+                  <AspectRatio ratio={1/1}>
+                    <Image 
+                      src={image} 
+                      alt={title || "Header image"} 
+                      fill
+                      className="object-cover"
+                    />
+                  </AspectRatio>
                 </div>
               ) : icon ? (
-                <div className="flex items-center justify-center">{icon}</div>
+                <div className="flex items-center justify-center bg-muted/30 p-2 rounded-md">{icon}</div>
               ) : null}
             </div>
           )}
