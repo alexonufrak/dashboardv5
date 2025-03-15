@@ -24,11 +24,12 @@ import { ChevronLeft } from 'lucide-react'
  * @param {string} props.image - Optional image URL to display before the title as an image
  * @param {number} props.imageSize - Size for the image (default: 40)
  * @param {string} props.bannerImage - Optional banner image URL to display above the header
- * @param {number} props.bannerHeight - Height for the banner image (default: 150)
+ * @param {number} props.bannerHeight - Deprecated - use AspectRatio instead (default: 150)
  * @param {string|React.ReactNode} props.backHref - Optional back link URL or component
  * @param {React.ReactNode} props.breadcrumbs - Optional breadcrumbs component
  * @param {boolean} props.divider - Whether to show a divider below the header (default: false)
  * @param {string} props.spacing - Size of vertical padding (default: 'md')
+ * @param {number} props.aspectRatio - Optional aspect ratio for banner image (default: 21/9)
  */
 export function PageHeader({
   title,
@@ -41,11 +42,12 @@ export function PageHeader({
   image,
   imageSize = 40,
   bannerImage,
-  bannerHeight = 150,
+  bannerHeight = 150, // Deprecated
   backHref,
   breadcrumbs,
   divider = false,
   spacing = 'md',
+  aspectRatio = 21/9,
 }) {
   // Normalize badges to an array if a single badge is passed
   const badgeElements = React.Children.toArray(badges);
@@ -66,7 +68,7 @@ export function PageHeader({
       {/* Banner Image with AspectRatio */}
       {bannerImage && (
         <div className="w-full rounded-lg overflow-hidden mb-4 bg-muted">
-          <AspectRatio ratio={21/9}>
+          <AspectRatio ratio={aspectRatio}>
             <Image 
               src={bannerImage} 
               alt={title || "Page banner"} 

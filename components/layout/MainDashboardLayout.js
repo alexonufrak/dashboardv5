@@ -213,11 +213,14 @@ const MainDashboardLayout = ({
 function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcrumbs, onNavigate, user }) {
   // For dashboard pages, always show the sidebar if the user is logged in
   const renderWithSidebar = showSidebar; 
+  
+  // Set default title if empty
+  const pageTitle = title?.trim() ? title : "xFoundry Hub";
 
   return (
     <>
       <Head>
-        <title>{title}</title>
+        <title>{pageTitle}</title>
         <meta name="description" content="xFoundry Hub - Empowering education through technology" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
@@ -283,10 +286,15 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
           <SidebarInset className="bg-background">
             <div className="pt-[64px] md:pt-4 overflow-x-hidden h-full">
               <div className="mx-auto max-w-6xl px-4 md:px-6 h-full">
-                {shouldShowBreadcrumbs && <Breadcrumbs />}
+                {/* Only show breadcrumbs if needed AND there's a non-empty title */}
+                {shouldShowBreadcrumbs && title?.trim() && <Breadcrumbs />}
                 
                 {/* Content wrapper with page transitions */}
                 <div className="main-dashboard-layout-content proper-dashboard-layout-content h-full">
+                  {/* Only display title at the top if specified and not empty */}
+                  {title?.trim() && (
+                    <h1 className="text-2xl font-bold tracking-tight mb-4">{title}</h1>
+                  )}
                   {children}
                 </div>
               </div>
