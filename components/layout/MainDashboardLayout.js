@@ -5,8 +5,8 @@ import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import Head from "next/head"
 import Link from "next/link"
-import { AppSidebar } from "./app-sidebar"
-import Breadcrumbs from "@/components/common/Breadcrumbs"
+import { AppSidebar } from "@/components/layout/app-sidebar"
+import { DashboardNavbar } from "@/components/layout/DashboardNavbar"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { isProgramRoute } from '@/lib/routing'
 import { Skeleton } from "@/components/ui/skeleton"
@@ -229,20 +229,23 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
       {renderWithSidebar ? (
         <SidebarProvider defaultOpen>
           {/* Mobile Header - Only visible on mobile */}
-          <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-primary text-primary-foreground py-3 px-4 flex justify-between items-center shadow-sm">
+          <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-background text-foreground py-3 px-4 flex justify-between items-center shadow-sm border-b">
             <div className="flex items-center">
-              <div className="w-10"></div> {/* Placeholder for alignment */}
-              <h2 className="text-lg font-bold tracking-tight ml-4">
+              <h2 className="text-lg font-bold tracking-tight">
                 xFoundry Hub
               </h2>
             </div>
             
             {/* User Avatar with Dropdown */}
-            <div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full">
+                <Search className="h-4 w-4" />
+                <span className="sr-only">Search</span>
+              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary-foreground/10">
-                    <Avatar className="h-8 w-8 rounded-full border-2 border-primary-foreground/20">
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <Avatar className="h-8 w-8 rounded-full">
                       <AvatarImage src={profile?.picture || user?.picture} alt={profile?.firstName || user?.name || "User"} />
                       <AvatarFallback>
                         {profile?.firstName?.[0]}{profile?.lastName?.[0] || 
@@ -284,28 +287,29 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
           
           {/* Main Content */}
           <SidebarInset className="bg-background">
-            <div className="pt-[64px] md:pt-4 overflow-x-hidden h-full">
-              <div className="mx-auto max-w-6xl px-4 md:px-6 h-full">
-                {/* Only show breadcrumbs if needed AND there's a non-empty title */}
-                {shouldShowBreadcrumbs && title?.trim() && <Breadcrumbs />}
-                
-                {/* Content wrapper with page transitions */}
-                <div className="main-dashboard-layout-content proper-dashboard-layout-content h-full">
-                  {/* Only display title at the top if specified and not empty */}
-                  {title?.trim() && (
-                    <h1 className="text-2xl font-bold tracking-tight mb-4">{title}</h1>
-                  )}
-                  {children}
+            <div className="pt-[64px] md:pt-0 h-full flex flex-col">
+              {/* Dashboard Navbar with Breadcrumbs */}
+              <DashboardNavbar title={title} showBreadcrumbs={shouldShowBreadcrumbs} />
+              
+              {/* Content wrapper with page transitions */}
+              <div className="flex-1 px-4 md:px-6 pb-4 overflow-auto">
+                <div className="mx-auto max-w-6xl">
+                  <div className="main-dashboard-layout-content proper-dashboard-layout-content">
+                    {children}
+                  </div>
                 </div>
               </div>
             </div>
           </SidebarInset>
         </SidebarProvider>
       ) : (
-        <div className="min-h-screen bg-background overflow-x-hidden h-full">
+        <div className="min-h-screen bg-background h-full flex flex-col">
+          {/* Dashboard Navbar with Breadcrumbs */}
+          <DashboardNavbar title={title} showBreadcrumbs={shouldShowBreadcrumbs} />
+          
           {/* Main Content without sidebar */}
-          <main className="flex-1 pt-4 overflow-x-hidden h-full">
-            <div className="container max-w-6xl mx-auto px-4 md:px-6 h-full">
+          <main className="flex-1 px-4 md:px-6 pb-4 overflow-auto">
+            <div className="container max-w-6xl mx-auto">
               {children}
             </div>
           </main>
