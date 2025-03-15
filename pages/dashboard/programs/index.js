@@ -46,12 +46,13 @@ function ProgramsPageContent({ onNavigate }) {
       transitionType="programsList"
     >
       <div className="space-y-6">
-        {/* Page Header with Clean Styling */}
+        {/* Main Section Header */}
         <BlurFade delay={0.1} direction="up">
           <PageHeader
             title="Available Programs"
             subtitle={`Browse and apply to xFoundry programs available at ${institutionName}`}
             spacing="md"
+            icon={<Blocks className="h-6 w-6 text-primary" />}
             badges={[
               applications?.length > 0 && (
                 <Badge key="applications" variant="outline" className="bg-blue-50/80 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900">
@@ -106,7 +107,8 @@ function ProgramsPageContent({ onNavigate }) {
             <PageHeader 
               title="Your Active Programs"
               subtitle="Programs you're currently enrolled in"
-              spacing="sm"
+              spacing="md"
+              icon={<Building2 className="h-6 w-6 text-primary" />}
               divider
             />
           </BlurFade>
