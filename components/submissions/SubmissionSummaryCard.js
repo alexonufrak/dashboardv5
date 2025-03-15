@@ -341,37 +341,37 @@ export default function SubmissionSummaryCard({ submissions: initialSubmissions 
         ) : (
           /* Actual content */
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-violet-50 rounded-lg p-3 border border-violet-100">
+            <Card className="bg-violet-50 dark:bg-violet-900 p-3 border-violet-100 dark:border-violet-800">
               <div className="flex items-center gap-2 mb-1">
-                <Upload className="h-5 w-5 text-violet-600" />
-                <span className="text-sm font-medium text-violet-800">Total Submissions</span>
+                <Upload className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                <span className="text-sm font-medium text-violet-800 dark:text-violet-300">Total Submissions</span>
               </div>
-              <div className="text-2xl font-bold text-violet-900">{totalSubmissions}</div>
-            </div>
+              <div className="text-2xl font-bold text-violet-900 dark:text-violet-100">{totalSubmissions}</div>
+            </Card>
             
-            <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+            <Card className="bg-green-50 dark:bg-green-900 p-3 border-green-100 dark:border-green-800">
               <div className="flex items-center gap-2 mb-1">
-                <FileCheck className="h-5 w-5 text-green-600" />
-                <span className="text-sm font-medium text-green-800">Recent Submissions</span>
+                <FileCheck className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium text-green-800 dark:text-green-300">Recent Submissions</span>
               </div>
-              <div className="text-2xl font-bold text-green-900">{recentSubmissions.length}</div>
-            </div>
+              <div className="text-2xl font-bold text-green-900 dark:text-green-100">{recentSubmissions.length}</div>
+            </Card>
             
-            <div className="bg-red-50 rounded-lg p-3 border border-red-100">
+            <Card className="bg-red-50 dark:bg-red-900 p-3 border-red-100 dark:border-red-800">
               <div className="flex items-center gap-2 mb-1">
-                <FileX className="h-5 w-5 text-red-600" />
-                <span className="text-sm font-medium text-red-800">Overdue</span>
+                <FileX className="h-5 w-5 text-red-600 dark:text-red-400" />
+                <span className="text-sm font-medium text-red-800 dark:text-red-300">Overdue</span>
               </div>
-              <div className="text-2xl font-bold text-red-900">{overdueCount}</div>
-            </div>
+              <div className="text-2xl font-bold text-red-900 dark:text-red-100">{overdueCount}</div>
+            </Card>
             
-            <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+            <Card className="bg-blue-50 dark:bg-blue-900 p-3 border-blue-100 dark:border-blue-800">
               <div className="flex items-center gap-2 mb-1">
-                <BarChart className="h-5 w-5 text-blue-600" />
-                <span className="text-sm font-medium text-blue-800">Submission Rate</span>
+                <BarChart className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <span className="text-sm font-medium text-blue-800 dark:text-blue-300">Submission Rate</span>
               </div>
-              <div className="text-2xl font-bold text-blue-900">{submissionRate}%</div>
-            </div>
+              <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{submissionRate}%</div>
+            </Card>
           </div>
         )}
         
