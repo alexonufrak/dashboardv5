@@ -28,6 +28,86 @@ export default function PageHeaderExample() {
             <PageHeader
               title="Dashboard Overview"
               subtitle="View and manage your program statistics and activities"
+              spacing="md" // Default medium padding
+            />
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* With Different Spacing Options */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4">With Different Spacing Options</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardContent className="p-6">
+              <PageHeader
+                title="Small Spacing"
+                subtitle="Compact header with minimal padding"
+                spacing="sm"
+                badges={["Compact"]}
+              />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <PageHeader
+                title="Large Spacing"
+                subtitle="Expanded header with more padding"
+                spacing="lg"
+                badges={["Spacious"]}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* With Icon and Image */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4">With Icon and Image Options</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card>
+            <CardContent className="p-6">
+              <PageHeader
+                title="With Icon"
+                subtitle="Using Lucide icon component"
+                icon={<Users className="h-6 w-6 text-primary" />}
+                badges={["Icon Example"]}
+              />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <PageHeader
+                title="With Image"
+                subtitle="Using Next.js Image component"
+                image="/placeholder-logo.svg"
+                imageSize={48}
+                badges={["Image Example"]}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      {/* With Banner Image */}
+      <section>
+        <h2 className="text-xl font-semibold mb-4">With Banner Image</h2>
+        <Card>
+          <CardContent className="p-6">
+            <PageHeader
+              title="Program Dashboard"
+              subtitle="Full-width banner image above header content"
+              bannerImage="/placeholder.jpg"
+              bannerHeight={180}
+              badges={[
+                <Badge key="active" variant="outline" className="bg-green-50 text-green-700 border-green-200">Active Program</Badge>
+              ]}
+              actions={[
+                <Button key="view" variant="default">
+                  View Details
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              ]}
             />
           </CardContent>
         </Card>
@@ -56,6 +136,7 @@ export default function PageHeaderExample() {
                   Add Member
                 </Button>
               ]}
+              spacing="lg" // More vertical padding
             />
           </CardContent>
         </Card>
@@ -69,7 +150,8 @@ export default function PageHeaderExample() {
             <PageHeader
               title="Program Settings"
               subtitle="Configure program parameters and permissions"
-              icon={<Settings className="h-6 w-6 text-primary" />}
+              image="/placeholder-logo.svg" // Using image instead of icon
+              imageSize={40}
               backHref="#"
               divider={true}
               actions={[
@@ -106,6 +188,7 @@ export default function PageHeaderExample() {
                 </Badge>
               ]}
               divider={true}
+              spacing="lg" // More vertical padding
             >
               <Tabs defaultValue="overview" className="w-full">
                 <TabsList>
@@ -128,31 +211,40 @@ export default function PageHeaderExample() {
         </Card>
       </section>
 
-      {/* With Helper Components */}
+      {/* Complete Showcase */}
       <section>
-        <h2 className="text-xl font-semibold mb-4">With Helper Components</h2>
+        <h2 className="text-xl font-semibold mb-4">Complete Showcase</h2>
         <Card>
           <CardContent className="p-6">
             <PageHeader
-              title="Resource Library"
-              subtitle="Access program resources and documentation"
+              title="Comprehensive Example"
+              subtitle="Showcasing all features of the enhanced page header component"
+              bannerImage="/placeholder.jpg"
+              bannerHeight={160}
+              image="/placeholder-logo.svg"
+              imageSize={48}
+              backHref="#"
+              divider={true}
+              spacing="xl" // Extra large padding
+              badges={[
+                <Badge key="featured" variant="default">Featured</Badge>,
+                <Badge key="new" variant="secondary">New</Badge>
+              ]}
+              actions={[
+                <Button key="action" variant="default">
+                  Primary Action
+                </Button>
+              ]}
             >
-              <PageHeaderBadges>
-                <Badge variant="outline">Documents</Badge>
-                <Badge variant="outline">Videos</Badge>
-                <Badge variant="outline">Templates</Badge>
-              </PageHeaderBadges>
-              
-              <PageHeaderActions>
+              <div className="mt-4">
+                <p className="text-sm text-muted-foreground mb-3">
+                  This example demonstrates all the available features of the enhanced PageHeader component,
+                  including banner image, left image, badges, actions, and customizable spacing.
+                </p>
                 <Button variant="outline" size="sm">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter
+                  Learn More
                 </Button>
-                <Button variant="default" size="sm">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Resource
-                </Button>
-              </PageHeaderActions>
+              </div>
             </PageHeader>
           </CardContent>
         </Card>
