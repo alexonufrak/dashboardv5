@@ -43,28 +43,57 @@ const LeaveProgramDialog = ({
     try {
       setIsLeaving(true)
       
-      // Use the team ID or "unknown" if not available
-      const leaveTeamId = teamId || "unknown"
-      console.log(`Attempting to leave team with ID: ${leaveTeamId}`)
+      // Track if we need to display any warnings in our final toast
+      let warnings = []
       
-      // Call the leave team API endpoint
-      const response = await fetch(`/api/teams/${leaveTeamId}/leave`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          programId,
-          cohortId
+      // Update team membership if this user is in a team
+      if (isInTeam) {
+        // Use the team ID or "unknown" if not available
+        const leaveTeamId = teamId || "unknown"
+        console.log(`Attempting to leave team with ID: ${leaveTeamId}`)
+        
+        // Call the leave team API endpoint
+        const teamResponse = await fetch(`/api/teams/${leaveTeamId}/leave`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
         })
-      })
-      
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to leave program')
+        
+        if (!teamResponse.ok) {
+          const errorData = await teamResponse.json()
+          console.error("Error leaving team:", errorData)
+          warnings.push("There was an issue leaving your team. Contact support if needed.")
+        } else {
+          console.log('Team leave successful')
+        }
       }
       
-      // Get the response data
-      const data = await response.json()
-      console.log('Leave program response:', data)
+      // Update participation record if this user is in a program
+      if (isInProgram) {
+        console.log(`Attempting to leave program participation for cohort ${cohortId}, program ${programId}`)
+        
+        // Call the participation leave API endpoint
+        const participationResponse = await fetch('/api/participation/unknown/leave', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cohortId,
+            programId
+          })
+        })
+        
+        if (!participationResponse.ok) {
+          const errorData = await participationResponse.json()
+          console.error("Error leaving program participation:", errorData)
+          warnings.push("There was an issue updating your program participation. Contact support if needed.")
+        } else {
+          const responseData = await participationResponse.json()
+          if (responseData.warning) {
+            console.warn("Warning from participation leave:", responseData.warning)
+            warnings.push(responseData.warning)
+          }
+          console.log('Program participation leave successful')
+        }
+      }
       
       // Close the dialog
       onClose()
@@ -88,26 +117,31 @@ const LeaveProgramDialog = ({
       let toastDescription = ""
       
       if (isInTeam && isInProgram) {
-        toastTitle = "Program & Team Left Successfully"
+        toastTitle = "Program & Team Left"
         toastDescription = `You have left ${programName} and ${teamName || "your team"}.`
       } else if (isInTeam) {
-        toastTitle = "Team Left Successfully"
+        toastTitle = "Team Left"
         toastDescription = `You have left ${teamName || "your team"}.`
       } else {
-        toastTitle = "Program Left Successfully"
+        toastTitle = "Program Left"
         toastDescription = `You have left ${programName}.`
+      }
+      
+      // Add any warnings to the toast description
+      if (warnings.length > 0) {
+        toastDescription += ` Note: ${warnings.join(' ')}`;
       }
       
       toast({
         title: toastTitle,
         description: toastDescription,
-        variant: "default",
+        variant: warnings.length > 0 ? "warning" : "default",
       })
       
       // Redirect to dashboard after a short delay
       setTimeout(() => {
         router.push('/dashboard')
-      }, 1500)
+      }, 1000)
     } catch (error) {
       console.error('Error leaving program:', error)
       setIsLeaving(false)
