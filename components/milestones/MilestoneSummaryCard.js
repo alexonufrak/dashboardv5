@@ -233,34 +233,34 @@ export default function MilestoneSummaryCard({ milestones = [], onViewMilestones
           <>
             {/* Stats grid - completed, late, and upcoming */}
             <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+              <Card className="bg-green-50 dark:bg-green-900 p-3 border-green-100 dark:border-green-800">
                 <div className="flex items-center gap-2 mb-1">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
-                  <span className="text-sm font-medium text-green-800">Completed</span>
+                  <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <span className="text-sm font-medium text-green-800 dark:text-green-300">Completed</span>
                 </div>
-                <div className="text-2xl font-bold text-green-900">{completedCount}</div>
-              </div>
+                <div className="text-2xl font-bold text-green-900 dark:text-green-100">{completedCount}</div>
+              </Card>
               
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+              <Card className="bg-neutral-50 dark:bg-neutral-900 p-3 border-neutral-100 dark:border-neutral-800">
                 <div className="flex items-center gap-2 mb-1">
-                  <Circle className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-800">Upcoming</span>
+                  <Circle className="h-5 w-5 text-neutral-500" />
+                  <span className="text-sm font-medium text-neutral-800 dark:text-neutral-300">Upcoming</span>
                 </div>
-                <div className="text-2xl font-bold text-gray-900">{upcomingCount}</div>
-              </div>
+                <div className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">{upcomingCount}</div>
+              </Card>
               
-              <div className="bg-red-50 rounded-lg p-3 border border-red-100">
+              <Card className="bg-red-50 dark:bg-red-900 p-3 border-red-100 dark:border-red-800">
                 <div className="flex items-center gap-2 mb-1">
-                  <AlertCircle className="h-5 w-5 text-red-600" />
-                  <span className="text-sm font-medium text-red-800">Late</span>
+                  <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  <span className="text-sm font-medium text-red-800 dark:text-red-300">Late</span>
                 </div>
-                <div className="text-2xl font-bold text-red-900">{lateCount}</div>
-              </div>
+                <div className="text-2xl font-bold text-red-900 dark:text-red-100">{lateCount}</div>
+              </Card>
             </div>
             
             {/* Next milestone */}
             {nextMilestone && (
-              <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
+              <Card className="bg-indigo-50 dark:bg-indigo-900 p-4 border-indigo-100 dark:border-indigo-800">
                 <h4 className="text-sm font-medium text-indigo-800 mb-1">Next Milestone</h4>
                 <div className="text-lg font-semibold text-indigo-900 mb-1">{nextMilestone.name}</div>
                 <div className="flex justify-between items-center">

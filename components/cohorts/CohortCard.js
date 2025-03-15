@@ -288,9 +288,9 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
     
     return (
       <>
-        <div 
+        <Card 
           key={cohort.id} 
-          className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-neutral-900 hover:bg-gray-50 dark:hover:bg-neutral-800 shadow-sm transition-all mr-2 mb-2 cursor-pointer group"
+          className="inline-flex items-center px-3 py-1.5 mr-2 mb-2 cursor-pointer group hover:shadow-sm"
           onClick={handleViewDetails}
         >
           <div className="flex items-center gap-2 pointer-events-none">
@@ -305,7 +305,7 @@ const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applic
             
             <Eye className="h-3 w-3 text-muted-foreground ml-1" />
           </div>
-        </div>
+        </Card>
       </>
     );
   }
