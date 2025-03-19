@@ -912,7 +912,10 @@ function Onboarding() {
       {/* Initiative Conflict Dialog */}
       <InitiativeConflictDialog
         open={showInitiativeConflictDialog}
-        onClose={() => setShowInitiativeConflictDialog(false)}
+        onClose={() => {
+          setShowInitiativeConflictDialog(false);
+          setActiveApplication(null); // Close the sheet on conflict dialog close
+        }}
         details={conflictDetails}
         conflictType="initiative_conflict"
       />

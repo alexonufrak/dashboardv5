@@ -23,11 +23,12 @@ import XtrapreneursApplicationForm from '@/components/program/xtrapreneurs/Xtrap
  * Used in both the dashboard and the onboarding checklist
  * @param {Object} cohort - The cohort data
  * @param {Object} profile - The user profile
+ * @param {Function} onApply - Callback when apply button is clicked
  * @param {Function} onApplySuccess - Callback when application is successful
  * @param {boolean} condensed - If true, displays a condensed version of the card
  * @param {Array} applications - List of applications to check if user has already applied
  */
-const CohortCard = ({ cohort, profile, onApplySuccess, condensed = false, applications = [] }) => {
+const CohortCard = ({ cohort, profile, onApply, onApplySuccess, condensed = false, applications = [] }) => {
   const [activeFilloutForm, setActiveFilloutForm] = useState(null)
   const [activeTeamSelectDialog, setActiveTeamSelectDialog] = useState(null)
   const [activeTeamCreateDialog, setActiveTeamCreateDialog] = useState(false)
