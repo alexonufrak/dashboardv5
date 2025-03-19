@@ -7,7 +7,7 @@ import { useUser } from "@auth0/nextjs-auth0/client"
 import { useOnboarding } from '@/contexts/OnboardingContext'
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { CheckCircle, ChevronDown, ChevronUp, Compass, ExternalLink, ArrowRight, X } from "lucide-react"
+import { CheckCircle, ChevronDown, ChevronUp, Compass, ExternalLink, ArrowRight } from "lucide-react"
 import CohortGrid from '@/components/cohorts/CohortGrid'
 import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -15,12 +15,6 @@ import Logo from "@/components/common/Logo"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Card } from "@/components/ui/card"
 import Head from "next/head"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet"
-import { Badge } from "@/components/ui/badge"
-import { FilloutPopupEmbed } from "@fillout/react"
-import TeamSelectDialog from '@/components/teams/TeamSelectDialog'
-import TeamCreateDialog from '@/components/teams/TeamCreateDialog'
-import InitiativeConflictDialog from '@/components/cohorts/InitiativeConflictDialog'
 
 function Onboarding() {
   const { user } = useUser()
@@ -47,19 +41,6 @@ function Onboarding() {
   const [applications, setApplications] = useState([])
   const [isLoadingApplications, setIsLoadingApplications] = useState(false)
   
-  // Application sheet state
-  const [activeApplication, setActiveApplication] = useState(null)
-  const [isCheckingRestrictions, setIsCheckingRestrictions] = useState(false)
-  const [showInitiativeConflictDialog, setShowInitiativeConflictDialog] = useState(false)
-  const [conflictDetails, setConflictDetails] = useState(null)
-  const [activeFilloutForm, setActiveFilloutForm] = useState(null)
-  const [activeTeamSelectDialog, setActiveTeamSelectDialog] = useState(null)
-  const [activeTeamCreateDialog, setActiveTeamCreateDialog] = useState(false)
-  const [userTeams, setUserTeams] = useState([])
-  const [isLoadingTeams, setIsLoadingTeams] = useState(false)
-  
-  // Application step state for multi-step experience
-  const [applicationStep, setApplicationStep] = useState("details") // "details", "team", "form", "confirm"
   
   // Fetch minimal profile data - only once on mount
   useEffect(() => {
@@ -175,146 +156,17 @@ function Onboarding() {
     }
   }, [onboardingCompleted, onboardingLoading, router])
   
-  // Check if a user is already part of an initiative
-  const checkInitiativeRestrictions = async (cohort) => {
-    try {
-      setIsCheckingRestrictions(true)
-      
-      // Get the current cohort's initiative
-      const currentInitiativeName = cohort.initiativeDetails?.name || "";
-      const currentInitiativeId = cohort.initiativeDetails?.id;
-      
-      console.log("Checking initiative restrictions for:", currentInitiativeName);
-      
-      // Skip check for Xperiment initiative (which has no restrictions)
-      if (currentInitiativeName.includes("Xperiment")) {
-        console.log("Skipping restrictions for Xperiment initiative");
-        return { allowed: true };
-      }
-      
-      // Check if this is a team-based initiative
-      const currentParticipationType = cohort.participationType || 
-                                     cohort.initiativeDetails?.["Participation Type"] || 
-                                     "Individual";
-                                     
-      // Standardized team participation detection
-      const normalizedType = currentParticipationType.trim().toLowerCase();
-      const isTeamProgram = 
-        normalizedType === "team" || 
-        normalizedType.includes("team") ||
-        normalizedType === "teams" ||
-        normalizedType === "group" ||
-        normalizedType.includes("group") ||
-        normalizedType === "collaborative" ||
-        normalizedType.includes("collaborative");
-      
-      console.log(`Is this a team program? ${isTeamProgram ? 'YES' : 'NO'} (${currentParticipationType})`);
-      
-      // Only check conflicts for team programs
-      if (!isTeamProgram) {
-        console.log(`Not a team program (${currentParticipationType}), skipping conflict check`);
-        return { allowed: true };
-      }
-      
-      // We need to make an API call to check if the user has participation records with conflicting initiatives
-      if (!profile?.contactId) {
-        console.error("No contact ID available for initiative conflict check");
-        return { allowed: true };
-      }
-      
-      console.log(`Calling API to check participation records for contact ${profile.contactId}`);
-      
-      const url = `/api/user/check-initiative-conflicts?initiative=${encodeURIComponent(currentInitiativeName)}`;
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        console.error("Error checking initiative conflicts:", response.statusText);
-        return { allowed: true }; // Allow if we can't check
-      }
-      
-      const data = await response.json();
-      
-      if (data.hasConflict) {
-        console.log("API found conflicting initiative:", data.conflictingInitiative);
-        return {
-          allowed: false,
-          reason: "initiative_conflict",
-          details: {
-            currentInitiative: currentInitiativeName,
-            conflictingInitiative: data.conflictingInitiative,
-            teamId: data.teamId,
-            teamName: data.teamName
-          }
-        };
-      }
-      
-      console.log("No conflicts found, allowing application");
-      return { allowed: true };
-    } catch (error) {
-      console.error("Error in initiative restriction check:", error);
-      return { allowed: true }; // In case of error, allow the application
-    } finally {
-      setIsCheckingRestrictions(false)
-    }
-  };
   
   // Handlers
-  const handleCohortApply = async (cohort) => {
-    console.log("ONBOARDING - Applying to cohort:", cohort)
-    
-    // Set step to details and reset any previous state
-    setApplicationStep("details")
-    setActiveApplication(cohort)
-    
-    // Check for initiative restrictions
-    const restrictionCheck = await checkInitiativeRestrictions(cohort);
-    if (!restrictionCheck.allowed) {
-      console.log("Application restricted:", restrictionCheck);
-      setConflictDetails(restrictionCheck.details);
-      setShowInitiativeConflictDialog(true);
-      return;
-    }
-    
-    console.log("Sheet should be open, activeApplication:", activeApplication)
+  const handleCohortApply = (cohort) => {
+    // Simply mark the step as complete when a cohort is applied to
+    console.log("Cohort applied to:", cohort.id);
+    markStepComplete('selectCohort');
   }
   
   const handleCohortApplySuccess = () => {
     // Mark the cohort selection step as complete
-    markStepComplete('selectCohort')
-    // Close the application sheet
-    setActiveApplication(null)
-  }
-  
-  // Handle form completion for individual applications
-  const handleFormCompleted = () => {
-    setActiveFilloutForm(null)
-    handleCohortApplySuccess()
-  }
-  
-  // Handle team creation
-  const handleTeamCreated = (team) => {
-    console.log("Team created successfully:", team)
-    
-    // Add new team to user's teams
-    setUserTeams(prev => {
-      const newTeams = [...prev, team]
-      console.log("Updated teams list:", newTeams)
-      return newTeams
-    })
-    
-    setActiveTeamCreateDialog(false)
-    
-    // Open team selection dialog with the newly created team
-    setActiveTeamSelectDialog({
-      cohort: activeApplication,
-      teams: [team]
-    })
-  }
-  
-  // Handle team application submission
-  const handleTeamApplicationSubmitted = () => {
-    setActiveTeamSelectDialog(null)
-    handleCohortApplySuccess()
+    markStepComplete('selectCohort');
   }
   
   const handleCompleteOnboarding = async () => {
@@ -813,114 +665,6 @@ function Onboarding() {
           </Card>
         </div>
       </div>
-      
-      {/* Application Sheet */}
-      {activeApplication && (
-        <Sheet open={!!activeApplication} onOpenChange={(open) => !open && setActiveApplication(null)}>
-          <SheetContent side="right" className="w-full sm:w-[600px] max-w-full p-0 gap-0">
-            <div className="flex flex-col h-full">
-              {/* Header */}
-              <SheetHeader className="p-6 border-b">
-                <SheetTitle>
-                  {applicationStep === "confirm" ? "Application Submitted" : "Program Application"}
-                </SheetTitle>
-                <SheetDescription>
-                  {applicationStep === "details" && "Review program details and apply"}
-                  {applicationStep === "form" && "Complete the application form"}
-                  {applicationStep === "team" && "Select or create a team for this program"}
-                  {applicationStep === "confirm" && "Your application has been submitted"}
-                </SheetDescription>
-              </SheetHeader>
-              
-              {/* Content */}
-              <div className="flex-grow overflow-y-auto p-6">
-                {/* Show appropriate content based on step */}
-                {applicationStep === "details" && (
-                  <ApplicationDetails 
-                    cohort={activeApplication} 
-                    onContinue={() => {
-                      const participationType = activeApplication.participationType || 
-                                     activeApplication.initiativeDetails?.["Participation Type"] || 
-                                     "Individual";
-                      const isTeamBased = participationType.toLowerCase().includes("team");
-                      
-                      // Route to appropriate next step based on participation type
-                      if (isTeamBased) {
-                        setApplicationStep("team");
-                      } else {
-                        setApplicationStep("form");
-                      }
-                    }}
-                  />
-                )}
-                
-                {applicationStep === "form" && (
-                  <IndividualApplicationForm 
-                    cohort={activeApplication}
-                    onComplete={() => {
-                      // Show confirmation and mark step complete
-                      setApplicationStep("confirm");
-                      markStepComplete('selectCohort');
-                    }}
-                  />
-                )}
-                
-                {applicationStep === "team" && (
-                  <TeamApplicationOptions 
-                    cohort={activeApplication}
-                    onCreateTeam={() => {
-                      setActiveTeamCreateDialog(true);
-                    }}
-                    onSelectTeam={() => {
-                      setActiveTeamSelectDialog({
-                        cohort: activeApplication,
-                        teams: userTeams || []
-                      });
-                    }}
-                  />
-                )}
-                
-                {applicationStep === "confirm" && (
-                  <ApplicationConfirmation
-                    onComplete={handleCohortApplySuccess}
-                  />
-                )}
-              </div>
-            </div>
-          </SheetContent>
-        </Sheet>
-      )}
-      
-      {/* Team Creation Dialog */}
-      <TeamCreateDialog 
-        open={activeTeamCreateDialog}
-        onClose={() => setActiveTeamCreateDialog(false)}
-        onCreateTeam={handleTeamCreated}
-        onJoinTeam={handleTeamApplicationSubmitted}
-        cohortId={activeApplication?.id}
-        profile={profile}
-        cohort={activeApplication}
-      />
-      
-      {/* Team Selection Dialog */}
-      <TeamSelectDialog 
-        open={!!activeTeamSelectDialog}
-        onClose={() => setActiveTeamSelectDialog(null)}
-        onSubmit={handleTeamApplicationSubmitted}
-        cohort={activeTeamSelectDialog?.cohort}
-        teams={activeTeamSelectDialog?.teams || []}
-      />
-      
-      {/* Initiative Conflict Dialog */}
-      <InitiativeConflictDialog
-        open={showInitiativeConflictDialog}
-        onClose={() => {
-          setShowInitiativeConflictDialog(false);
-          setActiveApplication(null); // Close the sheet on conflict dialog close
-        }}
-        details={conflictDetails}
-        conflictType="initiative_conflict"
-      />
     </>
   )
 }

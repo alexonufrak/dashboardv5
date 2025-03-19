@@ -239,18 +239,39 @@ const CohortCard = ({ cohort, profile, onApply, onApplySuccess, condensed = fals
         setIsApplying(false); // Reset apply button state
         return;
       }
+
+      // Determine how to apply based on participation type
+      const isTeamBased = participationType.toLowerCase().includes('team');
       
-      // Use onApply callback if provided (for onboarding flow)
-      console.log("onApply available?", Boolean(onApply), typeof onApply);
+      // If we're using this component from the onboarding flow, use the callback
       if (onApply && typeof onApply === 'function') {
         console.log("Using onApply callback for onboarding flow");
         onApply(cohort);
         setIsApplying(false);
         return;
       }
-      console.log("Falling back to page navigation");
       
-      // Default behavior - navigate to application page
+      // For team-based applications in normal mode, show the team creation dialog
+      if (isTeamBased) {
+        console.log("Team-based application, showing team dialog");
+        setActiveTeamCreateDialog(true);
+        setIsApplying(false);
+        return;
+      }
+      
+      // For individual applications with a form, show the fillout form
+      if (filloutFormId) {
+        console.log("Individual application with form, showing fillout form");
+        setActiveFilloutForm({
+          formId: filloutFormId,
+          cohortId: cohort.id,
+          initiativeName: initiativeName
+        });
+        setIsApplying(false);
+        return;
+      }
+      
+      // Default fallback behavior - navigate to application page
       // Get cohort ID for navigation
       const cohortId = cohort.id;
       
@@ -265,7 +286,6 @@ const CohortCard = ({ cohort, profile, onApply, onApplySuccess, condensed = fals
       import('next/router').then(module => {
         const router = module.default || module;
         // Use the router.push with shallow:false to ensure data is loaded
-        // but with a custom handler for the transition
         router.push(`/dashboard/programs/apply/${encodeURIComponent(cohortId)}`, undefined, {
           scroll: false // Prevent scrolling to top on navigation
         });
@@ -275,7 +295,6 @@ const CohortCard = ({ cohort, profile, onApply, onApplySuccess, condensed = fals
       console.error("Error in application process:", error);
       setIsApplying(false);
     }
-    // Note: We don't reset isApplying in finally block because we're navigating away
   }
   
   // Handle view details click
