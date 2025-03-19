@@ -7,7 +7,7 @@ import { useUser } from "@auth0/nextjs-auth0/client"
 import { useOnboarding } from '@/contexts/OnboardingContext'
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { CheckCircle, ChevronDown, ChevronUp, Compass, ExternalLink, ArrowRight } from "lucide-react"
+import { CheckCircle, ChevronDown, ChevronUp, Compass, ExternalLink, ArrowRight, X } from "lucide-react"
 import CohortGrid from '@/components/cohorts/CohortGrid'
 import OnboardingChecklist from "@/components/onboarding/OnboardingChecklist"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -15,6 +15,12 @@ import Logo from "@/components/common/Logo"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Card } from "@/components/ui/card"
 import Head from "next/head"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from "@/components/ui/sheet"
+import { Badge } from "@/components/ui/badge"
+import { FilloutPopupEmbed } from "@fillout/react"
+import TeamSelectDialog from '@/components/teams/TeamSelectDialog'
+import TeamCreateDialog from '@/components/teams/TeamCreateDialog'
+import InitiativeConflictDialog from '@/components/cohorts/InitiativeConflictDialog'
 
 function Onboarding() {
   const { user } = useUser()
@@ -40,6 +46,20 @@ function Onboarding() {
   const [profile, setProfile] = useState(null)
   const [applications, setApplications] = useState([])
   const [isLoadingApplications, setIsLoadingApplications] = useState(false)
+  
+  // Application sheet state
+  const [activeApplication, setActiveApplication] = useState(null)
+  const [isCheckingRestrictions, setIsCheckingRestrictions] = useState(false)
+  const [showInitiativeConflictDialog, setShowInitiativeConflictDialog] = useState(false)
+  const [conflictDetails, setConflictDetails] = useState(null)
+  const [activeFilloutForm, setActiveFilloutForm] = useState(null)
+  const [activeTeamSelectDialog, setActiveTeamSelectDialog] = useState(null)
+  const [activeTeamCreateDialog, setActiveTeamCreateDialog] = useState(false)
+  const [userTeams, setUserTeams] = useState([])
+  const [isLoadingTeams, setIsLoadingTeams] = useState(false)
+  
+  // Application step state for multi-step experience
+  const [applicationStep, setApplicationStep] = useState("details") // "details", "team", "form", "confirm"
   
   // Fetch minimal profile data - only once on mount
   useEffect(() => {
@@ -155,15 +175,144 @@ function Onboarding() {
     }
   }, [onboardingCompleted, onboardingLoading, router])
   
+  // Check if a user is already part of an initiative
+  const checkInitiativeRestrictions = async (cohort) => {
+    try {
+      setIsCheckingRestrictions(true)
+      
+      // Get the current cohort's initiative
+      const currentInitiativeName = cohort.initiativeDetails?.name || "";
+      const currentInitiativeId = cohort.initiativeDetails?.id;
+      
+      console.log("Checking initiative restrictions for:", currentInitiativeName);
+      
+      // Skip check for Xperiment initiative (which has no restrictions)
+      if (currentInitiativeName.includes("Xperiment")) {
+        console.log("Skipping restrictions for Xperiment initiative");
+        return { allowed: true };
+      }
+      
+      // Check if this is a team-based initiative
+      const currentParticipationType = cohort.participationType || 
+                                     cohort.initiativeDetails?.["Participation Type"] || 
+                                     "Individual";
+                                     
+      // Standardized team participation detection
+      const normalizedType = currentParticipationType.trim().toLowerCase();
+      const isTeamProgram = 
+        normalizedType === "team" || 
+        normalizedType.includes("team") ||
+        normalizedType === "teams" ||
+        normalizedType === "group" ||
+        normalizedType.includes("group") ||
+        normalizedType === "collaborative" ||
+        normalizedType.includes("collaborative");
+      
+      console.log(`Is this a team program? ${isTeamProgram ? 'YES' : 'NO'} (${currentParticipationType})`);
+      
+      // Only check conflicts for team programs
+      if (!isTeamProgram) {
+        console.log(`Not a team program (${currentParticipationType}), skipping conflict check`);
+        return { allowed: true };
+      }
+      
+      // We need to make an API call to check if the user has participation records with conflicting initiatives
+      if (!profile?.contactId) {
+        console.error("No contact ID available for initiative conflict check");
+        return { allowed: true };
+      }
+      
+      console.log(`Calling API to check participation records for contact ${profile.contactId}`);
+      
+      const url = `/api/user/check-initiative-conflicts?initiative=${encodeURIComponent(currentInitiativeName)}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        console.error("Error checking initiative conflicts:", response.statusText);
+        return { allowed: true }; // Allow if we can't check
+      }
+      
+      const data = await response.json();
+      
+      if (data.hasConflict) {
+        console.log("API found conflicting initiative:", data.conflictingInitiative);
+        return {
+          allowed: false,
+          reason: "initiative_conflict",
+          details: {
+            currentInitiative: currentInitiativeName,
+            conflictingInitiative: data.conflictingInitiative,
+            teamId: data.teamId,
+            teamName: data.teamName
+          }
+        };
+      }
+      
+      console.log("No conflicts found, allowing application");
+      return { allowed: true };
+    } catch (error) {
+      console.error("Error in initiative restriction check:", error);
+      return { allowed: true }; // In case of error, allow the application
+    } finally {
+      setIsCheckingRestrictions(false)
+    }
+  };
+  
   // Handlers
-  const handleCohortApply = (cohort) => {
-    // Mark the cohort selection step as complete
-    markStepComplete('selectCohort')
+  const handleCohortApply = async (cohort) => {
+    console.log("Applying to cohort:", cohort)
+    
+    // Set step to details and reset any previous state
+    setApplicationStep("details")
+    setActiveApplication(cohort)
+    
+    // Check for initiative restrictions
+    const restrictionCheck = await checkInitiativeRestrictions(cohort);
+    if (!restrictionCheck.allowed) {
+      console.log("Application restricted:", restrictionCheck);
+      setConflictDetails(restrictionCheck.details);
+      setShowInitiativeConflictDialog(true);
+      return;
+    }
   }
   
   const handleCohortApplySuccess = () => {
     // Mark the cohort selection step as complete
     markStepComplete('selectCohort')
+    // Close the application sheet
+    setActiveApplication(null)
+  }
+  
+  // Handle form completion for individual applications
+  const handleFormCompleted = () => {
+    setActiveFilloutForm(null)
+    handleCohortApplySuccess()
+  }
+  
+  // Handle team creation
+  const handleTeamCreated = (team) => {
+    console.log("Team created successfully:", team)
+    
+    // Add new team to user's teams
+    setUserTeams(prev => {
+      const newTeams = [...prev, team]
+      console.log("Updated teams list:", newTeams)
+      return newTeams
+    })
+    
+    setActiveTeamCreateDialog(false)
+    
+    // Open team selection dialog with the newly created team
+    setActiveTeamSelectDialog({
+      cohort: activeApplication,
+      teams: [team]
+    })
+  }
+  
+  // Handle team application submission
+  const handleTeamApplicationSubmitted = () => {
+    setActiveTeamSelectDialog(null)
+    handleCohortApplySuccess()
   }
   
   const handleCompleteOnboarding = async () => {
@@ -200,6 +349,206 @@ function Onboarding() {
           </div>
         </div>
       </>
+    )
+  }
+  
+  // Special rendering components for the application sheet
+  const ApplicationDetails = ({ cohort, onContinue }) => {
+    // Extract relevant data from cohort
+    const initiativeName = cohort.initiativeDetails?.name || "Unknown Initiative"
+    const description = cohort.description || cohort.initiativeDetails?.description || 
+                     "Join this program to connect with mentors and build career skills."
+    const topics = cohort.topicNames || []
+    const participationType = cohort.participationType || 
+                            cohort.initiativeDetails?.["Participation Type"] || 
+                            "Individual"
+    const isTeamBased = participationType.toLowerCase().includes("team")
+    
+    return (
+      <div className="space-y-6 py-4">
+        <div className="space-y-2">
+          <h3 className="text-xl font-medium">{initiativeName}</h3>
+          
+          <div className="flex flex-wrap gap-2 mt-2">
+            {Array.isArray(topics) && topics.length > 0 && 
+              topics.map((topic, index) => (
+                <Badge key={`topic-${index}`} variant="secondary" className="bg-cyan-50 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-100">
+                  {topic} {cohort.className && index === 0 ? `- ${cohort.className}` : ''}
+                </Badge>
+              ))
+            }
+          </div>
+          
+          <div className="mt-3">
+            <Badge variant="outline" className={
+              participationType.toLowerCase().includes('team') ? 
+                "bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-900 dark:text-purple-100 dark:border-purple-800" : 
+                "bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-100 dark:border-blue-800"
+            }>
+              {participationType}
+            </Badge>
+          </div>
+        </div>
+        
+        <div className="prose prose-sm dark:prose-invert max-w-none">
+          <p className="text-muted-foreground">{description}</p>
+        </div>
+        
+        <div className="mt-6">
+          <h4 className="text-lg font-medium mb-3">How to Apply</h4>
+          <p className="text-muted-foreground mb-4">
+            {isTeamBased ? (
+              "This program requires team participation. You'll need to either create a new team or join an existing team to apply."
+            ) : (
+              "This program supports individual participation. You can apply directly by completing the application form."
+            )}
+          </p>
+        </div>
+        
+        <SheetFooter className="mt-6 gap-3 flex-col sm:flex-row-reverse">
+          <Button onClick={onContinue}>
+            Continue to Apply
+          </Button>
+        </SheetFooter>
+      </div>
+    )
+  }
+  
+  // Individual application form component
+  const IndividualApplicationForm = ({ cohort, onComplete }) => {
+    const filloutFormId = cohort["Application Form ID (Fillout)"]
+    
+    // If there's no form ID, show a message
+    if (!filloutFormId) {
+      return (
+        <div className="py-4 text-center">
+          <p className="text-muted-foreground mb-4">
+            Application form is not available for this program.
+          </p>
+          <Button onClick={onComplete}>Close</Button>
+        </div>
+      )
+    }
+    
+    return (
+      <div className="py-4">
+        <p className="text-muted-foreground mb-4">
+          Please complete the application form below to apply to this program.
+        </p>
+        
+        <div className="border rounded-lg overflow-hidden h-[500px]">
+          <FilloutPopupEmbed
+            filloutId={filloutFormId}
+            mode="inline"
+            onSubmit={onComplete}
+            data-user_id={profile?.userId}
+            data-contact={profile?.contactId}
+            data-institution={profile?.institution?.id}
+            parameters={{
+              cohortId: cohort.id,
+              initiativeName: cohort.initiativeDetails?.name,
+              userEmail: profile?.email,
+              userName: profile?.name,
+              userContactId: profile?.contactId,
+              user_id: profile?.userId,
+              contact: profile?.contactId,
+              institution: profile?.institution?.id
+            }}
+          />
+        </div>
+      </div>
+    )
+  }
+  
+  // Team application component - provides options to create or join a team
+  const TeamApplicationOptions = ({ cohort, onCreateTeam, onSelectTeam }) => {
+    const [isLoadingUserTeams, setIsLoadingUserTeams] = useState(false)
+    const [userTeams, setUserTeams] = useState([])
+    
+    // Fetch user teams on first render
+    useEffect(() => {
+      const fetchUserTeams = async () => {
+        try {
+          setIsLoadingUserTeams(true)
+          const response = await fetch('/api/teams')
+          
+          if (response.ok) {
+            const data = await response.json()
+            setUserTeams(data.teams || [])
+          }
+        } catch (error) {
+          console.error("Error fetching user teams:", error)
+        } finally {
+          setIsLoadingUserTeams(false)
+        }
+      }
+      
+      fetchUserTeams()
+    }, [])
+    
+    return (
+      <div className="space-y-6 py-4">
+        <div className="space-y-2">
+          <h3 className="text-lg font-medium">Team Application</h3>
+          <p className="text-muted-foreground">
+            This program requires team participation. You can either create a new team or join an existing team.
+          </p>
+        </div>
+        
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card className="p-4 flex flex-col h-full">
+            <div className="font-medium mb-2">Create a New Team</div>
+            <p className="text-sm text-muted-foreground flex-grow">
+              Start a new team and invite others to join you in this program.
+            </p>
+            <Button 
+              onClick={onCreateTeam} 
+              variant="outline" 
+              className="mt-4"
+            >
+              Create Team
+            </Button>
+          </Card>
+          
+          <Card className="p-4 flex flex-col h-full">
+            <div className="font-medium mb-2">Select an Existing Team</div>
+            <p className="text-sm text-muted-foreground flex-grow">
+              {userTeams.length > 0 
+                ? `You have ${userTeams.length} team(s) you can use for this application.`
+                : "You don't have any teams yet. You can create a new one or wait to be invited to join one."
+              }
+            </p>
+            <Button 
+              onClick={onSelectTeam}
+              disabled={userTeams.length === 0}
+              variant="outline"
+              className="mt-4"
+            >
+              Select Team
+            </Button>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+  
+  // Application success confirmation
+  const ApplicationConfirmation = ({ onComplete }) => {
+    return (
+      <div className="flex flex-col items-center justify-center text-center py-6 space-y-4">
+        <div className="w-16 h-16 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center mb-2">
+          <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+        </div>
+        <h3 className="text-xl font-medium text-green-700 dark:text-green-400">
+          Application Submitted!
+        </h3>
+        <p className="text-muted-foreground max-w-md">
+          Your application has been submitted successfully. You'll receive updates about your application status soon.
+        </p>
+        <Button onClick={onComplete} className="mt-4">
+          Return to Onboarding
+        </Button>
+      </div>
     )
   }
   
@@ -462,6 +811,111 @@ function Onboarding() {
           </Card>
         </div>
       </div>
+      
+      {/* Application Sheet */}
+      {activeApplication && (
+        <Sheet open={!!activeApplication} onOpenChange={(open) => !open && setActiveApplication(null)}>
+          <SheetContent side="right" className="w-full sm:w-[600px] max-w-full p-0 gap-0">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <SheetHeader className="p-6 border-b">
+                <SheetTitle>
+                  {applicationStep === "confirm" ? "Application Submitted" : "Program Application"}
+                </SheetTitle>
+                <SheetDescription>
+                  {applicationStep === "details" && "Review program details and apply"}
+                  {applicationStep === "form" && "Complete the application form"}
+                  {applicationStep === "team" && "Select or create a team for this program"}
+                  {applicationStep === "confirm" && "Your application has been submitted"}
+                </SheetDescription>
+              </SheetHeader>
+              
+              {/* Content */}
+              <div className="flex-grow overflow-y-auto p-6">
+                {/* Show appropriate content based on step */}
+                {applicationStep === "details" && (
+                  <ApplicationDetails 
+                    cohort={activeApplication} 
+                    onContinue={() => {
+                      const participationType = activeApplication.participationType || 
+                                     activeApplication.initiativeDetails?.["Participation Type"] || 
+                                     "Individual";
+                      const isTeamBased = participationType.toLowerCase().includes("team");
+                      
+                      // Route to appropriate next step based on participation type
+                      if (isTeamBased) {
+                        setApplicationStep("team");
+                      } else {
+                        setApplicationStep("form");
+                      }
+                    }}
+                  />
+                )}
+                
+                {applicationStep === "form" && (
+                  <IndividualApplicationForm 
+                    cohort={activeApplication}
+                    onComplete={() => {
+                      // Show confirmation and mark step complete
+                      setApplicationStep("confirm");
+                      markStepComplete('selectCohort');
+                    }}
+                  />
+                )}
+                
+                {applicationStep === "team" && (
+                  <TeamApplicationOptions 
+                    cohort={activeApplication}
+                    onCreateTeam={() => {
+                      setActiveTeamCreateDialog(true);
+                    }}
+                    onSelectTeam={() => {
+                      setActiveTeamSelectDialog({
+                        cohort: activeApplication,
+                        teams: userTeams || []
+                      });
+                    }}
+                  />
+                )}
+                
+                {applicationStep === "confirm" && (
+                  <ApplicationConfirmation
+                    onComplete={handleCohortApplySuccess}
+                  />
+                )}
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
+      
+      {/* Team Creation Dialog */}
+      <TeamCreateDialog 
+        open={activeTeamCreateDialog}
+        onClose={() => setActiveTeamCreateDialog(false)}
+        onCreateTeam={handleTeamCreated}
+        onJoinTeam={handleTeamApplicationSubmitted}
+        cohortId={activeApplication?.id}
+        profile={profile}
+        cohort={activeApplication}
+      />
+      
+      {/* Team Selection Dialog */}
+      <TeamSelectDialog 
+        open={!!activeTeamSelectDialog}
+        onClose={() => setActiveTeamSelectDialog(null)}
+        onSubmit={handleTeamApplicationSubmitted}
+        cohort={activeTeamSelectDialog?.cohort}
+        teams={activeTeamSelectDialog?.teams || []}
+      />
+      
+      {/* Initiative Conflict Dialog */}
+      <InitiativeConflictDialog
+        open={showInitiativeConflictDialog}
+        onClose={() => setShowInitiativeConflictDialog(false)}
+        details={conflictDetails}
+        conflictType="initiative_conflict"
+      />
     </>
   )
 }
