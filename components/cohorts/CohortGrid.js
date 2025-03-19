@@ -16,6 +16,7 @@ const CohortGrid = ({
   isLoading = false,
   isLoadingApplications = false,
   applications = [],
+  onApply, // Add the onApply prop for handling application sheet in onboarding
   onApplySuccess,
   columns = {
     default: 1,
@@ -79,6 +80,7 @@ const CohortGrid = ({
             cohort={cohort} 
             profile={profile}
             applications={applications}
+            onApply={onApply} // Pass the onApply callback through to the CohortCard
             onApplySuccess={onApplySuccess}
           />
         ))}

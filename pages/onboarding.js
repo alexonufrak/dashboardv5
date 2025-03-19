@@ -260,7 +260,7 @@ function Onboarding() {
   
   // Handlers
   const handleCohortApply = async (cohort) => {
-    console.log("Applying to cohort:", cohort)
+    console.log("ONBOARDING - Applying to cohort:", cohort)
     
     // Set step to details and reset any previous state
     setApplicationStep("details")
@@ -274,6 +274,8 @@ function Onboarding() {
       setShowInitiativeConflictDialog(true);
       return;
     }
+    
+    console.log("Sheet should be open, activeApplication:", activeApplication)
   }
   
   const handleCohortApplySuccess = () => {

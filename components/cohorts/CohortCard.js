@@ -241,12 +241,14 @@ const CohortCard = ({ cohort, profile, onApply, onApplySuccess, condensed = fals
       }
       
       // Use onApply callback if provided (for onboarding flow)
+      console.log("onApply available?", Boolean(onApply), typeof onApply);
       if (onApply && typeof onApply === 'function') {
         console.log("Using onApply callback for onboarding flow");
         onApply(cohort);
         setIsApplying(false);
         return;
       }
+      console.log("Falling back to page navigation");
       
       // Default behavior - navigate to application page
       // Get cohort ID for navigation
