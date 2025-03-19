@@ -243,15 +243,15 @@ const CohortCard = ({ cohort, profile, onApply, onApplySuccess, condensed = fals
       // Determine how to apply based on participation type
       const isTeamBased = participationType.toLowerCase().includes('team');
       
-      // If we're using this component from the onboarding flow, use the callback
+      // Call the onApply callback to notify parent component (especially for onboarding)
+      // But DON'T return early - continue with the normal application flow
       if (onApply && typeof onApply === 'function') {
-        console.log("Using onApply callback for onboarding flow");
+        console.log("Calling onApply callback for tracking");
         onApply(cohort);
-        setIsApplying(false);
-        return;
+        // We don't return here - continue with normal application flow
       }
       
-      // For team-based applications in normal mode, show the team creation dialog
+      // For team-based applications, show the team creation dialog
       if (isTeamBased) {
         console.log("Team-based application, showing team dialog");
         setActiveTeamCreateDialog(true);

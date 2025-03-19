@@ -159,13 +159,15 @@ function Onboarding() {
   
   // Handlers
   const handleCohortApply = (cohort) => {
-    // Simply mark the step as complete when a cohort is applied to
-    console.log("Cohort applied to:", cohort.id);
-    markStepComplete('selectCohort');
+    // We should NOT mark the step as complete here
+    // Instead, let the normal application flow happen in CohortCard
+    console.log("Cohort apply in onboarding:", cohort.id);
+    // Don't call markStepComplete here - wait for success callback
   }
   
   const handleCohortApplySuccess = () => {
-    // Mark the cohort selection step as complete
+    // Only mark the step as complete when application is successful
+    console.log("Application successful, marking step complete");
     markStepComplete('selectCohort');
   }
   
@@ -206,205 +208,8 @@ function Onboarding() {
     )
   }
   
-  // Special rendering components for the application sheet
-  const ApplicationDetails = ({ cohort, onContinue }) => {
-    // Extract relevant data from cohort
-    const initiativeName = cohort.initiativeDetails?.name || "Unknown Initiative"
-    const description = cohort.description || cohort.initiativeDetails?.description || 
-                     "Join this program to connect with mentors and build career skills."
-    const topics = cohort.topicNames || []
-    const participationType = cohort.participationType || 
-                            cohort.initiativeDetails?.["Participation Type"] || 
-                            "Individual"
-    const isTeamBased = participationType.toLowerCase().includes("team")
-    
-    return (
-      <div className="space-y-6 py-4">
-        <div className="space-y-2">
-          <h3 className="text-xl font-medium">{initiativeName}</h3>
-          
-          <div className="flex flex-wrap gap-2 mt-2">
-            {Array.isArray(topics) && topics.length > 0 && 
-              topics.map((topic, index) => (
-                <Badge key={`topic-${index}`} variant="secondary" className="bg-cyan-50 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-100">
-                  {topic} {cohort.className && index === 0 ? `- ${cohort.className}` : ''}
-                </Badge>
-              ))
-            }
-          </div>
-          
-          <div className="mt-3">
-            <Badge variant="outline" className={
-              participationType.toLowerCase().includes('team') ? 
-                "bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-900 dark:text-purple-100 dark:border-purple-800" : 
-                "bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-900 dark:text-blue-100 dark:border-blue-800"
-            }>
-              {participationType}
-            </Badge>
-          </div>
-        </div>
-        
-        <div className="prose prose-sm dark:prose-invert max-w-none">
-          <p className="text-muted-foreground">{description}</p>
-        </div>
-        
-        <div className="mt-6">
-          <h4 className="text-lg font-medium mb-3">How to Apply</h4>
-          <p className="text-muted-foreground mb-4">
-            {isTeamBased ? (
-              "This program requires team participation. You'll need to either create a new team or join an existing team to apply."
-            ) : (
-              "This program supports individual participation. You can apply directly by completing the application form."
-            )}
-          </p>
-        </div>
-        
-        <SheetFooter className="mt-6 gap-3 flex-col sm:flex-row-reverse">
-          <Button onClick={onContinue}>
-            Continue to Apply
-          </Button>
-        </SheetFooter>
-      </div>
-    )
-  }
-  
-  // Individual application form component
-  const IndividualApplicationForm = ({ cohort, onComplete }) => {
-    const filloutFormId = cohort["Application Form ID (Fillout)"]
-    
-    // If there's no form ID, show a message
-    if (!filloutFormId) {
-      return (
-        <div className="py-4 text-center">
-          <p className="text-muted-foreground mb-4">
-            Application form is not available for this program.
-          </p>
-          <Button onClick={onComplete}>Close</Button>
-        </div>
-      )
-    }
-    
-    return (
-      <div className="py-4">
-        <p className="text-muted-foreground mb-4">
-          Please complete the application form below to apply to this program.
-        </p>
-        
-        <div className="border rounded-lg overflow-hidden h-[500px]">
-          <FilloutPopupEmbed
-            filloutId={filloutFormId}
-            mode="inline"
-            onSubmit={onComplete}
-            data-user_id={profile?.userId}
-            data-contact={profile?.contactId}
-            data-institution={profile?.institution?.id}
-            parameters={{
-              cohortId: cohort.id,
-              initiativeName: cohort.initiativeDetails?.name,
-              userEmail: profile?.email,
-              userName: profile?.name,
-              userContactId: profile?.contactId,
-              user_id: profile?.userId,
-              contact: profile?.contactId,
-              institution: profile?.institution?.id
-            }}
-          />
-        </div>
-      </div>
-    )
-  }
-  
-  // Team application component - provides options to create or join a team
-  const TeamApplicationOptions = ({ cohort, onCreateTeam, onSelectTeam }) => {
-    const [isLoadingUserTeams, setIsLoadingUserTeams] = useState(false)
-    const [userTeams, setUserTeams] = useState([])
-    
-    // Fetch user teams on first render
-    useEffect(() => {
-      const fetchUserTeams = async () => {
-        try {
-          setIsLoadingUserTeams(true)
-          const response = await fetch('/api/teams')
-          
-          if (response.ok) {
-            const data = await response.json()
-            setUserTeams(data.teams || [])
-          }
-        } catch (error) {
-          console.error("Error fetching user teams:", error)
-        } finally {
-          setIsLoadingUserTeams(false)
-        }
-      }
-      
-      fetchUserTeams()
-    }, [])
-    
-    return (
-      <div className="space-y-6 py-4">
-        <div className="space-y-2">
-          <h3 className="text-lg font-medium">Team Application</h3>
-          <p className="text-muted-foreground">
-            This program requires team participation. You can either create a new team or join an existing team.
-          </p>
-        </div>
-        
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card className="p-4 flex flex-col h-full">
-            <div className="font-medium mb-2">Create a New Team</div>
-            <p className="text-sm text-muted-foreground flex-grow">
-              Start a new team and invite others to join you in this program.
-            </p>
-            <Button 
-              onClick={onCreateTeam} 
-              variant="outline" 
-              className="mt-4"
-            >
-              Create Team
-            </Button>
-          </Card>
-          
-          <Card className="p-4 flex flex-col h-full">
-            <div className="font-medium mb-2">Select an Existing Team</div>
-            <p className="text-sm text-muted-foreground flex-grow">
-              {userTeams.length > 0 
-                ? `You have ${userTeams.length} team(s) you can use for this application.`
-                : "You don't have any teams yet. You can create a new one or wait to be invited to join one."
-              }
-            </p>
-            <Button 
-              onClick={onSelectTeam}
-              disabled={userTeams.length === 0}
-              variant="outline"
-              className="mt-4"
-            >
-              Select Team
-            </Button>
-          </Card>
-        </div>
-      </div>
-    )
-  }
-  
-  // Application success confirmation
-  const ApplicationConfirmation = ({ onComplete }) => {
-    return (
-      <div className="flex flex-col items-center justify-center text-center py-6 space-y-4">
-        <div className="w-16 h-16 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center mb-2">
-          <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
-        </div>
-        <h3 className="text-xl font-medium text-green-700 dark:text-green-400">
-          Application Submitted!
-        </h3>
-        <p className="text-muted-foreground max-w-md">
-          Your application has been submitted successfully. You'll receive updates about your application status soon.
-        </p>
-        <Button onClick={onComplete} className="mt-4">
-          Return to Onboarding
-        </Button>
-      </div>
-    )
-  }
+  // We've removed all Sheet-based components and application handling components
+  // The application process now uses the standard CohortCard dialogs
   
   return (
     <>
