@@ -59,8 +59,11 @@ function Onboarding() {
           throw new Error('Failed to fetch profile data');
         }
         
-        const profileData = await profileResponse.json();
+        const responseData = await profileResponse.json();
         if (!isMounted) return;
+        
+        // Extract profile data from the response (it's wrapped in a profile key)
+        const profileData = responseData.profile || responseData;
         
         // Set the profile data
         setProfile(profileData);
