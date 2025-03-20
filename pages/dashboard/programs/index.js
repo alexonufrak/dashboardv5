@@ -65,12 +65,7 @@ function ProgramsPageContent({ onNavigate }) {
                 </Badge>
               )
             ].filter(Boolean)}
-            actions={[
-              <Button key="filter" variant="outline" size="sm">
-                <ListFilter className="h-4 w-4 mr-2" />
-                Filter
-              </Button>
-            ]}
+            actions={[]}
           />
         </BlurFade>
 
