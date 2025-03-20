@@ -230,7 +230,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
       </Head>
 
       {renderWithSidebar ? (
-        <div className="flex flex-col min-h-screen bg-background"
+        <div className="flex flex-col min-h-screen bg-sidebar"
           style={{
             "--header-height": "3.5rem",
           }}
@@ -251,7 +251,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
                   </Sidebar>
                   
                   {/* Main content area */}
-                  <SidebarInset className="bg-background">
+                  <SidebarInset className="bg-sidebar-accent">
                     <div className="flex flex-col h-full">
                       <div className="flex items-center justify-between py-2 px-4 border-b border-border">
                         <div className="flex items-center">
@@ -317,7 +317,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
           })()}
         </div>
       ) : (
-        <div className="min-h-screen bg-background overflow-x-hidden h-full">
+        <div className="min-h-screen bg-sidebar overflow-x-hidden h-full">
           {/* Main Content without sidebar */}
           <main className="flex-1 pt-4 overflow-x-hidden h-full">
             <div className="container max-w-6xl mx-auto px-4 md:px-6 h-full">
