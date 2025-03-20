@@ -158,20 +158,18 @@ export function AppSidebar({
   }, [user, profile, setIsEditModalOpen]);
 
   return (
-    <Sidebar
-      variant="inset" // Using the inset variant for a modern, elevated design
-      {...props}>
-        <SidebarHeader>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <SidebarMenuButton size="lg" className="cursor-pointer w-full">
-                    <div
-                      className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg mr-2">
-                      <Command className="size-4" />
-                    </div>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
+    <>
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <Popover>
+              <PopoverTrigger asChild>
+                <SidebarMenuButton size="lg" className="cursor-pointer w-full">
+                  <div
+                    className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg mr-2">
+                    <Command className="size-4" />
+                  </div>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-semibold">{institutionName}</span>
                       <span className="truncate text-xs">xFoundry</span>
                     </div>
@@ -214,6 +212,6 @@ export function AppSidebar({
             </SidebarMenuItem>
           )}
         </SidebarFooter>
-      </Sidebar>
+    </>
   );
 }

@@ -230,7 +230,11 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
       </Head>
 
       {renderWithSidebar ? (
-        <div className="flex flex-col h-screen">
+        <div
+          style={{
+            "--header-height": "3.5rem", // 14 in Tailwind sizing
+          }}
+        >
           {/* We need to create a sidebar state here to use in the header */}
           {(() => {
             const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -238,24 +242,17 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
             return (
               <>
                 {/* Top header - spans full width */}
-                <header className="sticky top-0 z-50 flex h-14 w-full items-center border-b bg-background shrink-0">
+                <header className="sticky top-0 z-50 flex h-[--header-height] shrink-0 items-center gap-2 border-b bg-background">
                   <div className="flex h-full w-full items-center gap-2 px-4">
+                    {/* Mobile header */}
                     <div className="md:hidden flex items-center">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="mr-2"
-                      >
-                        <ViewVerticalIcon />
-                        <span className="sr-only">Toggle Sidebar</span>
-                      </Button>
+                      <SidebarTrigger className="mr-2" />
                       <h2 className="text-lg font-bold truncate">
                         {title || "xFoundry Hub"}
                       </h2>
                     </div>
                     
-                    {/* Toggle sidebar in desktop view */}
+                    {/* Desktop header */}
                     <div className="hidden md:flex items-center">
                       <Button 
                         variant="ghost" 
@@ -324,26 +321,28 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
                   </div>
                 </header>
 
-                {/* Main area with sidebar and content */}
-                <div className="flex flex-1 overflow-hidden">
-                  <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
-                    {/* Sidebar component */}
-                    <AppSidebar className="h-full" pageTitle={title} />
-                    
-                    {/* Main content area */}
-                    <SidebarInset className="bg-background flex-1">
-                      <div className="flex flex-col h-full">
-                        <div className="flex-1 overflow-auto">
-                          <div className="max-w-6xl mx-auto px-4 md:px-6 py-4">
-                            <div className="main-dashboard-layout-content proper-dashboard-layout-content">
-                              {children}
-                            </div>
+                {/* Sidebar and content */}
+                <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                  <Sidebar
+                    className="top-[--header-height]"
+                    variant="inset"
+                  >
+                    <AppSidebar pageTitle={title} />
+                  </Sidebar>
+                  
+                  {/* Main content area */}
+                  <SidebarInset className="bg-background">
+                    <div className="flex flex-col h-full">
+                      <div className="flex-1 overflow-auto py-4 px-4 md:px-6">
+                        <div className="max-w-6xl mx-auto">
+                          <div className="main-dashboard-layout-content proper-dashboard-layout-content">
+                            {children}
                           </div>
                         </div>
                       </div>
-                    </SidebarInset>
-                  </SidebarProvider>
-                </div>
+                    </div>
+                  </SidebarInset>
+                </SidebarProvider>
               </>
             );
           })()}
