@@ -247,10 +247,10 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
                     </Sidebar>
                     
                     {/* Main content area */}
-                    <SidebarInset className="bg-background dark:border dark:border-border dark:rounded-xl">
+                    <SidebarInset className="bg-background">
                       {/* Content header inside the inset */}
-                      <header className="sticky top-0 z-50 flex w-full items-center border-b border-border bg-background">
-                        <div className="flex h-[--header-height] w-full items-center gap-2 px-4">
+                      <header className="sticky top-0 z-50 flex w-full items-center justify-center border-b border-border bg-background">
+                        <div className="flex h-14 w-full items-center gap-2 px-4">
                           <SidebarTrigger className="mr-2" />
                           <h2 className="text-lg font-bold truncate">{title || "xFoundry Hub"}</h2>
                           
