@@ -247,7 +247,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
                     </Sidebar>
                     
                     {/* Main content area */}
-                    <SidebarInset className="bg-background">
+                    <SidebarInset className="bg-background dark:bg-neutral-950">
                       {/* Content header inside the inset */}
                       <header className="sticky top-0 z-50 flex w-full items-center justify-center border-b border-neutral-200 dark:border-neutral-800 bg-background">
                         <div className="flex h-14 w-full items-center gap-2 px-4">
