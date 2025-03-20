@@ -283,7 +283,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
           <AppSidebar className="h-screen" />
           
           {/* Main Content */}
-          <SidebarInset className="bg-background">
+          <SidebarInset className="bg-background overflow-auto">
             <div className="pt-[64px] md:pt-4 overflow-x-hidden h-full">
               <div className="mx-auto max-w-6xl px-4 md:px-6 h-full">
                 {/* Only show breadcrumbs if needed AND there's a non-empty title */}
