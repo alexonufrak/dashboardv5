@@ -7,7 +7,8 @@ import Head from "next/head"
 import Link from "next/link"
 import { AppSidebar } from "./app-sidebar"
 import Breadcrumbs from "@/components/common/Breadcrumbs"
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { Separator } from "@/components/ui/separator"
 import { isProgramRoute } from '@/lib/routing'
 import { Skeleton } from "@/components/ui/skeleton"
 import { Toaster } from "sonner"
@@ -228,81 +229,95 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
       </Head>
 
       {renderWithSidebar ? (
-        <SidebarProvider defaultOpen>
-          {/* We're now using the 'inset' variant for a modern, elevated design */}
-          {/* Mobile Header - Only visible on mobile */}
-          <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-primary text-primary-foreground py-3 px-4 flex justify-between items-center shadow-sm">
-            <div className="flex items-center">
-              <div className="w-10"></div> {/* Placeholder for alignment */}
-              <h2 className="text-lg font-bold tracking-tight ml-4">
-                {title || "xFoundry Hub"}
-              </h2>
-            </div>
-            
-            {/* User Avatar with Dropdown */}
-            <div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary-foreground/10">
-                    <Avatar className="h-8 w-8 rounded-full border-2 border-primary-foreground/20">
-                      <AvatarImage src={profile?.picture || user?.picture} alt={profile?.firstName || user?.name || "User"} />
-                      <AvatarFallback>
-                        {profile?.firstName?.[0]}{profile?.lastName?.[0] || 
-                         (user?.name ? user.name.split(" ").map(n => n[0]).join("").slice(0, 2) : "U")}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {profile?.firstName} {profile?.lastName || (user?.name || "User")}
-                      </p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user?.email || profile?.email}
-                      </p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setIsEditModalOpen?.(true)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    <span>Edit Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/api/auth/logout">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign Out
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-          
-          {/* Dashboard Sidebar using the new AppSidebar component */}
-          <AppSidebar className="h-screen" pageTitle={title} />
-          
-          {/* Main Content - Using inset variant for elevated design */}
-          <SidebarInset className="bg-background overflow-auto">
-            <div className="pt-[64px] md:pt-4 overflow-x-hidden h-full">
-              <div className="mx-auto max-w-6xl px-4 md:px-6 h-full">
-                {/* Only show breadcrumbs if needed AND there's a non-empty title */}
-                {shouldShowBreadcrumbs && title?.trim() && <Breadcrumbs />}
+        <main className="[--header-height:calc(theme(spacing.14))]">
+          <SidebarProvider defaultOpen className="flex flex-col">
+            {/* Mobile Header - Only visible on mobile */}
+            <header className="bg-background sticky top-0 z-50 flex w-full items-center border-b">
+              <div className="flex h-(--header-height) w-full items-center gap-2 px-2 pr-4">
+                <div className="md:hidden flex items-center">
+                  <SidebarTrigger className="mr-2" />
+                  <h2 className="text-lg font-bold truncate">
+                    {title || "xFoundry Hub"}
+                  </h2>
+                </div>
                 
-                {/* Content wrapper with page transitions */}
-                <div className="main-dashboard-layout-content proper-dashboard-layout-content h-full">
-                  {/* Only display title at the top if specified and not empty */}
-                  {title?.trim() && (
-                    <h1 className="text-2xl font-bold tracking-tight mb-4">{title}</h1>
-                  )}
-                  {children}
+                {/* Only show the title in desktop view when not in mobile mode */}
+                <div className="hidden md:block">
+                  <h2 className="text-lg font-bold truncate">
+                    {title || "xFoundry Hub"}
+                  </h2>
+                </div>
+                
+                {/* Show breadcrumbs if needed */}
+                {shouldShowBreadcrumbs && title?.trim() && (
+                  <>
+                    <Separator orientation="vertical" className="mr-2 ml-2 hidden md:block h-4" />
+                    <div className="hidden md:block">
+                      <Breadcrumbs />
+                    </div>
+                  </>
+                )}
+                
+                {/* User Avatar with Dropdown - align to the right */}
+                <div className="ml-auto">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary-foreground/10">
+                        <Avatar className="h-8 w-8 rounded-full border-2 border-primary-foreground/20">
+                          <AvatarImage src={profile?.picture || user?.picture} alt={profile?.firstName || user?.name || "User"} />
+                          <AvatarFallback>
+                            {profile?.firstName?.[0]}{profile?.lastName?.[0] || 
+                             (user?.name ? user.name.split(" ").map(n => n[0]).join("").slice(0, 2) : "U")}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none">
+                            {profile?.firstName} {profile?.lastName || (user?.name || "User")}
+                          </p>
+                          <p className="text-xs leading-none text-muted-foreground">
+                            {user?.email || profile?.email}
+                          </p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => setIsEditModalOpen?.(true)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        <span>Edit Profile</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href="/api/auth/logout">
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Sign Out
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
+            </header>
+            
+            {/* Main content area with sidebar and content */}
+            <div className="flex flex-1">
+              {/* Dashboard Sidebar using the AppSidebar component */}
+              <AppSidebar className="h-[calc(100svh-var(--header-height))]" pageTitle={title} />
+              
+              {/* Main Content - Using simplified structure */}
+              <SidebarInset className="bg-background">
+                <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 h-full">
+                  {/* Title is now in the header, so we only include content here */}
+                  <div className="main-dashboard-layout-content proper-dashboard-layout-content">
+                    {children}
+                  </div>
+                </div>
+              </SidebarInset>
             </div>
-          </SidebarInset>
-        </SidebarProvider>
+          </SidebarProvider>
+        </main>
       ) : (
         <div className="min-h-screen bg-background overflow-x-hidden h-full">
           {/* Main Content without sidebar */}
