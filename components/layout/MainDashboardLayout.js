@@ -230,9 +230,9 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
       </Head>
 
       {renderWithSidebar ? (
-        <div
+        <div className="flex flex-col min-h-screen"
           style={{
-            "--header-height": "3.5rem", // 14 in Tailwind sizing
+            "--header-height": "3.5rem",
           }}
         >
           {/* We need to create a sidebar state here to use in the header */}
@@ -313,28 +313,34 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
                   </div>
                 </header>
 
-                {/* Sidebar and content */}
-                <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
-                  <Sidebar
-                    className="top-[--header-height]"
-                    variant="inset"
-                  >
-                    <AppSidebar pageTitle={title} />
-                  </Sidebar>
-                  
-                  {/* Main content area */}
-                  <SidebarInset className="bg-background">
-                    <div className="flex flex-col h-full">
-                      <div className="flex-1 overflow-auto py-4 px-4 md:px-6">
-                        <div className="max-w-6xl mx-auto">
-                          <div className="main-dashboard-layout-content proper-dashboard-layout-content">
-                            {children}
+                {/* Contents below header */}
+                <div className="pt-[--header-height]">
+                  <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                    <Sidebar
+                      className="fixed top-[--header-height] h-[calc(100vh-var(--header-height))]"
+                      variant="inset"
+                    >
+                      <AppSidebar pageTitle={title} />
+                    </Sidebar>
+                    
+                    {/* Main content area */}
+                    <SidebarInset className="bg-background">
+                      <div className="flex flex-col h-full">
+                        <div className="md:hidden py-2 px-4 border-b flex items-center">
+                          <SidebarTrigger className="mr-2" />
+                          <h2 className="text-sm font-medium truncate">{title || "xFoundry Hub"}</h2>
+                        </div>
+                        <div className="flex-1 overflow-auto py-4 px-4 md:px-6">
+                          <div className="max-w-6xl mx-auto">
+                            <div className="main-dashboard-layout-content proper-dashboard-layout-content">
+                              {children}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </SidebarInset>
-                </SidebarProvider>
+                    </SidebarInset>
+                  </SidebarProvider>
+                </div>
               </>
             );
           })()}
