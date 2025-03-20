@@ -2,21 +2,20 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/router"
+import { useUser } from "@auth0/nextjs-auth0/client"
 import { Skeleton } from "@/components/ui/skeleton"
 
 const Callback = () => {
   const router = useRouter()
+  const { user, isLoading } = useUser()
 
   useEffect(() => {
-    const redirectToDashboard = () => {
+    // Only redirect once the user object is available from Auth0
+    // This ensures the session is fully established before navigation
+    if (user && !isLoading) {
       router.push("/dashboard")
     }
-
-    // Add a slight delay to ensure Auth0 has time to complete the process
-    const timer = setTimeout(redirectToDashboard, 1000)
-
-    return () => clearTimeout(timer)
-  }, [router])
+  }, [user, isLoading, router])
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background">
