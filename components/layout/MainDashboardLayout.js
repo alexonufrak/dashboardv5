@@ -229,6 +229,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
 
       {renderWithSidebar ? (
         <SidebarProvider defaultOpen>
+          {/* We're now using the 'inset' variant for a modern, elevated design */}
           {/* Mobile Header - Only visible on mobile */}
           <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-primary text-primary-foreground py-3 px-4 flex justify-between items-center shadow-sm">
             <div className="flex items-center">
@@ -283,7 +284,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
           {/* Dashboard Sidebar using the new AppSidebar component */}
           <AppSidebar className="h-screen" pageTitle={title} />
           
-          {/* Main Content */}
+          {/* Main Content - Using inset variant for elevated design */}
           <SidebarInset className="bg-background overflow-auto">
             <div className="pt-[64px] md:pt-4 overflow-x-hidden h-full">
               <div className="mx-auto max-w-6xl px-4 md:px-6 h-full">

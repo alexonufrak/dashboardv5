@@ -217,7 +217,8 @@ const Sidebar = React.forwardRef((
         {...props}>
         <div
           data-sidebar="sidebar"
-          className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm">
+          data-slot="sidebar-inner"
+          className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow-sm group-data-[variant=inset]:rounded-lg group-data-[variant=inset]:border group-data-[variant=inset]:border-sidebar-border group-data-[variant=inset]:shadow-sm">
           {children}
         </div>
       </div>
@@ -277,9 +278,10 @@ const SidebarInset = React.forwardRef(({ className, ...props }, ref) => {
   return (
     (<main
       ref={ref}
+      data-slot="sidebar-inset"
       className={cn(
-        "relative flex min-h-screen w-full flex-1 flex-col bg-white dark:bg-neutral-950 overflow-x-hidden",
-        "peer-data-[variant=inset]:min-h-[calc(100vh-(--spacing(4)))] md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm",
+        "bg-background relative flex w-full flex-1 flex-col overflow-x-hidden",
+        "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2",
         className
       )}
       {...props} />)
