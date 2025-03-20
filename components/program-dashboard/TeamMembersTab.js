@@ -5,13 +5,13 @@ import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/com
 import TeamMemberList from "@/components/teams/TeamMemberList"
 
 /**
- * Team members tab content component that displays team member list
+ * Team tab content component that displays team member list
  */
 export function TeamMembersTab({ team }) {
   return (
     <Card className="w-full max-w-none">
       <CardHeader>
-        <CardTitle>Team Members</CardTitle>
+        <CardTitle>Team</CardTitle>
         <CardDescription>All members of {team?.name || "your team"}</CardDescription>
       </CardHeader>
       <CardContent className="w-full">

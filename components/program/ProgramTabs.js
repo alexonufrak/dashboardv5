@@ -5,6 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PROGRAM_TYPES, getProgramType } from '@/lib/programComponents'
 import { ProgramOverview, ProgramTeam, ProgramMilestones, ProgramActivity, ProgramSettings } from './index'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useMobile } from "@/hooks/use-mobile"
 
 export default function ProgramTabs({
   programData,
@@ -18,6 +20,7 @@ export default function ProgramTabs({
 }) {
   const [activeTab, setActiveTab] = useState(initialTab)
   const [contentHeight, setContentHeight] = useState("auto")
+  const isMobile = useMobile()
   const contentRefs = {
     overview: useRef(null),
     milestones: useRef(null),
@@ -35,7 +38,7 @@ export default function ProgramTabs({
   const getTabLabels = () => {
     return {
       milestones: programType === PROGRAM_TYPES.XTRAPRENEURS ? 'Bounties' : 'Milestones',
-      team: 'Team Members',
+      team: 'Team',
       overview: 'Overview',
       activity: 'Activity',
       settings: 'Settings'
@@ -157,15 +160,34 @@ export default function ProgramTabs({
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-      <TabsList className="w-full md:w-auto">
-        <TabsTrigger value="overview">{tabLabels.overview}</TabsTrigger>
-        <TabsTrigger value={programType === PROGRAM_TYPES.XTRAPRENEURS ? "bounties" : "milestones"}>
-          {tabLabels.milestones}
-        </TabsTrigger>
-        {isTeamProgram && <TabsTrigger value="team">{tabLabels.team}</TabsTrigger>}
-        <TabsTrigger value="activity">{tabLabels.activity}</TabsTrigger>
-        <TabsTrigger value="settings">{tabLabels.settings}</TabsTrigger>
-      </TabsList>
+      {isMobile ? (
+        <div className="w-full mb-4">
+          <Select value={activeTab} onValueChange={handleTabChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a tab" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="overview">{tabLabels.overview}</SelectItem>
+              <SelectItem value={programType === PROGRAM_TYPES.XTRAPRENEURS ? "bounties" : "milestones"}>
+                {tabLabels.milestones}
+              </SelectItem>
+              {isTeamProgram && <SelectItem value="team">{tabLabels.team}</SelectItem>}
+              <SelectItem value="activity">{tabLabels.activity}</SelectItem>
+              <SelectItem value="settings">{tabLabels.settings}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      ) : (
+        <TabsList className="w-full md:w-auto">
+          <TabsTrigger value="overview">{tabLabels.overview}</TabsTrigger>
+          <TabsTrigger value={programType === PROGRAM_TYPES.XTRAPRENEURS ? "bounties" : "milestones"}>
+            {tabLabels.milestones}
+          </TabsTrigger>
+          {isTeamProgram && <TabsTrigger value="team">{tabLabels.team}</TabsTrigger>}
+          <TabsTrigger value="activity">{tabLabels.activity}</TabsTrigger>
+          <TabsTrigger value="settings">{tabLabels.settings}</TabsTrigger>
+        </TabsList>
+      )}
       
       <div style={containerStyle} className="relative">
         <AnimatePresence mode="wait">

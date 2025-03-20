@@ -142,7 +142,7 @@ function OverviewSidebar({ isTeamProgram, team, onViewMembers }) {
         <Card className="w-full">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Team Members</CardTitle>
+              <CardTitle className="text-lg">Team</CardTitle>
               <Button 
                 variant="ghost" 
                 size="sm" 

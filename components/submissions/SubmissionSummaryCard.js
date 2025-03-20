@@ -321,21 +321,21 @@ export default function SubmissionSummaryCard({ submissions: initialSubmissions 
         {!isInitialized ? (
           /* Skeleton loading state */
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 animate-pulse">
-              <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-8 bg-gray-300 rounded w-10"></div>
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-700 animate-pulse">
+              <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+              <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-10"></div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 animate-pulse">
-              <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-8 bg-gray-300 rounded w-10"></div>
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-700 animate-pulse">
+              <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+              <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-10"></div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 animate-pulse">
-              <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-8 bg-gray-300 rounded w-10"></div>
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-700 animate-pulse">
+              <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+              <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-10"></div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 animate-pulse">
-              <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-8 bg-gray-300 rounded w-10"></div>
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-700 animate-pulse">
+              <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+              <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-10"></div>
             </div>
           </div>
         ) : (
@@ -378,22 +378,22 @@ export default function SubmissionSummaryCard({ submissions: initialSubmissions 
         {/* Upcoming deadlines */}
         {!isInitialized ? (
           /* Skeleton loader for upcoming deadlines */
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-100 mb-6 animate-pulse">
-            <div className="h-5 bg-gray-200 rounded w-40 mb-3"></div>
+          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-100 dark:border-gray-700 mb-6 animate-pulse">
+            <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-40 mb-3"></div>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <div className="h-5 bg-gray-200 rounded w-1/2"></div>
-                <div className="h-5 bg-gray-200 rounded w-16"></div>
+                <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
               </div>
               <div className="flex justify-between items-center">
-                <div className="h-5 bg-gray-200 rounded w-2/3"></div>
-                <div className="h-5 bg-gray-200 rounded w-16"></div>
+                <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+                <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-16"></div>
               </div>
             </div>
           </div>
         ) : upcomingDeadlines.length > 0 && (
-          <div className="bg-amber-50 rounded-lg p-4 border border-amber-100 mb-6">
-            <h4 className="text-sm font-medium text-amber-800 mb-2 flex items-center">
+          <div className="bg-amber-50 dark:bg-amber-950/30 rounded-lg p-4 border border-amber-100 dark:border-amber-800/50 mb-6">
+            <h4 className="text-sm font-medium text-amber-800 dark:text-amber-400 mb-2 flex items-center">
               <Calendar className="h-4 w-4 mr-1" />
               Upcoming Deadlines
             </h4>
@@ -401,8 +401,8 @@ export default function SubmissionSummaryCard({ submissions: initialSubmissions 
             <div className="space-y-3">
               {upcomingDeadlines.map((milestone, index) => (
                 <div key={milestone.id || index} className="flex justify-between items-center">
-                  <div className="font-medium text-amber-900">{milestone.name}</div>
-                  <Badge variant="outline" className="bg-amber-100 border-amber-200 text-amber-800">
+                  <div className="font-medium text-amber-900 dark:text-amber-300">{milestone.name}</div>
+                  <Badge variant="outline" className="bg-amber-100 dark:bg-amber-900/50 border-amber-200 dark:border-amber-700 text-amber-800 dark:text-amber-300">
                     {milestone.dueDate ? new Date(milestone.dueDate).toLocaleDateString('en-US', {
                       month: 'short', day: 'numeric'
                     }) : "No date"}
