@@ -6,7 +6,7 @@ import { PROGRAM_TYPES, getProgramType } from '@/lib/programComponents'
 import { ProgramOverview, ProgramTeam, ProgramMilestones, ProgramActivity, ProgramSettings } from './index'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useMobile } from "@/hooks/use-mobile"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 export default function ProgramTabs({
   programData,
@@ -20,7 +20,7 @@ export default function ProgramTabs({
 }) {
   const [activeTab, setActiveTab] = useState(initialTab)
   const [contentHeight, setContentHeight] = useState("auto")
-  const isMobile = useMobile()
+  const isMobile = useIsMobile()
   const contentRefs = {
     overview: useRef(null),
     milestones: useRef(null),
