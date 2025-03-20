@@ -171,7 +171,6 @@ export function AppSidebar({
       <MobileTrigger />
       <Sidebar
         variant="inset" // Using the inset variant for a modern, elevated design
-        className="h-full"
         {...props}>
         <SidebarHeader>
           <SidebarMenu>
