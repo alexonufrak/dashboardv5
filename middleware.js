@@ -11,22 +11,22 @@ export async function middleware(request) {
   
   // Legacy routes that need to be redirected
   
-  // 1. Handle dashboard?program=X -> /dashboard/program/X
+  // 1. Handle dashboard?program=X -> /dashboard/programs/X
   if (pathname === '/dashboard' && search.includes('program=')) {
     const params = new URLSearchParams(search);
     const programId = params.get('program');
     
     if (programId) {
       return NextResponse.redirect(
-        new URL(`/dashboard/program/${encodeURIComponent(programId)}`, request.url)
+        new URL(`/dashboard/programs/${encodeURIComponent(programId)}`, request.url)
       );
     }
   }
   
-  // 2. Handle /program-dashboard -> /dashboard/program
+  // 2. Handle /program-dashboard -> /dashboard/programs
   if (pathname === '/program-dashboard') {
     return NextResponse.redirect(
-      new URL('/dashboard/program', request.url)
+      new URL('/dashboard/programs', request.url)
     );
   }
   
@@ -37,11 +37,19 @@ export async function middleware(request) {
     );
   }
   
-  // 4. Handle /program/[id] -> /dashboard/program/[id]
+  // 4. Handle /program/[id] -> /dashboard/programs/[id]
   if (pathname.startsWith('/program/') && !pathname.startsWith('/program-dashboard')) {
     const programPath = pathname.replace('/program/', '');
     return NextResponse.redirect(
-      new URL(`/dashboard/program/${programPath}${search}`, request.url)
+      new URL(`/dashboard/programs/${programPath}${search}`, request.url)
+    );
+  }
+  
+  // 5. Handle /dashboard/program/[id] -> /dashboard/programs/[id]
+  if (pathname.startsWith('/dashboard/program/')) {
+    const programPath = pathname.replace('/dashboard/program/', '');
+    return NextResponse.redirect(
+      new URL(`/dashboard/programs/${programPath}${search}`, request.url)
     );
   }
   
@@ -87,6 +95,7 @@ export const config = {
     '/dashboard',
     '/dashboard-shell',
     '/program-dashboard',
-    '/program/:path*', // Add this to handle any program route
+    '/program/:path*', // Legacy program routes
+    '/dashboard/program/:path*', // Old dashboard program routes that should redirect to programs
   ],
 };

@@ -34,10 +34,15 @@ const nextConfig = {
         source: '/dashboard-shell',
         destination: '/dashboard-new',
       },
-      // Redirect program to dashboard/program
+      // Redirect program to dashboard/programs
       {
         source: '/program/:path*',
-        destination: '/dashboard/program/:path*',
+        destination: '/dashboard/programs/:path*',
+      },
+      // Redirect old dashboard/program to dashboard/programs
+      {
+        source: '/dashboard/program/:path*',
+        destination: '/dashboard/programs/:path*',
       },
     ]
   },
