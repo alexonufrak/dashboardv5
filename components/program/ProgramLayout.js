@@ -63,7 +63,7 @@ export default function ProgramLayout({ children, programId, activeTab = "overvi
   const isXtrapreneurs = initiative?.name?.toLowerCase().includes("xtrapreneurs")
   
   return (
-    <div className="space-y-6 w-full h-full overflow-auto pb-8 max-w-none min-w-full">
+    <div className="space-y-6 w-full h-full pb-8 max-w-none min-w-full">
       <Card className="bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-100 w-full max-w-none">
         <div className="p-4 w-full">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 w-full">
