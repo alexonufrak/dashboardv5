@@ -165,7 +165,7 @@ export default function MilestoneStatus({ milestones = [], team, onViewMilestone
             <CardTitle className="text-lg">Milestone Status</CardTitle>
             <CardDescription>Track your progress on program milestones</CardDescription>
           </div>
-          <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+          <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 dark:bg-primary/20 dark:text-primary-foreground dark:border-primary/30">
             {progressPercentage}% Complete
           </Badge>
         </div>
@@ -191,27 +191,27 @@ export default function MilestoneStatus({ milestones = [], team, onViewMilestone
           <>
             {/* Skeleton loader for stats grid */}
             <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                <div className="animate-pulse h-5 bg-gray-200 rounded w-24 mb-2"></div>
-                <div className="animate-pulse h-8 bg-gray-300 rounded w-10"></div>
+              <div className="bg-muted/40 dark:bg-muted rounded-lg p-3 border border-border">
+                <div className="animate-pulse h-5 bg-muted dark:bg-muted-foreground/20 rounded w-24 mb-2"></div>
+                <div className="animate-pulse h-8 bg-muted-foreground/20 dark:bg-muted-foreground/30 rounded w-10"></div>
               </div>
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                <div className="animate-pulse h-5 bg-gray-200 rounded w-24 mb-2"></div>
-                <div className="animate-pulse h-8 bg-gray-300 rounded w-10"></div>
+              <div className="bg-muted/40 dark:bg-muted rounded-lg p-3 border border-border">
+                <div className="animate-pulse h-5 bg-muted dark:bg-muted-foreground/20 rounded w-24 mb-2"></div>
+                <div className="animate-pulse h-8 bg-muted-foreground/20 dark:bg-muted-foreground/30 rounded w-10"></div>
               </div>
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
-                <div className="animate-pulse h-5 bg-gray-200 rounded w-24 mb-2"></div>
-                <div className="animate-pulse h-8 bg-gray-300 rounded w-10"></div>
+              <div className="bg-muted/40 dark:bg-muted rounded-lg p-3 border border-border">
+                <div className="animate-pulse h-5 bg-muted dark:bg-muted-foreground/20 rounded w-24 mb-2"></div>
+                <div className="animate-pulse h-8 bg-muted-foreground/20 dark:bg-muted-foreground/30 rounded w-10"></div>
               </div>
             </div>
             
             {/* Skeleton loader for next milestone */}
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-              <div className="animate-pulse h-4 bg-gray-200 rounded w-32 mb-2"></div>
-              <div className="animate-pulse h-6 bg-gray-300 rounded w-48 mb-2"></div>
+            <div className="bg-muted/40 dark:bg-muted rounded-lg p-4 border border-border">
+              <div className="animate-pulse h-4 bg-muted dark:bg-muted-foreground/20 rounded w-32 mb-2"></div>
+              <div className="animate-pulse h-6 bg-muted-foreground/20 dark:bg-muted-foreground/30 rounded w-48 mb-2"></div>
               <div className="flex justify-between items-center">
-                <div className="animate-pulse h-5 bg-gray-200 rounded w-20"></div>
-                <div className="animate-pulse h-5 bg-gray-200 rounded w-24"></div>
+                <div className="animate-pulse h-5 bg-muted dark:bg-muted-foreground/20 rounded w-20"></div>
+                <div className="animate-pulse h-5 bg-muted dark:bg-muted-foreground/20 rounded w-24"></div>
               </div>
             </div>
           </>
@@ -219,36 +219,36 @@ export default function MilestoneStatus({ milestones = [], team, onViewMilestone
           <>
             {/* Stats grid - completed, late, and upcoming */}
             <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+              <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-3 border border-green-100 dark:border-green-900/40">
                 <div className="flex items-center gap-2 mb-1">
-                  <CheckCircle2 className="h-5 w-5 text-green-600" />
-                  <span className="text-sm font-medium text-green-800">Completed</span>
+                  <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <span className="text-sm font-medium text-green-800 dark:text-green-300">Completed</span>
                 </div>
-                <div className="text-2xl font-bold text-green-900">{completedCount}</div>
+                <div className="text-2xl font-bold text-green-900 dark:text-green-200">{completedCount}</div>
               </div>
               
-              <div className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+              <div className="bg-muted/40 dark:bg-muted rounded-lg p-3 border border-border dark:border-border">
                 <div className="flex items-center gap-2 mb-1">
-                  <Circle className="h-5 w-5 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-800">Upcoming</span>
+                  <Circle className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-sm font-medium">Upcoming</span>
                 </div>
-                <div className="text-2xl font-bold text-gray-900">{upcomingCount}</div>
+                <div className="text-2xl font-bold">{upcomingCount}</div>
               </div>
               
-              <div className="bg-red-50 rounded-lg p-3 border border-red-100">
+              <div className="bg-red-50 dark:bg-red-950/30 rounded-lg p-3 border border-red-100 dark:border-red-900/40">
                 <div className="flex items-center gap-2 mb-1">
-                  <AlertCircle className="h-5 w-5 text-red-600" />
-                  <span className="text-sm font-medium text-red-800">Late</span>
+                  <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  <span className="text-sm font-medium text-red-800 dark:text-red-300">Late</span>
                 </div>
-                <div className="text-2xl font-bold text-red-900">{lateCount}</div>
+                <div className="text-2xl font-bold text-red-900 dark:text-red-200">{lateCount}</div>
               </div>
             </div>
             
             {/* Next milestone */}
             {nextMilestone && (
-              <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
-                <h4 className="text-sm font-medium text-indigo-800 mb-1">Next Milestone</h4>
-                <div className="text-lg font-semibold text-indigo-900 mb-1">{nextMilestone.name}</div>
+              <div className="bg-primary/5 dark:bg-primary/10 rounded-lg p-4 border border-primary/20 dark:border-primary/30">
+                <h4 className="text-sm font-medium text-primary dark:text-primary mb-1">Next Milestone</h4>
+                <div className="text-lg font-semibold mb-1">{nextMilestone.name}</div>
                 <div className="flex justify-between items-center">
                   <Badge 
                     variant={nextMilestone.status === "late" ? "destructive" : "outline"} 
@@ -256,7 +256,7 @@ export default function MilestoneStatus({ milestones = [], team, onViewMilestone
                   >
                     {nextMilestone.status === "late" ? "Late" : "Upcoming"}
                   </Badge>
-                  <div className="text-sm text-indigo-700">
+                  <div className="text-sm text-muted-foreground">
                     Due: {nextMilestone.dueDate ? new Date(nextMilestone.dueDate).toLocaleDateString('en-US', {
                       month: 'short', day: 'numeric', year: 'numeric'
                     }) : "No date"}
