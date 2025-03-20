@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import Logo from "@/components/common/Logo"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Card } from "@/components/ui/card"
+import ProgramApplicationHandler from '@/components/program/ProgramApplicationHandler'
 import Head from "next/head"
 
 function Onboarding() {
@@ -157,18 +158,31 @@ function Onboarding() {
   }, [onboardingCompleted, onboardingLoading, router])
   
   
+  // Application state management
+  const [selectedCohort, setSelectedCohort] = useState(null)
+  const [showApplicationHandler, setShowApplicationHandler] = useState(false)
+  
   // Handlers
   const handleCohortApply = (cohort) => {
-    // We should NOT mark the step as complete here
-    // Instead, let the normal application flow happen in CohortCard
-    console.log("Cohort apply in onboarding:", cohort.id);
-    // Don't call markStepComplete here - wait for success callback
+    // Start the application process with the selected cohort
+    console.log("Cohort apply started in onboarding:", cohort.id);
+    setSelectedCohort(cohort);
+    setShowApplicationHandler(true);
   }
   
-  const handleCohortApplySuccess = () => {
-    // Only mark the step as complete when application is successful
+  const handleApplicationComplete = (cohort) => {
+    // Application completed successfully
     console.log("Application successful, marking step complete");
+    setSelectedCohort(null);
+    setShowApplicationHandler(false);
     markStepComplete('selectCohort');
+  }
+  
+  const handleApplicationCancel = () => {
+    // Application was cancelled
+    console.log("Application cancelled");
+    setSelectedCohort(null);
+    setShowApplicationHandler(false);
   }
   
   const handleCompleteOnboarding = async () => {
@@ -233,8 +247,6 @@ function Onboarding() {
             </p>
           </div>
           
-          <Card className="p-6 md:p-8 shadow-lg border-0 bg-white dark:bg-gray-900 rounded-xl">
-          
           {/* Progress indicator */}
           <div className="mb-6">
             <div className="flex justify-between mb-1">
@@ -249,7 +261,7 @@ function Onboarding() {
           {/* Steps */}
           <div className="space-y-6">
             {/* Register Step */}
-            <div className="border rounded-lg overflow-hidden shadow-sm border-green-100 dark:border-green-800/30">
+            <div className="border rounded-lg overflow-hidden shadow-sm border-green-100 dark:border-green-800/30 bg-white dark:bg-gray-900">
               {/* Step Header */}
               <div 
                 className="flex items-center p-4 cursor-pointer transition-colors duration-200 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30"
@@ -329,7 +341,7 @@ function Onboarding() {
             
             {/* Get Involved Step */}
             <div className={`
-              border rounded-lg overflow-hidden shadow-sm 
+              border rounded-lg overflow-hidden shadow-sm bg-white dark:bg-gray-900
               ${steps.selectCohort.completed 
                 ? 'border-green-100 dark:border-green-800/30' 
                 : 'border-border'
@@ -421,7 +433,6 @@ function Onboarding() {
                           isLoadingApplications={isLoadingApplications}
                           applications={applications}
                           onApply={handleCohortApply}
-                          onApplySuccess={handleCohortApplySuccess}
                           columns={{ default: 1, md: 1, lg: 2 }} 
                           emptyMessage="No programs are currently available for your institution."
                         />
@@ -467,9 +478,16 @@ function Onboarding() {
               )}
             </div>
           </div>
-          </Card>
         </div>
       </div>
+      {/* Application Handler */}
+      <ProgramApplicationHandler
+        cohort={selectedCohort}
+        profile={profile}
+        isActive={showApplicationHandler}
+        onComplete={handleApplicationComplete}
+        onCancel={handleApplicationCancel}
+      />
     </>
   )
 }
