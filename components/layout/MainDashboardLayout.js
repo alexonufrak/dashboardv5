@@ -244,7 +244,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
 
                 <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
                   <Sidebar
-                    className="fixed top-0 h-screen"
+                    className="fixed top-0 h-screen border-sidebar-border"
                     variant="inset"
                   >
                     <AppSidebar pageTitle={title} />
@@ -253,7 +253,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
                   {/* Main content area */}
                   <SidebarInset className="bg-background">
                     <div className="flex flex-col h-full">
-                      <div className="flex items-center justify-between py-2 px-4 border-b">
+                      <div className="flex items-center justify-between py-2 px-4 border-b border-border">
                         <div className="flex items-center">
                           <SidebarTrigger className="mr-2" />
                           <h2 className="text-lg font-bold truncate">{title || "xFoundry Hub"}</h2>
@@ -302,7 +302,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
                       </div>
                       
                       {/* Page content */}
-                      <div className="flex-1 overflow-auto py-4 px-4 md:px-6">
+                      <div className="flex-1 overflow-auto py-4 px-4 md:px-6 transition-all duration-200">
                         <div className="max-w-6xl mx-auto">
                           <div className="main-dashboard-layout-content proper-dashboard-layout-content">
                             {children}
