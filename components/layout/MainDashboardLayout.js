@@ -242,9 +242,9 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
             return (
               <>
 
-                <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen} className="flex flex-col">
                   <Sidebar
-                    className="fixed top-0 h-screen border-sidebar-border"
+                    className="fixed top-0 h-screen"
                     variant="inset"
                   >
                     <AppSidebar pageTitle={title} />
