@@ -317,7 +317,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
           })()}
         </div>
       ) : (
-        <div className="min-h-screen bg-sidebar overflow-x-hidden h-full">
+        <div className="min-h-screen bg-background overflow-x-hidden h-full">
           {/* Main Content without sidebar */}
           <main className="flex-1 pt-4 overflow-x-hidden h-full">
             <div className="container max-w-6xl mx-auto px-4 md:px-6 h-full">
