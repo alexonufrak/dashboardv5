@@ -230,7 +230,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
       </Head>
 
       {renderWithSidebar ? (
-        <div className="flex flex-col min-h-screen"
+        <div className="flex flex-col min-h-screen bg-background"
           style={{
             "--header-height": "3.5rem",
           }}
