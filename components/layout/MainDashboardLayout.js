@@ -230,7 +230,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
       </Head>
 
       {renderWithSidebar ? (
-        <div className="flex flex-col min-h-screen bg-sidebar">
+        <div className="flex flex-col min-h-screen bg-sidebar" style={{ backgroundColor: 'var(--color-sidebar)' }}>
           {/* We need to create a sidebar state here to use in the header */}
           {(() => {
             const [sidebarOpen, setSidebarOpen] = useState(true);
