@@ -230,89 +230,82 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
       </Head>
 
       {renderWithSidebar ? (
-        <div className="flex flex-col min-h-screen bg-sidebar"
-          style={{
-            "--header-height": "3.5rem",
-          }}
-        >
+        <div className="flex flex-col min-h-screen bg-sidebar">
           {/* We need to create a sidebar state here to use in the header */}
           {(() => {
             const [sidebarOpen, setSidebarOpen] = useState(true);
             
             return (
-              <>
-
+              <main className="[--header-height:calc(theme(spacing.14))]">
                 <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen} className="flex flex-col">
-                  <Sidebar
-                    className="fixed top-0 h-screen"
-                    variant="inset"
-                  >
-                    <AppSidebar pageTitle={title} />
-                  </Sidebar>
-                  
-                  {/* Main content area */}
-                  <SidebarInset className="bg-background">
-                    <div className="flex flex-col h-full">
-                      <div className="flex items-center justify-between py-2 px-4 border-b border-border">
-                        <div className="flex items-center">
-                          <SidebarTrigger className="mr-2" />
-                          <h2 className="text-lg font-bold truncate">{title || "xFoundry Hub"}</h2>
-                        </div>
-                        
-                        {/* User Avatar with Dropdown - align to the right */}
-                        <div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary-foreground/10">
-                                <Avatar className="h-8 w-8 rounded-full border-2 border-primary-foreground/20">
-                                  <AvatarImage src={profile?.picture || user?.picture} alt={profile?.firstName || user?.name || "User"} />
-                                  <AvatarFallback>
-                                    {profile?.firstName?.[0]}{profile?.lastName?.[0] || 
-                                     (user?.name ? user.name.split(" ").map(n => n[0]).join("").slice(0, 2) : "U")}
-                                  </AvatarFallback>
-                                </Avatar>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56">
-                              <DropdownMenuLabel className="font-normal">
-                                <div className="flex flex-col space-y-1">
-                                  <p className="text-sm font-medium leading-none">
-                                    {profile?.firstName} {profile?.lastName || (user?.name || "User")}
-                                  </p>
-                                  <p className="text-xs leading-none text-muted-foreground">
-                                    {user?.email || profile?.email}
-                                  </p>
-                                </div>
-                              </DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => setIsEditModalOpen?.(true)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                <span>Edit Profile</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem asChild>
-                                <Link href="/api/auth/logout">
-                                  <LogOut className="mr-2 h-4 w-4" />
-                                  Sign Out
-                                </Link>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
+                  {/* Site Header - Positioned at the top */}
+                  <header className="bg-background sticky top-0 z-50 flex w-full items-center border-b">
+                    <div className="flex h-[--header-height] w-full items-center gap-2 px-4">
+                      <SidebarTrigger className="mr-2" />
+                      <h2 className="text-lg font-bold truncate">{title || "xFoundry Hub"}</h2>
                       
-                      {/* Page content */}
-                      <div className="flex-1 overflow-auto py-4 px-4 md:px-6 transition-all duration-200">
-                        <div className="max-w-6xl mx-auto">
-                          <div className="main-dashboard-layout-content proper-dashboard-layout-content">
-                            {children}
-                          </div>
-                        </div>
+                      {/* User Avatar with Dropdown - align to the right */}
+                      <div className="ml-auto">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary-foreground/10">
+                              <Avatar className="h-8 w-8 rounded-full border-2 border-primary-foreground/20">
+                                <AvatarImage src={profile?.picture || user?.picture} alt={profile?.firstName || user?.name || "User"} />
+                                <AvatarFallback>
+                                  {profile?.firstName?.[0]}{profile?.lastName?.[0] || 
+                                   (user?.name ? user.name.split(" ").map(n => n[0]).join("").slice(0, 2) : "U")}
+                                </AvatarFallback>
+                              </Avatar>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuLabel className="font-normal">
+                              <div className="flex flex-col space-y-1">
+                                <p className="text-sm font-medium leading-none">
+                                  {profile?.firstName} {profile?.lastName || (user?.name || "User")}
+                                </p>
+                                <p className="text-xs leading-none text-muted-foreground">
+                                  {user?.email || profile?.email}
+                                </p>
+                              </div>
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => setIsEditModalOpen?.(true)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              <span>Edit Profile</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild>
+                              <Link href="/api/auth/logout">
+                                <LogOut className="mr-2 h-4 w-4" />
+                                Sign Out
+                              </Link>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
-                  </SidebarInset>
+                  </header>
+
+                  {/* Main content with sidebar and content area */}
+                  <div className="flex flex-1">
+                    <Sidebar
+                      variant="inset"
+                    >
+                      <AppSidebar pageTitle={title} />
+                    </Sidebar>
+                    
+                    {/* Main content area */}
+                    <SidebarInset className="bg-background">
+                      <div className="p-6">
+                        <div className="main-dashboard-layout-content proper-dashboard-layout-content">
+                          {children}
+                        </div>
+                      </div>
+                    </SidebarInset>
+                  </div>
                 </SidebarProvider>
-              </>
+              </main>
             );
           })()}
         </div>
