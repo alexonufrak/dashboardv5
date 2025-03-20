@@ -251,7 +251,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
                   </Sidebar>
                   
                   {/* Main content area */}
-                  <SidebarInset className="bg-sidebar">
+                  <SidebarInset className="bg-background">
                     <div className="flex flex-col h-full">
                       <div className="flex items-center justify-between py-2 px-4 border-b border-border">
                         <div className="flex items-center">
