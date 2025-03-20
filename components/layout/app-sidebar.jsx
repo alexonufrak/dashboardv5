@@ -31,6 +31,7 @@ import {
 import { CheckCircle } from "lucide-react"
 
 export function AppSidebar({
+  pageTitle,
   ...props
 }) {
   const router = useRouter()
@@ -183,7 +184,7 @@ export function AppSidebar({
                     </div>
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-semibold">{institutionName}</span>
-                      <span className="truncate text-xs">xFoundry Hub</span>
+                      <span className="truncate text-xs">xFoundry</span>
                     </div>
                   </SidebarMenuButton>
                 </PopoverTrigger>

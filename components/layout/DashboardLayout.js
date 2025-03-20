@@ -42,7 +42,7 @@ export default function DashboardLayout({
             <div className="flex items-center">
               <div className="w-10"></div> {/* Placeholder for alignment */}
               <h2 className="text-lg font-bold tracking-tight text-primary ml-4">
-                xFoundry Hub
+                {title || "xFoundry Hub"}
               </h2>
             </div>
             <div className="text-xs text-muted-foreground">
@@ -51,7 +51,7 @@ export default function DashboardLayout({
           </div>
           
           {/* Sidebar */}
-          <AppSidebar className="h-screen" />
+          <AppSidebar className="h-screen" pageTitle={title} />
           
           {/* Main Content */}
           <SidebarInset className="bg-background flex-1 overflow-auto">

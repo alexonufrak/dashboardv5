@@ -234,7 +234,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
             <div className="flex items-center">
               <div className="w-10"></div> {/* Placeholder for alignment */}
               <h2 className="text-lg font-bold tracking-tight ml-4">
-                xFoundry Hub
+                {title || "xFoundry Hub"}
               </h2>
             </div>
             
@@ -281,7 +281,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
           </div>
           
           {/* Dashboard Sidebar using the new AppSidebar component */}
-          <AppSidebar className="h-screen" />
+          <AppSidebar className="h-screen" pageTitle={title} />
           
           {/* Main Content */}
           <SidebarInset className="bg-background overflow-auto">
