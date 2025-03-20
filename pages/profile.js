@@ -2,44 +2,92 @@
 
 import { withPageAuthRequired } from "@auth0/nextjs-auth0"
 import { useRouter } from "next/router"
-import { useEffect } from "react"
-import { useDashboard } from "@/contexts/DashboardContext"
+import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton"
+import MainDashboardLayout from "@/components/layout/MainDashboardLayout"
+import { useDashboard } from "@/contexts/DashboardContext"
+import { navigateToDashboard, navigateToProgram, navigateToProfile, navigateToPrograms } from '@/lib/routing'
 
-// Profile page that opens the edit modal and stays on the current page
-const ProfilePage = () => {
-  const router = useRouter()
-  const { setIsEditModalOpen } = useDashboard()
-  
-  useEffect(() => {
-    // Open the profile edit modal
-    setIsEditModalOpen(true)
-    
-    // Return to the previous page or dashboard
-    const returnPath = document.referrer ? new URL(document.referrer).pathname : "/dashboard"
-    
-    // Check if return path is valid internal route
-    const isInternalRoute = returnPath.startsWith("/dashboard") || 
-                           returnPath === "/" || 
-                           returnPath.startsWith("/program-dashboard")
-    
-    // Use shallow routing to go back without triggering a refresh
-    router.replace(isInternalRoute ? returnPath : "/dashboard", undefined, { shallow: true })
-  }, [router, setIsEditModalOpen])
-  
+// Dynamically import the ProfilePage component with loading state
+const ProfilePage = dynamic(() => import("@/pages/dashboard/ProfilePage"), {
+  loading: () => <PageSkeleton />
+})
+
+// Page skeleton for loading state
+function PageSkeleton() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] w-full">
-      <div className="text-center mb-6">
-        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent mx-auto mb-4"></div>
-        <p className="text-muted-foreground text-sm">Opening profile editor...</p>
+    <div className="space-y-4 pt-4">
+      <Skeleton className="h-8 w-64" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Skeleton className="h-64 rounded-lg" />
+        <div className="col-span-2">
+          <Skeleton className="h-16 rounded-lg mb-4" />
+          <Skeleton className="h-48 rounded-lg" />
+        </div>
       </div>
-      <Skeleton className="h-6 w-48 mb-4" />
-      <Skeleton className="h-6 w-64 mb-4" />
-      <Skeleton className="h-6 w-32" />
     </div>
+  )
+}
+
+function Profile() {
+  const router = useRouter()
+  const { profile, isLoading, error, refreshData } = useDashboard()
+
+  // Handle navigation between pages
+  const handleNavigation = (page) => {
+    console.log(`Navigation requested to page: ${page}`);
+    
+    // Extract program ID if this is a program-specific page
+    let programId = null;
+    if (page.startsWith('program-')) {
+      programId = page.replace('program-', '');
+      page = 'program'; // Set base page to program
+    }
+    
+    // Navigate based on the page
+    switch (page) {
+      case "dashboard":
+        navigateToDashboard(router, { shallow: true });
+        break;
+      case "profile":
+        navigateToProfile(router, { shallow: true });
+        break;
+      case "programs":
+        navigateToPrograms(router, { shallow: true });
+        break;
+      case "program":
+        if (programId) {
+          navigateToProgram(router, programId, { shallow: true });
+        }
+        break;
+      default:
+        navigateToDashboard(router, { shallow: true });
+    }
+  }
+
+  // Use refreshData function for error retry
+  const handleRetry = () => {
+    if (refreshData) {
+      refreshData('all');
+    } else {
+      window.location.reload();
+    }
+  };
+
+  return (
+    <MainDashboardLayout
+      title="Your Profile"
+      profile={profile}
+      currentPage="profile"
+      onNavigate={handleNavigation}
+      isLoading={isLoading}
+      error={error && { message: error, onRetry: handleRetry }}
+    >
+      <ProfilePage onNavigate={handleNavigation} />
+    </MainDashboardLayout>
   )
 }
 
 export const getServerSideProps = withPageAuthRequired()
 
-export default ProfilePage
+export default Profile

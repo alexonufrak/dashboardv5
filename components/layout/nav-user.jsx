@@ -89,6 +89,12 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
+              <DropdownMenuItem asChild>
+                <Link href="/profile">
+                  <User className="mr-2 h-4 w-4" />
+                  View Profile
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={user.onEditClick ? user.onEditClick : undefined}>
                 <User className="mr-2 h-4 w-4" />
                 Edit Profile

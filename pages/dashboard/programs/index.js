@@ -169,7 +169,7 @@ function ProgramsPageContent({ onNavigate }) {
                         size="sm"
                         asChild
                       >
-                        <a href={`/dashboard/program/${initiative.id}`}>
+                        <a href={`/dashboard/programs/${initiative.id}`}>
                           <span>Go to Program</span>
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </a>

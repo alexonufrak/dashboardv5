@@ -5,8 +5,9 @@ This document outlines the dashboard architecture after the recent cleanup and s
 ## Primary Dashboard Components
 
 1. **Main Entry Points**:
-   - `/pages/dashboard.js` - Main dashboard entry point
+   - `/pages/dashboard/index.js` - Main dashboard entry point
    - `/pages/program-dashboard.js` - Program-specific dashboard view
+   - `/pages/dashboard.js` - Redirect to main dashboard for backward compatibility
 
 2. **Core Components**:
    - `/components/DashboardShell.js` - Main container component that handles navigation and page routing

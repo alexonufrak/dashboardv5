@@ -23,8 +23,8 @@ function ProgramIndex() {
       
       // Redirect based on available programs
       if (initiatives && initiatives.length > 0) {
-        // Redirect to the first available program
-        router.replace(`/dashboard/program/${initiatives[0].id}`)
+        // Redirect to the first available program using new URL structure
+        router.replace(`/dashboard/programs/${initiatives[0].id}`)
       } else {
         // If no programs available, redirect to main dashboard
         router.replace('/dashboard')

@@ -101,7 +101,7 @@ const Navbar = () => {
               <>
                 <Link 
                   href="/dashboard" 
-                  className={`text-sm font-medium ${router.pathname === "/dashboard" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                  className={`text-sm font-medium ${router.pathname.startsWith("/dashboard") && router.pathname !== "/dashboard/programs" ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   Dashboard
                 </Link>

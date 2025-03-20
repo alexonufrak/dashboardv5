@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useRouter } from "next/router"
 import Link from "next/link"
-import { Home, ExternalLink, LogOut, Command, Compass, Blocks } from "lucide-react"
+import { Home, ExternalLink, LogOut, Command, Compass, Blocks, User } from "lucide-react"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { useUser } from "@auth0/nextjs-auth0/client"
 import { ROUTES } from '@/lib/routing'
@@ -74,6 +74,12 @@ export function AppSidebar({
       url: ROUTES.PROGRAMS,
       icon: Blocks,
       isActive: isProgramsActive
+    },
+    {
+      title: "Profile",
+      url: ROUTES.PROFILE || "/profile",
+      icon: User,
+      isActive: router.pathname === "/profile"
     }
   ];
 
