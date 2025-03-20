@@ -244,16 +244,8 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
                 {/* Top header - spans full width */}
                 <header className="sticky top-0 z-50 flex h-[--header-height] shrink-0 items-center gap-2 border-b bg-background">
                   <div className="flex h-full w-full items-center gap-2 px-4">
-                    {/* Mobile header */}
-                    <div className="md:hidden flex items-center">
-                      <SidebarTrigger className="mr-2" />
-                      <h2 className="text-lg font-bold truncate">
-                        {title || "xFoundry Hub"}
-                      </h2>
-                    </div>
-                    
-                    {/* Desktop header */}
-                    <div className="hidden md:flex items-center">
+                    {/* Mobile and Desktop header */}
+                    <div className="flex items-center">
                       <Button 
                         variant="ghost" 
                         size="icon" 
