@@ -157,21 +157,10 @@ export function AppSidebar({
     };
   }, [user, profile, setIsEditModalOpen]);
 
-  // Mobile trigger button (fixed position)
-  const MobileTrigger = () => (
-    <div className="md:hidden fixed left-4 top-3 z-40">
-      <SidebarTrigger 
-        className="h-10 w-10 rounded-full bg-white dark:bg-neutral-800 shadow-xs border dark:border-neutral-700"
-      />
-    </div>
-  );
-
   return (
-    <>
-      <MobileTrigger />
-      <Sidebar
-        variant="inset" // Using the inset variant for a modern, elevated design
-        {...props}>
+    <Sidebar
+      variant="inset" // Using the inset variant for a modern, elevated design
+      {...props}>
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>

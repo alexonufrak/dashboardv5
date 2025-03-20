@@ -24,7 +24,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { LogOut, Edit } from "lucide-react"
+import { LogOut, Edit, Menu } from "lucide-react"
+import { ViewVerticalIcon } from "@radix-ui/react-icons"
 
 /**
  * Main dashboard layout component for all dashboard views
@@ -230,92 +231,118 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
 
       {renderWithSidebar ? (
         <div className="[--header-height:calc(theme(spacing.14))]">
-          {/* Top header - fixed above everything */}
-          <header className="sticky top-0 z-50 flex h-[--header-height] w-full items-center border-b bg-background">
-            <div className="flex h-full w-full items-center gap-2 px-4">
-              <div className="md:hidden flex items-center">
-                <SidebarTrigger className="mr-2" />
-                <h2 className="text-lg font-bold truncate">
-                  {title || "xFoundry Hub"}
-                </h2>
-              </div>
-              
-              {/* Only show the title in desktop view when not in mobile mode */}
-              <div className="hidden md:block">
-                <h2 className="text-lg font-bold truncate">
-                  {title || "xFoundry Hub"}
-                </h2>
-              </div>
-              
-              {/* Show breadcrumbs if needed */}
-              {shouldShowBreadcrumbs && title?.trim() && (
-                <>
-                  <Separator orientation="vertical" className="mr-2 ml-2 hidden md:block h-4" />
-                  <div className="hidden md:block">
-                    <Breadcrumbs />
-                  </div>
-                </>
-              )}
-              
-              {/* User Avatar with Dropdown - align to the right */}
-              <div className="ml-auto">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary-foreground/10">
-                      <Avatar className="h-8 w-8 rounded-full border-2 border-primary-foreground/20">
-                        <AvatarImage src={profile?.picture || user?.picture} alt={profile?.firstName || user?.name || "User"} />
-                        <AvatarFallback>
-                          {profile?.firstName?.[0]}{profile?.lastName?.[0] || 
-                           (user?.name ? user.name.split(" ").map(n => n[0]).join("").slice(0, 2) : "U")}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">
-                          {profile?.firstName} {profile?.lastName || (user?.name || "User")}
-                        </p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {user?.email || profile?.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setIsEditModalOpen?.(true)}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      <span>Edit Profile</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/api/auth/logout">
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Sign Out
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
-          </header>
-          
-          {/* Main area with sidebar */}
-          <SidebarProvider defaultOpen>
-            {/* Sidebar component */}
-            <AppSidebar className="top-[--header-height] h-[calc(100svh-var(--header-height))]" pageTitle={title} />
+          {/* We need to create a sidebar state here to use in the header */}
+          {(() => {
+            const [sidebarOpen, setSidebarOpen] = React.useState(true);
             
-            {/* Main content area */}
-            <SidebarInset className="bg-background">
-              <div className="flex flex-col flex-1 h-full">
-                <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 h-full">
-                  <div className="main-dashboard-layout-content proper-dashboard-layout-content">
-                    {children}
+            return (
+              <>
+                {/* Top header - fixed above everything */}
+                <header className="sticky top-0 z-50 flex h-[--header-height] w-full items-center border-b bg-background">
+                  <div className="flex h-full w-full items-center gap-2 px-4">
+                    <div className="md:hidden flex items-center">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                        className="mr-2"
+                      >
+                        <ViewVerticalIcon />
+                        <span className="sr-only">Toggle Sidebar</span>
+                      </Button>
+                      <h2 className="text-lg font-bold truncate">
+                        {title || "xFoundry Hub"}
+                      </h2>
+                    </div>
+                    
+                    {/* Toggle sidebar in desktop view */}
+                    <div className="hidden md:flex items-center">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                        className="mr-2"
+                      >
+                        <ViewVerticalIcon />
+                        <span className="sr-only">Toggle Sidebar</span>
+                      </Button>
+                      <h2 className="text-lg font-bold truncate">
+                        {title || "xFoundry Hub"}
+                      </h2>
+                    </div>
+                    
+                    {/* Show breadcrumbs if needed */}
+                    {shouldShowBreadcrumbs && title?.trim() && (
+                      <>
+                        <Separator orientation="vertical" className="mr-2 ml-2 hidden md:block h-4" />
+                        <div className="hidden md:block">
+                          <Breadcrumbs />
+                        </div>
+                      </>
+                    )}
+                    
+                    {/* User Avatar with Dropdown - align to the right */}
+                    <div className="ml-auto">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary-foreground/10">
+                            <Avatar className="h-8 w-8 rounded-full border-2 border-primary-foreground/20">
+                              <AvatarImage src={profile?.picture || user?.picture} alt={profile?.firstName || user?.name || "User"} />
+                              <AvatarFallback>
+                                {profile?.firstName?.[0]}{profile?.lastName?.[0] || 
+                                 (user?.name ? user.name.split(" ").map(n => n[0]).join("").slice(0, 2) : "U")}
+                              </AvatarFallback>
+                            </Avatar>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                          <DropdownMenuLabel className="font-normal">
+                            <div className="flex flex-col space-y-1">
+                              <p className="text-sm font-medium leading-none">
+                                {profile?.firstName} {profile?.lastName || (user?.name || "User")}
+                              </p>
+                              <p className="text-xs leading-none text-muted-foreground">
+                                {user?.email || profile?.email}
+                              </p>
+                            </div>
+                          </DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => setIsEditModalOpen?.(true)}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            <span>Edit Profile</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem asChild>
+                            <Link href="/api/auth/logout">
+                              <LogOut className="mr-2 h-4 w-4" />
+                              Sign Out
+                            </Link>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
-                </div>
-              </div>
-            </SidebarInset>
-          </SidebarProvider>
+                </header>
+                
+                {/* Main area with sidebar */}
+                <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                  {/* Sidebar component */}
+                  <AppSidebar className="top-[--header-height] h-[calc(100svh-var(--header-height))]" pageTitle={title} />
+                  
+                  {/* Main content area */}
+                  <SidebarInset className="bg-background">
+                    <div className="flex flex-col flex-1 h-full">
+                      <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 h-full">
+                        <div className="main-dashboard-layout-content proper-dashboard-layout-content">
+                          {children}
+                        </div>
+                      </div>
+                    </div>
+                  </SidebarInset>
+                </SidebarProvider>
+              </>
+            );
+          })()}
         </div>
       ) : (
         <div className="min-h-screen bg-background overflow-x-hidden h-full">
