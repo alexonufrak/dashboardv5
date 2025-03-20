@@ -111,10 +111,10 @@ export default function PointsSummary({ team }) {
   return (
     <div className="space-y-4">
       {/* Total points display */}
-      <div className="text-center p-2 bg-blue-50 rounded-lg border border-blue-100">
-        <Award className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-        <div className="text-2xl font-bold text-blue-800">{totalPoints}</div>
-        <div className="text-sm text-blue-600">Total Team Points</div>
+      <div className="text-center p-3 bg-primary/10 rounded-lg border border-primary/20 dark:bg-primary/20 dark:border-primary/30">
+        <Award className="h-8 w-8 text-primary mx-auto mb-2" />
+        <div className="text-2xl font-bold text-primary-foreground dark:text-primary">{totalPoints}</div>
+        <div className="text-sm text-primary-foreground/80 dark:text-primary/80">Total Team Points</div>
       </div>
       
       {/* Top contributors */}
@@ -141,9 +141,9 @@ export default function PointsSummary({ team }) {
                   value={member.percentage} 
                   className="h-2" 
                   indicatorClassName={
-                    index === 0 ? "bg-blue-500" : 
-                    index === 1 ? "bg-cyan-500" : 
-                    "bg-indigo-500"
+                    index === 0 ? "bg-primary" : 
+                    index === 1 ? "bg-primary/80" : 
+                    "bg-primary/60"
                   }
                 />
                 <div className="text-xs text-right text-muted-foreground">
@@ -154,23 +154,23 @@ export default function PointsSummary({ team }) {
           </div>
         </div>
       ) : (
-        <div className="bg-gray-50 p-3 rounded-md text-sm text-muted-foreground flex items-center">
-          <Info className="h-4 w-4 mr-2 text-blue-500" />
+        <div className="bg-muted/40 dark:bg-muted p-3 rounded-md text-sm text-muted-foreground flex items-center">
+          <Info className="h-4 w-4 mr-2 text-primary" />
           No individual point contributions yet
         </div>
       )}
       
       {/* Last points activity */}
       {!isLoading && pointTransactions?.length > 0 && (
-        <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg border">
+        <div className="flex items-center justify-between p-3 bg-muted/40 dark:bg-muted rounded-lg border dark:border-border">
           <div className="flex items-center">
-            <Clock className="h-4 w-4 text-blue-600 mr-2" />
+            <Clock className="h-4 w-4 text-primary mr-2" />
             <span className="text-sm font-medium">Last Activity</span>
           </div>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="font-medium text-sm">
+                <span className="font-medium text-sm cursor-pointer">
                   {pointTransactions[0]?.achievementName?.length > 15 
                     ? `${pointTransactions[0]?.achievementName?.substring(0, 15)}...` 
                     : pointTransactions[0]?.achievementName || "Point Activity"}
@@ -212,8 +212,8 @@ export default function PointsSummary({ team }) {
           </div>
         </div>
       ) : (
-        <div className="bg-gray-50 p-3 rounded-md text-sm text-muted-foreground flex items-center">
-          <Info className="h-4 w-4 mr-2 text-blue-500" />
+        <div className="bg-muted/40 dark:bg-muted p-3 rounded-md text-sm text-muted-foreground flex items-center">
+          <Info className="h-4 w-4 mr-2 text-primary" />
           No point breakdown available
         </div>
       )}
