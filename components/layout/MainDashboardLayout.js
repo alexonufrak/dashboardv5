@@ -233,7 +233,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
         <div className="[--header-height:calc(theme(spacing.14))]">
           {/* We need to create a sidebar state here to use in the header */}
           {(() => {
-            const [sidebarOpen, setSidebarOpen] = React.useState(true);
+            const [sidebarOpen, setSidebarOpen] = useState(true);
             
             return (
               <>
