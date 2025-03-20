@@ -160,7 +160,6 @@ export function AppSidebar({
   return (
     <Sidebar
       variant="inset" // Using the inset variant for a modern, elevated design
-      collapsible="offcanvas" // Controls how sidebar behaves when collapsed
       {...props}>
         <SidebarHeader>
           <SidebarMenu>
