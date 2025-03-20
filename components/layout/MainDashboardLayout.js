@@ -7,7 +7,7 @@ import Head from "next/head"
 import Link from "next/link"
 import { AppSidebar } from "./app-sidebar"
 import Breadcrumbs from "@/components/common/Breadcrumbs"
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarProvider, SidebarInset, SidebarTrigger, Sidebar } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import { isProgramRoute } from '@/lib/routing'
 import { Skeleton } from "@/components/ui/skeleton"
