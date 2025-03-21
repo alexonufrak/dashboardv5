@@ -1,4 +1,4 @@
-import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0'
+import { auth0 } from '@/lib/auth0'
 import { getUserProfile, getUserTeams, getTeamsByIds } from '@/lib/airtable'
 
 /**
@@ -10,15 +10,15 @@ import { getUserProfile, getUserTeams, getTeamsByIds } from '@/lib/airtable'
  * 1. Get user's teams (default): /api/teams
  * 2. Get teams by IDs: /api/teams?ids=id1,id2,id3
  */
-export default withApiAuthRequired(async function teamsHandler(req, res) {
+export default async function teamsHandler(req, res) {
   // Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
-    // Get the user session
-    const session = await getSession(req, res)
+    // Get the user session using Auth0 v4
+    const session = await auth0.getSession(req)
     
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Not authenticated' })
@@ -86,4 +86,4 @@ export default withApiAuthRequired(async function teamsHandler(req, res) {
     console.error('Error fetching teams:', error)
     return res.status(500).json({ error: 'Failed to fetch teams' })
   }
-})
+}

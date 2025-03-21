@@ -1,18 +1,18 @@
-import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0'
+import { auth0 } from '@/lib/auth0'
 import { invalidateAllData } from '@/lib/useDataFetching'
 
 /**
  * API endpoint to invalidate client caches
  * This is used to trigger cache invalidation without a full page reload
  */
-export default withApiAuthRequired(async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
   
   try {
     // Check if the user is authenticated
-    const session = await getSession(req, res)
+    const session = await auth0.getSession(req)
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Not authenticated' })
     }
@@ -36,4 +36,4 @@ export default withApiAuthRequired(async function handler(req, res) {
     console.error('Error in cache invalidation:', error)
     return res.status(500).json({ error: 'Error invalidating cache' })
   }
-})
+}

@@ -1,4 +1,4 @@
-import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import { auth0 } from '@/lib/auth0';
 import { base } from '../../../lib/airtable';
 import { getCompleteUserProfile } from '../../../lib/userProfile';
 
@@ -6,13 +6,13 @@ import { getCompleteUserProfile } from '../../../lib/userProfile';
  * API endpoint to check if the current user has applied to a specific cohort
  * Returns all applications for the user, or filtered by cohort if cohortId is provided
  */
-export default withApiAuthRequired(async function checkApplication(req, res) {
+export default async function checkApplication(req, res) {
   try {
     // Get cohort ID from query params (optional)
     const { cohortId } = req.query;
 
     // Get the user session
-    const session = await getSession(req, res);
+    const session = await auth0.getSession(req);
     
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Not authenticated', applications: [] });
@@ -302,4 +302,4 @@ export default withApiAuthRequired(async function checkApplication(req, res) {
       applications: []
     });
   }
-});
+};

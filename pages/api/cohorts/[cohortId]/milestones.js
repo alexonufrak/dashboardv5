@@ -1,4 +1,4 @@
-import { getSession, withApiAuthRequired } from "@auth0/nextjs-auth0"
+import { auth0 } from "@/lib/auth0"
 import { base } from "@/lib/airtable"
 
 /**
@@ -6,10 +6,10 @@ import { base } from "@/lib/airtable"
  * @param {object} req - Next.js API request
  * @param {object} res - Next.js API response
  */
-export default withApiAuthRequired(async function handler(req, res) {
+export default async function handler(req, res) {
   try {
-    // Get the current session and user
-    const session = await getSession(req, res)
+    // Get the current session and user using Auth0 v4
+    const session = await auth0.getSession(req)
     if (!session?.user) {
       return res.status(401).json({ error: "Not authenticated" })
     }
@@ -155,4 +155,4 @@ export default withApiAuthRequired(async function handler(req, res) {
     console.error("Error fetching milestones:", error)
     return res.status(500).json({ error: "Failed to fetch milestones", details: error.message })
   }
-})
+}

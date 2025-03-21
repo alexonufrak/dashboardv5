@@ -1,4 +1,4 @@
-import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0'
+import { auth0 } from '@/lib/auth0'
 import { getUserProfile, base } from '@/lib/airtable'
 
 /**
@@ -6,7 +6,7 @@ import { getUserProfile, base } from '@/lib/airtable'
  * @param {Object} req - Next.js API Request
  * @param {Object} res - Next.js API Response
  */
-export default withApiAuthRequired(async function joinableTeamsHandler(req, res) {
+export default async function joinableTeamsHandler(req, res) {
   // Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -14,7 +14,7 @@ export default withApiAuthRequired(async function joinableTeamsHandler(req, res)
 
   try {
     // Get the user session
-    const session = await getSession(req, res)
+    const session = await auth0.getSession(req)
     
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Not authenticated' })
@@ -187,4 +187,4 @@ export default withApiAuthRequired(async function joinableTeamsHandler(req, res)
     console.error('Error fetching joinable teams:', error)
     return res.status(500).json({ error: 'Failed to fetch joinable teams' })
   }
-})
+}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { useUser } from '@auth0/nextjs-auth0/client'
+import { useUser } from '@auth0/nextjs-auth0'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,7 @@ import XtrapreneursApplicationForm from '@/components/program/xtrapreneurs/Xtrap
 import TeamApplicationForm from '@/components/teams/TeamApplicationForm'
 import Link from 'next/link'
 import { ROUTES } from '@/lib/routing'
-import { withPageAuthRequired } from '@auth0/nextjs-auth0'
+import { auth0 } from '@/lib/auth0'
 import MainDashboardLayout from '@/components/layout/MainDashboardLayout'
 import TransitionLayout from '@/components/common/TransitionLayout'
 import { BlurFade } from "@/components/magicui/blur-fade"
@@ -384,6 +384,26 @@ const ProgramsApplicationPage = () => {
   )
 }
 
-export const getServerSideProps = withPageAuthRequired();
+export async function getServerSideProps(context) {
+  // Get the session using Auth0 v4 client
+  const session = await auth0.getSession(context.req);
+  
+  // Redirect to login if no session
+  if (!session) {
+    return {
+      redirect: {
+        destination: '/auth/login?returnTo=' + encodeURIComponent(context.resolvedUrl),
+        permanent: false,
+      },
+    };
+  }
+  
+  // Return the user prop to maintain compatibility with existing code
+  return {
+    props: {
+      user: session.user || null,
+    },
+  };
+}
 
 export default ProgramsApplicationPage

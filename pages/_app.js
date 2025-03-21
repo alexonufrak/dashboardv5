@@ -1,4 +1,4 @@
-import { UserProvider } from "@auth0/nextjs-auth0/client"
+import { Auth0Provider } from "@auth0/nextjs-auth0"
 import "../styles/globals.css"
 import "@fillout/react/style.css" // Import Fillout styles
 import { Toaster } from 'sonner';
@@ -10,7 +10,7 @@ import { Analytics } from "@vercel/analytics/react"
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { ThemeProvider } from '@/components/theme-provider'
-import { useUser } from "@auth0/nextjs-auth0/client"
+import { useUser } from "@auth0/nextjs-auth0"
 
 // Simple class-based error boundary component defined inline to avoid import issues
 class ErrorBoundary extends React.Component {
@@ -200,14 +200,14 @@ function MyApp({ Component, pageProps }) {
         defaultTheme="system"
         enableSystem
       >
-        <UserProvider>
+        <Auth0Provider>
           <OnboardingProvider>
             <ErrorBoundary className="bg-white dark:bg-gray-900">
               <AppContent Component={Component} pageProps={pageProps} router={router} />
               <Analytics />
             </ErrorBoundary>
           </OnboardingProvider>
-        </UserProvider>
+        </Auth0Provider>
         {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
       </ThemeProvider>
     </QueryClientProvider>

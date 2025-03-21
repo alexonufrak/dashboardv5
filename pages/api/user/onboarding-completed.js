@@ -1,5 +1,5 @@
-import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0';
-import auth0Client from '../../../lib/auth0';
+import { auth0 } from '@/lib/auth0';
+// Import for auth0Client no longer needed
 import { getUserProfile, getOnboardingStatus, updateOnboardingStatus } from '../../../lib/airtable';
 
 /**
@@ -7,9 +7,9 @@ import { getUserProfile, getOnboardingStatus, updateOnboardingStatus } from '../
  * Uses Airtable Contact Onboarding field as the primary source of truth
  * Still updates Auth0 metadata for backwards compatibility
  */
-export default withApiAuthRequired(async function onboardingCompleted(req, res) {
+export default async function onboardingCompleted(req, res) {
   try {
-    const session = await getSession(req, res);
+    const session = await auth0.getSession(req);
     
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Not authenticated' });
@@ -47,7 +47,8 @@ export default withApiAuthRequired(async function onboardingCompleted(req, res) 
         
         // Fall back to Auth0 as secondary source
         try {
-          const userData = await auth0Client.getUser({ id: userId });
+          // Use the auth0 default export for compatibility with old auth0Client
+          const userData = await auth0.default.getUser({ id: userId });
           
           if (userData && userData.user_metadata) {
             completed = userData.user_metadata.onboardingCompleted === true;
@@ -107,7 +108,7 @@ export default withApiAuthRequired(async function onboardingCompleted(req, res) 
           // Attempt to update directly in Auth0 with retry logic
           const updateWithRetry = async (retries = 3, delay = 500) => {
             try {
-              await auth0Client.updateUserMetadata({ id: userId }, {
+              await auth0.default.updateUserMetadata({ id: userId }, {
                 onboardingCompleted: true,
                 onboardingCompletedAt: timestamp
               });
@@ -155,4 +156,4 @@ export default withApiAuthRequired(async function onboardingCompleted(req, res) 
     console.error('Error in onboarding completion endpoint:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
-});
+};

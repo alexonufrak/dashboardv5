@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/router"
 import dynamic from "next/dynamic"
-import { withPageAuthRequired } from "@auth0/nextjs-auth0"
+import { auth0 } from "@/lib/auth0"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { Skeleton } from "@/components/ui/skeleton"
 import MainDashboardLayout from "@/components/layout/MainDashboardLayout"
@@ -118,6 +118,27 @@ function ProgramPage() {
   )
 }
 
-export const getServerSideProps = withPageAuthRequired()
+// Auth protection with Auth0 v4
+export async function getServerSideProps(context) {
+  // Get the session using Auth0 v4 client
+  const session = await auth0.getSession(context.req);
+  
+  // Redirect to login if no session
+  if (!session) {
+    return {
+      redirect: {
+        destination: '/auth/login?returnTo=' + encodeURIComponent(context.resolvedUrl),
+        permanent: false,
+      },
+    };
+  }
+  
+  // Return the user prop to maintain compatibility with existing code
+  return {
+    props: {
+      user: session.user || null,
+    },
+  };
+}
 
 export default ProgramPage

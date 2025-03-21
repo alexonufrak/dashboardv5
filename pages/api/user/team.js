@@ -1,10 +1,10 @@
 // pages/api/user/team.js
-import { getSession, withApiAuthRequired } from "@auth0/nextjs-auth0"
+import { auth0 } from "@/lib/auth0"
 import { getCompleteUserProfile } from "../../../lib/userProfile"
 import { getUserTeams } from "../../../lib/airtable"
 
 async function handler(req, res) {
-  const session = await getSession(req, res)
+  const session = await auth0.getSession(req)
   if (!session || !session.user) {
     return res.status(401).json({ error: "Not authenticated" })
   }

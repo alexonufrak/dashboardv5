@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
-import { useUser } from "@auth0/nextjs-auth0/client"
+import { useUser } from "@auth0/nextjs-auth0"
 import Head from "next/head"
 import Link from "next/link"
 import { AppSidebar } from "./app-sidebar"
@@ -13,7 +13,7 @@ import { isProgramRoute } from '@/lib/routing'
 import { Skeleton } from "@/components/ui/skeleton"
 import { Toaster } from "sonner"
 import ProfileEditModal from "@/components/profile/ProfileEditModal"
-import { useDashboard, DashboardContext } from "@/contexts/DashboardContext"
+import { useDashboard } from "@/contexts/DashboardContext"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import RefreshButton from "@/components/common/RefreshButton"
@@ -218,9 +218,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
   // For dashboard pages, always show the sidebar if the user is logged in
   const renderWithSidebar = showSidebar;
   
-  // Access dashboard context directly with the hook - let React handle if it's not available
-  // This avoids the useEffect not defined error by ensuring hooks are always called
-  const dashboardContext = React.useContext(DashboardContext);
+  // We're already using the useDashboard hook above, so no need to access the context directly
   
   // Set default title if empty
   const pageTitle = title?.trim() ? title : "xFoundry Hub";

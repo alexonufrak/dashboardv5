@@ -1,4 +1,4 @@
-import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import { auth0 } from '@/lib/auth0';
 import { checkInitiativeConflicts } from '@/lib/airtable';
 import { getCompleteUserProfile } from '@/lib/userProfile';
 
@@ -6,7 +6,7 @@ import { getCompleteUserProfile } from '@/lib/userProfile';
  * API endpoint to check if the current user has conflicts with the specified initiative
  * Uses the Participation table as source of truth instead of applications
  */
-export default withApiAuthRequired(async function checkInitiativeConflictsHandler(req, res) {
+export default async function checkInitiativeConflictsHandler(req, res) {
   try {
     // Get initiative name from query params
     const { initiative } = req.query;
@@ -19,7 +19,7 @@ export default withApiAuthRequired(async function checkInitiativeConflictsHandle
     }
 
     // Get the user session
-    const session = await getSession(req, res);
+    const session = await auth0.getSession(req);
     
     if (!session || !session.user) {
       return res.status(401).json({ 
@@ -71,4 +71,4 @@ export default withApiAuthRequired(async function checkInitiativeConflictsHandle
       hasConflict: false
     });
   }
-});
+};

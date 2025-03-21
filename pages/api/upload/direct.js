@@ -1,5 +1,5 @@
 import { put } from '@vercel/blob';
-import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import { auth0 } from '@/lib/auth0';
 import formidable from 'formidable';
 import fs from 'fs';
 
@@ -10,10 +10,10 @@ export const config = {
 };
 
 // Direct server-side upload using put method
-export default withApiAuthRequired(async function handler(req, res) {
+export default async function handler(req, res) {
   try {
     // Get the user session
-    const session = await getSession(req, res);
+    const session = await auth0.getSession(req);
     if (!session?.user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -100,4 +100,4 @@ export default withApiAuthRequired(async function handler(req, res) {
       details: error.message
     });
   }
-});
+};

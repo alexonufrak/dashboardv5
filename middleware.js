@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@auth0/nextjs-auth0/edge';
+import { auth0 } from './lib/auth0';
 
 /**
  * Next.js Middleware for handling redirects
@@ -7,9 +7,17 @@ import { getSession } from '@auth0/nextjs-auth0/edge';
  * and redirects users to onboarding page if needed
  */
 export async function middleware(request) {
+  // First, get the Auth0 response to handle auth routes and session management
+  const authResponse = await auth0.middleware(request);
+  
   const { pathname, search } = request.nextUrl;
   
-  // Legacy routes that need to be redirected
+  // If path starts with /auth, let the auth middleware handle it
+  if (pathname.startsWith('/auth')) {
+    return authResponse;
+  }
+  
+  // Handle legacy URL redirects
   
   // 1. Handle dashboard?program=X -> /dashboard/programs/X
   if (pathname === '/dashboard' && search.includes('program=')) {
@@ -53,21 +61,30 @@ export async function middleware(request) {
     );
   }
   
-  // 6. Onboarding check moved to client-side to avoid auth0 edge compatibility issues
-  // We'll handle onboarding check in _app.js or a layout component instead
+  // For protected routes, can check session and redirect to login if needed
+  // Uncomment and modify as needed
+  /*
+  if (pathname.startsWith('/dashboard') || pathname.startsWith('/program') || pathname === '/onboarding' || pathname === '/profile') {
+    const session = await auth0.getSession(request);
+    if (!session) {
+      return NextResponse.redirect(new URL('/auth/login?returnTo=' + encodeURIComponent(pathname), request.url));
+    }
+  }
+  */
   
-  // Continue to the requested page
-  return NextResponse.next();
+  // Return the auth response to ensure cookies are handled correctly
+  return authResponse;
 }
 
 // Configure middleware to run on specific paths
 export const config = {
   matcher: [
-    // Run on these paths
-    '/dashboard',
-    '/dashboard-shell',
-    '/program-dashboard',
-    '/program/:path*', // Legacy program routes
-    '/dashboard/program/:path*', // Old dashboard program routes that should redirect to programs
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
+     */
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
   ],
 };

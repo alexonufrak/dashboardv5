@@ -1,6 +1,7 @@
 "use client"
 
-import { withPageAuthRequired } from "@auth0/nextjs-auth0"
+// Import Auth0 client for session handling
+import { auth0 } from "@/lib/auth0"
 import { useDashboard } from "@/contexts/DashboardContext"
 import dynamic from "next/dynamic"
 import { useState, useEffect } from "react"
@@ -241,7 +242,27 @@ function Dashboard() {
   )
 }
 
-// Wrap with auth protection
-export const getServerSideProps = withPageAuthRequired()
+// Auth protection with Auth0 v4
+export async function getServerSideProps(context) {
+  // Get the session using Auth0 v4 client 
+  const session = await auth0.getSession(context.req);
+  
+  // Redirect to login if no session
+  if (!session) {
+    return {
+      redirect: {
+        destination: '/auth/login?returnTo=/dashboard',
+        permanent: false,
+      },
+    };
+  }
+  
+  // Return the user prop to maintain compatibility with existing code
+  return {
+    props: {
+      user: session.user || null,
+    },
+  };
+}
 
 export default Dashboard

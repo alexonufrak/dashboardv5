@@ -1,4 +1,4 @@
-import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0'
+import { auth0 } from '@/lib/auth0'
 import { getUserProfile, base, createParticipationRecord } from '@/lib/airtable'
 
 /**
@@ -6,15 +6,15 @@ import { getUserProfile, base, createParticipationRecord } from '@/lib/airtable'
  * @param {Object} req - Next.js API Request
  * @param {Object} res - Next.js API Response
  */
-export default withApiAuthRequired(async function createApplicationHandler(req, res) {
+export default async function createApplicationHandler(req, res) {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
-    // Get the user session
-    const session = await getSession(req, res)
+    // Get the user session using Auth0 v4
+    const session = await auth0.getSession(req)
     
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Not authenticated' })
@@ -401,4 +401,4 @@ export default withApiAuthRequired(async function createApplicationHandler(req, 
     
     return res.status(500).json({ error: 'Failed to create application: ' + error.message })
   }
-})
+}

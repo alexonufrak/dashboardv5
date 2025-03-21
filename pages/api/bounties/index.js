@@ -1,4 +1,4 @@
-import { getSession, withApiAuthRequired } from '@auth0/nextjs-auth0'
+import { auth0 } from '@/lib/auth0'
 import { base } from '@/lib/airtable'
 import { getCompleteUserProfile } from '@/lib/userProfile'
 
@@ -7,9 +7,9 @@ import { getCompleteUserProfile } from '@/lib/userProfile'
  * @param {Object} req - Next.js request object
  * @param {Object} res - Next.js response object
  */
-export default withApiAuthRequired(async function handler(req, res) {
+export default async function handler(req, res) {
   try {
-    const session = await getSession(req, res)
+    const session = await auth0.getSession(req)
     if (!session) {
       return res.status(401).json({ error: 'Not authenticated' })
     }
@@ -78,4 +78,4 @@ export default withApiAuthRequired(async function handler(req, res) {
     console.error('Error fetching bounties:', error)
     res.status(500).json({ error: 'Failed to fetch bounties', details: error.message })
   }
-})
+}

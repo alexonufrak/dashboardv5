@@ -1,4 +1,4 @@
-import { getSession, withApiAuthRequired } from "@auth0/nextjs-auth0";
+import { auth0 } from "@/lib/auth0";
 import { getAllPrograms } from "../../../lib/airtable";
 
 async function handler(req, res) {
