@@ -215,7 +215,7 @@ const MainDashboardLayout = ({
 
 // SidebarShell component to properly handle React hooks
 function SidebarShell({ children }) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = React.useState(true);
   return children(sidebarOpen, setSidebarOpen);
 }
 
