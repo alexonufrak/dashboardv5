@@ -13,7 +13,7 @@ import { isProgramRoute } from '@/lib/routing'
 import { Skeleton } from "@/components/ui/skeleton"
 import { Toaster } from "sonner"
 import ProfileEditModal from "@/components/profile/ProfileEditModal"
-import { useDashboard } from "@/contexts/DashboardContext"
+import { useDashboard, DashboardContext } from "@/contexts/DashboardContext"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import RefreshButton from "@/components/common/RefreshButton"
@@ -218,14 +218,9 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
   // For dashboard pages, always show the sidebar if the user is logged in
   const renderWithSidebar = showSidebar;
   
-  // Get dashboard context for data refresh functionality if available
-  // Wrapped in try-catch to prevent errors in contexts where DashboardProvider isn't available
-  let dashboardContext = null;
-  try {
-    dashboardContext = useDashboard();
-  } catch (error) {
-    console.log("Dashboard context not available in this component");
-  }
+  // Access dashboard context directly with the hook - let React handle if it's not available
+  // This avoids the useEffect not defined error by ensuring hooks are always called
+  const dashboardContext = React.useContext(DashboardContext);
   
   // Set default title if empty
   const pageTitle = title?.trim() ? title : "xFoundry Hub";

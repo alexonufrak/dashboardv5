@@ -53,36 +53,8 @@ export async function middleware(request) {
     );
   }
   
-  // 4. Check if user should be redirected to onboarding
-  // Skip this check for the onboarding page itself and API routes
-  if (pathname === '/dashboard' && !pathname.startsWith('/api') && pathname !== '/onboarding') {
-    try {
-      // Get the session
-      const session = await getSession(request);
-      
-      if (session && session.user) {
-        // Make an API call to check onboarding status
-        const onboardingCheckResponse = await fetch(
-          new URL('/api/user/onboarding-completed', request.url),
-          { headers: { cookie: request.headers.get('cookie') || '' } }
-        );
-        
-        if (onboardingCheckResponse.ok) {
-          const onboardingStatus = await onboardingCheckResponse.json();
-          
-          // If onboarding is not completed, redirect to onboarding page
-          if (!onboardingStatus.completed) {
-            return NextResponse.redirect(
-              new URL('/onboarding', request.url)
-            );
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error checking onboarding status in middleware:', error);
-      // Continue to the dashboard on error (fail open)
-    }
-  }
+  // 6. Onboarding check moved to client-side to avoid auth0 edge compatibility issues
+  // We'll handle onboarding check in _app.js or a layout component instead
   
   // Continue to the requested page
   return NextResponse.next();

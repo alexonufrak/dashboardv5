@@ -7,9 +7,6 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/comp
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
-// Use explicit React hooks rather than destructured imports
-const { useState, useEffect } = React
-
 /**
  * A button component that refreshes data with status indicators
  * 
@@ -29,11 +26,11 @@ export default function RefreshButton({
   className,
   queryKeys = ["submissions", "milestones", "teams"],
 }) {
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [status, setStatus] = useState("neutral") // neutral, fresh, stale, outdated
+  const [isRefreshing, setIsRefreshing] = React.useState(false)
+  const [status, setStatus] = React.useState("neutral") // neutral, fresh, stale, outdated
   
   // Determine data freshness status based on lastUpdated timestamp
-  useEffect(() => {
+  React.useEffect(() => {
     if (!lastUpdated) {
       setStatus("neutral")
       return

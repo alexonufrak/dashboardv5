@@ -10,6 +10,7 @@ import { Analytics } from "@vercel/analytics/react"
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { ThemeProvider } from '@/components/theme-provider'
+import { useUser } from "@auth0/nextjs-auth0/client"
 
 // Simple class-based error boundary component defined inline to avoid import issues
 class ErrorBoundary extends React.Component {
@@ -53,6 +54,8 @@ class ErrorBoundary extends React.Component {
 
 // Special AppContent component to handle non-dashboard pages
 function AppContent({ Component, pageProps, router }) {
+  const { user, isLoading } = useUser();
+  
   // Check if this is a dashboard-related page to keep app state
   const isDashboardRoute = 
     router.pathname === '/dashboard' || 
@@ -66,6 +69,30 @@ function AppContent({ Component, pageProps, router }) {
     router.pathname === '/program-dashboard' ||
     // Make sure all programs-related pages are included
     router.pathname.includes('/programs/apply/');
+
+  // Handle onboarding check (moved from middleware)
+  useEffect(() => {
+    // Skip check if not logged in, loading, or not on dashboard
+    if (!user || isLoading || router.pathname !== '/dashboard') {
+      return;
+    }
+
+    async function checkOnboarding() {
+      try {
+        const response = await fetch('/api/user/onboarding-completed');
+        if (response.ok) {
+          const data = await response.json();
+          if (!data.completed) {
+            router.push('/onboarding');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+      }
+    }
+
+    checkOnboarding();
+  }, [user, isLoading, router]);
 
   // If not a dashboard route, render Component directly
   if (!isDashboardRoute) {

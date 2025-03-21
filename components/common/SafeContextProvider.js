@@ -1,30 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { useDashboard } from '@/contexts/DashboardContext';
+import React, { useContext } from 'react';
+import { DashboardContext } from '@/contexts/DashboardContext';
 
 /**
  * A wrapper component that safely provides access to the dashboard context
  * and handles cases where context might not be immediately available
  */
 function SafeContextProvider({ children, fallback }) {
-  const [contextAvailable, setContextAvailable] = useState(false);
-
-  // Attempt to access the dashboard context
-  let dashboardContext = null;
-  let contextError = null;
-
-  try {
-    dashboardContext = useDashboard();
-    // If we get here, the context is available
-    if (!contextAvailable) {
-      setContextAvailable(true);
-    }
-  } catch (error) {
-    contextError = error;
-    console.error('Error accessing dashboard context:', error);
-  }
-
+  // Always call hooks at the top level, even if we handle the null case later
+  const dashboardContext = useContext(DashboardContext);
+  
   // If context isn't available yet, show a fallback UI
-  if (!contextAvailable || contextError) {
+  if (!dashboardContext) {
     return fallback || (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mx-auto max-w-md my-6">
         <h2 className="text-yellow-800 text-lg font-semibold mb-2">Loading dashboard data...</h2>
@@ -33,7 +19,7 @@ function SafeContextProvider({ children, fallback }) {
     );
   }
 
-  // Context is available, render children
+  // Context is available, render children with it
   return children(dashboardContext);
 }
 
