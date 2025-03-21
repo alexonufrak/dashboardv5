@@ -5,6 +5,24 @@ import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Award } from "lucide-react"
 
+// Get initials from name (first letter of first name and first letter of last name)
+const getInitials = (name) => {
+  if (!name) return "??"
+  
+  // Split the name by spaces
+  const parts = name.split(" ")
+  
+  if (parts.length === 1) {
+    // If only one part (first name only), return first two letters
+    return parts[0].substring(0, 2).toUpperCase()
+  } else {
+    // Get first letter of first name and first letter of last name
+    const firstInitial = parts[0][0]
+    const lastInitial = parts[parts.length - 1][0]
+    return (firstInitial + lastInitial).toUpperCase()
+  }
+}
+
 /**
  * Team card component that displays team information with member avatars
  * and a fading cover photo
@@ -43,7 +61,7 @@ export function TeamCard({ team }) {
                   <Avatar key={member.id || index} className="border-2 border-background">
                     <AvatarImage src={member.image || member.avatar} alt={member.name || `Team member ${index + 1}`} />
                     <AvatarFallback>
-                      {member.name ? member.name.substring(0, 2).toUpperCase() : `M${index + 1}`}
+                      {member.name ? getInitials(member.name) : `M${index + 1}`}
                     </AvatarFallback>
                   </Avatar>
                 ))}

@@ -22,12 +22,19 @@ import { MoreHorizontal, UserMinus } from "lucide-react"
 
 const getInitials = (name) => {
   if (!name) return "??"
-  return name
-    .split(" ")
-    .map(part => part[0])
-    .join("")
-    .toUpperCase()
-    .substring(0, 2)
+  
+  // Split the name by spaces
+  const parts = name.split(" ")
+  
+  if (parts.length === 1) {
+    // If only one part (first name only), return first two letters
+    return parts[0].substring(0, 2).toUpperCase()
+  } else {
+    // Get first letter of first name and first letter of last name
+    const firstInitial = parts[0][0]
+    const lastInitial = parts[parts.length - 1][0]
+    return (firstInitial + lastInitial).toUpperCase()
+  }
 }
 
 const MemberStatusBadge = ({ status }) => {
@@ -96,7 +103,7 @@ const MembersTable = ({ members, onRemoveMember, isInactiveTable = false }) => {
               <TableCell>
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={member.avatar || ""} alt={member.name} />
+                    <AvatarImage src={member.image || member.avatar || ""} alt={member.name} />
                     <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
                   </Avatar>
                   <div className="font-medium flex items-center">
