@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useMemo } from "react"
+import { createContext, useContext, useState, useMemo, useEffect } from "react"
 import { useUser } from "@auth0/nextjs-auth0"
 import { useQueryClient } from '@tanstack/react-query'
 import { 
