@@ -77,6 +77,8 @@ export default function ProgramDashboard({
         bounties={bounties}
         programId={programId}
         isTeamProgram={isTeamProgram}
+        onInviteClick={() => setIsInviteDialogOpen(true)}
+        onEditTeamClick={() => setIsEditDialogOpen(true)}
       />
       
       {/* Team Dialogs */}

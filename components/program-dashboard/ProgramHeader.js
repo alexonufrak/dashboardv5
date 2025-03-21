@@ -32,11 +32,7 @@ export function ProgramHeader({
         {/* Team Card - Takes 1/3 of the space on larger screens */}
         {isTeamProgram && team && (
           <div className="md:col-span-1">
-            <TeamCard 
-              team={team} 
-              onInviteClick={onInviteClick}
-              onEditTeamClick={onEditTeamClick}
-            />
+            <TeamCard team={team} />
           </div>
         )}
       </div>

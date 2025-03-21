@@ -3,7 +3,8 @@
 import React, { useState, useRef, useEffect, Suspense } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PROGRAM_TYPES, getProgramType } from '@/lib/programComponents'
-import { ProgramOverview, ProgramTeam, ProgramMilestones, ProgramActivity, ProgramSettings } from './index'
+import { ProgramOverview, ProgramMilestones, ProgramActivity, ProgramSettings } from './index'
+import { TeamMembersTab } from '@/components/program-dashboard/TeamMembersTab'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -16,7 +17,9 @@ export default function ProgramTabs({
   bounties = [],
   programId,
   isTeamProgram,
-  initialTab = "overview"
+  initialTab = "overview",
+  onInviteClick,
+  onEditTeamClick
 }) {
   const [activeTab, setActiveTab] = useState(initialTab)
   const [contentHeight, setContentHeight] = useState("auto")
@@ -249,12 +252,10 @@ export default function ProgramTabs({
               ref={contentRefs.team}
             >
               <Suspense fallback={<div>Loading team...</div>}>
-                <ProgramTeam
-                  programData={programData}
+                <TeamMembersTab
                   team={team}
-                  bounties={bounties}
-                  milestones={milestones}
-                  onInviteMember={() => console.log('Invite member')} // Replace with actual handler
+                  onInviteClick={onInviteClick}
+                  onEditTeamClick={onEditTeamClick}
                 />
               </Suspense>
             </motion.div>
