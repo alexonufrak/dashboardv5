@@ -5,6 +5,25 @@ try {
   // ignore error
 }
 
+// Determine the application's base URL based on environment
+const getAppBaseUrl = () => {
+  // 1. Custom domain for production
+  if (process.env.NODE_ENV === 'production') {
+    return 'https://hub.xfoundry.org';
+  }
+  
+  // 2. Vercel preview deployments
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  
+  // 3. Local development
+  return 'http://localhost:3000';
+};
+
+// Make base URL available to both client and server
+process.env.NEXT_PUBLIC_APP_URL = getAppBaseUrl();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -20,6 +39,10 @@ const nextConfig = {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
+  },
+  // Make base URL available to client
+  env: {
+    NEXT_PUBLIC_APP_URL: getAppBaseUrl(),
   },
   // Add rewrites for legacy routes
   async rewrites() {

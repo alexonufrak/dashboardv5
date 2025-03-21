@@ -10,14 +10,36 @@ export async function middleware(request) {
   // First, get the Auth0 response to handle auth routes and session management
   const authResponse = await auth0.middleware(request);
   
-  // Helper function to ensure URLs have a protocol
+  /**
+   * Helper function to ensure URLs have a protocol
+   * Prioritizes custom domain for production environment
+   */
   const getBaseUrl = () => {
-    // Check if running on Vercel
+    // Get hostname from request headers
+    const host = request.headers.get('host');
+    
+    // 1. Custom domain (production) - our primary environment
+    if (host === 'hub.xfoundry.org') {
+      return 'https://hub.xfoundry.org';
+    }
+    
+    // 2. Local development
+    if (host?.includes('localhost')) {
+      return `http://${host}`;
+    }
+    
+    // 3. Vercel preview deployments
     if (process.env.VERCEL_URL) {
       return `https://${process.env.VERCEL_URL}`;
     }
-    // For local development or other environments, use host header with https
-    return `https://${request.headers.get('host')}`;
+    
+    // 4. Any other Vercel domain (including the original v0-dashboard)
+    if (host?.includes('vercel.app')) {
+      return `https://${host}`;
+    }
+    
+    // 5. Absolute fallback (should rarely be needed)
+    return 'https://hub.xfoundry.org';
   };
   
   const { pathname, search } = request.nextUrl;
