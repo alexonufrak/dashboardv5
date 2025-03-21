@@ -1,11 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import * as React from "react"
 import { RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+
+// Use explicit React hooks rather than destructured imports
+const { useState, useEffect } = React
 
 /**
  * A button component that refreshes data with status indicators
