@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0"
 import Head from "next/head"
@@ -213,6 +213,12 @@ const MainDashboardLayout = ({
   )
 }
 
+// SidebarShell component to properly handle React hooks
+function SidebarShell({ children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  return children(sidebarOpen, setSidebarOpen);
+}
+
 // Internal layout shell component
 function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcrumbs, onNavigate, user }) {
   // For dashboard pages, always show the sidebar if the user is logged in
@@ -234,11 +240,9 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
 
       {renderWithSidebar ? (
         <div className="flex flex-col min-h-screen bg-sidebar" style={{ backgroundColor: 'var(--color-sidebar)' }}>
-          {/* We need to create a sidebar state here to use in the header */}
-          {(() => {
-            const [sidebarOpen, setSidebarOpen] = useState(true);
-            
-            return (
+          {/* Using SidebarShell component to properly handle state */}
+          <SidebarShell>
+            {(sidebarOpen, setSidebarOpen) => (
               <main className="[--header-height:calc(theme(spacing.14))]">
                 <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen} className="flex flex-col">
                   {/* Main content with sidebar and content area */}
@@ -322,8 +326,8 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
                   </div>
                 </SidebarProvider>
               </main>
-            );
-          })()}
+            )}
+          </SidebarShell>
         </div>
       ) : (
         <div className="min-h-screen bg-sidebar overflow-x-hidden h-full" style={{ backgroundColor: 'var(--color-sidebar)' }}>
