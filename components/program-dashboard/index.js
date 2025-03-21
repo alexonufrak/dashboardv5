@@ -1,4 +1,6 @@
 export * from './ProgramHeader'
+export * from './ProgramCard'
+export * from './TeamCard'
 export * from './ErrorStates'
 export * from './OverviewTab'
 export * from './MilestonesTab'

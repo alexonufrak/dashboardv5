@@ -1,15 +1,12 @@
 "use client"
 
 import React from 'react'
-import Image from 'next/image'
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { CalendarIcon, Users, Award, BarChart3, Flag, Edit } from "lucide-react"
+import { ProgramCard } from './ProgramCard'
+import { TeamCard } from './TeamCard'
 
 /**
  * Program header component that displays program information and team details
+ * in a side-by-side layout with program info taking 2/3 and team info 1/3
  */
 export function ProgramHeader({
   programCohort,
@@ -22,177 +19,26 @@ export function ProgramHeader({
 }) {
   return (
     <div className="mb-6 w-full">
-      {/* Program Banner */}
-      <ProgramBanner 
-        programCohort={programCohort}
-        programInitiativeName={programInitiativeName} 
-        milestones={milestones}
-      />
-      
-      {/* Team Info (if team-based program) */}
-      {isTeamProgram && team && (
-        <TeamInfoSection 
-          team={team} 
-          onInviteClick={onInviteClick}
-          onEditTeamClick={onEditTeamClick}
-        />
-      )}
-    </div>
-  )
-}
-
-/**
- * Program banner component with program information and milestone stats
- */
-function ProgramBanner({ programCohort, programInitiativeName, milestones }) {
-  return (
-    <Card className="bg-primary/5 dark:bg-primary/10 border-primary/10 mb-4 w-full max-w-none">
-      <CardContent className="p-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 w-full">
-          <div>
-            <div className="flex gap-2 mb-2">
-              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-                {programCohort?.initiativeDetails?.name || programInitiativeName}
-              </Badge>
-              
-              {(programCohort?.['Current Cohort'] === true || 
-                programCohort?.['Current Cohort'] === 'true' || 
-                programCohort?.['Is Current'] === true ||
-                programCohort?.['Is Current'] === 'true') && (
-                <Badge variant="outline" className="bg-success/10 text-success border-success/20">
-                  Active Cohort
-                </Badge>
-              )}
-            </div>
-            <h2 className="text-xl font-semibold mb-1">
-              {programCohort?.initiativeDetails?.name || programInitiativeName || "Active Program"}
-            </h2>
-            <div className="text-sm text-muted-foreground flex items-center">
-              <CalendarIcon className="h-3.5 w-3.5 mr-1" />
-              {programCohort?.['Start Date'] && programCohort?.['End Date'] ? (
-                <span>
-                  {new Date(programCohort['Start Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
-                  {' - '}
-                  {new Date(programCohort['End Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
-                </span>
-              ) : programCohort?.['Start_Date'] && programCohort?.['End_Date'] ? (
-                <span>
-                  {new Date(programCohort['Start_Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
-                  {' - '}
-                  {new Date(programCohort['End_Date']).toLocaleDateString('en-US', {year: 'numeric', month: 'short', day: 'numeric'})}
-                </span>
-              ) : (
-                <span>Active Program • {new Date().toLocaleDateString('en-US', {year: 'numeric', month: 'long'})}</span>
-              )}
-            </div>
-          </div>
-          <div className="flex gap-2 mt-3 md:mt-0">
-            {/* Dynamic completion percentage based on actual milestones */}
-            <Badge variant="outline" className="bg-success/10 text-success border-success/20">
-              <BarChart3 className="h-3.5 w-3.5 mr-1" />
-              {(() => {
-                // Use a key to force re-render when milestones change
-                const completedCount = milestones?.filter(m => m.status === "completed").length || 0;
-                const totalCount = milestones?.length || 0;
-                const progressPercentage = totalCount > 0 
-                  ? Math.round((completedCount) / totalCount * 100) 
-                  : 0;
-                
-                // Include key values in output for easier debugging
-                return `${progressPercentage}% Complete (${completedCount}/${totalCount})`;
-              })()}
-            </Badge>
-            <Badge variant="outline" className="bg-secondary/10 text-secondary border-secondary/20">
-              <Flag className="h-3.5 w-3.5 mr-1" />
-              {(() => {
-                // Same calculation but with different wording
-                const completedCount = milestones?.filter(m => m.status === "completed").length || 0;
-                const totalCount = milestones?.length || 0;
-                return `${completedCount} of ${totalCount} Milestones`;
-              })()}
-            </Badge>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Program Card - Takes 2/3 of the space on larger screens */}
+        <div className="md:col-span-2">
+          <ProgramCard 
+            programCohort={programCohort}
+            programInitiativeName={programInitiativeName} 
+            milestones={milestones}
+          />
         </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-/**
- * Team information section with team details and actions
- */
-function TeamInfoSection({ team, onInviteClick, onEditTeamClick }) {
-  return (
-    <div className="flex flex-col w-full">
-      {/* Team Header Image */}
-      {team.image && (
-        <Card className="overflow-hidden mb-4 p-0 border">
-          <div className="w-full h-48 relative">
-            <Image 
-              src={team.image}
-              alt={`${team.name} header`}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 1200px"
-              priority
+        
+        {/* Team Card - Takes 1/3 of the space on larger screens */}
+        {isTeamProgram && team && (
+          <div className="md:col-span-1">
+            <TeamCard 
+              team={team} 
+              onInviteClick={onInviteClick}
+              onEditTeamClick={onEditTeamClick}
             />
           </div>
-        </Card>
-      )}
-      
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-12 w-12 border">
-            <AvatarImage src={team.image} alt={team.name} />
-            <AvatarFallback>{team.name?.substring(0, 2).toUpperCase() || "TM"}</AvatarFallback>
-          </Avatar>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{team.name || "Your Team"}</h1>
-            
-            {/* Team Description */}
-            {team.description && (
-              <p className="text-sm text-muted-foreground mt-1 mb-2 line-clamp-2">
-                {team.description}
-              </p>
-            )}
-            
-            {/* Team stats */}
-            <div className="flex items-center text-muted-foreground">
-              {/* Member count with very basic output - zero JS operations */}
-              <Users className="h-4 w-4 mr-1" />
-              <span data-testid="member-count">
-                {team.members?.length} member{team.members?.length !== 1 ? 's' : ''}
-              </span>
-              
-              {team.points > 0 && (
-                <>
-                  <span className="mx-2">•</span>
-                  <Award className="h-4 w-4 mr-1" />
-                  <span data-testid="team-points">
-                    {team.points} point{team.points !== 1 ? 's' : ''}
-                  </span>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onInviteClick}
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Invite Members
-          </Button>
-          <Button 
-            size="sm"
-            onClick={onEditTeamClick}
-          >
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Team
-          </Button>
-        </div>
+        )}
       </div>
     </div>
   )
