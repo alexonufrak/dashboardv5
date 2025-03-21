@@ -10,6 +10,16 @@ export async function middleware(request) {
   // First, get the Auth0 response to handle auth routes and session management
   const authResponse = await auth0.middleware(request);
   
+  // Helper function to ensure URLs have a protocol
+  const getBaseUrl = () => {
+    // Check if running on Vercel
+    if (process.env.VERCEL_URL) {
+      return `https://${process.env.VERCEL_URL}`;
+    }
+    // For local development or other environments, use host header with https
+    return `https://${request.headers.get('host')}`;
+  };
+  
   const { pathname, search } = request.nextUrl;
   
   // If path starts with /auth, let the auth middleware handle it
@@ -25,38 +35,23 @@ export async function middleware(request) {
     const programId = params.get('program');
     
     if (programId) {
-      // Ensure we have a proper base URL with protocol
-      const baseUrl = request.url.startsWith('http') ? 
-        request.url : 
-        `https://${request.headers.get('host')}`;
-      
       return NextResponse.redirect(
-        new URL(`/dashboard/programs/${encodeURIComponent(programId)}`, baseUrl)
+        new URL(`/dashboard/programs/${encodeURIComponent(programId)}`, getBaseUrl())
       );
     }
   }
   
   // 2. Handle /program-dashboard -> /dashboard/programs
   if (pathname === '/program-dashboard') {
-    // Ensure we have a proper base URL with protocol
-    const baseUrl = request.url.startsWith('http') ? 
-      request.url : 
-      `https://${request.headers.get('host')}`;
-    
     return NextResponse.redirect(
-      new URL('/dashboard/programs', baseUrl)
+      new URL('/dashboard/programs', getBaseUrl())
     );
   }
   
   // 3. Handle /dashboard-shell -> /dashboard
   if (pathname === '/dashboard-shell') {
-    // Ensure we have a proper base URL with protocol
-    const baseUrl = request.url.startsWith('http') ? 
-      request.url : 
-      `https://${request.headers.get('host')}`;
-    
     return NextResponse.redirect(
-      new URL('/dashboard', baseUrl)
+      new URL('/dashboard', getBaseUrl())
     );
   }
   
@@ -64,13 +59,8 @@ export async function middleware(request) {
   if (pathname.startsWith('/program/') && !pathname.startsWith('/program-dashboard')) {
     const programPath = pathname.replace('/program/', '');
     
-    // Ensure we have a proper base URL with protocol
-    const baseUrl = request.url.startsWith('http') ? 
-      request.url : 
-      `https://${request.headers.get('host')}`;
-    
     return NextResponse.redirect(
-      new URL(`/dashboard/programs/${programPath}${search}`, baseUrl)
+      new URL(`/dashboard/programs/${programPath}${search}`, getBaseUrl())
     );
   }
   
@@ -78,13 +68,8 @@ export async function middleware(request) {
   if (pathname.startsWith('/dashboard/program/')) {
     const programPath = pathname.replace('/dashboard/program/', '');
     
-    // Ensure we have a proper base URL with protocol
-    const baseUrl = request.url.startsWith('http') ? 
-      request.url : 
-      `https://${request.headers.get('host')}`;
-    
     return NextResponse.redirect(
-      new URL(`/dashboard/programs/${programPath}${search}`, baseUrl)
+      new URL(`/dashboard/programs/${programPath}${search}`, getBaseUrl())
     );
   }
   
@@ -94,12 +79,7 @@ export async function middleware(request) {
   if (pathname.startsWith('/dashboard') || pathname.startsWith('/program') || pathname === '/onboarding' || pathname === '/profile') {
     const session = await auth0.getSession(request);
     if (!session) {
-      // Ensure we have a proper base URL with protocol
-      const baseUrl = request.url.startsWith('http') ? 
-        request.url : 
-        `https://${request.headers.get('host')}`;
-      
-      return NextResponse.redirect(new URL('/auth/login?returnTo=' + encodeURIComponent(pathname), baseUrl));
+      return NextResponse.redirect(new URL('/auth/login?returnTo=' + encodeURIComponent(pathname), getBaseUrl()));
     }
   }
   */
