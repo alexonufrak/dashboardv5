@@ -218,8 +218,14 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
   // For dashboard pages, always show the sidebar if the user is logged in
   const renderWithSidebar = showSidebar;
   
-  // Get dashboard context for data refresh functionality
-  const dashboardContext = useDashboard();
+  // Get dashboard context for data refresh functionality if available
+  // Wrapped in try-catch to prevent errors in contexts where DashboardProvider isn't available
+  let dashboardContext = null;
+  try {
+    dashboardContext = useDashboard();
+  } catch (error) {
+    console.log("Dashboard context not available in this component");
+  }
   
   // Set default title if empty
   const pageTitle = title?.trim() ? title : "xFoundry Hub";
@@ -260,15 +266,17 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
                           
                           {/* User Avatar with Dropdown - align to the right */}
                           <div className="ml-auto flex items-center gap-2">
-                            {/* Data refresh button */}
-                            <RefreshButton 
-                              lastUpdated={dashboardContext?.getLastUpdatedTimestamp?.()}
-                              queryKeys={["submissions", "milestones", "teams", "profile", "participation"]}
-                              variant="ghost"
-                              size="sm"
-                              className="hover:bg-background dark:hover:bg-neutral-800 tooltip-trigger"
-                              aria-label="Refresh dashboard data"
-                            />
+                            {/* Data refresh button - only shown when dashboard context is available */}
+                            {dashboardContext && (
+                              <RefreshButton 
+                                lastUpdated={dashboardContext.getLastUpdatedTimestamp?.()}
+                                queryKeys={["submissions", "milestones", "teams", "profile", "participation"]}
+                                variant="ghost"
+                                size="sm"
+                                className="hover:bg-background dark:hover:bg-neutral-800 tooltip-trigger"
+                                aria-label="Refresh dashboard data"
+                              />
+                            )}
                             
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
