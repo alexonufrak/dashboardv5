@@ -111,6 +111,7 @@ const MainDashboardLayout = ({
         profile={profile} 
         showSidebar={showSidebar} 
         shouldShowBreadcrumbs={shouldShowBreadcrumbs}
+        dashboardContext={dashboardContext}
       >
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
@@ -137,6 +138,7 @@ const MainDashboardLayout = ({
         user={user}
         showSidebar={showSidebar}
         shouldShowBreadcrumbs={shouldShowBreadcrumbs}
+        dashboardContext={dashboardContext}
       >
         <div className="space-y-6 w-full py-6">
           <Skeleton className="h-8 w-64 mb-6" />
@@ -197,6 +199,7 @@ const MainDashboardLayout = ({
         showSidebar={showSidebar}
         shouldShowBreadcrumbs={shouldShowBreadcrumbs}
         onNavigate={onNavigate}
+        dashboardContext={dashboardContext}
       >
         {children}
       </LayoutShell>
@@ -221,11 +224,9 @@ function SidebarShell({ children }) {
 }
 
 // Internal layout shell component
-function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcrumbs, onNavigate, user }) {
+function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcrumbs, onNavigate, user, dashboardContext }) {
   // For dashboard pages, always show the sidebar if the user is logged in
   const renderWithSidebar = showSidebar;
-  
-  // We're already using the useDashboard hook above, so no need to access the context directly
   
   // Set default title if empty
   const pageTitle = title?.trim() ? title : "xFoundry Hub";
