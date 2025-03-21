@@ -65,7 +65,7 @@ export default withApiAuthRequired(async function teamHandler(req, res) {
     
     // PATCH request - update team details
     if (req.method === 'PATCH') {
-      const { name, description } = req.body
+      const { name, description, fileInfo } = req.body
       
       // Validate request data
       if (!name || !name.trim()) {
@@ -88,8 +88,25 @@ export default withApiAuthRequired(async function teamHandler(req, res) {
         return res.status(403).json({ error: 'You must be a team member to update this team' })
       }
       
+      // Prepare update data including fileInfo if provided
+      const updateData = { 
+        name, 
+        description 
+      }
+      
+      // Add image if provided in fileInfo
+      if (fileInfo && fileInfo.url) {
+        console.log(`Adding team header image: ${fileInfo.url}`)
+        updateData.image = [
+          {
+            url: fileInfo.url,
+            filename: fileInfo.filename || `team_header_${Date.now()}`
+          }
+        ]
+      }
+      
       // Update the team
-      const updatedTeam = await updateTeam(teamId, { name, description })
+      const updatedTeam = await updateTeam(teamId, updateData)
       
       // Get the complete updated team with members
       const completeTeam = await getTeamById(teamId, userProfile.contactId)
