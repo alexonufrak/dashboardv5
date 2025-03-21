@@ -87,17 +87,27 @@ function MyApp({ Component, pageProps }) {
   // Removed pageLoading state as we've removed the loading overlay
   
   // Create a client for React Query with persistent cache
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 5 * 60 * 1000, // 5 minutes by default
-        cacheTime: 60 * 60 * 1000, // 1 hour - keep data in cache longer for page navigations
-        retry: 1,
-        refetchOnWindowFocus: false, // Disable refetching on window focus to prevent unnecessary API calls
-        refetchOnReconnect: true, // Refetch when reconnecting (useful after a page refresh)
+  const [queryClient] = useState(() => {
+    const client = new QueryClient({
+      defaultOptions: {
+        queries: {
+          staleTime: 5 * 60 * 1000, // 5 minutes by default
+          cacheTime: 60 * 60 * 1000, // 1 hour - keep data in cache longer for page navigations
+          retry: 1,
+          refetchOnWindowFocus: false, // Disable refetching on window focus to prevent unnecessary API calls
+          refetchOnReconnect: true, // Refetch when reconnecting (useful after a page refresh)
+        },
       },
-    },
-  }));
+    });
+    
+    // Expose the queryClient globally for direct cache invalidation
+    if (typeof window !== 'undefined') {
+      window._queryClient = client;
+      console.log("QueryClient exposed globally for direct cache invalidation");
+    }
+    
+    return client;
+  });
   
   // Add listener for page refresh (not navigation) to clear initiative conflicts cache
   useEffect(() => {

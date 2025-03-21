@@ -433,6 +433,26 @@ export default function MilestoneSubmissionDialog({
       // We need to delay this slightly to ensure the backend data is updated
       setTimeout(async () => {
         try {
+          // Get the React Query queryClient to invalidate caches
+          const queryClient = window._queryClient;
+          
+          // Invalidate both the specific milestone submissions query and all other related queries
+          if (queryClient) {
+            console.log("Invalidating React Query caches for milestone submission");
+            
+            // Invalidate specific milestone submissions
+            queryClient.invalidateQueries(['submissions', teamData.id, milestone.id]);
+            
+            // Also invalidate any queries that might include this milestone data
+            queryClient.invalidateQueries(['submissions']);
+            queryClient.invalidateQueries(['milestones']);
+            queryClient.invalidateQueries(['participation']);
+            
+            console.log("Refreshing milestone data via React Query");
+          } else {
+            console.warn("QueryClient not available for cache invalidation, falling back to fetch");
+          }
+          
           // Fetch the latest submissions for this milestone
           const refreshResponse = await fetch(`/api/teams/${teamData.id}/submissions?milestoneId=${milestone.id}`);
           

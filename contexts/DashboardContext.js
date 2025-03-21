@@ -690,6 +690,74 @@ export function DashboardProvider({ children }) {
     }))
   }
   
+  // Track data refresh timestamps
+  const [lastUpdatedTimestamps, setLastUpdatedTimestamps] = useState({
+    teams: null,
+    milestones: null,
+    submissions: null,
+    profile: null,
+    participations: null,
+    applications: null,
+  });
+  
+  // Update timestamps when data changes
+  useEffect(() => {
+    if (teams) {
+      setLastUpdatedTimestamps(prev => ({ ...prev, teams: new Date().toISOString() }));
+    }
+  }, [teams]);
+  
+  useEffect(() => {
+    if (milestones && milestones.length > 0) {
+      setLastUpdatedTimestamps(prev => ({ ...prev, milestones: new Date().toISOString() }));
+    }
+  }, [milestones]);
+  
+  useEffect(() => {
+    if (profile) {
+      setLastUpdatedTimestamps(prev => ({ ...prev, profile: new Date().toISOString() }));
+    }
+  }, [profile]);
+  
+  useEffect(() => {
+    if (participationData) {
+      setLastUpdatedTimestamps(prev => ({ ...prev, participations: new Date().toISOString() }));
+    }
+  }, [participationData]);
+  
+  // Get the latest update timestamp across all data types
+  const getLastUpdatedTimestamp = () => {
+    const timestamps = Object.values(lastUpdatedTimestamps).filter(Boolean);
+    if (timestamps.length === 0) return null;
+    
+    // Sort timestamps in descending order and get the most recent
+    return timestamps.sort((a, b) => new Date(b) - new Date(a))[0];
+  };
+  
+  // Enhanced refreshData function that updates timestamps
+  const refreshDataWithTimestamps = (dataType) => {
+    refreshData(dataType);
+    
+    // Update timestamp for the refreshed data type
+    if (dataType && dataType !== 'all') {
+      setLastUpdatedTimestamps(prev => ({ 
+        ...prev, 
+        [dataType]: new Date().toISOString() 
+      }));
+    } else if (dataType === 'all') {
+      // Update all timestamps
+      const now = new Date().toISOString();
+      setLastUpdatedTimestamps({
+        teams: now,
+        milestones: now,
+        submissions: now,
+        profile: now,
+        participations: now,
+        applications: now,
+      });
+    }
+  };
+
   // Create context value
   const value = {
     // User & profile data
@@ -724,7 +792,7 @@ export function DashboardProvider({ children }) {
     isUpdating,
     
     // Actions
-    refreshData,
+    refreshData: refreshDataWithTimestamps,
     handleProfileUpdate,
     
     // Helper methods for navigation
@@ -739,7 +807,11 @@ export function DashboardProvider({ children }) {
     // Multiple teams per program support
     getTeamsForProgram,
     setActiveTeamForProgram,
-    getActiveTeamForProgram
+    getActiveTeamForProgram,
+    
+    // Data freshness tracking
+    lastUpdatedTimestamps,
+    getLastUpdatedTimestamp
   }
 
   return (

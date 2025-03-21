@@ -53,6 +53,20 @@ export default function ProgramTabs({
   // Handler for tab changes
   const handleTabChange = (value) => {
     setActiveTab(value)
+    
+    // Force invalidation of relevant caches when switching tabs to prevent stale data
+    if (typeof window !== 'undefined' && window._queryClient) {
+      console.log(`Tab changed to ${value}, refreshing relevant data`);
+      
+      // Invalidate caches based on which tab we're switching to
+      if (value === 'milestones' || value === 'bounties') {
+        window._queryClient.invalidateQueries(['submissions']);
+        window._queryClient.invalidateQueries(['milestones']);
+      } else if (value === 'overview') {
+        window._queryClient.invalidateQueries(['submissions']);
+        window._queryClient.invalidateQueries(['milestones']);
+      }
+    }
   }
   
   // Handler for navigation between tabs

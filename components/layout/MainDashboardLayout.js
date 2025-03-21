@@ -16,6 +16,7 @@ import ProfileEditModal from "@/components/profile/ProfileEditModal"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import RefreshButton from "@/components/common/RefreshButton"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -215,7 +216,10 @@ const MainDashboardLayout = ({
 // Internal layout shell component
 function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcrumbs, onNavigate, user }) {
   // For dashboard pages, always show the sidebar if the user is logged in
-  const renderWithSidebar = showSidebar; 
+  const renderWithSidebar = showSidebar;
+  
+  // Get dashboard context for data refresh functionality
+  const dashboardContext = useDashboard();
   
   // Set default title if empty
   const pageTitle = title?.trim() ? title : "xFoundry Hub";
@@ -255,7 +259,17 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
                           <h2 className="text-lg font-bold truncate">{title || "xFoundry Hub"}</h2>
                           
                           {/* User Avatar with Dropdown - align to the right */}
-                          <div className="ml-auto">
+                          <div className="ml-auto flex items-center gap-2">
+                            {/* Data refresh button */}
+                            <RefreshButton 
+                              lastUpdated={dashboardContext?.getLastUpdatedTimestamp?.()}
+                              queryKeys={["submissions", "milestones", "teams", "profile", "participation"]}
+                              variant="ghost"
+                              size="sm"
+                              className="hover:bg-background dark:hover:bg-neutral-800 tooltip-trigger"
+                              aria-label="Refresh dashboard data"
+                            />
+                            
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary-foreground/10">
