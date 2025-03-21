@@ -5,18 +5,22 @@ import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Users, Edit } from "lucide-react"
 import TeamMemberList from "@/components/teams/TeamMemberList"
+import PointsSummary from "@/components/program/common/PointsSummary"
 
 /**
  * Team tab content component that displays team member list with action buttons
  */
 export function TeamMembersTab({ team, onInviteClick, onEditTeamClick }) {
   return (
-    <Card className="w-full max-w-none">
-      <CardHeader className="flex flex-row items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <div>
-          <CardTitle>Team</CardTitle>
-          <CardDescription>All members of {team?.name || "your team"}</CardDescription>
+          <h2 className="text-2xl font-bold">Team</h2>
+          <p className="text-muted-foreground">
+            {team?.members?.length || 0} members in {team?.name || "your team"}
+          </p>
         </div>
+        
         <div className="flex gap-2">
           <Button 
             variant="outline" 
@@ -34,10 +38,35 @@ export function TeamMembersTab({ team, onInviteClick, onEditTeamClick }) {
             Edit Team
           </Button>
         </div>
-      </CardHeader>
-      <CardContent className="w-full">
-        <TeamMemberList team={team} detailed={true} />
-      </CardContent>
-    </Card>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Main members list */}
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Team Members</CardTitle>
+              <CardDescription>All members of {team?.name || "your team"}</CardDescription>
+            </CardHeader>
+            <CardContent className="w-full">
+              <TeamMemberList team={team} detailed={true} />
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Team Points Summary */}
+        <div className="md:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Team Points</CardTitle>
+              <CardDescription>Point contributions and achievements</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PointsSummary team={team} />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
   )
 }
