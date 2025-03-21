@@ -1,5 +1,6 @@
 import { handleUpload } from '@vercel/blob/client';
 import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import { FILE_UPLOAD, getAllowedMimeTypes } from '@/lib/constants';
 
 export const config = {
   api: {
@@ -93,25 +94,27 @@ export default withApiAuthRequired(async function handler(req, res) {
         const validUntil = now.setMinutes(now.getMinutes() + 30); // 30 minute token validity
         
         return {
-          // Allow specific file types for milestone submissions
-          allowedContentTypes: [
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'application/vnd.ms-excel',
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'application/vnd.ms-powerpoint',
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            'image/jpeg',
-            'image/png',
-            'image/gif',
-            'application/zip',
-            'text/plain',
-            'image/svg+xml',
-            'image/x-icon',
-            'image/vnd.microsoft.icon'
-          ],
-          maximumSizeInBytes: 5 * 1024 * 1024, // 5MB
+          // Allow specific file types based on upload purpose
+          allowedContentTypes: (() => {
+            // Determine if this is a team header or milestone upload based on metadata
+            if (metadata.type === 'team-header') {
+              return getAllowedMimeTypes(FILE_UPLOAD.TEAM_IMAGE.ALLOWED_TYPES);
+            } else {
+              // Default to milestone submission allowed types (includes all image types)
+              return getAllowedMimeTypes(FILE_UPLOAD.MILESTONE_SUBMISSION.ALLOWED_TYPES);
+            }
+          })(),
+          maximumSizeInBytes: (() => {
+            // Use different size limits based on upload type
+            if (metadata.type === 'team-header') {
+              return FILE_UPLOAD.TEAM_IMAGE.MAX_SIZE;
+            } else {
+              // For milestone submissions, we might need to chunk larger files
+              // Vercel Blob might have its own limits on single file size
+              // For safety, cap at a reasonable size (100MB) for single file upload
+              return Math.min(FILE_UPLOAD.MILESTONE_SUBMISSION.MAX_SIZE, 100 * 1024 * 1024);
+            }
+          })(),
           validUntil,
           addRandomSuffix: true, // Add random suffix to prevent filename conflicts
           tokenPayload: JSON.stringify({

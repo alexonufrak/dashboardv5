@@ -8,6 +8,7 @@ import { format, parseISO, isValid } from "date-fns"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { upload } from "@vercel/blob/client"
+import { FILE_UPLOAD, formatFileSize } from "@/lib/constants"
 import {
   Dialog,
   DialogContent,
@@ -76,8 +77,9 @@ export default function MilestoneSubmissionDialog({
 
   // Dropzone setup
   const onDrop = useCallback(acceptedFiles => {
-    // Maximum allowed combined file size (10MB)
-    const MAX_TOTAL_SIZE = 10 * 1024 * 1024;
+    // Maximum allowed combined file size
+    const MAX_TOTAL_SIZE = FILE_UPLOAD.MILESTONE_SUBMISSION.MAX_SIZE;
+    const MAX_SINGLE_FILE_SIZE = MAX_TOTAL_SIZE / 2; // Half of total limit for a single file
     
     // Filter out files that are too large or not compatible
     const validFiles = [];
@@ -85,14 +87,14 @@ export default function MilestoneSubmissionDialog({
     
     acceptedFiles.forEach(file => {
       // Check file size
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error(`"${file.name}" is too large. Files must be under 5MB each.`);
+      if (file.size > MAX_SINGLE_FILE_SIZE) {
+        toast.error(`"${file.name}" is too large. Files must be under ${formatFileSize(MAX_SINGLE_FILE_SIZE)} each.`);
         return;
       }
       
       // Check total accumulated size
       if (totalSize + file.size > MAX_TOTAL_SIZE) {
-        toast.error(`Total file size exceeds 10MB limit. "${file.name}" was not added.`);
+        toast.error(`Total file size exceeds ${formatFileSize(MAX_TOTAL_SIZE)} limit. "${file.name}" was not added.`);
         return;
       }
       
@@ -117,20 +119,8 @@ export default function MilestoneSubmissionDialog({
   const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
     onDrop,
     maxFiles: 5,
-    maxSize: 10485760, // 10MB
-    accept: {
-      'application/pdf': ['.pdf'],
-      'application/msword': ['.doc'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-      'application/vnd.ms-excel': ['.xls'],
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/vnd.ms-powerpoint': ['.ppt'],
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
-      'image/jpeg': ['.jpg', '.jpeg'],
-      'image/png': ['.png'],
-      'application/zip': ['.zip'],
-      'text/plain': ['.txt']
-    },
+    maxSize: FILE_UPLOAD.MILESTONE_SUBMISSION.MAX_SIZE, // From constants
+    accept: FILE_UPLOAD.MILESTONE_SUBMISSION.ALLOWED_TYPES,
     onDropRejected: (rejectedFiles) => {
       // Show a toast for each rejected file
       rejectedFiles.forEach(rejection => {
@@ -164,7 +154,7 @@ export default function MilestoneSubmissionDialog({
       // Create a unique folder path for each team/milestone combination
       // Include a timestamp to avoid filename conflicts
       const timestamp = Date.now();
-      const folderPath = `team-${teamData.id}/milestone-${milestone.id}/${timestamp}`;
+      const folderPath = `${FILE_UPLOAD.MILESTONE_SUBMISSION.FOLDER_PATH}/team-${teamData.id}/milestone-${milestone.id}/${timestamp}`;
       
       // Clean up the file name to avoid path issues
       const safeFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
@@ -293,7 +283,7 @@ export default function MilestoneSubmissionDialog({
           console.log('Content type rejected by Vercel Blob:', file.type);
           
         } else if (error.message.includes('maximumSizeInBytes') || error.message.includes('size')) {
-          errorMessage = 'File exceeds maximum size limit (5MB).';
+          errorMessage = `File exceeds maximum size limit (${formatFileSize(FILE_UPLOAD.MILESTONE_SUBMISSION.MAX_SIZE / 2)}).`;
           shouldSuggestLinkOption = true;
           
         } else if (error.message.includes('network') || error.message.includes('fetch')) {
@@ -853,7 +843,7 @@ export default function MilestoneSubmissionDialog({
                       {isDragActive ? "Drop files here" : "Drag and drop files here, or click to select"}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Accepts PDF, Word, Excel, PowerPoint, images, and ZIP (Max 10MB)
+                      Accepts PDF, Word, Excel, PowerPoint, images, and ZIP (Max {formatFileSize(FILE_UPLOAD.MILESTONE_SUBMISSION.MAX_SIZE)})
                     </p>
                   </div>
                   

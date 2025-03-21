@@ -23,6 +23,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useCreateTeam } from '@/lib/useDataFetching'
 import { upload } from '@vercel/blob/client'
 import { toast } from 'sonner'
+import { FILE_UPLOAD, formatFileSize } from "@/lib/constants"
 
 /**
  * Combined dialog for creating a new team or joining an existing team
@@ -66,7 +67,7 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
       
       // Create a unique folder path for the team header
       const timestamp = Date.now()
-      const folderPath = `team-headers/${timestamp}`
+      const folderPath = `${FILE_UPLOAD.TEAM_IMAGE.FOLDER_PATH}/${timestamp}`
       
       // Clean up the file name
       const safeFilename = headerImage.name.replace(/[^a-zA-Z0-9.-]/g, '_')
@@ -555,18 +556,10 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
                   
                   <Dropzone
                     maxFiles={1}
-                    maxSize={2 * 1024 * 1024} // 2MB
-                    accept={{
-                      'image/jpeg': ['.jpg', '.jpeg'],
-                      'image/png': ['.png'],
-                      'image/gif': ['.gif'],
-                      'image/svg+xml': ['.svg'],
-                      'image/webp': ['.webp'],
-                      'image/x-icon': ['.ico'],
-                      'image/vnd.microsoft.icon': ['.ico']
-                    }}
+                    maxSize={FILE_UPLOAD.TEAM_IMAGE.MAX_SIZE}
+                    accept={FILE_UPLOAD.TEAM_IMAGE.ALLOWED_TYPES}
                     prompt="Drag & drop a header image, or click to browse"
-                    subPrompt="PNG, JPG, SVG, WEBP, GIF, ICO up to 2MB"
+                    subPrompt={`Supported image formats up to ${formatFileSize(FILE_UPLOAD.TEAM_IMAGE.MAX_SIZE)}`}
                     onDrop={(file) => setHeaderImage(file)}
                     onFileRemove={() => setHeaderImage(null)}
                     disabled={isSubmitting || createTeamMutation.isPending || isUploading}
