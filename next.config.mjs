@@ -5,20 +5,23 @@ try {
   // ignore error
 }
 
-// Determine the application's base URL based on environment
+// Function to ensure URLs always have a protocol prefix
+const ensureProtocol = (url) => {
+  if (!url) return null;
+  return url.startsWith('http') ? url : `https://${url}`;
+};
+
+// Get base URL from auth0 config if available, otherwise use environment-specific defaults
 const getAppBaseUrl = () => {
-  // 1. Custom domain for production
-  if (process.env.NODE_ENV === 'production') {
-    return 'https://hub.xfoundry.org';
+  // Check if AUTH0_BASE_URL is provided with correct protocol
+  if (process.env.AUTH0_BASE_URL) {
+    return ensureProtocol(process.env.AUTH0_BASE_URL);
   }
   
-  // 2. Vercel preview deployments
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  
-  // 3. Local development
-  return 'http://localhost:3000';
+  // Environment-specific defaults
+  return process.env.NODE_ENV === 'production' 
+    ? 'https://hub.xfoundry.org' 
+    : 'http://localhost:3000';
 };
 
 // Make base URL available to both client and server

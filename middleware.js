@@ -11,35 +11,16 @@ export async function middleware(request) {
   const authResponse = await auth0.middleware(request);
   
   /**
-   * Helper function to ensure URLs have a protocol
-   * Prioritizes custom domain for production environment
+   * Simple helper function to ensure URLs always have a protocol
+   * Simplified since we know the specific issue was with protocol handling
    */
   const getBaseUrl = () => {
     // Get hostname from request headers
-    const host = request.headers.get('host');
+    const host = request.headers.get('host') || '';
     
-    // 1. Custom domain (production) - our primary environment
-    if (host === 'hub.xfoundry.org') {
-      return 'https://hub.xfoundry.org';
-    }
-    
-    // 2. Local development
-    if (host?.includes('localhost')) {
-      return `http://${host}`;
-    }
-    
-    // 3. Vercel preview deployments
-    if (process.env.VERCEL_URL) {
-      return `https://${process.env.VERCEL_URL}`;
-    }
-    
-    // 4. Any other Vercel domain (including the original v0-dashboard)
-    if (host?.includes('vercel.app')) {
-      return `https://${host}`;
-    }
-    
-    // 5. Absolute fallback (should rarely be needed)
-    return 'https://hub.xfoundry.org';
+    // Add correct protocol based on environment
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    return `${protocol}://${host}`;
   };
   
   const { pathname, search } = request.nextUrl;
