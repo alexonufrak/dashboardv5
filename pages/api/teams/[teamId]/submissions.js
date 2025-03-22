@@ -1,4 +1,4 @@
-import { base, batchFetchRecords } from "@/lib/airtable"
+import { base, batchFetchRecords, CACHE_TYPES, createCacheKey } from "@/lib/airtable"
 
 /**
  * API endpoint to get submissions for a specific team
@@ -39,19 +39,29 @@ export default async function handler(req, res) {
     
     console.log(`Using Airtable formula: ${formula}`);
     
-    // Create a cache key that includes all query parameters
-    const cacheKey = `team_submissions_${teamId}_${milestoneId || 'all'}`;
+    // Create a structured cache key using the new system
+    // This replaces the old string concatenation approach with a more predictable system
+    const queryParams = { 
+      filterByFormula: formula,
+      sort: [{ field: "Created Time", direction: "desc" }]
+    };
     
     // Use batchFetchRecords which handles caching, throttling and pagination
-    const records = await batchFetchRecords(submissionsTableId, {
-      filterByFormula: formula,
-      fields: [
-        'teamId', 'milestoneId', 'Team', 'Milestone', 
-        'Comments', 'Link', 'Attachment', 'Created Time', 
-        'Name (from Milestone)'
-      ],
-      sort: [{ field: "Created Time", direction: "desc" }]
-    });
+    const records = await batchFetchRecords(
+      submissionsTableId, 
+      {
+        filterByFormula: formula,
+        fields: [
+          'teamId', 'milestoneId', 'Team', 'Milestone', 
+          'Comments', 'Link', 'Attachment', 'Created Time', 
+          'Name (from Milestone)'
+        ],
+        sort: [{ field: "Created Time", direction: "desc" }]
+      },
+      // Pass the cache type and ID for structured caching
+      CACHE_TYPES.SUBMISSIONS,
+      milestoneId ? `${teamId}-${milestoneId}` : teamId
+    );
     
     console.log(`Found ${records.length} total submissions for team ${teamId}`);
     

@@ -467,7 +467,7 @@ export default function MilestoneSubmissionDialog({
             try {
               console.log(`Requesting server-side cache clear for team=${teamData.id}, milestone=${milestone.id}`);
               
-              // Use a more targeted approach that tries multiple patterns
+              // Use the new type-based cache clearing approach with fallback to pattern-based
               fetch('/api/cache-invalidate', {
                 method: 'POST',
                 headers: {
@@ -477,7 +477,9 @@ export default function MilestoneSubmissionDialog({
                   cacheKeys: ['submissions'],
                   clearSubmissions: true,
                   teamId: teamData.id,
-                  milestoneId: milestone.id
+                  milestoneId: milestone.id,
+                  // Add the new cache types array for type-based clearing
+                  cacheTypes: ['submissions']
                 }),
               }).then(response => {
                 if (response.ok) {
@@ -490,6 +492,12 @@ export default function MilestoneSubmissionDialog({
               }).then(data => {
                 if (data) {
                   console.log('Cache invalidation results:', data);
+                  // Log the number of entries cleared for better visibility
+                  if (data.totalClearedEntries > 0) {
+                    console.log(`Cleared ${data.totalClearedEntries} cache entries`);
+                  } else {
+                    console.warn('No cache entries were cleared - may need to check cache key format');
+                  }
                 }
               }).catch(err => {
                 console.warn('Error processing cache invalidation response:', err);

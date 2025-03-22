@@ -16,7 +16,8 @@ import { cn } from "@/lib/utils"
  * @param {string} props.variant Button variant (default: "ghost")
  * @param {string} props.size Button size (default: "sm")
  * @param {string} props.className Additional CSS classes
- * @param {Array} props.queryKeys Array of query keys to invalidate
+ * @param {Array} props.queryKeys Array of query keys to invalidate in React Query
+ * @param {Array} props.cacheTypes Array of cache types to clear in server-side cache
  */
 export default function RefreshButton({ 
   onRefresh, 
@@ -24,7 +25,8 @@ export default function RefreshButton({
   variant = "ghost",
   size = "sm",
   className,
-  queryKeys = ["submissions", "milestones", "teams", "team_submissions"],
+  queryKeys = ["submissions", "milestones", "teams"],
+  cacheTypes = ["submissions", "milestones", "teams"],
 }) {
   const [isRefreshing, setIsRefreshing] = React.useState(false)
   const [status, setStatus] = React.useState("neutral") // neutral, fresh, stale, outdated
@@ -83,7 +85,8 @@ export default function RefreshButton({
           },
           body: JSON.stringify({
             cacheKeys: queryKeys,
-            clearSubmissions: true // Clear all submission caches when refresh is clicked
+            cacheTypes: cacheTypes, // Use the new type-based cache clearing
+            clearSubmissions: true // Also include legacy submission cache clearing for backward compatibility
           }),
         });
         
