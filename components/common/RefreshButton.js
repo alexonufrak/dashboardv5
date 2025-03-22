@@ -24,7 +24,7 @@ export default function RefreshButton({
   variant = "ghost",
   size = "sm",
   className,
-  queryKeys = ["submissions", "milestones", "teams"],
+  queryKeys = ["submissions", "milestones", "teams", "team_submissions"],
 }) {
   const [isRefreshing, setIsRefreshing] = React.useState(false)
   const [status, setStatus] = React.useState("neutral") // neutral, fresh, stale, outdated
@@ -75,10 +75,37 @@ export default function RefreshButton({
       if (typeof window !== 'undefined' && window._queryClient) {
         console.log(`Refreshing data for queries: ${queryKeys.join(', ')}`)
         
-        // Invalidate all specified query keys
-        queryKeys.forEach(key => {
-          window._queryClient.invalidateQueries([key])
-        })
+        // Also clear server-side cache for submissions and related data
+        const serverCachePatterns = ['team_submissions_', 'batch_'];
+        
+        // Make API call to invalidate both client and server caches
+        const response = await fetch('/api/cache-invalidate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            cacheKeys: queryKeys,
+            serverCachePatterns
+          }),
+        });
+        
+        if (response.ok) {
+          // Invalidate all specified query keys locally too
+          queryKeys.forEach(key => {
+            window._queryClient.invalidateQueries([key])
+            // Force refetch for submissions to ensure fresh data
+            if (key === 'submissions' || key === 'team_submissions') {
+              window._queryClient.refetchQueries([key])
+            }
+          })
+        } else {
+          console.warn('Cache invalidation API call failed, falling back to client-side only');
+          // Still invalidate client-side cache even if server-side fails
+          queryKeys.forEach(key => {
+            window._queryClient.invalidateQueries([key])
+          })
+        }
         
         // Allow custom refresh logic if provided
         if (onRefresh) {

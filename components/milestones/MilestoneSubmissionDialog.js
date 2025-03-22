@@ -440,13 +440,28 @@ export default function MilestoneSubmissionDialog({
           if (queryClient) {
             console.log("Invalidating React Query caches for milestone submission");
             
-            // Invalidate specific milestone submissions
+            // Only invalidate specific milestone submissions
             queryClient.invalidateQueries(['submissions', teamData.id, milestone.id]);
             
-            // Also invalidate any queries that might include this milestone data
-            queryClient.invalidateQueries(['submissions']);
-            queryClient.invalidateQueries(['milestones']);
-            queryClient.invalidateQueries(['participation']);
+            // Force refetch to ensure fresh data from server
+            queryClient.refetchQueries(['submissions', teamData.id, milestone.id]);
+            
+            // Clear any server-side cache for this team's submissions
+            try {
+              fetch('/api/cache-invalidate', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  cacheKeys: ['submissions'],
+                  serverCachePatterns: [`team_submissions_${teamData.id}_${milestone.id}`]
+                }),
+              });
+            } catch (cacheError) {
+              console.warn('Error clearing server cache:', cacheError);
+              // Non-blocking - continue even if this fails
+            }
             
             console.log("Refreshing milestone data via React Query");
           } else {
