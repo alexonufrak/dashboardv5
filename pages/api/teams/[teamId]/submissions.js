@@ -1,8 +1,8 @@
-import { base } from "@/lib/airtable"
+import { base, batchFetchRecords } from "@/lib/airtable"
 
 /**
  * API endpoint to get submissions for a specific team
- * Simplified to efficiently fetch and filter by milestone
+ * Optimized with throttling, caching, and improved error handling
  * 
  * @param {object} req - Next.js API request
  * @param {object} res - Next.js API response
@@ -26,66 +26,51 @@ export default async function handler(req, res) {
       return res.status(200).json({ submissions: [] });
     }
     
-    // Initialize the submissions table
-    const submissionsTable = base(submissionsTableId);
-    
-    // We'll fetch all submissions for this team and filter on our side
-    // This avoids complex formula issues with Airtable linked records
-    console.log(`Fetching all submissions for team: ${teamId}`);
-    
-    // Query all submissions for the team
-    // We use simple formula that should work reliably
-    // This code is already optimized to use the dedicated ID fields
-    // We're keeping it as is since it already follows the best practice
+    // Construct the query formula
     let formula;
-    
     if (milestoneId) {
-      // If we have both team and milestone IDs, use FIND which is more reliable
-      // for finding record IDs in linked record fields
       formula = `AND(
         FIND("${teamId}", {teamId}),
         FIND("${milestoneId}", {milestoneId})
       )`;
     } else {
-      // If we only have team ID, just check that field with FIND
       formula = `FIND("${teamId}", {teamId})`;
     }
     
-    console.log(`Using advanced Airtable formula: ${formula}`);
+    console.log(`Using Airtable formula: ${formula}`);
     
-    // Select only the fields we need to reduce data transfer
-    // Remove fields that don't exist in the Airtable schema
-    const records = await submissionsTable
-      .select({
-        filterByFormula: formula,
-        fields: ['teamId', 'milestoneId', 'Team', 'Milestone', 'Comments', 'Link', 'Attachment', 'Created Time', 
-                'Name (from Milestone)'],
-        // Sort by created time in descending order to get the most recent first
-        sort: [{ field: "Created Time", direction: "desc" }]
-      })
-      .firstPage();
-      
-    console.log(`Found ${records.length} total submissions matching our formula`);
+    // Create a cache key that includes all query parameters
+    const cacheKey = `team_submissions_${teamId}_${milestoneId || 'all'}`;
     
-    // Log field names from the first record if available
+    // Use batchFetchRecords which handles caching, throttling and pagination
+    const records = await batchFetchRecords(submissionsTableId, {
+      filterByFormula: formula,
+      fields: [
+        'teamId', 'milestoneId', 'Team', 'Milestone', 
+        'Comments', 'Link', 'Attachment', 'Created Time', 
+        'Name (from Milestone)'
+      ],
+      sort: [{ field: "Created Time", direction: "desc" }]
+    });
+    
+    console.log(`Found ${records.length} total submissions for team ${teamId}`);
+    
+    // Log field names from the first record if available (for debugging)
     if (records.length > 0) {
-      console.log("Available fields in submission records:", Object.keys(records[0].fields));
-      
       // Safely log team and milestone fields
       const team = records[0].fields.Team ? JSON.stringify(records[0].fields.Team) : "undefined";
       const milestone = records[0].fields.Milestone ? JSON.stringify(records[0].fields.Milestone) : "undefined";
       console.log(`First record - Team: ${team}, Milestone: ${milestone}`);
     }
     
-    // For optimization, we're directly using the records from Airtable's filtered results
-    const filteredRecords = records;
-    
-    // Process the filtered submissions
-    const submissions = filteredRecords.map(record => {
+    // Process the filtered submissions - preserve all functionality from the original implementation
+    const submissions = records.map(record => {
       // Get milestone ID from the linked record
-      const recordMilestoneId = record.fields.Milestone && Array.isArray(record.fields.Milestone) && record.fields.Milestone.length > 0
-        ? record.fields.Milestone[0]
-        : null;
+      const recordMilestoneId = record.fields.Milestone && 
+        Array.isArray(record.fields.Milestone) && 
+        record.fields.Milestone.length > 0
+          ? record.fields.Milestone[0]
+          : null;
 
       // Get team IDs from linked records - we already know one matches our teamId
       const teamIds = record.fields.Team && Array.isArray(record.fields.Team)
@@ -118,7 +103,7 @@ export default async function handler(req, res) {
       };
     });
     
-    // Add diagnostic logging before returning
+    // Add diagnostic logging for the first submission
     if (submissions.length > 0) {
       console.log("First submission details:", {
         id: submissions[0].id,
@@ -131,16 +116,13 @@ export default async function handler(req, res) {
       });
     }
     
-    // Show the raw Airtable response for debugging
-    if (records.length > 0) {
-      console.log("Raw Airtable record sample:", JSON.stringify(records[0], null, 2));
-    }
+    // Enhanced caching strategy
+    // - Client-side cache for 5 minutes (300 seconds)
+    // - Edge/CDN cache for 10 minutes (600 seconds)
+    // - Stale-while-revalidate for 30 minutes (1800 seconds)
+    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=1800');
     
-    // Add cache control headers - cache for 1 hour (3600 seconds)
-    // Client caching for 30 minutes, CDN/edge caching for 1 hour
-    res.setHeader('Cache-Control', 'public, max-age=1800, s-maxage=3600, stale-while-revalidate=7200');
-    
-    // Return the submissions we found
+    // Return the submissions with the same response structure as before
     return res.status(200).json({
       submissions,
       meta: {
@@ -149,14 +131,27 @@ export default async function handler(req, res) {
           teamId,
           milestoneId: milestoneId || null
         },
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        cached: true // Indicate this may be cached data
       }
     });
   } catch (error) {
     console.error("Error in submissions endpoint:", error);
+    
+    // Add Retry-After header for rate limit errors
+    if (error.statusCode === 429) {
+      res.setHeader('Retry-After', '10'); // Suggest client retry after 10 seconds
+      console.warn('Rate limit exceeded in submissions endpoint. Adding Retry-After header.');
+    }
+    
     // Return empty array rather than an error to prevent UI issues
     return res.status(200).json({ 
-      submissions: []
+      submissions: [],
+      meta: {
+        error: true,
+        message: "An error occurred retrieving submissions",
+        timestamp: new Date().toISOString()
+      }
     });
   }
 }
