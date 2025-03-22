@@ -73,7 +73,7 @@ export default async function handler(req, res) {
                     sort: [{ field: 'Number', direction: 'asc' }],
                     fields: [
                       'Name', 'Number', 'Due Datetime', 'Description',
-                      'Cohort', 'Due Accuracy', 'Status'
+                      'Cohort', 'Due Accuracy'
                     ]
                   });
                   
@@ -96,7 +96,7 @@ export default async function handler(req, res) {
               sort: [{ field: 'Number', direction: 'asc' }],
               fields: [
                 'Name', 'Number', 'Due Datetime', 'Description',
-                'Cohort', 'Due Accuracy', 'Status'
+                'Cohort', 'Due Accuracy'
               ]
             });
             
