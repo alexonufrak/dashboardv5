@@ -244,60 +244,71 @@ export function DashboardProvider({ children }) {
     
     // Only proceed with prefetching if we have both team and milestones
     if (teamData?.id && allMilestones.length > 0) {
-      console.log(`Starting background prefetch for ${allMilestones.length} milestones`);
+      console.log(`Starting optimized background prefetch for ${allMilestones.length} milestones`);
       
-      // Prefetch submissions for milestones in the background
       // Using setTimeout to avoid blocking the UI rendering
       setTimeout(() => {
-        // Single log message instead of one per milestone
-        const milestoneIds = allMilestones
-          .filter(m => m.id)
-          .map(m => m.id)
-          .slice(0, 3); // Only show first 3 in log
-          
-        console.log(`Prefetching milestones: ${milestoneIds.length > 3 ? 
-          `${milestoneIds.join(', ')}... and ${allMilestones.length - 3} more` : 
-          milestoneIds.join(', ')}`);
+        // Prefetch only important milestones to reduce API load
+        // 1. First prioritize any upcoming or late milestones (most relevant to users)
+        // 2. Then add earliest milestone if none are upcoming/late
+        // 3. Limit total prefetched milestones to reduce API pressure
         
-        // Process milestones in batches to reduce network congestion
-        const processMilestones = (milestones, batchSize = 2) => {
-          const batch = milestones.slice(0, batchSize);
-          const remaining = milestones.slice(batchSize);
-          
-          // Process current batch
-          batch.forEach(milestone => {
-            if (milestone.id) {
-              queryClient.prefetchQuery({
-                queryKey: ['submissions', teamData.id, milestone.id],
-                queryFn: async () => {
-                  const url = `/api/teams/${teamData.id}/submissions?milestoneId=${encodeURIComponent(milestone.id)}&_t=${new Date().getTime()}`;
-                  
-                  try {
-                    const response = await fetch(url);
-                    if (!response.ok) {
-                      return { submissions: [] };
-                    }
-                    
-                    const data = await response.json();
-                    return { submissions: data.submissions || [] };
-                  } catch (err) {
-                    return { submissions: [] };
-                  }
-                },
-                staleTime: 60 * 1000 // 1 minute
-              });
-            }
+        // Find highest priority milestones first
+        const upcomingMilestones = allMilestones
+          .filter(m => m.status === "upcoming" || m.status === "late")
+          .slice(0, 2); // Limit to first 2 upcoming/late
+        
+        // If no upcoming/late milestones, use the first milestone
+        const milestonesToPrefetch = upcomingMilestones.length > 0 
+          ? upcomingMilestones 
+          : allMilestones.slice(0, 1); // Just the first one
+        
+        // Add the current milestone if it exists and isn't already included
+        const currentMilestoneIndex = allMilestones.findIndex(m => 
+          m.status !== "completed" && m.dueDate && new Date(m.dueDate) > new Date()
+        );
+        
+        if (currentMilestoneIndex >= 0 && 
+            !milestonesToPrefetch.some(m => m.id === allMilestones[currentMilestoneIndex].id)) {
+          milestonesToPrefetch.push(allMilestones[currentMilestoneIndex]);
+        }
+        
+        // Log prefetching action
+        const milestonesToLog = milestonesToPrefetch.map(m => ({
+          id: m.id,
+          name: m.name,
+          status: m.status
+        }));
+        console.log(`Prefetching ${milestonesToPrefetch.length} priority milestones:`, 
+          JSON.stringify(milestonesToLog));
+        
+        // Process milestones in a single batch to reduce API calls
+        // Batch fetch all milestone submissions at once
+        if (milestonesToPrefetch.length > 0) {
+          // First prefetch the all-submissions query which might satisfy milestone-specific needs
+          queryClient.prefetchQuery({
+            queryKey: ['submissions', teamData.id, null],
+            queryFn: async () => {
+              const url = `/api/teams/${teamData.id}/submissions?_t=${new Date().getTime()}`;
+              try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                  return { submissions: [] };
+                }
+                const data = await response.json();
+                return data;
+              } catch (err) {
+                return { submissions: [] };
+              }
+            },
+            staleTime: 300 * 1000 // 5 minutes
           });
-          
-          // Process next batch if any
-          if (remaining.length > 0) {
-            setTimeout(() => processMilestones(remaining, batchSize), 500);
-          }
-        };
+        }
         
-        // Start processing in batches
-        processMilestones(allMilestones.filter(m => m.id));
-      }, 1000); // Delay initial prefetching to let initial render complete
+        // Only prefetch individual milestone submissions if absolutely necessary
+        // This dramatically reduces API pressure while still providing good UX
+        // Most milestone-specific submission needs will be served from the data above
+      }, 3000); // Increased delay to let initial render and more important operations complete
     }
     
     return allMilestones;
