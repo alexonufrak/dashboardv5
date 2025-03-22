@@ -27,6 +27,19 @@ export async function middleware(request) {
   
   // If path starts with /auth, let the auth middleware handle it
   if (pathname.startsWith('/auth')) {
+    // For /auth/profile specifically, add extra session validation and error logging
+    if (pathname === '/auth/profile') {
+      console.log('Processing /auth/profile request');
+      
+      // Add debugging for cookies
+      const cookies = request.headers.get('cookie') || '';
+      console.log(`Cookie header length: ${cookies.length}`);
+      
+      // We won't log the actual cookies for security reasons
+      const hasCookies = cookies.includes('auth0.is.authenticated');
+      console.log(`Has auth0 cookie: ${hasCookies}`);
+    }
+    
     return authResponse;
   }
   
