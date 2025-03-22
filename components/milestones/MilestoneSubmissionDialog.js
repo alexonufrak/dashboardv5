@@ -530,12 +530,12 @@ export default function MilestoneSubmissionDialog({
     
     return (
       <div className="mt-1">
-        <div className="relative w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+        <div className="relative w-full h-1.5 bg-muted rounded-full overflow-hidden">
           <div 
             className={`absolute top-0 left-0 h-full ${
-              status === 'error' ? 'bg-red-500' : 
-              status === 'completed' ? 'bg-green-500' : 
-              'bg-blue-500'
+              status === 'error' ? 'bg-destructive' : 
+              status === 'completed' ? 'bg-green-500 dark:bg-green-600' : 
+              'bg-primary'
             }`}
             style={{ width: `${percentage || 0}%` }}
           />
@@ -547,10 +547,10 @@ export default function MilestoneSubmissionDialog({
              `${Math.round(percentage || 0)}%`}
           </span>
           {status === 'completed' && (
-            <span className="text-xs text-green-600">Complete</span>
+            <span className="text-xs text-green-600 dark:text-green-400">Complete</span>
           )}
           {status === 'error' && (
-            <span className="text-xs text-red-600">Failed</span>
+            <span className="text-xs text-destructive">Failed</span>
           )}
         </div>
       </div>
@@ -568,10 +568,10 @@ export default function MilestoneSubmissionDialog({
           const isUploaded = uploadedFiles.some(u => u.filename === file.name)
           
           return (
-            <div key={index} className="p-2 border rounded bg-gray-50">
+            <div key={index} className="p-2 border rounded bg-muted/40 dark:bg-muted/20">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <FileText className={`h-4 w-4 mr-2 ${isUploaded ? 'text-green-500' : 'text-blue-500'}`} />
+                  <FileText className={`h-4 w-4 mr-2 ${isUploaded ? 'text-green-500 dark:text-green-400' : 'text-primary'}`} />
                   <span className="text-sm truncate max-w-[200px]">
                     {file.name}
                   </span>
@@ -607,7 +607,7 @@ export default function MilestoneSubmissionDialog({
       return (
         <div className="py-8 text-center">
           <div className="text-muted-foreground">
-            <AlertCircle className="h-10 w-10 mx-auto mb-3 text-gray-300" />
+            <AlertCircle className="h-10 w-10 mx-auto mb-3 text-muted-foreground/50" />
             <h3 className="text-lg font-medium mb-2">No Submissions Yet</h3>
             <p className="text-sm">
               There are no submissions for this milestone.
@@ -637,13 +637,13 @@ export default function MilestoneSubmissionDialog({
               </TableCell>
               <TableCell className="align-top">
                 {submission.attachments && submission.attachments.length > 0 && (
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                  <Badge variant="outline" className="border-primary/20 text-primary bg-primary/10">
                     <FileText className="h-3 w-3 mr-1" />
                     File
                   </Badge>
                 )}
                 {submission.link && (
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 ml-1">
+                  <Badge variant="outline" className="border-green-500/20 text-green-600 dark:text-green-400 bg-green-500/10 ml-1">
                     <LinkIcon className="h-3 w-3 mr-1" />
                     Link
                   </Badge>
@@ -653,7 +653,7 @@ export default function MilestoneSubmissionDialog({
                 <div className="space-y-1">
                   {submission.attachments && submission.attachments.length > 0 && (
                     <div className="flex flex-wrap items-center text-sm">
-                      <FileText className="h-3.5 w-3.5 mr-1 text-blue-600" />
+                      <FileText className="h-3.5 w-3.5 mr-1 text-primary" />
                       <span>
                         {submission.attachments.length} {submission.attachments.length === 1 ? 'file' : 'files'}
                       </span>
@@ -722,12 +722,12 @@ export default function MilestoneSubmissionDialog({
                   
                   {submission.link && (
                     <div className="flex items-center text-sm">
-                      <ExternalLink className="h-3.5 w-3.5 mr-1 text-blue-600" />
+                      <ExternalLink className="h-3.5 w-3.5 mr-1 text-primary" />
                       <a 
                         href={submission.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline break-all"
+                        className="text-primary hover:underline break-all"
                       >
                         {submission.link.length > 30 ? `${submission.link.substring(0, 30)}...` : submission.link}
                       </a>
@@ -763,7 +763,7 @@ export default function MilestoneSubmissionDialog({
         </DialogHeader>
         
         {/* Milestone details */}
-        <div className="bg-gray-50 p-3 rounded-md text-sm">
+        <div className="bg-muted/30 p-3 rounded-md text-sm">
           {milestone?.dueDate && (
             <div className="flex items-center mb-1">
               <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
@@ -773,16 +773,16 @@ export default function MilestoneSubmissionDialog({
           
           <div className="flex items-center mb-2">
             {milestone?.status === "completed" ? (
-              <CheckCircle className="h-4 w-4 mr-1 text-green-600" />
+              <CheckCircle className="h-4 w-4 mr-1 text-green-600 dark:text-green-400" />
             ) : milestone?.status === "late" ? (
-              <AlertCircle className="h-4 w-4 mr-1 text-red-600" />
+              <AlertCircle className="h-4 w-4 mr-1 text-destructive" />
             ) : milestone?.status === "in_progress" ? (
-              <Clock className="h-4 w-4 mr-1 text-blue-600" />
+              <Clock className="h-4 w-4 mr-1 text-primary" />
             ) : (
-              <Clock className="h-4 w-4 mr-1 text-gray-400" />
+              <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
             )}
             <span className={
-              milestone?.status === "completed" ? "text-green-600" : "text-gray-500"
+              milestone?.status === "completed" ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
             }>
               Status: {
                 milestone?.status === "completed" ? "Completed" : "Upcoming"
@@ -803,10 +803,10 @@ export default function MilestoneSubmissionDialog({
                   ul: ({node, ...props}) => <ul className="list-disc pl-4 mb-2" {...props} />,
                   ol: ({node, ...props}) => <ol className="list-decimal pl-4 mb-2" {...props} />,
                   li: ({node, ...props}) => <li className="mb-1" {...props} />,
-                  a: ({node, ...props}) => <a className="text-blue-600 hover:underline" {...props} />,
-                  blockquote: ({node, ...props}) => <blockquote className="border-l-2 border-gray-300 pl-2 italic my-2" {...props} />,
-                  code: ({node, ...props}) => <code className="bg-gray-100 px-1 py-0.5 rounded" {...props} />,
-                  pre: ({node, ...props}) => <pre className="bg-gray-100 p-2 rounded my-2 overflow-auto" {...props} />
+                  a: ({node, ...props}) => <a className="text-primary hover:underline" {...props} />,
+                  blockquote: ({node, ...props}) => <blockquote className="border-l-2 border-border pl-2 italic my-2" {...props} />,
+                  code: ({node, ...props}) => <code className="bg-muted px-1 py-0.5 rounded" {...props} />,
+                  pre: ({node, ...props}) => <pre className="bg-muted p-2 rounded my-2 overflow-auto" {...props} />
                 }}
               >
                 {milestone.description}
@@ -839,12 +839,12 @@ export default function MilestoneSubmissionDialog({
               {currentTab === 'file' && (
                 <div>
                   {/* Add Link Option Notice */}
-                  <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <div className="mb-3 p-3 bg-warning/10 border border-warning/20 rounded-md">
                     <div className="flex items-start">
-                      <AlertCircle className="h-5 w-5 text-yellow-500 mr-2 mt-0.5" />
+                      <AlertCircle className="h-5 w-5 text-warning mr-2 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-yellow-800">File Upload Alternative</p>
-                        <p className="text-xs text-yellow-700 mt-0.5">
+                        <p className="text-sm font-medium text-warning-foreground">File Upload Alternative</p>
+                        <p className="text-xs text-warning-foreground/80 mt-0.5">
                           If file upload doesn't work, you can upload your file to Google Drive, Dropbox, 
                           or another service and share the link using the "Add Link" tab.
                         </p>
@@ -855,7 +855,7 @@ export default function MilestoneSubmissionDialog({
                   <div
                     {...getRootProps()}
                     className={`border-2 border-dashed rounded-md p-8 text-center cursor-pointer transition-colors
-                      ${isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300 hover:border-primary/50'}`}
+                      ${isDragActive ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
                   >
                     <input {...getInputProps()} />
                     <UploadCloud className="mx-auto h-10 w-10 text-muted-foreground mb-2" />
@@ -887,9 +887,9 @@ export default function MilestoneSubmissionDialog({
               {currentTab === 'link' && (
                 <div className="space-y-3">
                   {/* Instructions panel */}
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-md mb-4">
-                    <h3 className="text-sm font-medium text-blue-800 mb-1">How to share your work via a link</h3>
-                    <ol className="text-xs text-blue-700 list-decimal ml-4 space-y-1">
+                  <div className="p-3 bg-primary/10 border border-primary/20 rounded-md mb-4">
+                    <h3 className="text-sm font-medium text-primary-foreground mb-1">How to share your work via a link</h3>
+                    <ol className="text-xs text-primary-foreground/80 list-decimal ml-4 space-y-1">
                       <li>Upload your file to a cloud storage service (Google Drive, Dropbox, OneDrive, etc.)</li>
                       <li>Create a shareable link with <b>public access</b> to the file</li>
                       <li>Copy the link and paste it below</li>
