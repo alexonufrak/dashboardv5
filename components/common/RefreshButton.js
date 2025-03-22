@@ -91,9 +91,28 @@ export default function RefreshButton({
           // Invalidate all specified query keys locally too
           queryKeys.forEach(key => {
             window._queryClient.invalidateQueries([key])
-            // Force refetch for submissions to ensure fresh data
+            // More targeted approach for submissions
             if (key === 'submissions') {
-              window._queryClient.refetchQueries([key], { type: 'all' })
+              // Get the team ID from the context if available
+              const teamId = window._activeTeamId || 
+                (window._queryClient.getQueryData(['teams']) && 
+                window._queryClient.getQueryData(['teams'])[0]?.id);
+              
+              if (teamId) {
+                console.log(`Targeted refresh for team ${teamId} submissions`);
+                // Refetch only this team's submissions
+                window._queryClient.refetchQueries({
+                  queryKey: [key, teamId],
+                  exact: false // Include any milestone-specific queries
+                });
+              } else {
+                // Fallback to fetching all submissions
+                console.log('No team context available, refreshing all submissions');
+                window._queryClient.refetchQueries({
+                  queryKey: [key],
+                  exact: false
+                });
+              }
             }
           })
         } else {
