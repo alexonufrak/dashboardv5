@@ -465,8 +465,9 @@ export default function MilestoneSubmissionDialog({
             
             // Clear any server-side cache for submissions
             try {
-              // Instead of using patterns with table IDs, use a special command
-              // that the server will interpret to clear submission-related caches
+              console.log(`Requesting server-side cache clear for team=${teamData.id}, milestone=${milestone.id}`);
+              
+              // Use a more targeted approach that tries multiple patterns
               fetch('/api/cache-invalidate', {
                 method: 'POST',
                 headers: {
@@ -478,6 +479,20 @@ export default function MilestoneSubmissionDialog({
                   teamId: teamData.id,
                   milestoneId: milestone.id
                 }),
+              }).then(response => {
+                if (response.ok) {
+                  console.log('Server cache invalidation request successful');
+                  return response.json();
+                } else {
+                  console.warn('Server cache invalidation request failed');
+                  return null;
+                }
+              }).then(data => {
+                if (data) {
+                  console.log('Cache invalidation results:', data);
+                }
+              }).catch(err => {
+                console.warn('Error processing cache invalidation response:', err);
               });
             } catch (cacheError) {
               console.warn('Error clearing server cache:', cacheError);

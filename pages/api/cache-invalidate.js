@@ -32,16 +32,33 @@ export default async function handler(req, res) {
     if (clearSubmissions === true) {
       // Get the submissions table ID from environment variable
       const submissionsTableId = process.env.AIRTABLE_SUBMISSIONS_TABLE_ID;
+      
       if (submissionsTableId) {
-        // Clear all submissions-related caches
-        const submissionPattern = `batch_${submissionsTableId}_`;
-        clearCacheByPattern(submissionPattern);
-        clearedServerCaches.push('submissions');
+        // First try with the more specific pattern including table ID
+        const teamDetails = teamId ? { teamId } : null;
         
-        // If specific team/milestone provided, create a more specific pattern to log what was cleared
-        if (teamId) {
-          clearedServerCaches.push(`team ${teamId} submissions`);
+        // Try multiple patterns to account for different cache key formats
+        const patterns = [
+          // Most specific: include table ID and batch prefix
+          `batch_${submissionsTableId}_`,
+          // Less specific: just the table ID
+          submissionsTableId,
+          // For keys that might include the table ID elsewhere
+          `filterByFormula`
+        ];
+        
+        // Try each pattern
+        for (const pattern of patterns) {
+          clearCacheByPattern(pattern, teamDetails);
+          clearedServerCaches.push(`${pattern} (${teamId ? `team ${teamId}` : 'all teams'})`);
         }
+      }
+      
+      // If we have a team ID but no submissionsTableId, try with just the team ID
+      if (!submissionsTableId && teamId) {
+        // Try clearing by team ID
+        clearCacheByPattern(teamId);
+        clearedServerCaches.push(`submissions by team ID: ${teamId}`);
       }
     }
     
