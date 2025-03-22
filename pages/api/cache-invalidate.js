@@ -19,14 +19,33 @@ export default async function handler(req, res) {
     }
     
     // Get the cache keys to invalidate from the request body
-    const { cacheKeys, serverCachePatterns } = req.body
+    const { cacheKeys, serverCachePatterns, clearSubmissions, teamId, milestoneId } = req.body
     
     if (!cacheKeys || !Array.isArray(cacheKeys) || cacheKeys.length === 0) {
       return res.status(400).json({ error: 'cacheKeys must be a non-empty array' })
     }
     
-    // Clear server-side cache if patterns are provided
+    // Clear server-side cache based on request
     let clearedServerCaches = [];
+    
+    // Special handling for submissions cache
+    if (clearSubmissions === true) {
+      // Get the submissions table ID from environment variable
+      const submissionsTableId = process.env.AIRTABLE_SUBMISSIONS_TABLE_ID;
+      if (submissionsTableId) {
+        // Clear all submissions-related caches
+        const submissionPattern = `batch_${submissionsTableId}_`;
+        clearCacheByPattern(submissionPattern);
+        clearedServerCaches.push('submissions');
+        
+        // If specific team/milestone provided, create a more specific pattern to log what was cleared
+        if (teamId) {
+          clearedServerCaches.push(`team ${teamId} submissions`);
+        }
+      }
+    }
+    
+    // General pattern-based cache clearing
     if (serverCachePatterns && Array.isArray(serverCachePatterns) && serverCachePatterns.length > 0) {
       for (const pattern of serverCachePatterns) {
         // For security, only allow specific patterns
@@ -38,7 +57,10 @@ export default async function handler(req, res) {
           clearedServerCaches.push(pattern);
         }
       }
-      console.log(`Cleared server-side cache for patterns: ${clearedServerCaches.join(', ')}`);
+    }
+    
+    if (clearedServerCaches.length > 0) {
+      console.log(`Cleared server-side cache for: ${clearedServerCaches.join(', ')}`);
     }
     
     // Return success response

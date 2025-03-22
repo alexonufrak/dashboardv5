@@ -446,8 +446,10 @@ export default function MilestoneSubmissionDialog({
             // Force refetch to ensure fresh data from server
             queryClient.refetchQueries(['submissions', teamData.id, milestone.id]);
             
-            // Clear any server-side cache for this team's submissions
+            // Clear any server-side cache for submissions
             try {
+              // Instead of using patterns with table IDs, use a special command
+              // that the server will interpret to clear submission-related caches
               fetch('/api/cache-invalidate', {
                 method: 'POST',
                 headers: {
@@ -455,7 +457,9 @@ export default function MilestoneSubmissionDialog({
                 },
                 body: JSON.stringify({
                   cacheKeys: ['submissions'],
-                  serverCachePatterns: [`team_submissions_${teamData.id}_${milestone.id}`]
+                  clearSubmissions: true,
+                  teamId: teamData.id,
+                  milestoneId: milestone.id
                 }),
               });
             } catch (cacheError) {

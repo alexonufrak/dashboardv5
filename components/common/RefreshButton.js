@@ -75,9 +75,6 @@ export default function RefreshButton({
       if (typeof window !== 'undefined' && window._queryClient) {
         console.log(`Refreshing data for queries: ${queryKeys.join(', ')}`)
         
-        // Also clear server-side cache for submissions and related data
-        const serverCachePatterns = ['team_submissions_', 'batch_'];
-        
         // Make API call to invalidate both client and server caches
         const response = await fetch('/api/cache-invalidate', {
           method: 'POST',
@@ -86,7 +83,7 @@ export default function RefreshButton({
           },
           body: JSON.stringify({
             cacheKeys: queryKeys,
-            serverCachePatterns
+            clearSubmissions: true // Clear all submission caches when refresh is clicked
           }),
         });
         
