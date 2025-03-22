@@ -3,7 +3,8 @@ import { auth0 } from "@/lib/auth0"
 import { getCompleteUserProfile } from "../../../lib/userProfile"
 import { getUserTeams } from "../../../lib/airtable"
 
-async function handler(req, res) {
+export default async function handler(req, res) {
+  // Auth0 v4 approach - check session directly instead of using withApiAuthRequired
   const session = await auth0.getSession(req)
   if (!session || !session.user) {
     return res.status(401).json({ error: "Not authenticated" })
@@ -31,5 +32,3 @@ async function handler(req, res) {
     return res.status(500).json({ error: "Internal server error" })
   }
 }
-
-export default withApiAuthRequired(handler)

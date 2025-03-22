@@ -1,7 +1,13 @@
 import { auth0 } from "@/lib/auth0";
 import { getAllPrograms } from "../../../lib/airtable";
 
-async function handler(req, res) {
+export default async function handler(req, res) {
+  // Check authentication using Auth0 v4 approach
+  const session = await auth0.getSession(req);
+  if (!session || !session.user) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
   try {
     // Get all majors from Airtable
     const programs = await getAllPrograms();
@@ -21,5 +27,3 @@ async function handler(req, res) {
     return res.status(500).json({ error: "Failed to fetch majors" });
   }
 }
-
-export default withApiAuthRequired(handler);
