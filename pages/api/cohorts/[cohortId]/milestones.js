@@ -48,7 +48,7 @@ export default async function handler(req, res) {
             // Use batchFetchRecords for cohort lookup
             const cohortRecords = await batchFetchRecords(cohortsTableId, {
               filterByFormula: `RECORD_ID()="${cohortId}"`,
-              fields: ['Milestones', 'Name']
+              fields: ['Milestones', 'Cohort Name']
             });
             
             if (cohortRecords.length > 0) {
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
                     sort: [{ field: 'Number', direction: 'asc' }],
                     fields: [
                       'Name', 'Number', 'Due Datetime', 'Description',
-                      'Cohort', 'Milestone Type', 'Points', 'Status'
+                      'Cohort', 'Type', 'Points', 'Status'
                     ]
                   });
                   
@@ -96,7 +96,7 @@ export default async function handler(req, res) {
               sort: [{ field: 'Number', direction: 'asc' }],
               fields: [
                 'Name', 'Number', 'Due Datetime', 'Description',
-                'Cohort', 'Milestone Type', 'Points', 'Status'
+                'Cohort', 'Type', 'Points', 'Status'
               ]
             });
             
@@ -139,7 +139,7 @@ export default async function handler(req, res) {
             description: milestone.fields.Description,
             status,
             progress,
-            type: milestone.fields["Milestone Type"],
+            type: milestone.fields["Type"],
             points: milestone.fields.Points,
             completedDate: completedDate ? completedDate.toISOString() : null,
             score
