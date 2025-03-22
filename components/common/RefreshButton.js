@@ -92,8 +92,8 @@ export default function RefreshButton({
           queryKeys.forEach(key => {
             window._queryClient.invalidateQueries([key])
             // Force refetch for submissions to ensure fresh data
-            if (key === 'submissions' || key === 'team_submissions') {
-              window._queryClient.refetchQueries([key])
+            if (key === 'submissions') {
+              window._queryClient.refetchQueries([key], { type: 'all' })
             }
           })
         } else {
