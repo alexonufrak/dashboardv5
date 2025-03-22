@@ -47,11 +47,26 @@ export default function MilestoneSubmissionChecker({
       if (updatedMilestoneId === milestoneId && teamId === teamData?.id) {
         console.log("Received submission update event for this milestone");
         
-        // Force a refetch of the submission data
-        refetch();
+        // Force a complete reset and fresh fetch from server
+        // This ensures we don't just get a cached response
+        const queryClient = window._queryClient;
+        if (queryClient) {
+          // Remove ALL cached data for this query
+          queryClient.resetQueries({ 
+            queryKey: ['submissions', teamId, updatedMilestoneId],
+            exact: true
+          });
+          
+          // Now trigger a fresh fetch
+          queryClient.fetchQuery(['submissions', teamId, updatedMilestoneId]);
+        } else {
+          // Fallback to regular refetch if queryClient isn't available
+          refetch();
+        }
         
-        // Reset processed state to force reprocessing 
+        // Reset all processing state
         setHasProcessed(false);
+        processingRef.current = false;
       }
     };
     

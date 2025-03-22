@@ -60,7 +60,31 @@ export default function MilestoneTable({
       const milestoneIndex = enhancedMilestones.findIndex(m => m.id === milestoneId);
       
       if (milestoneIndex >= 0) {
-        // Update the refresh trigger to force milestone reprocessing, but only once
+        console.log(`IMPORTANT: Detected submission update for milestone ${milestoneId} at index ${milestoneIndex}`);
+        
+        // Force a COMPLETE reset of the milestone state
+        setEnhancedMilestones(prev => {
+          // Create a new array with all milestones
+          const newMilestones = [...prev];
+          
+          // Reset the specific milestone to force reprocessing
+          if (newMilestones[milestoneIndex]) {
+            // Keep basic data but reset submission-specific fields
+            newMilestones[milestoneIndex] = {
+              ...newMilestones[milestoneIndex],
+              hasSubmission: false,
+              submissions: [],
+              submissionDate: null,
+              submissionLink: null,
+              hasAttachments: false,
+              attachmentCount: 0,
+              _forceRefresh: Date.now() // Add a timestamp to force react to see this as different
+            };
+          }
+          return newMilestones;
+        });
+        
+        // Update the refresh trigger to force milestone reprocessing
         setRefreshTrigger(prev => prev + 1);
       }
     };

@@ -440,18 +440,28 @@ export default function MilestoneSubmissionDialog({
           if (queryClient) {
             console.log("Invalidating React Query caches for milestone submission");
             
-            // Only invalidate and refetch this specific team's submissions
-            // This is more targeted and prevents unnecessary refetching
-            queryClient.invalidateQueries({ 
-              queryKey: ['submissions', teamData.id],
-              exact: false // Include nested queries (with milestoneId)
-            });
-            
-            // Force refetch just this milestone's submissions
-            queryClient.refetchQueries({ 
+            // The CORRECT way: completely reset and refetch from server
+            // This is more reliable than invalidation + refetch
+            queryClient.resetQueries({ 
               queryKey: ['submissions', teamData.id, milestone.id],
               exact: true // Only this exact query
             });
+            
+            // Also reset the general team submissions query
+            queryClient.resetQueries({ 
+              queryKey: ['submissions', teamData.id, null],
+              exact: true // Only this exact query  
+            });
+            
+            // Use a small timeout to ensure state updates properly
+            setTimeout(() => {
+              // Now force a refetch with fresh data
+              queryClient.refetchQueries({ 
+                queryKey: ['submissions', teamData.id],
+                exact: false, // Include milestone-specific queries
+                type: 'all' // Important: refetch ALL queries even if inactive
+              });
+            }, 100);
             
             // Clear any server-side cache for submissions
             try {
