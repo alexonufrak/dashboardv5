@@ -27,18 +27,7 @@ export async function middleware(request) {
   
   // If path starts with /auth, let the auth middleware handle it
   if (pathname.startsWith('/auth')) {
-    // For /auth/profile specifically, add extra session validation and error logging
-    if (pathname === '/auth/profile') {
-      console.log('Processing /auth/profile request');
-      
-      // Add debugging for cookies
-      const cookies = request.headers.get('cookie') || '';
-      console.log(`Cookie header length: ${cookies.length}`);
-      
-      // We won't log the actual cookies for security reasons
-      const hasCookies = cookies.includes('auth0.is.authenticated');
-      console.log(`Has auth0 cookie: ${hasCookies}`);
-    }
+    // Let Auth0 handle profile requests directly
     
     return authResponse;
   }
@@ -89,31 +78,11 @@ export async function middleware(request) {
     );
   }
   
-  // For protected routes, check session and redirect to login if needed
-  // This ensures users are always properly authenticated for dashboard pages
+  // For protected routes, use Auth0's built-in middleware handling
+  // This uses Auth0's proper session validation without our custom logic
   if (pathname.startsWith('/dashboard') || pathname.startsWith('/program') || pathname === '/onboarding' || pathname === '/profile') {
-    // Check for auth cookie first for performance - avoids unnecessary auth checking
-    const cookies = request.headers.get('cookie') || '';
-    const hasAuthCookie = cookies.includes('auth0.is.authenticated') || cookies.includes('auth0_session');
-    
-    // Only do full session check if we have some indication of an auth cookie
-    // This reduces unnecessary Auth0 API calls
-    if (hasAuthCookie) {
-      try {
-        const session = await auth0.getSession(request);
-        if (!session) {
-          console.log('No valid session found despite auth cookie, redirecting to login');
-          return NextResponse.redirect(new URL('/auth/login?returnTo=' + encodeURIComponent(pathname), getBaseUrl()));
-        }
-      } catch (error) {
-        console.error('Error checking session:', error.message);
-        // On session check error, redirect to login
-        return NextResponse.redirect(new URL('/auth/login?returnTo=' + encodeURIComponent(pathname), getBaseUrl()));
-      }
-    } else {
-      console.log('No auth cookie found, redirecting to login');
-      return NextResponse.redirect(new URL('/auth/login?returnTo=' + encodeURIComponent(pathname), getBaseUrl()));
-    }
+    // Let Auth0 handle the authentication check and redirect
+    return authResponse;
   }
   
   // Return the auth response to ensure cookies are handled correctly
