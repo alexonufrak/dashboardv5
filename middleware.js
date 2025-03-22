@@ -89,16 +89,32 @@ export async function middleware(request) {
     );
   }
   
-  // For protected routes, can check session and redirect to login if needed
-  // Uncomment and modify as needed
-  /*
+  // For protected routes, check session and redirect to login if needed
+  // This ensures users are always properly authenticated for dashboard pages
   if (pathname.startsWith('/dashboard') || pathname.startsWith('/program') || pathname === '/onboarding' || pathname === '/profile') {
-    const session = await auth0.getSession(request);
-    if (!session) {
+    // Check for auth cookie first for performance - avoids unnecessary auth checking
+    const cookies = request.headers.get('cookie') || '';
+    const hasAuthCookie = cookies.includes('auth0.is.authenticated') || cookies.includes('auth0_session');
+    
+    // Only do full session check if we have some indication of an auth cookie
+    // This reduces unnecessary Auth0 API calls
+    if (hasAuthCookie) {
+      try {
+        const session = await auth0.getSession(request);
+        if (!session) {
+          console.log('No valid session found despite auth cookie, redirecting to login');
+          return NextResponse.redirect(new URL('/auth/login?returnTo=' + encodeURIComponent(pathname), getBaseUrl()));
+        }
+      } catch (error) {
+        console.error('Error checking session:', error.message);
+        // On session check error, redirect to login
+        return NextResponse.redirect(new URL('/auth/login?returnTo=' + encodeURIComponent(pathname), getBaseUrl()));
+      }
+    } else {
+      console.log('No auth cookie found, redirecting to login');
       return NextResponse.redirect(new URL('/auth/login?returnTo=' + encodeURIComponent(pathname), getBaseUrl()));
     }
   }
-  */
   
   // Return the auth response to ensure cookies are handled correctly
   return authResponse;
