@@ -6,6 +6,7 @@
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 - `npx next lint --fix` - Automatically fix linting issues
+ - `git add . && git commit -m "your commit message" && git push` -Commit and push any changes when requested. Do not coauthor claude code. Write detailed description.
 
 ## Code Style Guidelines
 - **Framework**: Next.js with React functional components and hooks
