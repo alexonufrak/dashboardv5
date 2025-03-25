@@ -6,7 +6,11 @@
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 - `npx next lint --fix` - Automatically fix linting issues
- - `git add . && git commit -m "your commit message" && git push` -Commit and push any changes when requested. Do not coauthor claude code. Write detailed description.
+- `git add . && git commit -m "your commit message" && git push` - Commit and push any changes when requested. Do not coauthor claude code. Write detailed description.
+
+## MCP Tools Configuration
+- `fetch-user` - Use this MCP tool for making web requests to external APIs or websites
+- `brave-search-user` - Use this MCP tool for performing web searches with Brave Search
 
 ## Code Style Guidelines
 - **Framework**: Next.js with React functional components and hooks
