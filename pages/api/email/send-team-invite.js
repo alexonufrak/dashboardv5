@@ -69,13 +69,18 @@ export default async function sendTeamInviteEmailHandler(req, res) {
       return res.status(403).json({ error: 'You must be a team member to send team invitations' })
     }
     
+    // Extract first name and last name from the user profile's fields
+    const inviterFirstName = userProfile["First Name"] || "A team member";
+    const inviterLastName = userProfile["Last Name"] || "";
+    const inviterName = `${inviterFirstName} ${inviterLastName}`.trim();
+    
     // Send the invitation email
     const result = await sendTeamInviteEmail({
       email,
       firstName,
       lastName: lastName || '',
       teamName: team.name,
-      inviterName: `${userProfile.firstName} ${userProfile.lastName}`,
+      inviterName: inviterName,
       inviteUrl
     })
     

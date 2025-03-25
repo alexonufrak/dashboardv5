@@ -56,7 +56,7 @@ export function TeamInviteEmail({ firstName, teamName, inviterName, inviteUrl })
           <Section>
             <Text>Hi {firstName},</Text>
             <Text>
-              {inviterName} has invited you to join <strong>{teamName}</strong> on xFoundry!
+              {inviterName ? `${inviterName} has invited you` : "You've been invited"} to join <strong>{teamName}</strong> on xFoundry!
             </Text>
             <Text>
               xFoundry is a platform where students can collaborate on projects and 

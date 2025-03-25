@@ -217,15 +217,20 @@ export default async function inviteTeamMemberHandler(req, res) {
           
           // Send invitation email
           try {
+            // Extract first name and last name from the user profile's fields
+            const inviterFirstName = userProfile["First Name"] || "A team member";
+            const inviterLastName = userProfile["Last Name"] || "";
+            const inviterName = `${inviterFirstName} ${inviterLastName}`.trim();
+            
             await sendTeamInviteEmail({
               email: normalizedEmail,
               firstName: firstName.trim(),
               lastName: lastName.trim(),
               teamName: team.name,
-              inviterName: `${userProfile.firstName} ${userProfile.lastName}`,
+              inviterName: inviterName,
               inviteUrl
             });
-            console.log(`Invitation email sent to ${normalizedEmail}`);
+            console.log(`Invitation email sent to ${normalizedEmail} from ${inviterName}`);
           } catch (emailError) {
             console.error("Error sending invitation email:", emailError);
             // Continue even if email sending fails
