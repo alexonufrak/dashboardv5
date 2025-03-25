@@ -103,7 +103,7 @@ const LoginModal = ({ isOpen, onClose, initialEmail = "" }) => {
     
     if (userExists) {
       // If user exists, redirect to login with email prefilled
-      window.location.href = `/api/auth/login?login_hint=${encodedEmail}`;
+      window.location.href = `/auth/login?login_hint=${encodedEmail}`;
     } else {
       // If user doesn't exist, redirect to signup with email prefilled
       router.push(`/signup?email=${encodedEmail}`);

@@ -110,7 +110,7 @@ export default function SignUp() {
         
         // Delay redirect to show message to user for 2 seconds
         setTimeout(() => {
-          window.location.href = `/api/auth/login?prompt=login`;
+          window.location.href = `/auth/login?prompt=login`;
         }, 2000);
         return;
       }
@@ -271,7 +271,7 @@ export default function SignUp() {
     
     // Redirect directly to Google authentication, bypassing Auth0 login screen
     // Use login_hint with connection=google-oauth2 to go straight to Google
-    window.location.href = `/api/auth/login?connection=google-oauth2&${queryParams.toString()}&prompt=login&login_hint=${encodedEmail}`;
+    window.location.href = `/auth/login?connection=google-oauth2&${queryParams.toString()}&prompt=login&login_hint=${encodedEmail}`;
   };
 
   if (isLoading) {

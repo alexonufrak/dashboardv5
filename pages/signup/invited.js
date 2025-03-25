@@ -198,7 +198,7 @@ export default function InvitedSignup() {
     const encodedEmail = encodeURIComponent(formData.email);
     
     // Redirect directly to Google authentication, bypassing Auth0 login screen
-    window.location.href = `/api/auth/login?connection=google-oauth2&${queryParams.toString()}&prompt=login&login_hint=${encodedEmail}`;
+    window.location.href = `/auth/login?connection=google-oauth2&${queryParams.toString()}&prompt=login&login_hint=${encodedEmail}`;
   };
 
   if (isLoading || isVerifying) {
