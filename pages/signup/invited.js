@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
 import Layout from "@/components/layout/Layout"
+import AuthLayout from "@/components/layout/AuthLayout"
 import { useUser } from "@auth0/nextjs-auth0"
 import { Skeleton } from "@/components/ui/skeleton"
 import Logo from "@/components/common/Logo"
@@ -201,26 +202,23 @@ export default function InvitedSignup() {
 
   if (isLoading || isVerifying) {
     return (
-      <Layout title="Loading - xFoundry">
+      <AuthLayout title="Loading - xFoundry" showLogo={false}>
         <div className="flex min-h-[calc(100vh-100px)] w-full items-center justify-center py-10 px-4">
           <div className="w-full max-w-md">
             <Skeleton className="h-12 w-48 mx-auto mb-8" />
             <Skeleton className="h-[600px] w-full rounded-lg" />
           </div>
         </div>
-      </Layout>
+      </AuthLayout>
     );
   }
 
   if (!router.query.token) {
     return (
-      <Layout title="Invalid Invitation - xFoundry">
+      <AuthLayout title="Invalid Invitation - xFoundry" showLogo={true}>
         <div className="container mx-auto flex flex-col items-center justify-center py-12 px-4 lg:px-8">
           <div className="max-w-md w-full">
             <div className="text-center mb-8">
-              <div className="flex justify-center mb-4">
-                <Logo variant="horizontal" color="eden" height={50} />
-              </div>
               <h1 className="text-2xl font-bold tracking-tight text-primary">
                 Missing Invitation
               </h1>
@@ -245,19 +243,16 @@ export default function InvitedSignup() {
             </Card>
           </div>
         </div>
-      </Layout>
+      </AuthLayout>
     );
   }
 
   if (invitationStatus === "error" || invitationStatus === "invalid") {
     return (
-      <Layout title="Invalid Invitation - xFoundry">
+      <AuthLayout title="Invalid Invitation - xFoundry">
         <div className="container mx-auto flex flex-col items-center justify-center py-12 px-4 lg:px-8">
           <div className="max-w-md w-full">
             <div className="text-center mb-8">
-              <div className="flex justify-center mb-4">
-                <Logo variant="horizontal" color="eden" height={50} />
-              </div>
               <h1 className="text-2xl font-bold tracking-tight text-primary">
                 Invalid Invitation
               </h1>
@@ -282,19 +277,16 @@ export default function InvitedSignup() {
             </Card>
           </div>
         </div>
-      </Layout>
+      </AuthLayout>
     );
   }
 
   if (invitationStatus === "expired") {
     return (
-      <Layout title="Expired Invitation - xFoundry">
+      <AuthLayout title="Expired Invitation - xFoundry">
         <div className="container mx-auto flex flex-col items-center justify-center py-12 px-4 lg:px-8">
           <div className="max-w-md w-full">
             <div className="text-center mb-8">
-              <div className="flex justify-center mb-4">
-                <Logo variant="horizontal" color="eden" height={50} />
-              </div>
               <h1 className="text-2xl font-bold tracking-tight text-primary">
                 Invitation Expired
               </h1>
@@ -319,19 +311,16 @@ export default function InvitedSignup() {
             </Card>
           </div>
         </div>
-      </Layout>
+      </AuthLayout>
     );
   }
 
   if (invitationStatus === "accepted") {
     return (
-      <Layout title="Invitation Already Accepted - xFoundry">
+      <AuthLayout title="Invitation Already Accepted - xFoundry">
         <div className="container mx-auto flex flex-col items-center justify-center py-12 px-4 lg:px-8">
           <div className="max-w-md w-full">
             <div className="text-center mb-8">
-              <div className="flex justify-center mb-4">
-                <Logo variant="horizontal" color="eden" height={50} />
-              </div>
               <h1 className="text-2xl font-bold tracking-tight text-primary">
                 Invitation Already Accepted
               </h1>
@@ -356,19 +345,16 @@ export default function InvitedSignup() {
             </Card>
           </div>
         </div>
-      </Layout>
+      </AuthLayout>
     );
   }
 
   if (user && hasAccepted) {
     return (
-      <Layout title="Invitation Accepted - xFoundry">
+      <AuthLayout title="Invitation Accepted - xFoundry">
         <div className="container mx-auto flex flex-col items-center justify-center py-12 px-4 lg:px-8">
           <div className="max-w-md w-full">
             <div className="text-center mb-8">
-              <div className="flex justify-center mb-4">
-                <Logo variant="horizontal" color="eden" height={50} />
-              </div>
               <h1 className="text-2xl font-bold tracking-tight text-primary">
                 Invitation Accepted!
               </h1>
@@ -407,19 +393,16 @@ export default function InvitedSignup() {
             </Card>
           </div>
         </div>
-      </Layout>
+      </AuthLayout>
     );
   }
 
   if (user && !hasAccepted) {
     return (
-      <Layout title="Accept Invitation - xFoundry">
+      <AuthLayout title="Accept Invitation - xFoundry">
         <div className="container mx-auto flex flex-col items-center justify-center py-12 px-4 lg:px-8">
           <div className="max-w-md w-full">
             <div className="text-center mb-8">
-              <div className="flex justify-center mb-4">
-                <Logo variant="horizontal" color="eden" height={50} />
-              </div>
               <h1 className="text-2xl font-bold tracking-tight text-primary">
                 Team Invitation
               </h1>
@@ -459,12 +442,12 @@ export default function InvitedSignup() {
             </Card>
           </div>
         </div>
-      </Layout>
+      </AuthLayout>
     );
   }
 
   return (
-    <Layout title="Team Invitation - xFoundry">
+    <AuthLayout title="Team Invitation - xFoundry">
       <div className="container mx-auto flex flex-col items-center justify-center py-12 px-4 lg:px-8">
         <div className="max-w-5xl w-full">
           <div className="text-center mb-8">
@@ -701,6 +684,6 @@ export default function InvitedSignup() {
           </div>
         </div>
       </div>
-    </Layout>
+    </AuthLayout>
   );
 }
