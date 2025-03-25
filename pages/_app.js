@@ -4,7 +4,7 @@ import "@fillout/react/style.css" // Import Fillout styles
 import { Toaster } from 'sonner';
 import { OnboardingProvider } from '@/contexts/OnboardingContext'
 import { DashboardProvider } from '@/contexts/DashboardContext'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, QueryCache } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { Analytics } from "@vercel/analytics/react"
 import React, { useState, useEffect } from 'react'
@@ -135,6 +135,23 @@ function MyApp({ Component, pageProps }) {
   
   // Create a client for React Query with persistent cache
   const [queryClient] = useState(() => {
+    // Check for server-side rendering
+    if (typeof window === 'undefined') {
+      // For SSR, return a basic QueryClient without QueryCache to avoid SSR errors
+      return new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 5 * 60 * 1000, // 5 minutes by default
+            cacheTime: 60 * 60 * 1000, // 1 hour 
+            retry: 1,
+            refetchOnWindowFocus: false,
+            refetchOnReconnect: true,
+          },
+        },
+      });
+    }
+    
+    // For client-side only, use the full configuration with QueryCache
     const client = new QueryClient({
       defaultOptions: {
         queries: {
@@ -154,38 +171,35 @@ function MyApp({ Component, pageProps }) {
     });
     
     // Expose the queryClient globally for direct cache invalidation
-    if (typeof window !== 'undefined') {
-      window._queryClient = client;
-      console.log("QueryClient exposed globally for direct cache invalidation");
-    }
+    window._queryClient = client;
+    console.log("QueryClient exposed globally for direct cache invalidation");
     
     return client;
   });
   
   // Add listener for page refresh (not navigation) to clear initiative conflicts cache
   useEffect(() => {
+    // Skip this effect entirely during server-side rendering
+    if (typeof window === 'undefined') return;
+    
     // This will run when the page is loaded for the first time
     const handleBeforeUnload = () => {
       // Mark this as the most recent unload time
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('lastPageUnload', Date.now().toString());
-      }
+      localStorage.setItem('lastPageUnload', Date.now().toString());
     };
     
     // This will run when the page is loaded after a refresh
     const checkIfRefreshed = () => {
-      if (typeof window !== 'undefined') {
-        const lastUnload = localStorage.getItem('lastPageUnload');
+      const lastUnload = localStorage.getItem('lastPageUnload');
+      
+      if (lastUnload) {
+        const unloadTime = parseInt(lastUnload);
+        const loadTime = Date.now();
         
-        if (lastUnload) {
-          const unloadTime = parseInt(lastUnload);
-          const loadTime = Date.now();
-          
-          // If the time between unload and reload is less than 2 seconds, it was likely a refresh
-          if (loadTime - unloadTime < 2000) {
-            console.log('Page was refreshed, clearing initiative conflicts cache');
-            queryClient.invalidateQueries(['initiativeConflicts']);
-          }
+        // If the time between unload and reload is less than 2 seconds, it was likely a refresh
+        if (loadTime - unloadTime < 2000) {
+          console.log('Page was refreshed, clearing initiative conflicts cache');
+          queryClient.invalidateQueries(['initiativeConflicts']);
         }
       }
     };
