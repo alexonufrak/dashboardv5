@@ -57,14 +57,25 @@ export default function SignUp() {
     }
   };
 
+  // Track if verification has been run at least once
+  const hasVerified = useRef(false);
+
   // Function to check email domain against institution domains and check if user exists
   const verifyInstitution = useCallback(async () => {
+    // Skip if we've already verified to prevent loops
+    if (hasVerified.current && isVerifying) {
+      console.log("Skipping duplicate verification call");
+      return;
+    }
+
     // Basic email validation
     if (!email || !email.includes("@")) {
       setEmailError("Please enter a valid email address");
       return;
     }
     
+    // Mark that we've started verification
+    hasVerified.current = true;
     setIsVerifying(true);
     setEmailError("");
     setInstitutionStatus(null);
@@ -133,24 +144,26 @@ export default function SignUp() {
           };
           
           console.log("Prefilling form data:", updatedFormData);
-          setFormData(updatedFormData);
-          setHasPrefilledData(true);
-          
-          // Automatically proceed to step 2 if we have good prefilled data
-          if (metadata.firstName && metadata.lastName && !hasAutoAdvanced.current) {
-            // Mark that we've auto-advanced to prevent infinite loops
-            hasAutoAdvanced.current = true;
+          // Don't update state if the data is the same to avoid loops
+          const hasChanged = JSON.stringify(updatedFormData) !== JSON.stringify(formData);
+          if (hasChanged) {
+            setFormData(updatedFormData);
+            setHasPrefilledData(true);
             
-            // Brief delay to ensure institution verification completes
-            setTimeout(() => {
-              if (institutionStatus === "success" || institutionStatus === null) {
+            // Automatically proceed to step 2 if we have good prefilled data
+            if (metadata.firstName && metadata.lastName && !hasAutoAdvanced.current) {
+              // Mark that we've auto-advanced to prevent infinite loops
+              hasAutoAdvanced.current = true;
+              
+              // Brief delay to ensure institution verification completes
+              setTimeout(() => {
                 nextStep();
-              }
-            }, 500);
+              }, 500);
+            }
+            
+            // Show notification about found details
+            toast.success("We found your existing details! Continue with signup to access your account.");
           }
-          
-          // Show notification about found details
-          toast.success("We found your existing details! Continue with signup to access your account.");
         }
       }
       
@@ -184,7 +197,7 @@ export default function SignUp() {
     } finally {
       setIsVerifying(false);
     }
-  }, [email, formData, institutionStatus, nextStep]);
+  }, [email, formData, nextStep]);
 
   // Function to handle input changes for personal info form
   const handleInputChange = (e) => {
@@ -194,6 +207,9 @@ export default function SignUp() {
       [name]: value,
     });
   };
+
+  // Track if verification was auto-triggered from URL params
+  const autoVerifiedRef = useRef(false);
 
   // Redirect to dashboard if user is already logged in
   useEffect(() => {
@@ -207,12 +223,22 @@ export default function SignUp() {
     }
     
     // Get email from URL query parameters if available
-    if (router.query.email) {
+    if (router.query.email && !autoVerifiedRef.current) {
+      console.log("Setting email from URL param:", router.query.email);
       setEmail(router.query.email);
+      
       // Automatically initiate verification if email is provided via URL
       if (router.query.email.includes('@')) {
+        console.log("Auto-triggering verification from URL param");
+        // Mark that we've triggered verification to prevent loops
+        autoVerifiedRef.current = true;
+        
         // Need to wait for component to fully mount
-        setTimeout(() => verifyInstitution(), 500);
+        setTimeout(() => {
+          if (!hasVerified.current) {
+            verifyInstitution();
+          }
+        }, 500);
       }
     }
   }, [user, router, router.query, verifyInstitution]);
