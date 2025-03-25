@@ -17,6 +17,7 @@ import { AlertCircle, CheckCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { toast } from "sonner"
 import { inviteTeamMember } from "@/lib/useDataFetching"
+import { useEmail } from "@/hooks/use-email"
 
 /**
  * Dialog component for inviting users to a team
@@ -28,6 +29,7 @@ import { inviteTeamMember } from "@/lib/useDataFetching"
  */
 const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
   const queryClient = useQueryClient()
+  const { sendTeamInvite, isLoading: isEmailSending } = useEmail()
   const [email, setEmail] = useState("")
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -175,6 +177,24 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
         onTeamUpdated(data.team)
       }
       
+      // If we have an invite URL from the backend, we can send an email through the client
+      // This is a fallback in case the server-side email fails
+      if (data.invite?.inviteUrl) {
+        try {
+          // Send email via client-side
+          await sendTeamInvite({
+            email: email.trim(),
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            teamId: team.id,
+            inviteUrl: data.invite.inviteUrl
+          });
+        } catch (emailError) {
+          console.warn("Client-side email sending failed, but the invitation was created", emailError);
+          // Continue even if client-side email fails, since server-side should have attempted it
+        }
+      }
+      
       // Show success message
       toast.success(`Invitation sent to ${firstName} ${lastName}`, {
         description: `An invitation to join ${team?.name || "your team"} has been sent to ${email}.`,
@@ -300,9 +320,9 @@ const TeamInviteDialog = ({ team, open, onClose, onTeamUpdated }) => {
             </Button>
             <Button 
               type="submit" 
-              disabled={isSubmitting || !isVerified || !isValidDomain}
+              disabled={isSubmitting || isEmailSending || !isVerified || !isValidDomain}
             >
-              {isSubmitting ? "Sending..." : "Send Invitation"}
+              {isSubmitting || isEmailSending ? "Sending..." : "Send Invitation"}
             </Button>
           </DialogFooter>
         </form>

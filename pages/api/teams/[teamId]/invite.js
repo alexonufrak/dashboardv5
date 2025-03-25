@@ -6,6 +6,7 @@ import {
   lookupInstitutionByEmail,
   createTeamInvitation
 } from '@/lib/airtable'
+import { sendTeamInviteEmail } from '@/lib/email-service'
 
 /**
  * API handler to invite a new member to an existing team
@@ -213,6 +214,22 @@ export default async function inviteTeamMemberHandler(req, res) {
           inviteToken = invitation.token;
           inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || ''}/signup/invited?token=${inviteToken}`;
           console.log(`Generated invitation URL: ${inviteUrl}`);
+          
+          // Send invitation email
+          try {
+            await sendTeamInviteEmail({
+              email: normalizedEmail,
+              firstName: firstName.trim(),
+              lastName: lastName.trim(),
+              teamName: team.name,
+              inviterName: `${userProfile.firstName} ${userProfile.lastName}`,
+              inviteUrl
+            });
+            console.log(`Invitation email sent to ${normalizedEmail}`);
+          } catch (emailError) {
+            console.error("Error sending invitation email:", emailError);
+            // Continue even if email sending fails
+          }
         }
       } catch (inviteError) {
         console.error("Error creating invitation token:", inviteError);

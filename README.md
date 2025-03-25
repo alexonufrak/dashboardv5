@@ -17,6 +17,8 @@ xFoundry Dashboard is a comprehensive student management platform designed to co
 - Auth0 (Authentication)
 - Airtable (Data storage)
 - Vercel (Deployment)
+- Resend (Email delivery)
+- React Email (Email templates)
 
 ## Setup Instructions 
 
@@ -45,9 +47,10 @@ AUTH0_CLIENT_ID=your_auth0_client_id
 AUTH0_CLIENT_SECRET=your_auth0_client_secret
 AIRTABLE_API_KEY=your_airtable_api_key
 AIRTABLE_BASE_ID=your_airtable_base_id
+RESEND_API_KEY=your_resend_api_key
 \`\`\`
 
-Replace the placeholder values with your actual Auth0 and Airtable credentials.
+Replace the placeholder values with your actual Auth0, Airtable, and Resend credentials.
 
 ### Running the Application
 
@@ -86,6 +89,15 @@ Auth0 is integrated for secure user authentication. The authentication flow is h
 ### Airtable Data Storage
 
 Airtable is used as the primary data storage solution. The integration is managed through \`lib/airtable.js\`.
+
+### Email System
+
+Resend and React Email are used for creating and delivering beautiful, responsive emails. See [EMAIL_SYSTEM.md](docs/EMAIL_SYSTEM.md) for detailed documentation on:
+
+- Email template creation
+- Sending emails from server-side code
+- Using the email hook in client components
+- Best practices for email design
 
 ### Key Components
 
