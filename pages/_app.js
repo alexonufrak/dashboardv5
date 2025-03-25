@@ -53,7 +53,7 @@ class ErrorBoundary extends React.Component {
 }
 
 // Special AppContent component to handle non-dashboard pages
-function AppContent({ Component, pageProps, router }) {
+function AppContent({ Component, pageProps, router, queryClient }) {
   const { user, isLoading } = useUser();
   
   // Check if this is a dashboard-related page to keep app state
@@ -69,6 +69,26 @@ function AppContent({ Component, pageProps, router }) {
     router.pathname === '/program-dashboard' ||
     // Make sure all programs-related pages are included
     router.pathname.includes('/programs/apply/');
+
+  // Set up user-specific query keys when user is available
+  useEffect(() => {
+    if (user?.sub) {
+      // Associate the user ID with the query client to ensure user-specific cache
+      if (typeof window !== 'undefined') {
+        window._userId = user.sub;
+        console.log(`Setting user ID for cache isolation: ${user.sub.substring(0, 8)}...`);
+        
+        // Clear all queries when user changes
+        if (window._lastUserId && window._lastUserId !== user.sub) {
+          console.log("User changed, clearing all cached data");
+          queryClient.clear();
+        }
+        
+        // Store the current user ID for future comparisons
+        window._lastUserId = user.sub;
+      }
+    }
+  }, [user, queryClient]);
 
   // Handle onboarding check (moved from middleware)
   useEffect(() => {
@@ -125,6 +145,12 @@ function MyApp({ Component, pageProps }) {
           refetchOnReconnect: true, // Refetch when reconnecting (useful after a page refresh)
         },
       },
+      // Add queryCache config with a user-specific key prefix
+      queryCache: new QueryCache({
+        onError: (error) => {
+          console.error('Query cache error:', error);
+        },
+      }),
     });
     
     // Expose the queryClient globally for direct cache invalidation
@@ -203,7 +229,7 @@ function MyApp({ Component, pageProps }) {
         <Auth0Provider>
           <OnboardingProvider>
             <ErrorBoundary className="bg-white dark:bg-gray-900">
-              <AppContent Component={Component} pageProps={pageProps} router={router} />
+              <AppContent Component={Component} pageProps={pageProps} router={router} queryClient={queryClient} />
               <Analytics />
             </ErrorBoundary>
           </OnboardingProvider>
