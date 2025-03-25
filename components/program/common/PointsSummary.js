@@ -9,23 +9,23 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export default function PointsSummary({ team }) {
-  if (!team) return null
+  // Initialize states first
+  const [memberPoints, setMemberPoints] = useState([])
+  const [pointsBreakdown, setPointsBreakdown] = useState(null)
   
-  // Get total team points from the team data
-  const totalPoints = team.points || 0
-  
-  // Fetch point transactions for this team using React Query
+  // Fetch point transactions - use optional chaining for team
   const { 
     data: pointTransactions = [], 
     isLoading,
     isError 
-  } = usePointTransactions(null, team.id)
+  } = usePointTransactions(null, team?.id)
   
-  // Group transactions by member and calculate totals
-  const [memberPoints, setMemberPoints] = useState([])
-  const [pointsBreakdown, setPointsBreakdown] = useState(null)
+  // Get total team points from the team data
+  const totalPoints = team?.points || 0
   
   useEffect(() => {
+    // Return early inside the effect if no team
+    if (!team) return;
     if (!isLoading && pointTransactions?.length > 0 && team?.members?.length > 0) {
       // Create a map of member IDs to point totals
       const memberPointsMap = new Map()
@@ -108,6 +108,9 @@ export default function PointsSummary({ team }) {
     }
   }, [pointTransactions, team, isLoading, totalPoints])
 
+  // Early return after useEffect hook
+  if (!team) return null
+  
   return (
     <div className="space-y-4">
       {/* Total points display */}

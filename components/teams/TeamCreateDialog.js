@@ -621,7 +621,7 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
                       No teams are currently looking for members. 
-                      You can create your own team by clicking the "Create a New Team" button below.
+                      You can create your own team by clicking the &quot;Create a New Team&quot; button below.
                     </AlertDescription>
                   </Alert>
                 </div>
@@ -697,7 +697,7 @@ const TeamCreateDialog = ({ open, onClose, onCreateTeam, onJoinTeam, cohortId, p
           <DialogHeader>
             <DialogTitle>Join {selectedTeam?.name || "Team"}</DialogTitle>
             <DialogDescription>
-              Send a message to the team explaining why you'd like to join and what skills you bring.
+              Send a message to the team explaining why you&apos;d like to join and what skills you bring.
             </DialogDescription>
           </DialogHeader>
           

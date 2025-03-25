@@ -100,7 +100,7 @@ function Dashboard() {
       setActivePage("dashboard");
       setTitle("xFoundry Hub");
     }
-  }, [router.pathname, router.query]);
+  }, [router, router.pathname, router.query]);
   
   // Handle navigation
   const handleNavigation = (page) => {

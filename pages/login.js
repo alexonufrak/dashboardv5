@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useUser } from "@auth0/nextjs-auth0";
 import Head from "next/head";
+import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import Logo from "@/components/common/Logo";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +43,7 @@ export default function Login() {
         setTimeout(() => verifyEmailAndInstitution(), 500);
       }
     }
-  }, [user, router, router.query]);
+  }, [user, router, router.query, verifyEmailAndInstitution]);
 
   // Function to verify the institution and check if user exists
   const verifyEmailAndInstitution = async () => {
@@ -240,7 +241,7 @@ export default function Login() {
                     <Alert variant="default" className="bg-blue-50 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800">
                       <AlertCircle className="h-4 w-4 mr-2" />
                       <AlertDescription>
-                        No account found with this email. We'll help you create one.
+                        No account found with this email. We&apos;ll help you create one.
                       </AlertDescription>
                     </Alert>
                   )}
@@ -250,7 +251,7 @@ export default function Login() {
                     <Alert variant="destructive">
                       <XCircle className="h-4 w-4 mr-2" />
                       <AlertDescription>
-                        We couldn't verify your institution. Please use your school email.
+                        We couldn&apos;t verify your institution. Please use your school email.
                       </AlertDescription>
                     </Alert>
                   )}
@@ -323,7 +324,7 @@ export default function Login() {
                 
                 <div className="text-center">
                   <Button variant="outline" asChild className="w-full border-curious text-curious hover:bg-curious/5">
-                    <a href="/signup">Create New Account</a>
+                    <Link href="/signup">Create New Account</Link>
                   </Button>
                 </div>
               </div>

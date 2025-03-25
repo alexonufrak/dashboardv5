@@ -215,7 +215,7 @@ const InitiativeConflictDialog = ({
                 <Alert variant="outline" className="border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30">
                   <AlertDescription className="py-2">
                     <div className="mb-2"><span className="text-muted-foreground">Your active initiative:</span> <strong className="text-foreground">{details.conflictingInitiative || details.teamInitiative || "Current Program"}</strong></div>
-                    <div><span className="text-muted-foreground">Initiative you're applying to:</span> <strong className="text-foreground">{details.currentInitiative || details.appliedProgram || "New Program"}</strong></div>
+                    <div><span className="text-muted-foreground">Initiative you&apos;re applying to:</span> <strong className="text-foreground">{details.currentInitiative || details.appliedProgram || "New Program"}</strong></div>
                     <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-800/50">
                       <span className="font-medium text-amber-800 dark:text-amber-500">Initiative Conflict</span>
                     </div>
@@ -279,7 +279,7 @@ const InitiativeConflictDialog = ({
                 <Alert variant="outline" className="border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30">
                   <AlertDescription className="py-2">
                     <div className="mb-2"><span className="text-muted-foreground">Your active initiative:</span> <strong className="text-foreground">{details.currentProgram}</strong></div>
-                    <div><span className="text-muted-foreground">Initiative you're applying to:</span> <strong className="text-foreground">{details.appliedProgram}</strong></div>
+                    <div><span className="text-muted-foreground">Initiative you&apos;re applying to:</span> <strong className="text-foreground">{details.appliedProgram}</strong></div>
                     <div className="mt-2 pt-2 border-t border-amber-200 dark:border-amber-800/50">
                       <span className="font-medium text-amber-800 dark:text-amber-500">Initiative Conflict</span>
                     </div>

@@ -115,7 +115,7 @@ const FilloutPopupEmbed = ({
             </svg>
             <h3 className="text-xl font-bold mb-2">Application Submitted</h3>
             <p className="text-gray-600 mb-6">
-              Thank you for your application! We'll review it and get back to you soon.
+              Thank you for your application! We&apos;ll review it and get back to you soon.
             </p>
             <Button onClick={handleDialogClose}>
               Close

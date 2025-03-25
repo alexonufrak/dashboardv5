@@ -104,7 +104,7 @@ function DashboardHomeInner({ onNavigate }) {
         onboardingInitializedRef.current = true;
       }, 500); 
     }
-  }, [profile, applications, participationData, isProgramLoading])
+  }, [profile, applications, participationData, isProgramLoading, checkOnboardingStatus])
   
   // Handler functions
   const handleEditClick = () => {
@@ -276,7 +276,7 @@ function DashboardHomeInner({ onNavigate }) {
                   <span>Your Teams</span>
                 </CardTitle>
                 <CardDescription>
-                  Teams you're participating in
+                  Teams you&apos;re participating in
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-3">
@@ -317,7 +317,7 @@ function DashboardHomeInner({ onNavigate }) {
                 ) : (
                   <BlurFade delay={0.35} direction="up">
                     <div className="text-center py-6 text-muted-foreground">
-                      <p>You haven't joined any teams yet</p>
+                      <p>You haven&apos;t joined any teams yet</p>
                       <p className="text-sm mt-1">Join or create a team to get started</p>
                     </div>
                   </BlurFade>
@@ -592,7 +592,7 @@ function DashboardHomeInner({ onNavigate }) {
                 <span>Your Teams</span>
               </CardTitle>
               <CardDescription>
-                Teams you're participating in
+                Teams you&apos;re participating in
               </CardDescription>
             </CardHeader>
             <CardContent>

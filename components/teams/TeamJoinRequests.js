@@ -112,7 +112,7 @@ export default function TeamJoinRequests({ applications = [], isLoading = false,
                 {application.joinTeamMessage && (
                   <div className="text-sm text-muted-foreground">
                     <p className="font-medium text-foreground mb-1">Your message:</p>
-                    <p className="italic">"{application.joinTeamMessage}"</p>
+                    <p className="italic">&quot;{application.joinTeamMessage}&quot;</p>
                   </div>
                 )}
               </CardContent>

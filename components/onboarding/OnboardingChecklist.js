@@ -618,10 +618,10 @@ const OnboardingChecklist = ({
                             <CheckCircle className="h-8 w-8 text-green-600" />
                           </div>
                           <h3 className="text-xl font-medium text-green-700 mb-2">
-                            You've applied to a program!
+                            You&apos;ve applied to a program!
                           </h3>
                           <p className="text-muted-foreground max-w-md mb-4">
-                            Your application has been submitted. You'll receive updates about your application status soon.
+                            Your application has been submitted. You&apos;ll receive updates about your application status soon.
                           </p>
                         </div>
                       )}

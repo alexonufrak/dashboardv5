@@ -5,6 +5,7 @@ import { useRouter } from "next/router"
 import Layout from "@/components/layout/Layout"
 import AuthLayout from "@/components/layout/AuthLayout"
 import { useUser } from "@auth0/nextjs-auth0"
+import Link from "next/link"
 import { Skeleton } from "@/components/ui/skeleton"
 import Logo from "@/components/common/Logo"
 import { Card } from "@/components/ui/card"
@@ -44,7 +45,7 @@ export default function InvitedSignup() {
     if (router.query.token) {
       verifyInvitation(router.query.token);
     }
-  }, [router.query.token]);
+  }, [router.query.token, verifyInvitation]);
 
   // Check if user is already logged in
   useEffect(() => {
@@ -55,7 +56,7 @@ export default function InvitedSignup() {
       // User is logged in but no invitation - redirect to dashboard
       router.push("/dashboard");
     }
-  }, [user, invitation]);
+  }, [user, invitation, handleExistingUserInvite, router]);
 
   // Function to verify the invitation token
   const verifyInvitation = async (token) => {
@@ -416,17 +417,17 @@ export default function InvitedSignup() {
               </div>
               
               <h2 className="text-xl font-semibold text-center mb-2">
-                You're Invited!
+                You&apos;re Invited!
               </h2>
               
               <p className="text-gray-600 text-center mb-4">
-                You've been invited to join {invitation?.team?.name || "a team"} on xFoundry.
+                You&apos;ve been invited to join {invitation?.team?.name || "a team"} on xFoundry.
               </p>
               
               <Alert className="bg-blue-50 text-blue-800 border-blue-200 mb-6">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
-                  Since you're already signed in, you can accept this invitation directly.
+                  Since you&apos;re already signed in, you can accept this invitation directly.
                 </AlertDescription>
               </Alert>
               
@@ -530,7 +531,7 @@ export default function InvitedSignup() {
                     
                     <h2 className="text-xl font-semibold text-center">Verify Your Email</h2>
                     <p className="text-gray-500 text-center">
-                      Your invitation was sent to the following email address. Confirm it's correct.
+                      Your invitation was sent to the following email address. Confirm it&apos;s correct.
                     </p>
                     
                     <div className="space-y-4">
@@ -679,7 +680,7 @@ export default function InvitedSignup() {
           
           <div className="text-center mt-6">
             <p className="text-sm text-gray-600">
-              Already have an account? <a href="/login" className="text-primary font-semibold hover:underline">Sign In</a>
+              Already have an account? <Link href="/login" className="text-primary font-semibold hover:underline">Sign In</Link>
             </p>
           </div>
         </div>

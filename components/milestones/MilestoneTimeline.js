@@ -231,7 +231,7 @@ export default function MilestoneTimeline({
             <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-medium mb-1">No Timeline Available</h3>
             <p className="text-sm">
-              This program doesn't have any milestones defined yet.
+              This program doesn&apos;t have any milestones defined yet.
               <br />
               Program administrators will add milestones when they are ready.
             </p>

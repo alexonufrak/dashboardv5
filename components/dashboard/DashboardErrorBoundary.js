@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 class DashboardErrorBoundary extends React.Component {
   constructor(props) {
@@ -33,7 +34,7 @@ class DashboardErrorBoundary extends React.Component {
           <p className="text-red-700 mb-3">The error above occurred while rendering this page. Please try one of the following:</p>
           <ul className="list-disc pl-5 mb-4 text-red-700">
             <li>Refresh the page</li>
-            <li>Return to the <a href="/dashboard" className="underline">main dashboard</a></li>
+            <li>Return to the <Link href="/dashboard" className="underline">main dashboard</Link></li>
             <li>Log out and log back in</li>
           </ul>
           <button 

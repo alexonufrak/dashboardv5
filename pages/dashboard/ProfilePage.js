@@ -225,7 +225,7 @@ function ProfilePageInner({ onNavigate }) {
                 <CardHeader>
                   <CardTitle>Programs & Participation</CardTitle>
                   <CardDescription>
-                    Programs you're enrolled in and your participation records
+                    Programs you&apos;re enrolled in and your participation records
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -249,7 +249,7 @@ function ProfilePageInner({ onNavigate }) {
                       ))
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">
-                        <p>You're not enrolled in any programs yet.</p>
+                        <p>You&apos;re not enrolled in any programs yet.</p>
                         <Button 
                           variant="outline" 
                           className="mt-4"

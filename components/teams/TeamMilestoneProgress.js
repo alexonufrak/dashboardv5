@@ -151,7 +151,7 @@ export default function TeamMilestoneProgress({ milestones: initialMilestones = 
           <AlertCircle className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
           <h3 className="text-lg font-medium mb-2">No Milestones Available</h3>
           <p className="text-sm">
-            This team doesn't have any milestones assigned yet.
+            This team doesn&apos;t have any milestones assigned yet.
             <br />
             Your program coordinator will add milestones when they are ready.
           </p>

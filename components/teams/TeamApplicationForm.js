@@ -362,7 +362,7 @@ const TeamApplicationForm = ({ profile, cohort, onSubmit, isPage = false }) => {
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
                       No teams are currently looking for members. 
-                      You can create your own team by switching to the "Create New Team" tab.
+                      You can create your own team by switching to the &quot;Create New Team&quot; tab.
                     </AlertDescription>
                   </Alert>
                 </div>

@@ -421,7 +421,7 @@ const TeamSelectDialog = ({ open, onClose, onSubmit, cohort, teams = [] }) => {
               ) : (
                 <div className="flex flex-col space-y-2">
                   <p className="text-sm text-muted-foreground">
-                    You don't have any teams yet. Create a team to continue.
+                    You don&apos;t have any teams yet. Create a team to continue.
                   </p>
                   <Button
                     type="button"

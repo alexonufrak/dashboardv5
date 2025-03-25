@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0"
 import Head from "next/head"
+import Link from "next/link"
 import { Skeleton } from "@/components/ui/skeleton"
 import Logo from "@/components/common/Logo"
 import { Card } from "@/components/ui/card"
@@ -60,7 +61,7 @@ export default function SignUp() {
         setTimeout(() => verifyInstitution(), 500);
       }
     }
-  }, [user, router, router.query]);
+  }, [user, router, router.query, verifyInstitution]);
 
   // Function to check email domain against institution domains and check if user exists
   const verifyInstitution = async () => {
@@ -372,7 +373,7 @@ export default function SignUp() {
                     
                     <h2 className="text-xl font-semibold text-center">Verify Your Institution</h2>
                     <p className="text-gray-500 text-center">
-                      Enter your institutional email to get started. We'll verify that your school is part of our network.
+                      Enter your institutional email to get started. We&apos;ll verify that your school is part of our network.
                     </p>
                     
                     <div className="space-y-4">
@@ -474,7 +475,7 @@ export default function SignUp() {
                       <Alert className="mt-2 bg-blue-50 text-blue-800 border-blue-200">
                         <CheckCircle className="h-4 w-4 mr-2 text-blue-500" />
                         <AlertDescription>
-                          We found your existing information! Please verify it's correct before continuing.
+                          We found your existing information! Please verify it&apos;s correct before continuing.
                         </AlertDescription>
                       </Alert>
                     ) : (
@@ -621,7 +622,7 @@ export default function SignUp() {
           
           <div className="text-center mt-6">
             <p className="text-sm text-gray-600">
-              Already have an account? <a href="/login" className="text-primary font-semibold hover:underline">Sign In</a>
+              Already have an account? <Link href="/login" className="text-primary font-semibold hover:underline">Sign In</Link>
             </p>
           </div>
         </div>

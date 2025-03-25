@@ -21,7 +21,7 @@ const TeamSelectPanel = ({ teams, selectedTeam, onSelectTeam }) => {
   if (!teams || teams.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">You don't have any teams yet.</p>
+        <p className="text-muted-foreground">You don&apos;t have any teams yet.</p>
       </div>
     )
   }

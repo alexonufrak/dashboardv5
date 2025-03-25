@@ -671,7 +671,7 @@ export default function MilestoneSubmissionDialog({
             <p className="text-sm">
               There are no submissions for this milestone.
               <br />
-              Use the "Submit" button on the milestone table to make a submission.
+              Use the &quot;Submit&quot; button on the milestone table to make a submission.
             </p>
           </div>
         </div>
@@ -904,8 +904,8 @@ export default function MilestoneSubmissionDialog({
                       <div>
                         <p className="text-sm font-medium text-warning-foreground">File Upload Alternative</p>
                         <p className="text-xs text-warning-foreground/80 mt-0.5">
-                          If file upload doesn't work, you can upload your file to Google Drive, Dropbox, 
-                          or another service and share the link using the "Add Link" tab.
+                          If file upload doesn&apos;t work, you can upload your file to Google Drive, Dropbox, 
+                          or another service and share the link using the &quot;Add Link&quot; tab.
                         </p>
                       </div>
                     </div>

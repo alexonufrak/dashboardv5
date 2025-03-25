@@ -51,7 +51,7 @@ export default function TeamInviteSuccessAlert({ onDismiss }) {
       <div className="flex items-start space-x-2">
         <CheckCircle className="h-5 w-5 text-green-600 mt-0.5" />
         <AlertDescription className="text-sm font-medium">
-          Welcome to the team! You've successfully joined <span className="font-semibold">{teamName}</span>.
+          Welcome to the team! You&apos;ve successfully joined <span className="font-semibold">{teamName}</span>.
         </AlertDescription>
       </div>
       <Button 

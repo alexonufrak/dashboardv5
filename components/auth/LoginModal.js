@@ -121,7 +121,7 @@ const LoginModal = ({ isOpen, onClose, initialEmail = "" }) => {
         
         <div className="py-5">
           <p className="text-sm text-muted-foreground mb-6">
-            Please use your school email address. We'll verify your institution 
+            Please use your school email address. We&apos;ll verify your institution 
             and either sign you in or help you create a new account.
           </p>
           

@@ -24,10 +24,12 @@ import { Calendar, MapPin, Clock, Users, BookOpen, ExternalLink } from "lucide-r
 import ProgramApplicationHandler from "./ProgramApplicationHandler"
 
 const ProgramDetailModal = ({ cohort, isOpen, onClose, onApply, profile, applications = [] }) => {
-  if (!cohort) return null
-
+  // Initialize state hooks first, before any conditional logic
   const [showApplicationHandler, setShowApplicationHandler] = useState(false)
   const [isApplying, setIsApplying] = useState(false)
+  
+  // Early return after hooks are defined
+  if (!cohort) return null
 
   const initiativeName = cohort.initiativeDetails?.name || "Unknown Initiative"
   const topics = cohort.topicNames || []
