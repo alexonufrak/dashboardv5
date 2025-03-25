@@ -31,20 +31,49 @@ export function NotParticipatingError({ onNavigateToDashboard }) {
  * Component displayed when there is a general error loading the program
  */
 export function GeneralProgramError({ error, onRetry, onNavigateToDashboard }) {
-  return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <div className="text-center">
-        <div className="bg-destructive/10 text-destructive border border-destructive/20 p-4 rounded-md mb-4">
-          <h3 className="text-lg font-medium">Error Loading Program</h3>
-          <p>{error}</p>
+  // Import ErrorDisplay dynamically to avoid circular dependencies
+  const [ErrorDisplay, setErrorDisplay] = React.useState(null);
+  
+  React.useEffect(() => {
+    // Dynamically import the ErrorDisplay component
+    import('@/components/common/ErrorDisplay').then(module => {
+      setErrorDisplay(() => module.default);
+    });
+  }, []);
+  
+  // Show a simpler error while loading the ErrorDisplay component
+  if (!ErrorDisplay) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-center">
+          <div className="bg-destructive/10 text-destructive border border-destructive/20 p-4 rounded-md mb-4">
+            <h3 className="text-lg font-medium">Error Loading Program</h3>
+            <p>{error}</p>
+          </div>
+          <Button onClick={onRetry}>Retry</Button>
+          <Button variant="outline" className="ml-2" onClick={onNavigateToDashboard}>
+            Return to Dashboard
+          </Button>
         </div>
-        <Button onClick={onRetry}>Retry</Button>
-        <Button variant="outline" className="ml-2" onClick={onNavigateToDashboard}>
-          Return to Dashboard
-        </Button>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="flex items-center justify-center min-h-[50vh] p-4">
+      <div className="w-full max-w-3xl">
+        <ErrorDisplay
+          title="Error Loading Program"
+          message={error}
+          redirectUrl="/dashboard"
+          redirectLabel="Return to Dashboard"
+          onRetry={onRetry}
+          errorCode="PROGRAM_LOAD_ERROR"
+          errorDetails={`Failed to load program data. This could be due to network issues, data access permissions, or a temporary service disruption.`}
+        />
       </div>
     </div>
-  )
+  );
 }
 
 /**
