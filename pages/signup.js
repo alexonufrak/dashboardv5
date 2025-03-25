@@ -41,27 +41,19 @@ export default function SignUp() {
     referralSource: ""
   });
 
-  // Redirect to dashboard if user is already logged in
-  useEffect(() => {
-    if (user) {
-      // If there's a cohortId parameter, add it to the dashboard redirect
-      if (router.query.cohortId) {
-        router.push(`/dashboard?cohortId=${router.query.cohortId}`);
-      } else {
-        router.push("/dashboard");
-      }
+  // Function to continue to the next step
+  const nextStep = () => {
+    if (currentStep < 2) {
+      setCurrentStep(currentStep + 1);
     }
-    
-    // Get email from URL query parameters if available
-    if (router.query.email) {
-      setEmail(router.query.email);
-      // Automatically initiate verification if email is provided via URL
-      if (router.query.email.includes('@')) {
-        // Need to wait for component to fully mount
-        setTimeout(() => verifyInstitution(), 500);
-      }
+  };
+
+  // Function to go back to the previous step
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
     }
-  }, [user, router, router.query, verifyInstitution]);
+  };
 
   // Function to check email domain against institution domains and check if user exists
   const verifyInstitution = useCallback(async () => {
@@ -198,19 +190,27 @@ export default function SignUp() {
     });
   };
 
-  // Function to continue to the next step
-  const nextStep = () => {
-    if (currentStep < 2) {
-      setCurrentStep(currentStep + 1);
+  // Redirect to dashboard if user is already logged in
+  useEffect(() => {
+    if (user) {
+      // If there's a cohortId parameter, add it to the dashboard redirect
+      if (router.query.cohortId) {
+        router.push(`/dashboard?cohortId=${router.query.cohortId}`);
+      } else {
+        router.push("/dashboard");
+      }
     }
-  };
-
-  // Function to go back to the previous step
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+    
+    // Get email from URL query parameters if available
+    if (router.query.email) {
+      setEmail(router.query.email);
+      // Automatically initiate verification if email is provided via URL
+      if (router.query.email.includes('@')) {
+        // Need to wait for component to fully mount
+        setTimeout(() => verifyInstitution(), 500);
+      }
     }
-  };
+  }, [user, router, router.query, verifyInstitution]);
 
   // Function to handle the Google sign up/in
   const handleGoogleSignup = () => {
