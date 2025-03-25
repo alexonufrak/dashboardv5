@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0"
 import Head from "next/head"
@@ -32,6 +32,8 @@ export default function SignUp() {
   const [userExists, setUserExists] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [hasPrefilledData, setHasPrefilledData] = useState(false);
+  // Use a ref to track if we've already auto-advanced to step 2 to prevent infinite loops
+  const hasAutoAdvanced = useRef(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -135,7 +137,10 @@ export default function SignUp() {
           setHasPrefilledData(true);
           
           // Automatically proceed to step 2 if we have good prefilled data
-          if (metadata.firstName && metadata.lastName) {
+          if (metadata.firstName && metadata.lastName && !hasAutoAdvanced.current) {
+            // Mark that we've auto-advanced to prevent infinite loops
+            hasAutoAdvanced.current = true;
+            
             // Brief delay to ensure institution verification completes
             setTimeout(() => {
               if (institutionStatus === "success" || institutionStatus === null) {
