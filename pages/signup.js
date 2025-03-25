@@ -187,7 +187,7 @@ export default function SignUp() {
     } finally {
       setIsVerifying(false);
     }
-  }, [email]);
+  }, [email, formData, institutionStatus, nextStep]);
 
   // Function to handle input changes for personal info form
   const handleInputChange = (e) => {

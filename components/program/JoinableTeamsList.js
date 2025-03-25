@@ -259,20 +259,20 @@ const JoinableTeamsList = ({ teams = [], cohort, profile, onApplySuccess, onClos
                             {getTeamMembersCount(team)}
                           </Badge>
                         </div>
-                      <div className="flex flex-col gap-1">
-                        {team.institution && (
-                          <CardDescription className="text-xs">
-                            {team.institution.name}
-                          </CardDescription>
-                        )}
-                        {team.displayMembers && team.displayMembers.length > 0 && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            <span className="font-medium">Members:</span> {team.displayMembers.join(", ")}
-                            {team.hasMoreMembers && ` +${team.additionalMembersCount} more`}
-                          </div>
-                        )}
-                      </div>
-                    </CardHeader>
+                        <div className="flex flex-col gap-1">
+                          {team.institution && (
+                            <CardDescription className="text-xs">
+                              {team.institution.name}
+                            </CardDescription>
+                          )}
+                          {team.displayMembers && team.displayMembers.length > 0 && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              <span className="font-medium">Members:</span> {team.displayMembers.join(", ")}
+                              {team.hasMoreMembers && ` +${team.additionalMembersCount} more`}
+                            </div>
+                          )}
+                        </div>
+                      </CardHeader>
                     <CardContent className="text-sm">
                       <p className="line-clamp-3">{team.description || "Team description not available."}</p>
                     </CardContent>

@@ -28,23 +28,6 @@ export default function Login() {
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [userExists, setUserExists] = useState(null);
 
-  // If user is already logged in, redirect to dashboard
-  useEffect(() => {
-    if (user) {
-      router.push("/dashboard");
-    }
-
-    // Get email from URL query parameters if available
-    if (router.query.email) {
-      setEmail(router.query.email);
-      
-      // Auto-verify if email is in the URL
-      if (router.query.email.includes('@')) {
-        setTimeout(() => verifyEmailAndInstitution(), 500);
-      }
-    }
-  }, [user, router, router.query, verifyEmailAndInstitution]);
-
   // Function to verify the institution and check if user exists - wrapped in useCallback
   const verifyEmailAndInstitution = useCallback(async () => {
     // Basic email validation
@@ -128,6 +111,23 @@ export default function Login() {
       setIsVerifying(false);
     }
   }, [email]);
+
+  // If user is already logged in, redirect to dashboard
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard");
+    }
+
+    // Get email from URL query parameters if available
+    if (router.query.email) {
+      setEmail(router.query.email);
+      
+      // Auto-verify if email is in the URL
+      if (router.query.email.includes('@')) {
+        setTimeout(() => verifyEmailAndInstitution(), 500);
+      }
+    }
+  }, [user, router, router.query, verifyEmailAndInstitution]);
 
   // Function to proceed to login or signup based on user existence
   const proceedToAuth = () => {

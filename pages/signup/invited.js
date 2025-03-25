@@ -99,7 +99,7 @@ export default function InvitedSignup() {
     } finally {
       setIsVerifying(false);
     }
-  }, []);
+  }, [formData]);
 
   // Handle existing user accepting the invitation
   const handleExistingUserInvite = useCallback(async () => {
@@ -144,7 +144,7 @@ export default function InvitedSignup() {
     } finally {
       setIsAccepting(false);
     }
-  }, [invitation, hasAccepted, router]);
+  }, [invitation, hasAccepted, router, formData]);
 
   // Function to handle input changes for personal info form
   const handleInputChange = (e) => {
