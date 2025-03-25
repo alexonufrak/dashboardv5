@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { useUser } from "@auth0/nextjs-auth0";
 import Head from "next/head";
@@ -45,8 +45,8 @@ export default function Login() {
     }
   }, [user, router, router.query, verifyEmailAndInstitution]);
 
-  // Function to verify the institution and check if user exists
-  const verifyEmailAndInstitution = async () => {
+  // Function to verify the institution and check if user exists - wrapped in useCallback
+  const verifyEmailAndInstitution = useCallback(async () => {
     // Basic email validation
     if (!email || !email.includes("@")) {
       setEmailError("Please enter a valid email address");
@@ -127,7 +127,7 @@ export default function Login() {
     } finally {
       setIsVerifying(false);
     }
-  };
+  }, [email]);
 
   // Function to proceed to login or signup based on user existence
   const proceedToAuth = () => {

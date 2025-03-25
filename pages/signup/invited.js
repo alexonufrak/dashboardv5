@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/router"
 import Layout from "@/components/layout/Layout"
 import AuthLayout from "@/components/layout/AuthLayout"
@@ -59,7 +59,7 @@ export default function InvitedSignup() {
   }, [user, invitation, handleExistingUserInvite, router]);
 
   // Function to verify the invitation token
-  const verifyInvitation = async (token) => {
+  const verifyInvitation = useCallback(async (token) => {
     setIsVerifying(true);
     setInvitationStatus(null);
     
@@ -99,10 +99,10 @@ export default function InvitedSignup() {
     } finally {
       setIsVerifying(false);
     }
-  };
+  }, []);
 
   // Handle existing user accepting the invitation
-  const handleExistingUserInvite = async () => {
+  const handleExistingUserInvite = useCallback(async () => {
     if (!invitation || !invitation.token || hasAccepted) {
       return;
     }
@@ -144,7 +144,7 @@ export default function InvitedSignup() {
     } finally {
       setIsAccepting(false);
     }
-  };
+  }, [invitation, hasAccepted, router]);
 
   // Function to handle input changes for personal info form
   const handleInputChange = (e) => {

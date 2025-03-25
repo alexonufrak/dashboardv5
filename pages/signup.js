@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0"
 import Head from "next/head"
@@ -64,7 +64,7 @@ export default function SignUp() {
   }, [user, router, router.query, verifyInstitution]);
 
   // Function to check email domain against institution domains and check if user exists
-  const verifyInstitution = async () => {
+  const verifyInstitution = useCallback(async () => {
     // Basic email validation
     if (!email || !email.includes("@")) {
       setEmailError("Please enter a valid email address");
@@ -187,7 +187,7 @@ export default function SignUp() {
     } finally {
       setIsVerifying(false);
     }
-  };
+  }, [email]);
 
   // Function to handle input changes for personal info form
   const handleInputChange = (e) => {
