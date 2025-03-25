@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/router"
 import Layout from "@/components/layout/Layout"
 import AuthLayout from "@/components/layout/AuthLayout"
@@ -40,26 +40,19 @@ export default function InvitedSignup() {
     referralSource: "Team Invite"
   });
 
-  // Handle token from query parameters
-  useEffect(() => {
-    if (router.query.token) {
-      verifyInvitation(router.query.token);
-    }
-  }, [router.query.token, verifyInvitation]);
-
-  // Check if user is already logged in
-  useEffect(() => {
-    if (user && invitation) {
-      // If user is logged in and we have invitation details
-      handleExistingUserInvite();
-    } else if (user) {
-      // User is logged in but no invitation - redirect to dashboard
-      router.push("/dashboard");
-    }
-  }, [user, invitation, handleExistingUserInvite, router]);
+  // Track if invitation has been verified to prevent loops
+  const hasVerifiedInvitation = useRef(false);
 
   // Function to verify the invitation token
   const verifyInvitation = useCallback(async (token) => {
+    // Skip if already verifying to prevent loops
+    if (isVerifying || hasVerifiedInvitation.current) {
+      console.log("Skipping duplicate invitation verification");
+      return;
+    }
+    
+    console.log("Verifying invitation token:", token);
+    hasVerifiedInvitation.current = true;
     setIsVerifying(true);
     setInvitationStatus(null);
     
@@ -79,13 +72,21 @@ export default function InvitedSignup() {
       // Check if invitation is valid
       if (data.isValid) {
         setInvitationStatus("valid");
-        // Pre-fill form data from invitation
-        setFormData({
+        
+        // Only update form data if it's different
+        const updatedFormData = {
           ...formData,
           email: data.email,
           firstName: data.firstName || "",
           lastName: data.lastName || "",
-        });
+        };
+        
+        // Check if data actually changed to avoid loops
+        const hasDataChanged = JSON.stringify(updatedFormData) !== JSON.stringify(formData);
+        if (hasDataChanged) {
+          console.log("Updating form data with invitation details");
+          setFormData(updatedFormData);
+        }
       } else if (data.status === "Expired") {
         setInvitationStatus("expired");
       } else if (data.status === "Accepted") {
@@ -99,14 +100,26 @@ export default function InvitedSignup() {
     } finally {
       setIsVerifying(false);
     }
-  }, [formData]);
+  }, [formData, isVerifying]);
+  
+  // Track if invitation has been accepted to prevent loops
+  const hasAttemptedAccept = useRef(false);
 
   // Handle existing user accepting the invitation
   const handleExistingUserInvite = useCallback(async () => {
-    if (!invitation || !invitation.token || hasAccepted) {
+    // Skip if already processed or no valid invitation
+    if (!invitation || !invitation.token || hasAccepted || isAccepting) {
       return;
     }
     
+    // Skip if already attempted to prevent duplicate attempts
+    if (hasAttemptedAccept.current) {
+      console.log("Skipping duplicate invitation acceptance attempt");
+      return;
+    }
+    
+    console.log("Processing invitation acceptance:", invitation.token);
+    hasAttemptedAccept.current = true;
     setIsAccepting(true);
     
     try {
@@ -144,7 +157,30 @@ export default function InvitedSignup() {
     } finally {
       setIsAccepting(false);
     }
-  }, [invitation, hasAccepted, router, formData]);
+  }, [invitation, hasAccepted, router, isAccepting]);
+
+  // Track if verification was triggered from URL token
+  const verificationTriggeredRef = useRef(false);
+  
+  // Handle token from query parameters
+  useEffect(() => {
+    if (router.query.token && !verificationTriggeredRef.current) {
+      console.log("Triggering invitation verification from URL token:", router.query.token);
+      verificationTriggeredRef.current = true;
+      verifyInvitation(router.query.token);
+    }
+  }, [router.query.token, verifyInvitation]);
+
+  // Check if user is already logged in
+  useEffect(() => {
+    if (user && invitation) {
+      // If user is logged in and we have invitation details
+      handleExistingUserInvite();
+    } else if (user) {
+      // User is logged in but no invitation - redirect to dashboard
+      router.push("/dashboard");
+    }
+  }, [user, invitation, handleExistingUserInvite, router]);
 
   // Function to handle input changes for personal info form
   const handleInputChange = (e) => {
