@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
+import { useRouter } from "next/router"
+import { useQueryClient } from "@tanstack/react-query"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,6 +21,7 @@ import {
   TableRow 
 } from "@/components/ui/table"
 import { MoreHorizontal, UserMinus } from "lucide-react"
+import { toast } from "sonner"
 
 const getInitials = (name) => {
   if (!name) return "??"
@@ -54,9 +57,11 @@ const MemberStatusBadge = ({ status }) => {
   )
 }
 
-const MemberActions = ({ member, onRemoveMember }) => {
+const MemberActions = ({ member, onRemoveMember, onRescindInvite }) => {
   const handleRemove = () => {
-    if (onRemoveMember) {
+    if (member.status === 'Invited' && onRescindInvite) {
+      onRescindInvite(member.id)
+    } else if (onRemoveMember) {
       onRemoveMember(member.id)
     }
   }
@@ -72,14 +77,14 @@ const MemberActions = ({ member, onRemoveMember }) => {
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={handleRemove} className="text-red-600 dark:text-red-400">
           <UserMinus className="h-4 w-4 mr-2" />
-          Remove Member
+          {member.status === 'Invited' ? 'Rescind Invite' : 'Remove Member'}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )
 }
 
-const MembersTable = ({ members, onRemoveMember, isInactiveTable = false }) => {
+const MembersTable = ({ members, onRemoveMember, onRescindInvite, isInactiveTable = false }) => {
   return (
     <Table>
       <TableHeader>
@@ -124,7 +129,8 @@ const MembersTable = ({ members, onRemoveMember, isInactiveTable = false }) => {
                 {!member.isCurrentUser && (
                   <MemberActions 
                     member={member} 
-                    onRemoveMember={onRemoveMember} 
+                    onRemoveMember={onRemoveMember}
+                    onRescindInvite={onRescindInvite}
                   />
                 )}
               </TableCell>
@@ -136,17 +142,56 @@ const MembersTable = ({ members, onRemoveMember, isInactiveTable = false }) => {
   )
 }
 
-export default function TeamMemberList({ team, detailed = false, truncated = false }) {
+export default function TeamMemberList({ team, detailed = false, truncated = false, onTeamUpdated }) {
+  const router = useRouter()
+  const queryClient = useQueryClient()
+  const [isLoading, setIsLoading] = useState(false)
+  
   // Track active/inactive members state
   const [memberStates, setMemberStates] = useState(() => {
     return team?.members?.reduce((acc, member) => {
-      acc[member.id] = { ...member, isActive: true }
+      // Consider both actual status and our local active state
+      acc[member.id] = { 
+        ...member, 
+        isActive: member.status !== 'Inactive' 
+      }
       return acc
     }, {}) || {}
   })
   
   // Track if inactive members are visible
   const [showInactive, setShowInactive] = useState(false)
+  
+  // Use a flag to track if the component is mounted
+  const [isMounted, setIsMounted] = useState(false)
+  
+  // Update member states when team data changes
+  useEffect(() => {
+    if (isMounted && team?.members) {
+      setMemberStates(prev => {
+        // Build a new state object preserving our local isActive flag where possible
+        const newState = {}
+        team.members.forEach(member => {
+          // If we have previous state for this member, use it
+          if (prev[member.id]) {
+            newState[member.id] = {
+              ...member,
+              isActive: member.status !== 'Inactive' && prev[member.id].isActive
+            }
+          } else {
+            // Otherwise use status to determine active state
+            newState[member.id] = {
+              ...member,
+              isActive: member.status !== 'Inactive'
+            }
+          }
+        })
+        return newState
+      })
+    } else {
+      setIsMounted(true)
+    }
+  }, [team, isMounted])
   
   // Separate active and inactive members
   const { activeMembers, inactiveMembers } = useMemo(() => {
@@ -170,12 +215,94 @@ export default function TeamMemberList({ team, detailed = false, truncated = fal
   }, [memberStates, truncated])
   
   // Handle member removal (mark as inactive)
-  const handleRemoveMember = useCallback((memberId) => {
-    setMemberStates(prev => ({
-      ...prev,
-      [memberId]: { ...prev[memberId], isActive: false }
-    }))
-  }, [])
+  const handleRemoveMember = useCallback(async (memberId) => {
+    try {
+      const member = memberStates[memberId]
+      if (!member || isLoading) return
+
+      setIsLoading(true)
+      
+      // Call API to update member status to Inactive
+      const response = await fetch(`/api/teams/${team.id}/members/${memberId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to remove team member')
+      }
+      
+      const data = await response.json()
+      
+      // Update local state
+      setMemberStates(prev => ({
+        ...prev,
+        [memberId]: { ...prev[memberId], isActive: false, status: 'Inactive' }
+      }))
+      
+      // If callback provided for team updates, call it
+      if (typeof onTeamUpdated === 'function' && data.team) {
+        onTeamUpdated(data.team)
+      } else {
+        // Invalidate teams cache to trigger refetch
+        queryClient.invalidateQueries({ queryKey: ['teams'] })
+      }
+      
+      toast.success('Team member removed successfully')
+    } catch (error) {
+      console.error('Error removing team member:', error)
+      toast.error(error.message || 'Failed to remove team member')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [memberStates, team?.id, queryClient, onTeamUpdated, isLoading])
+  
+  // Handle rescinding invites (delete the record)
+  const handleRescindInvite = useCallback(async (memberId) => {
+    try {
+      const member = memberStates[memberId]
+      if (!member || isLoading) return
+      
+      setIsLoading(true)
+      
+      // Call API to delete the member record
+      const response = await fetch(`/api/teams/${team.id}/members/${memberId}`, {
+        method: 'DELETE'
+      })
+      
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to rescind invitation')
+      }
+      
+      const data = await response.json()
+      
+      // Remove from local state
+      setMemberStates(prev => {
+        const newState = { ...prev }
+        delete newState[memberId]
+        return newState
+      })
+      
+      // If callback provided for team updates, call it
+      if (typeof onTeamUpdated === 'function' && data.team) {
+        onTeamUpdated(data.team)
+      } else {
+        // Invalidate teams cache to trigger refetch
+        queryClient.invalidateQueries({ queryKey: ['teams'] })
+      }
+      
+      toast.success('Invitation rescinded successfully')
+    } catch (error) {
+      console.error('Error rescinding invitation:', error)
+      toast.error(error.message || 'Failed to rescind invitation')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [memberStates, team?.id, queryClient, onTeamUpdated, isLoading])
   
   // Toggle showing inactive members
   const toggleInactiveMembers = useCallback(() => {
@@ -195,7 +322,8 @@ export default function TeamMemberList({ team, detailed = false, truncated = fal
       <div className="border dark:border-neutral-800 rounded-md overflow-hidden">
         <MembersTable 
           members={activeMembers} 
-          onRemoveMember={handleRemoveMember} 
+          onRemoveMember={handleRemoveMember}
+          onRescindInvite={handleRescindInvite}
         />
       </div>
       
@@ -224,7 +352,8 @@ export default function TeamMemberList({ team, detailed = false, truncated = fal
             <div className="mt-4 border dark:border-neutral-800 rounded-md overflow-hidden">
               <MembersTable 
                 members={inactiveMembers} 
-                onRemoveMember={null} 
+                onRemoveMember={null}
+                onRescindInvite={null}
                 isInactiveTable={true}
               />
             </div>

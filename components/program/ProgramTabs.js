@@ -19,7 +19,8 @@ export default function ProgramTabs({
   isTeamProgram,
   initialTab = "overview",
   onInviteClick,
-  onEditTeamClick
+  onEditTeamClick,
+  onTeamUpdated
 }) {
   const [activeTab, setActiveTab] = useState(initialTab)
   const [contentHeight, setContentHeight] = useState("auto")
@@ -270,6 +271,7 @@ export default function ProgramTabs({
                   team={team}
                   onInviteClick={onInviteClick}
                   onEditTeamClick={onEditTeamClick}
+                  onTeamUpdated={onTeamUpdated}
                 />
               </Suspense>
             </motion.div>

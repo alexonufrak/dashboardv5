@@ -10,7 +10,7 @@ import PointsSummary from "@/components/program/common/PointsSummary"
 /**
  * Team tab content component that displays team member list with action buttons
  */
-export function TeamMembersTab({ team, onInviteClick, onEditTeamClick }) {
+export function TeamMembersTab({ team, onInviteClick, onEditTeamClick, onTeamUpdated }) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -49,7 +49,11 @@ export function TeamMembersTab({ team, onInviteClick, onEditTeamClick }) {
               <CardDescription>All members of {team?.name || "your team"}</CardDescription>
             </CardHeader>
             <CardContent className="w-full">
-              <TeamMemberList team={team} detailed={true} />
+              <TeamMemberList 
+                team={team} 
+                detailed={true} 
+                onTeamUpdated={onTeamUpdated} 
+              />
             </CardContent>
           </Card>
         </div>

@@ -79,6 +79,7 @@ export default function ProgramDashboard({
         isTeamProgram={isTeamProgram}
         onInviteClick={() => setIsInviteDialogOpen(true)}
         onEditTeamClick={() => setIsEditDialogOpen(true)}
+        onTeamUpdated={handleTeamUpdated}
       />
       
       {/* Team Dialogs */}
