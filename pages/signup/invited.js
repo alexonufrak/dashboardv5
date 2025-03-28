@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/router"
 import Layout from "@/components/layout/Layout"
 import AuthLayout from "@/components/layout/AuthLayout"
-import { useUser } from "@auth0/nextjs-auth0"
+import { useUser } from "@auth0/nextjs-auth0/client"
 import Link from "next/link"
 import { Skeleton } from "@/components/ui/skeleton"
 import Logo from "@/components/common/Logo"
@@ -234,7 +234,7 @@ export default function InvitedSignup() {
     const encodedEmail = encodeURIComponent(formData.email);
     
     // Redirect directly to Google authentication, bypassing Auth0 login screen
-    window.location.href = `/auth/login?connection=google-oauth2&${queryParams.toString()}&prompt=login&login_hint=${encodedEmail}`;
+    window.location.href = `/api/auth/login?connection=google-oauth2&${queryParams.toString()}&prompt=login&login_hint=${encodedEmail}`;
   };
 
   if (isLoading || isVerifying) {

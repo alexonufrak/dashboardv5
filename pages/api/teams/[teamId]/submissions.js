@@ -7,7 +7,7 @@ import { base, batchFetchRecords, CACHE_TYPES, createCacheKey } from "@/lib/airt
  * @param {object} req - Next.js API request
  * @param {object} res - Next.js API response
  */
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     // Get team ID and milestone ID from the query
     const { teamId, milestoneId } = req.query
@@ -165,3 +165,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiAuthRequired(handler)

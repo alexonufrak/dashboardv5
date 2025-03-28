@@ -1,4 +1,4 @@
-import { auth0 } from '@/lib/auth0'
+import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0'
 import { getUserProfile, getTeamById } from '@/lib/airtable'
 import { leaveTeam } from '@/lib/leaveOperations'
 
@@ -7,7 +7,7 @@ import { leaveTeam } from '@/lib/leaveOperations'
  * @param {Object} req - Next.js API Request
  * @param {Object} res - Next.js API Response
  */
-export default async function leaveTeamHandler(req, res) {
+async function leaveTeamHandler(req, res) {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -17,7 +17,7 @@ export default async function leaveTeamHandler(req, res) {
 
   try {
     // Get the user session
-    const session = await auth0.getSession(req)
+    const session = await getSession(req, res)
     
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Not authenticated' })
@@ -59,3 +59,5 @@ export default async function leaveTeamHandler(req, res) {
     return res.status(500).json({ error: 'Failed to leave team' })
   }
 }
+
+export default withApiAuthRequired(leaveTeamHandler)

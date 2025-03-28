@@ -1,11 +1,11 @@
-import { auth0 } from '@/lib/auth0';
+import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
 import { base } from '../../../../lib/airtable';
 
 /**
  * API endpoint to get a team's cohorts
  * Used for displaying team programs and checking for initiative conflicts
  */
-export default async function getTeamCohorts(req, res) {
+async function getTeamCohorts(req, res) {
   // Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -13,7 +13,7 @@ export default async function getTeamCohorts(req, res) {
 
   try {
     // Get the user session
-    const session = await auth0.getSession(req);
+    const session = await getSession(req, res);
     
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Not authenticated' });
@@ -196,3 +196,5 @@ export default async function getTeamCohorts(req, res) {
     });
   }
 };
+
+export default withApiAuthRequired(getTeamCohorts)

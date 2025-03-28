@@ -3,9 +3,9 @@ import { auth0 } from "@/lib/auth0"
 import { getUserProfile } from "../../../lib/airtable"
 import Airtable from "airtable"
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   // Auth0 v4 approach - check session directly instead of using withApiAuthRequired
-  const session = await auth0.getSession(req)
+  const session = await getSession(req, res)
   if (!session || !session.user) {
     return res.status(401).json({ error: "Not authenticated" })
   }
@@ -211,3 +211,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Debug error", message: error.message });
   }
 }
+
+export default withApiAuthRequired(handler)

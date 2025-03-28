@@ -5,7 +5,7 @@ import { getInvitationByToken } from '@/lib/airtable';
  * @param {Object} req - Next.js API Request
  * @param {Object} res - Next.js API Response
  */
-export default async function getInvitationHandler(req, res) {
+async function getInvitationHandler(req, res) {
   // Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -46,3 +46,5 @@ export default async function getInvitationHandler(req, res) {
     return res.status(500).json({ error: 'Failed to get invitation details' });
   }
 }
+
+export default withApiAuthRequired(getInvitationHandler)

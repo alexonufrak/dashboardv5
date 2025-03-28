@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { auth0 } from './lib/auth0';
 
 /**
  * Next.js Middleware for handling redirects
@@ -7,13 +6,7 @@ import { auth0 } from './lib/auth0';
  * and redirects users to onboarding page if needed
  */
 export async function middleware(request) {
-  // First, get the Auth0 response to handle auth routes and session management
-  const authResponse = await auth0.middleware(request);
-  
-  /**
-   * Simple helper function to ensure URLs always have a protocol
-   * Simplified since we know the specific issue was with protocol handling
-   */
+  // Helper function to get base URL with appropriate protocol
   const getBaseUrl = () => {
     // Get hostname from request headers
     const host = request.headers.get('host') || '';
@@ -22,16 +15,9 @@ export async function middleware(request) {
     const protocol = host.includes('localhost') ? 'http' : 'https';
     return `${protocol}://${host}`;
   };
-  
+
   const { pathname, search } = request.nextUrl;
-  
-  // If path starts with /auth, let the auth middleware handle it
-  if (pathname.startsWith('/auth')) {
-    // Let Auth0 handle profile requests directly
-    
-    return authResponse;
-  }
-  
+
   // Handle legacy URL redirects
   
   // 1. Handle dashboard?program=X -> /dashboard/programs/X
@@ -78,15 +64,31 @@ export async function middleware(request) {
     );
   }
   
-  // For protected routes, use Auth0's built-in middleware handling
-  // This uses Auth0's proper session validation without our custom logic
-  if (pathname.startsWith('/dashboard') || pathname.startsWith('/program') || pathname === '/onboarding' || pathname === '/profile') {
-    // Let Auth0 handle the authentication check and redirect
-    return authResponse;
+  // For protected routes, check authenticated session
+  // Note: In Auth0 v3, we need to handle authentication checks ourselves
+  if (pathname.startsWith('/dashboard') || 
+      pathname.startsWith('/program') || 
+      pathname === '/onboarding' || 
+      pathname === '/profile') {
+    
+    try {
+      // Try to get the session, but don't throw on error
+      // In v3, the getSession function is handled directly in API routes, not middleware
+      // So we can't use it here, but we also don't need to since Auth0 v3 handles this differently
+      // For v3, we'll handle authentication in the pages with getServerSideProps or API routes
+      
+      // We'll let the page's getServerSideProps handle auth checks via withPageAuthRequired
+      return NextResponse.next();
+    } catch (error) {
+      console.error('Error in middleware:', error);
+      // On error, just continue to the page
+      // Auth0 v3 will handle authentication at the page level
+      return NextResponse.next();
+    }
   }
-  
-  // Return the auth response to ensure cookies are handled correctly
-  return authResponse;
+
+  // For all other routes, continue the request
+  return NextResponse.next();
 }
 
 // Configure middleware to run on specific paths

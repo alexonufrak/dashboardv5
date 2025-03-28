@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/router"
-import { useUser } from "@auth0/nextjs-auth0"
+import { useUser } from "@auth0/nextjs-auth0/client"
 import Head from "next/head"
 import Link from "next/link"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -115,7 +115,7 @@ export default function SignUp() {
         
         // Delay redirect to show message to user for 2 seconds
         setTimeout(() => {
-          window.location.href = `/auth/login?prompt=login`;
+          window.location.href = `/api/auth/login?prompt=login`;
         }, 2000);
         return;
       }
@@ -302,7 +302,7 @@ export default function SignUp() {
     
     // Redirect directly to Google authentication, bypassing Auth0 login screen
     // Use login_hint with connection=google-oauth2 to go straight to Google
-    window.location.href = `/auth/login?connection=google-oauth2&${queryParams.toString()}&prompt=login&login_hint=${encodedEmail}`;
+    window.location.href = `/api/auth/login?connection=google-oauth2&${queryParams.toString()}&prompt=login&login_hint=${encodedEmail}`;
   };
 
   if (isLoading) {

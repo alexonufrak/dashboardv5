@@ -1,13 +1,13 @@
-import { auth0 } from '@/lib/auth0';
+import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
 
 /**
  * API endpoint to debug Auth0 session issues
  * This endpoint will help diagnose intermittent 401 errors with /auth/profile
  */
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     // Get current session
-    const session = await auth0.getSession(req);
+    const session = await getSession(req, res);
     
     // Get information about the request
     const requestInfo = {
@@ -75,3 +75,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiAuthRequired(handler)

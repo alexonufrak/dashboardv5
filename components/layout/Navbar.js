@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/router"
-import { useUser } from "@auth0/nextjs-auth0"
+import { useUser } from "@auth0/nextjs-auth0/client"
 import { useState, useEffect } from "react"
 // ProfileEditModal is now included in MainDashboardLayout
 import Logo from "@/components/common/Logo"
@@ -113,7 +113,7 @@ const Navbar = () => {
                   Profile
                 </a>
                 <Button asChild variant="destructive" size="sm">
-                  <Link href="/auth/logout">Sign Out</Link>
+                  <Link href="/api/auth/logout">Sign Out</Link>
                 </Button>
                 <Avatar className="h-8 w-8">
                   <AvatarImage 

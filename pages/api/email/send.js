@@ -1,4 +1,4 @@
-import { auth0 } from '@/lib/auth0'
+import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0'
 import { sendEmail } from '@/lib/email-service'
 
 /**
@@ -6,7 +6,7 @@ import { sendEmail } from '@/lib/email-service'
  * @param {Object} req - Next.js API Request
  * @param {Object} res - Next.js API Response
  */
-export default async function sendEmailHandler(req, res) {
+async function sendEmailHandler(req, res) {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -14,7 +14,7 @@ export default async function sendEmailHandler(req, res) {
 
   try {
     // Get the user session to ensure authentication
-    const session = await auth0.getSession(req)
+    const session = await getSession(req, res)
     
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Not authenticated' })
@@ -74,3 +74,5 @@ export default async function sendEmailHandler(req, res) {
     return res.status(500).json({ error: 'Failed to send email: ' + error.message })
   }
 }
+
+export default withApiAuthRequired(sendEmailHandler)

@@ -1,4 +1,4 @@
-import { auth0 } from '@/lib/auth0'
+import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0'
 import { getUserProfile, getTeamById, updateTeam, base } from '@/lib/airtable'
 
 /**
@@ -6,7 +6,7 @@ import { getUserProfile, getTeamById, updateTeam, base } from '@/lib/airtable'
  * @param {Object} req - Next.js API Request
  * @param {Object} res - Next.js API Response
  */
-export default async function teamHandler(req, res) {
+async function teamHandler(req, res) {
   const { teamId } = req.query
 
   // Handle GET and PATCH requests
@@ -16,7 +16,7 @@ export default async function teamHandler(req, res) {
 
   try {
     // Get the user session using Auth0 v4
-    const session = await auth0.getSession(req)
+    const session = await getSession(req, res)
     
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Not authenticated' })
@@ -118,3 +118,5 @@ export default async function teamHandler(req, res) {
     return res.status(500).json({ error: 'Failed to process team request' })
   }
 }
+
+export default withApiAuthRequired(teamHandler)

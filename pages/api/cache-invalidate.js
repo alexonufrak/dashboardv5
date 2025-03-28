@@ -1,4 +1,4 @@
-import { auth0 } from '@/lib/auth0'
+import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0'
 import { invalidateAllData } from '@/lib/useDataFetching'
 import { clearCacheByPattern, clearCacheByType, CACHE_TYPES } from '@/lib/airtable'
 
@@ -6,14 +6,14 @@ import { clearCacheByPattern, clearCacheByType, CACHE_TYPES } from '@/lib/airtab
  * API endpoint to invalidate client and server caches
  * This is used to trigger cache invalidation without a full page reload
  */
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
   
   try {
     // Check if the user is authenticated
-    const session = await auth0.getSession(req)
+    const session = await getSession(req, res)
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Not authenticated' })
     }
@@ -136,3 +136,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Error invalidating cache' })
   }
 }
+
+export default withApiAuthRequired(handler)

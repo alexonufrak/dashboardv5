@@ -1,5 +1,5 @@
-import { auth0 } from '@/lib/auth0';
-import auth0Client from '../../../lib/auth0';
+import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import * as auth0Client from '../../../lib/auth0';
 
 /**
  * In-memory metadata store as fallback for when Auth0 Management API is unavailable
@@ -27,9 +27,9 @@ const shouldAttemptAuth0ManagementAPI = () => {
  * API endpoint to get and update user metadata
  * Uses Auth0 Management API with fallback to in-memory storage
  */
-export default async function userMetadata(req, res) {
+async function userMetadata(req, res) {
   try {
-    const session = await auth0.getSession(req);
+    const session = await getSession(req, res);
     
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Not authenticated' });
@@ -45,7 +45,10 @@ export default async function userMetadata(req, res) {
           try {
             // Get the latest user data from Auth0 Management API
             console.log(`Fetching fresh user data from Auth0 for user ${userId}`);
-            const userData = await auth0Client.getUser({ id: userId });
+            
+            // Use the Management API client directly
+            const managementClient = await auth0Client.getManagementClient();
+            const userData = await managementClient.users.get({ id: userId });
             
             if (userData && userData.user_metadata) {
               // Return the fresh metadata directly
@@ -137,7 +140,9 @@ export default async function userMetadata(req, res) {
             // Make 3 attempts to update in Auth0 with exponential backoff
             const updateWithRetry = async (retries = 3, delay = 500) => {
               try {
-                await auth0Client.updateUserMetadata({ id: userId }, newMetadata);
+                // Use the Management API client directly
+                const managementClient = await auth0Client.getManagementClient();
+                await managementClient.users.updateUserMetadata({ id: userId }, newMetadata);
                 return true;
               } catch (updateError) {
                 if (retries > 1) {
@@ -203,3 +208,5 @@ export default async function userMetadata(req, res) {
     });
   }
 };
+
+export default withApiAuthRequired(userMetadata)

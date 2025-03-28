@@ -7,13 +7,13 @@ import { batchFetchRecords, getCachedOrFetch } from "@/lib/airtable"
  * @param {object} req - Next.js API request
  * @param {object} res - Next.js API response
  */
-export default async function handler(req, res) {
+async function handler(req, res) {
   try {
     // Record start time for performance measurement
     const startTime = Date.now();
     
     // Get the current session and user using Auth0 v4
-    const session = await auth0.getSession(req)
+    const session = await getSession(req, res)
     if (!session?.user) {
       return res.status(401).json({ error: "Not authenticated" })
     }
@@ -203,3 +203,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiAuthRequired(handler)

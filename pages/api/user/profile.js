@@ -1,14 +1,14 @@
 import { getCompleteUserProfile } from "../../../lib/userProfile"
 import { updateUserProfile } from "../../../lib/airtable"
-import { auth0 } from "@/lib/auth0"
+import { withApiAuthRequired, getSession } from "@auth0/nextjs-auth0"
 
 async function handler(req, res) {
   // Record start time for performance monitoring
   const startTime = Date.now();
   
   try {
-    // Auth0 v4 session handling for Pages Router requires req parameter
-    const session = await auth0.getSession(req)
+    // Auth0 v3 session handling
+    const session = await getSession(req, res)
     if (!session || !session.user) {
       return res.status(401).json({ error: "Not authenticated" })
     }
@@ -213,6 +213,6 @@ async function handler(req, res) {
   }
 }
 
-// In Auth0 v4, we use middleware to protect routes instead of withApiAuthRequired
-export default handler
+// In Auth0 v3, we use withApiAuthRequired to protect API routes
+export default withApiAuthRequired(handler)
 

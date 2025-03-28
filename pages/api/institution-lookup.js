@@ -5,7 +5,7 @@ const institutionsTable = process.env.AIRTABLE_INSTITUTIONS_TABLE_ID
   ? base(process.env.AIRTABLE_INSTITUTIONS_TABLE_ID) 
   : null;
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -93,3 +93,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
+
+export default withApiAuthRequired(handler)

@@ -1,4 +1,4 @@
-import { auth0 } from '@/lib/auth0';
+import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
 import { acceptTeamInvitation, getUserProfile } from '@/lib/airtable';
 
 /**
@@ -6,7 +6,7 @@ import { acceptTeamInvitation, getUserProfile } from '@/lib/airtable';
  * @param {Object} req - Next.js API Request
  * @param {Object} res - Next.js API Response
  */
-export default async function acceptInvitationHandler(req, res) {
+async function acceptInvitationHandler(req, res) {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -14,7 +14,7 @@ export default async function acceptInvitationHandler(req, res) {
 
   try {
     // Get the user session using Auth0 v4
-    const session = await auth0.getSession(req);
+    const session = await getSession(req, res);
     
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Not authenticated' });
@@ -98,3 +98,5 @@ export default async function acceptInvitationHandler(req, res) {
     return res.status(500).json({ error: 'Failed to accept invitation: ' + error.message });
   }
 };
+
+export default withApiAuthRequired(acceptInvitationHandler)

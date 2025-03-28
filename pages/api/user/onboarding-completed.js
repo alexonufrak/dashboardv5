@@ -1,4 +1,4 @@
-import { auth0 } from '@/lib/auth0';
+import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
 // Import for auth0Client no longer needed
 import { getUserProfile, getOnboardingStatus, updateOnboardingStatus } from '../../../lib/airtable';
 
@@ -7,9 +7,9 @@ import { getUserProfile, getOnboardingStatus, updateOnboardingStatus } from '../
  * Uses Airtable Contact Onboarding field as the primary source of truth
  * Still updates Auth0 metadata for backwards compatibility
  */
-export default async function onboardingCompleted(req, res) {
+async function onboardingCompleted(req, res) {
   try {
-    const session = await auth0.getSession(req);
+    const session = await getSession(req, res);
     
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Not authenticated' });
@@ -157,3 +157,5 @@ export default async function onboardingCompleted(req, res) {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export default withApiAuthRequired(onboardingCompleted)

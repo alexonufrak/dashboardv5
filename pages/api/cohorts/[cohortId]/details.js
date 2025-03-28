@@ -1,4 +1,4 @@
-import { auth0 } from '@/lib/auth0'
+import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0'
 import { base } from '@/lib/airtable'
 
 /**
@@ -6,7 +6,7 @@ import { base } from '@/lib/airtable'
  * @param {Object} req - Next.js API Request
  * @param {Object} res - Next.js API Response
  */
-export default async function cohortDetailsHandler(req, res) {
+async function cohortDetailsHandler(req, res) {
   // Only allow GET requests
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -14,7 +14,7 @@ export default async function cohortDetailsHandler(req, res) {
 
   try {
     // Get the user session using Auth0 v4
-    const session = await auth0.getSession(req)
+    const session = await getSession(req, res)
     
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Not authenticated' })
@@ -131,3 +131,5 @@ export default async function cohortDetailsHandler(req, res) {
     return res.status(500).json({ error: 'Failed to fetch cohort details' })
   }
 }
+
+export default withApiAuthRequired(cohortDetailsHandler)

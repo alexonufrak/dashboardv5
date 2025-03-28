@@ -1,11 +1,11 @@
 import { getUserByEmail } from '../../../lib/userProfile';
-import auth0Client from '../../../lib/auth0';
+import * as auth0Client from '../../../lib/auth0';
 import { lookupInstitutionByEmail, getUserProfile } from '../../../lib/airtable';
 
 /**
  * API handler to check if a user exists by email and verify institution
  */
-export default async function handler(req, res) {
+async function handler(req, res) {
   // Allow both POST and GET methods
   if (req.method !== 'POST' && req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -180,3 +180,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiAuthRequired(handler)

@@ -89,27 +89,9 @@ function Profile() {
   )
 }
 
-// Auth protection with Auth0 v4
-export async function getServerSideProps(context) {
-  // Get the session using Auth0 v4 client
-  const session = await auth0.getSession(context.req);
-  
-  // Redirect to login if no session
-  if (!session) {
-    return {
-      redirect: {
-        destination: '/auth/login?returnTo=/profile',
-        permanent: false,
-      },
-    };
-  }
-  
-  // Return the user prop to maintain compatibility with existing code
-  return {
-    props: {
-      user: session.user || null,
-    },
-  };
-}
+import { withPageAuthRequired } from '@auth0/nextjs-auth0';
+
+// Auth protection with Auth0 v3
+export const getServerSideProps = withPageAuthRequired();
 
 export default Profile

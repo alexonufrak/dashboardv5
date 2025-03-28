@@ -1,4 +1,4 @@
-import { auth0 } from '@/lib/auth0'
+import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0'
 import { getUserProfile, getTeamById } from '@/lib/airtable'
 import { updateMemberStatus, deleteTeamInvitation } from '@/lib/leaveOperations'
 
@@ -7,7 +7,7 @@ import { updateMemberStatus, deleteTeamInvitation } from '@/lib/leaveOperations'
  * @param {Object} req - Next.js API Request
  * @param {Object} res - Next.js API Response
  */
-export default async function teamMemberHandler(req, res) {
+async function teamMemberHandler(req, res) {
   const { teamId, memberId } = req.query
 
   // Only allow PATCH (status update) and DELETE (remove invite) requests
@@ -17,7 +17,7 @@ export default async function teamMemberHandler(req, res) {
 
   try {
     // Get the user session
-    const session = await auth0.getSession(req)
+    const session = await getSession(req, res)
     
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Not authenticated' })
@@ -118,3 +118,5 @@ export default async function teamMemberHandler(req, res) {
     return res.status(500).json({ error: 'Failed to manage team member: ' + error.message })
   }
 }
+
+export default withApiAuthRequired(teamMemberHandler)

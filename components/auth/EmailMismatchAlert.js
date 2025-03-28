@@ -50,8 +50,8 @@ export default function EmailMismatchAlert({ emailMismatch }) {
 
   // Create URL for sign out, then sign in with correct email
   const handleCorrectEmail = () => {
-    const redirectUrl = encodeURIComponent(`/auth/login?login_hint=${encodeURIComponent(verifiedEmail)}`);
-    window.location.href = `/auth/logout?returnTo=${redirectUrl}`;
+    const redirectUrl = encodeURIComponent(`/api/auth/login?login_hint=${encodeURIComponent(verifiedEmail)}`);
+    window.location.href = `/api/auth/logout?returnTo=${redirectUrl}`;
   };
 
   return (

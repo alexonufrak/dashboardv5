@@ -3,7 +3,7 @@
 import React from "react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
-import { useUser } from "@auth0/nextjs-auth0"
+import { useUser } from "@auth0/nextjs-auth0/client"
 import Head from "next/head"
 import Link from "next/link"
 import { AppSidebar } from "./app-sidebar"
@@ -307,7 +307,7 @@ function LayoutShell({ children, title, profile, showSidebar, shouldShowBreadcru
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild>
-                                  <Link href="/auth/logout">
+                                  <Link href="/api/auth/logout">
                                     <LogOut className="mr-2 h-4 w-4" />
                                     Sign Out
                                   </Link>

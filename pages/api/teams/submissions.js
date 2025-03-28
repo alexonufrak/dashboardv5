@@ -14,7 +14,7 @@ export const config = {
  * API endpoint to create a new milestone submission
  * Accepts file URLs (from Vercel Blob) and external links
  */
-export default async function handler(req, res) {
+async function handler(req, res) {
   // Only allow POST method for submissions
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" })
@@ -22,7 +22,7 @@ export default async function handler(req, res) {
 
   try {
     // Get the current session and user
-    const session = await auth0.getSession(req)
+    const session = await getSession(req, res)
     if (!session?.user) {
       return res.status(401).json({ error: "Not authenticated" })
     }
@@ -169,3 +169,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default withApiAuthRequired(handler)

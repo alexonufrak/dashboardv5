@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 // Directly import Auth0Client - no need for withPageAuthRequired in v4
 import { useRouter } from "next/router"
-import { useUser } from "@auth0/nextjs-auth0"
+import { useUser } from "@auth0/nextjs-auth0/client"
 import { useOnboarding } from '@/contexts/OnboardingContext'
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -492,30 +492,9 @@ function Onboarding() {
   )
 }
 
-// Use Auth0 v4 pattern for authentication in Pages Router
-export async function getServerSideProps(context) {
-  // Import auth0 client from our configured instance
-  const { auth0 } = await import('@/lib/auth0');
-  
-  // Get the session using the Auth0 v4 client (req is required for Pages Router)
-  const session = await auth0.getSession(context.req);
-  
-  // Redirect to login if no session
-  if (!session) {
-    return {
-      redirect: {
-        destination: '/auth/login?returnTo=/onboarding',
-        permanent: false,
-      },
-    };
-  }
-  
-  // Return the user prop to maintain compatibility with existing code
-  return {
-    props: {
-      user: session.user || null,
-    },
-  };
-}
+import { withPageAuthRequired } from '@auth0/nextjs-auth0';
+
+// Auth protection with Auth0 v3
+export const getServerSideProps = withPageAuthRequired();
 
 export default Onboarding

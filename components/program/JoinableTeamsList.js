@@ -287,7 +287,8 @@ const JoinableTeamsList = ({ teams = [], cohort, profile, onApplySuccess, onClos
                       </Button>
                     </CardFooter>
                   </Card>
-                ))}
+                );
+                })}
               </div>
             </ScrollArea>
           )}
@@ -317,7 +318,7 @@ const JoinableTeamsList = ({ teams = [], cohort, profile, onApplySuccess, onClos
           <DialogHeader>
             <DialogTitle>Join {selectedTeam?.name || "Team"}</DialogTitle>
             <DialogDescription>
-              Send a message to the team explaining why you'd like to join and what skills you bring.
+              Send a message to the team explaining why you&apos;d like to join and what skills you bring.
             </DialogDescription>
           </DialogHeader>
           

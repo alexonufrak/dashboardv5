@@ -5,7 +5,7 @@ import { useRouter } from "next/router"
 import Link from "next/link"
 import { Home, ExternalLink, LogOut, Command, Compass, Blocks, User } from "lucide-react"
 import { useDashboard } from "@/contexts/DashboardContext"
-import { useUser } from "@auth0/nextjs-auth0"
+import { useUser } from "@auth0/nextjs-auth0/client"
 import { ROUTES } from '@/lib/routing'
 
 import { NavMain } from "@/components/layout/nav-main"
