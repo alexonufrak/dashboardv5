@@ -137,7 +137,7 @@ All the necessary changes for Auth0 v4 have been successfully implemented:
 
 3. **Middleware Implementation**
    - Configured middleware.js to use Auth0 v4 pattern
-   - Implemented `auth0.handleAuth()` for authentication routes
+   - Implemented `auth0.middleware()` for authentication routes
    - Added proper route protection using `auth0.getSession()`
 
 4. **API Routes Update**

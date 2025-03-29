@@ -24,7 +24,7 @@ export async function middleware(request) {
   
   // Process Auth0 authentication routes
   // This is the Auth0 v4 middleware that handles login, logout, callback, etc.
-  const authResponse = await auth0.handleAuth(request);
+  const authResponse = await auth0.middleware(request);
   if (authResponse) {
     return authResponse;
   }
