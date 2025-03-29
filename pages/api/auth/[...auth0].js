@@ -9,7 +9,7 @@ const config = {
   secret: process.env.AUTH0_SECRET
 };
 
-console.log('Auth0 config with baseURL:', config.baseURL);
+console.log('Auth0 handler initialized with baseURL:', config.baseURL);
 
 const afterCallback = async (req, res, session, state) => {
   try {
@@ -28,8 +28,7 @@ const afterCallback = async (req, res, session, state) => {
       email, // User's email address from query params
       contactId, // Airtable contact ID if available
       educationId, // Airtable education ID if available
-      airtableId, // Legacy parameter for contactId
-      invitationToken // Team invitation token if coming from an invite
+      airtableId // Legacy parameter for contactId
     } = req.query
 
     // The verified email might come from query parameters or login_hint
@@ -56,7 +55,6 @@ const afterCallback = async (req, res, session, state) => {
         degreeType: degreeType || "",
         major: major || "",
         graduationYear: graduationYear || "",
-        graduationSemester: req.query.graduationSemester || "",
       }
     }
     
@@ -67,15 +65,11 @@ const afterCallback = async (req, res, session, state) => {
     // Add referral source and cohortId as user metadata
     if (referralSource) session.user.referralSource = referralSource;
     if (cohortId) session.user.cohortId = cohortId;
-    
-    // Save invitation token if provided
-    if (invitationToken) session.user.invitationToken = invitationToken;
 
-    // Initialize session metadata - ensure onboarding is properly set up
+    // Initialize onboarding steps - first step is always completed
     session.user.user_metadata = {
       ...session.user.user_metadata,
       onboarding: ['register'],
-      onboardingCompleted: false, // Explicitly set to false to ensure checklist shows for new users
       ...(cohortId ? { selectedCohort: cohortId } : {})
     };
 
@@ -102,18 +96,12 @@ const afterCallback = async (req, res, session, state) => {
         ...(institutionId ? { institutionId } : {}),
         ...(degreeType ? { degreeType } : {}),
         ...(graduationYear ? { graduationYear } : {}),
-        ...(req.query.graduationSemester ? { graduationSemester: req.query.graduationSemester } : {}),
         ...(major ? { major } : {}),
         
         // Additional metadata
         onboarding: ['register'], // First step is always completed for new users
         ...(referralSource ? { referralSource } : {}),
         ...(cohortId ? { selectedCohort: cohortId } : {}),
-        ...(invitationToken ? { invitationToken } : {}),
-        
-        // Explicitly set onboardingCompleted to false for new users
-        // This ensures the checklist will show on first login
-        onboardingCompleted: false,
         
         // Store the verified email in metadata for future reference
         ...(verifiedEmail ? { verifiedEmail } : {}),
@@ -173,52 +161,8 @@ const afterCallback = async (req, res, session, state) => {
       contactId,
       airtableId,
       educationId,
-      invitationToken,
       metadata: session.user.user_metadata
     });
-    
-    // Handle invitation acceptance if there's a token and we have a contact ID
-    if (invitationToken && (contactId || airtableId)) {
-      try {
-        console.log("Processing team invitation acceptance with token:", invitationToken);
-        
-        // Import the Airtable module
-        const airtableModule = await import('../../../lib/airtable');
-        const airtable = airtableModule.default;
-        
-        // Get the contact ID from either the contactId or airtableId parameter
-        const userContactId = contactId || airtableId;
-        
-        // Accept the invitation using the token and contact ID
-        const acceptResult = await airtable.acceptTeamInvitation(invitationToken, userContactId);
-        
-        if (acceptResult.success) {
-          console.log("Successfully accepted team invitation:", acceptResult);
-          
-          // Store result in session for the frontend to access
-          session.user.teamInviteAccepted = {
-            success: true,
-            team: acceptResult.invitation?.team || null
-          };
-        } else {
-          console.error("Failed to accept team invitation:", acceptResult.error);
-          
-          // Store error in session for the frontend to handle
-          session.user.teamInviteAccepted = {
-            success: false,
-            error: acceptResult.error
-          };
-        }
-      } catch (error) {
-        console.error("Error accepting team invitation:", error);
-        
-        // Store error in session
-        session.user.teamInviteAccepted = {
-          success: false,
-          error: error.message
-        };
-      }
-    }
 
     return session
   } catch (error) {
@@ -232,7 +176,7 @@ export default handleAuth({
   async callback(req, res) {
     try {
       await handleCallback(req, res, { 
-        ...config, 
+        ...config,
         afterCallback 
       })
     } catch (error) {
