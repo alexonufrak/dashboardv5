@@ -212,7 +212,6 @@ async function getUserByEmail(email) {
           }
           
           console.log(`[Management API] API returned 0 users with all methods - potential permission issue or empty tenant`);
-          }
         }
       } catch (sampleError) {
         console.error(`[Management API] Error listing sample users:`, sampleError.message);
