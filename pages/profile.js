@@ -1,7 +1,7 @@
 "use client"
 
 // Import Auth0 client
-import { auth0 } from "@/lib/auth0"
+import auth0 from "@/lib/auth0"
 import { useRouter } from "next/router"
 import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -89,9 +89,37 @@ function Profile() {
   )
 }
 
-import { withPageAuthRequired } from '@auth0/nextjs-auth0';
-
-// Auth protection with Auth0 v3
-export const getServerSideProps = withPageAuthRequired();
+// Auth protection now handled in middleware.js for Auth0 v4
+export const getServerSideProps = async ({ req, res }) => {
+  try {
+    // Get the user session, if available
+    const session = await auth0.getSession(req, res);
+    
+    // If no session, middleware will redirect, but let's check just in case
+    if (!session) {
+      return {
+        redirect: {
+          destination: '/auth/login?returnTo=/profile',
+          permanent: false,
+        },
+      };
+    }
+    
+    // Return session user data
+    return {
+      props: {
+        user: session.user
+      }
+    };
+  } catch (error) {
+    console.error('Error in getServerSideProps:', error);
+    return {
+      redirect: {
+        destination: '/auth/login?returnTo=/profile',
+        permanent: false,
+      },
+    };
+  }
+};
 
 export default Profile

@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
+import { auth0 } from './lib/auth0';
 
 /**
- * Next.js Middleware for handling redirects
- * This middleware handles redirects from legacy routes to the new URL structure
- * and redirects users to onboarding page if needed
+ * Next.js Middleware for handling redirects and authentication
+ * 
+ * This middleware:
+ * 1. Mounts Auth0 authentication routes (/auth/*)
+ * 2. Handles redirects from legacy routes to the new URL structure
+ * 3. Protects routes requiring authentication
  */
 export async function middleware(request) {
   // Helper function to get base URL with appropriate protocol
@@ -17,7 +21,14 @@ export async function middleware(request) {
   };
 
   const { pathname, search } = request.nextUrl;
-
+  
+  // Process Auth0 authentication routes
+  // This is the Auth0 v4 middleware that handles login, logout, callback, etc.
+  const authResponse = await auth0.handleAuth(request);
+  if (authResponse) {
+    return authResponse;
+  }
+  
   // Handle legacy URL redirects
   
   // 1. Handle dashboard?program=X -> /dashboard/programs/X
@@ -65,25 +76,32 @@ export async function middleware(request) {
   }
   
   // For protected routes, check authenticated session
-  // Note: In Auth0 v3, we need to handle authentication checks ourselves
   if (pathname.startsWith('/dashboard') || 
       pathname.startsWith('/program') || 
       pathname === '/onboarding' || 
       pathname === '/profile') {
     
     try {
-      // Try to get the session, but don't throw on error
-      // In v3, the getSession function is handled directly in API routes, not middleware
-      // So we can't use it here, but we also don't need to since Auth0 v3 handles this differently
-      // For v3, we'll handle authentication in the pages with getServerSideProps or API routes
+      // Get Auth0 session - in v4 this works in middleware
+      const session = await auth0.getSession(request);
       
-      // We'll let the page's getServerSideProps handle auth checks via withPageAuthRequired
+      // If no session, redirect to login
+      if (!session) {
+        // Use the Auth0 login endpoint with returnTo query parameter
+        const returnPath = encodeURIComponent(pathname + search);
+        return NextResponse.redirect(
+          new URL(`/auth/login?returnTo=${returnPath}`, getBaseUrl())
+        );
+      }
+      
+      // Session exists, allow access to the protected route
       return NextResponse.next();
     } catch (error) {
-      console.error('Error in middleware:', error);
-      // On error, just continue to the page
-      // Auth0 v3 will handle authentication at the page level
-      return NextResponse.next();
+      console.error('Error in middleware auth check:', error);
+      // On error, redirect to login as a fallback
+      return NextResponse.redirect(
+        new URL('/auth/login', getBaseUrl())
+      );
     }
   }
 
