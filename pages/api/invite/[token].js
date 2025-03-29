@@ -1,4 +1,5 @@
 import { getInvitationByToken } from '@/lib/airtable';
+import { auth0 } from '@/lib/auth0';
 
 /**
  * API handler to get invitation details by token

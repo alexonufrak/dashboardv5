@@ -1,6 +1,7 @@
 import { getCompleteUserProfile } from "../../../lib/userProfile"
 import { updateUserProfile } from "../../../lib/airtable"
 import { withApiAuthRequired, getSession } from "@auth0/nextjs-auth0"
+import { auth0 } from "../../../lib/auth0"
 
 async function handlerImpl(req, res) {
   // Record start time for performance monitoring
