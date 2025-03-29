@@ -1,15 +1,18 @@
-import { base, batchFetchRecords, CACHE_TYPES, createCacheKey } from "@/lib/airtable"
+import { base } from "@/lib/airtable"
 import { auth0 } from "@/lib/auth0"
 
 /**
  * API endpoint to get submissions for a specific team
- * Optimized with throttling, caching, and improved error handling
+ * Simplified implementation with consistent response format and HTTP caching
  * 
  * @param {object} req - Next.js API request
  * @param {object} res - Next.js API response
  */
 async function handlerImpl(req, res) {
   try {
+    // Start timer for performance monitoring
+    const startTime = Date.now();
+    
     // Get team ID and milestone ID from the query
     const { teamId, milestoneId } = req.query
     
@@ -24,45 +27,50 @@ async function handlerImpl(req, res) {
     const submissionsTableId = process.env.AIRTABLE_SUBMISSIONS_TABLE_ID;
     if (!submissionsTableId) {
       console.error("Submissions table ID not configured");
-      return res.status(200).json({ submissions: [] });
+      return res.status(200).json({ 
+        submissions: [],
+        meta: {
+          error: true,
+          message: "Submissions table ID not configured",
+          timestamp: new Date().toISOString()
+        }
+      });
     }
+    
+    // Get the submission table
+    const submissionsTable = base(submissionsTableId);
+    
+    // Sanitize inputs to prevent formula injection
+    const safeTeamId = teamId.replace(/["'\\]/g, '');
+    const safeMilestoneId = milestoneId ? milestoneId.replace(/["'\\]/g, '') : null;
     
     // Construct the query formula
     let formula;
-    if (milestoneId) {
+    if (safeMilestoneId) {
       formula = `AND(
-        FIND("${teamId}", {teamId}),
-        FIND("${milestoneId}", {milestoneId})
+        FIND("${safeTeamId}", {teamId}),
+        FIND("${safeMilestoneId}", {milestoneId})
       )`;
     } else {
-      formula = `FIND("${teamId}", {teamId})`;
+      formula = `FIND("${safeTeamId}", {teamId})`;
     }
     
     console.log(`Using Airtable formula: ${formula}`);
     
-    // Create a structured cache key using the new system
-    // This replaces the old string concatenation approach with a more predictable system
-    const queryParams = { 
+    // Query parameters
+    const queryParams = {
       filterByFormula: formula,
+      fields: [
+        'teamId', 'milestoneId', 'Team', 'Milestone', 
+        'Comments', 'Link', 'Attachment', 'Created Time', 
+        'Name (from Milestone)'
+      ],
       sort: [{ field: "Created Time", direction: "desc" }]
     };
     
-    // Use batchFetchRecords which handles caching, throttling and pagination
-    const records = await batchFetchRecords(
-      submissionsTableId, 
-      {
-        filterByFormula: formula,
-        fields: [
-          'teamId', 'milestoneId', 'Team', 'Milestone', 
-          'Comments', 'Link', 'Attachment', 'Created Time', 
-          'Name (from Milestone)'
-        ],
-        sort: [{ field: "Created Time", direction: "desc" }]
-      },
-      // Pass the cache type and ID for structured caching
-      CACHE_TYPES.SUBMISSIONS,
-      milestoneId ? `${teamId}-${milestoneId}` : teamId
-    );
+    // Fetch records directly from Airtable
+    // This allows client-side caching to be the source of truth
+    const records = await submissionsTable.select(queryParams).all();
     
     console.log(`Found ${records.length} total submissions for team ${teamId}`);
     
@@ -74,45 +82,78 @@ async function handlerImpl(req, res) {
       console.log(`First record - Team: ${team}, Milestone: ${milestone}`);
     }
     
-    // Process the filtered submissions - preserve all functionality from the original implementation
+    // Process the submissions with a standardized format
     const submissions = records.map(record => {
-      // Get milestone ID from the linked record
-      const recordMilestoneId = record.fields.Milestone && 
-        Array.isArray(record.fields.Milestone) && 
-        record.fields.Milestone.length > 0
-          ? record.fields.Milestone[0]
-          : null;
+      try {
+        // Get milestone ID from the linked record - enforce consistent format
+        const recordMilestoneId = record.fields.Milestone && 
+          Array.isArray(record.fields.Milestone) && 
+          record.fields.Milestone.length > 0
+            ? record.fields.Milestone[0]
+            : null;
 
-      // Get team IDs from linked records - we already know one matches our teamId
-      const teamIds = record.fields.Team && Array.isArray(record.fields.Team)
-        ? record.fields.Team
-        : [teamId];
+        // Get team IDs from linked records - enforce consistent format
+        const teamIds = record.fields.Team && Array.isArray(record.fields.Team)
+          ? record.fields.Team
+          : [teamId];
 
-      // Process attachments from Airtable format
-      let attachments = [];
-      if (record.fields.Attachment && Array.isArray(record.fields.Attachment)) {
-        attachments = record.fields.Attachment.map(file => ({
-          id: file.id,
-          url: file.url,
-          filename: file.filename,
-          size: file.size,
-          type: file.type,
-          thumbnails: file.thumbnails
-        }));
+        // Process attachments from Airtable format - ensure valid attachments only
+        let attachments = [];
+        if (record.fields.Attachment && Array.isArray(record.fields.Attachment)) {
+          attachments = record.fields.Attachment
+            .filter(file => file && file.url) // Only include valid attachments
+            .map(file => ({
+              id: file.id || `att_${Date.now()}`, // Ensure ID exists
+              url: file.url,
+              filename: file.filename || 'attachment',
+              size: file.size || 0,
+              type: file.type || 'application/octet-stream',
+              thumbnails: file.thumbnails || null
+            }));
+        }
+
+        // Process date with validation
+        let createdTime = record.fields["Created Time"];
+        if (!createdTime) {
+          createdTime = new Date().toISOString();
+        } else {
+          // Ensure valid ISO format
+          try {
+            const date = new Date(createdTime);
+            if (isNaN(date.getTime())) {
+              createdTime = new Date().toISOString();
+            }
+          } catch (e) {
+            createdTime = new Date().toISOString();
+          }
+        }
+
+        // Return standardized submission object
+        return {
+          id: record.id,
+          teamId: teamId,
+          teamIds: teamIds, 
+          milestoneId: recordMilestoneId,
+          milestoneName: record.fields["Name (from Milestone)"]?.[0] || null,
+          createdTime: createdTime,
+          attachments: attachments,
+          comments: record.fields.Comments || "",
+          link: record.fields.Link || ""
+        };
+      } catch (recordError) {
+        // Handle individual record processing errors
+        console.error(`Error processing submission record ${record.id}:`, recordError);
+        
+        // Return partial record with error flag
+        return {
+          id: record.id,
+          teamId: teamId,
+          error: true,
+          errorMessage: recordError.message
+        };
       }
-
-      return {
-        id: record.id,
-        teamId: teamId,
-        teamIds: teamIds,
-        milestoneId: recordMilestoneId,
-        milestoneName: record.fields["Name (from Milestone)"]?.[0] || null,
-        createdTime: record.fields["Created Time"] || new Date().toISOString(),
-        attachments: attachments,
-        comments: record.fields.Comments,
-        link: record.fields.Link
-      };
-    });
+    })
+    .filter(submission => !submission.error); // Filter out failed records
     
     // Add diagnostic logging for the first submission
     if (submissions.length > 0) {
@@ -127,13 +168,16 @@ async function handlerImpl(req, res) {
       });
     }
     
-    // Enhanced caching strategy
-    // - Client-side cache for 5 minutes (300 seconds)
-    // - Edge/CDN cache for 10 minutes (600 seconds)
-    // - Stale-while-revalidate for 30 minutes (1800 seconds)
-    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600, stale-while-revalidate=1800');
+    // Calculate processing time
+    const processingTime = Date.now() - startTime;
     
-    // Return the submissions with the same response structure as before
+    // Set cache control headers for client-side caching
+    // Private: Only browser should cache, not CDNs
+    // max-age: Cache for 3 minutes
+    // must-revalidate: Check with server before using stale data
+    res.setHeader('Cache-Control', 'private, max-age=180, must-revalidate');
+    
+    // Return the submissions with enhanced metadata
     return res.status(200).json({
       submissions,
       meta: {
@@ -143,25 +187,48 @@ async function handlerImpl(req, res) {
           milestoneId: milestoneId || null
         },
         timestamp: new Date().toISOString(),
-        cached: true // Indicate this may be cached data
+        processingTime: `${processingTime}ms`,
+        requestId: `req_${Date.now().toString(36)}`
       }
     });
   } catch (error) {
     console.error("Error in submissions endpoint:", error);
     
-    // Add Retry-After header for rate limit errors
+    // Add specific error information for better debugging
+    let errorCode = "UNKNOWN_ERROR";
+    let errorMessage = "An error occurred retrieving submissions";
+    let status = 200; // Default to 200 to prevent UI issues
+    
+    // Handle specific error types
     if (error.statusCode === 429) {
+      // Rate limit error
+      errorCode = "RATE_LIMIT_EXCEEDED";
+      errorMessage = "Rate limit exceeded. Please try again later.";
       res.setHeader('Retry-After', '10'); // Suggest client retry after 10 seconds
       console.warn('Rate limit exceeded in submissions endpoint. Adding Retry-After header.');
+    } else if (error.message && error.message.includes("authentication")) {
+      // Authentication error
+      errorCode = "AUTHENTICATION_ERROR";
+      errorMessage = "Authentication error with Airtable API.";
+    } else if (error.message && error.message.includes("permission")) {
+      // Permission error
+      errorCode = "PERMISSION_ERROR";
+      errorMessage = "Permission error accessing Airtable data.";
+    } else if (error.message && error.message.includes("network")) {
+      // Network error
+      errorCode = "NETWORK_ERROR";
+      errorMessage = "Network error connecting to Airtable API.";
     }
     
-    // Return empty array rather than an error to prevent UI issues
-    return res.status(200).json({ 
+    // Return standardized error response
+    return res.status(status).json({ 
       submissions: [],
       meta: {
         error: true,
-        message: "An error occurred retrieving submissions",
-        timestamp: new Date().toISOString()
+        errorCode,
+        errorMessage,
+        timestamp: new Date().toISOString(),
+        requestId: `req_${Date.now().toString(36)}`
       }
     });
   }

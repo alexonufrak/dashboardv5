@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { useTeamSubmissions } from "@/lib/useDataFetching"
+import { useQueryClient } from "@tanstack/react-query"
 
 /**
  * Component that checks if a team has submitted for a milestone
- * This is a fully rewritten implementation based on the correct Airtable schema relationships
+ * Simplified implementation that leverages the standardized API response format
  * 
  * @param {Object} props - Component props
  * @param {string} props.milestoneId - The ID of the milestone to check
@@ -18,194 +19,82 @@ export default function MilestoneSubmissionChecker({
   onSubmissionCheck,
   children 
 }) {
+  // Get global query client for cache management
+  const queryClient = useQueryClient();
+  
+  // Get team data from dashboard context
+  const { teamData } = useDashboard();
+  
   // Component state
-  const [hasSubmission, setHasSubmission] = useState(false)
-  const [submissionData, setSubmissionData] = useState(null)
-  const [hasProcessed, setHasProcessed] = useState(false)
-  const [lastTeamId, setLastTeamId] = useState(null)
-  const [lastMilestoneId, setLastMilestoneId] = useState(null)
-  const processingRef = useRef(false)
+  const [hasSubmission, setHasSubmission] = useState(false);
   
-  // Get team data from context
-  const { teamData } = useDashboard()
-  
-  // Fetch team submissions using our custom hook
+  // Use the standardized team submissions hook
+  // This directly fetches submissions for the specific milestone
   const { 
     data,
     isLoading, 
     error,
     refetch
-  } = useTeamSubmissions(teamData?.id, milestoneId)
+  } = useTeamSubmissions(teamData?.id, milestoneId);
   
   // Listen for submission updates from the MilestoneSubmissionDialog component
   useEffect(() => {
-    // Event handler for the custom submission updated event
     const handleSubmissionUpdate = (event) => {
       const { milestoneId: updatedMilestoneId, teamId } = event.detail;
       
       // Only process events for this milestone and team
       if (updatedMilestoneId === milestoneId && teamId === teamData?.id) {
-        console.log("Received submission update event for this milestone");
+        console.log("MilestoneSubmissionChecker: Received submission update event");
         
-        // Force a complete reset and fresh fetch from server
-        // This ensures we don't just get a cached response
-        const queryClient = window._queryClient;
-        if (queryClient) {
-          // Remove ALL cached data for this query
-          queryClient.resetQueries({ 
-            queryKey: ['submissions', teamId, updatedMilestoneId],
-            exact: true
-          });
-          
-          // Now trigger a fresh fetch
-          queryClient.fetchQuery(['submissions', teamId, updatedMilestoneId]);
-        } else {
-          // Fallback to regular refetch if queryClient isn't available
-          refetch();
-        }
+        // Invalidate the cache and refetch
+        queryClient.invalidateQueries({ 
+          queryKey: ['submissions', teamId, updatedMilestoneId] 
+        });
         
-        // Reset all processing state
-        setHasProcessed(false);
-        processingRef.current = false;
+        // Trigger refetch to get fresh data
+        refetch();
       }
     };
     
     // Add event listener
     window.addEventListener('milestoneSubmissionUpdated', handleSubmissionUpdate);
     
-    // Cleanup
+    // Cleanup when component unmounts
     return () => {
       window.removeEventListener('milestoneSubmissionUpdated', handleSubmissionUpdate);
     };
-  }, [milestoneId, teamData?.id, refetch]);
+  }, [milestoneId, teamData?.id, refetch, queryClient]);
   
-  // Debug logging - reduced to essential messages
+  // Log errors for debugging
   useEffect(() => {
     if (error) {
       console.error("Error loading submission data:", error);
     }
   }, [error]);
   
-  // Force reprocessing when team or milestone changes
-  useEffect(() => {
-    if (teamData?.id !== lastTeamId || milestoneId !== lastMilestoneId) {
-      setLastTeamId(teamData?.id);
-      setLastMilestoneId(milestoneId);
-      setHasProcessed(false);
-      
-      // Clear submission data when changing team/milestone
-      setHasSubmission(false);
-      setSubmissionData(null);
-      
-      // Force refetch when parameters change
-      if (teamData?.id && milestoneId) {
-        refetch();
-      }
-    }
-  }, [teamData?.id, milestoneId, lastTeamId, lastMilestoneId, refetch]);
-  
   // Process submission data when it becomes available
   useEffect(() => {
-    // Skip if still loading
+    // Wait for data to be loaded
     if (isLoading || !data) {
       return;
     }
     
-    // Skip if we don't have both team and milestone IDs
-    if (!teamData?.id || !milestoneId) {
-      return;
-    }
-    
-    // Skip if already processed or currently processing
-    if (hasProcessed || processingRef.current) {
-      return;
-    }
-    
-    // Mark as processing to prevent duplicate processing
-    processingRef.current = true;
-    
-    // Get relevant submissions data
+    // Get the submissions array
     const submissions = data.submissions || [];
     
-    // First try to find submissions specifically linked to this milestone
-    const milestoneMatches = submissions.filter(s => 
-      s.milestoneId === milestoneId || 
-      s.milestone?.id === milestoneId ||
-      (s.milestone && (s.milestone.id === milestoneId || s.milestone.recordId === milestoneId))
-    );
+    // Process submissions to determine status
+    const hasSubmissions = submissions.length > 0;
+    setHasSubmission(hasSubmissions);
     
-    if (milestoneMatches.length > 0) {
-      setHasSubmission(true);
-      setSubmissionData(milestoneMatches[0]);
-      
-      // Call the callback with results
-      if (onSubmissionCheck) {
-        onSubmissionCheck(true, milestoneMatches);
-      }
-      
-      // Mark as processed
-      setHasProcessed(true);
-      processingRef.current = false;
-      return;
-    }
-    
-    // If no specific milestone matches, try by milestone name if available
-    if (submissions.length > 0) {
-      // Try to get the milestone name from one of the component parents
-      const milestoneNameMatches = submissions.filter(s => {
-        if (s.milestoneName && s.milestone?.name) {
-          // Match by name if available
-          return s.milestoneName === s.milestone.name;
-        }
-        return false;
-      });
-      
-      if (milestoneNameMatches.length > 0) {
-        setHasSubmission(true);
-        setSubmissionData(milestoneNameMatches[0]);
-        
-        // Call the callback with results
-        if (onSubmissionCheck) {
-          onSubmissionCheck(true, milestoneNameMatches);
-        }
-        
-        // Mark as processed
-        setHasProcessed(true);
-        processingRef.current = false;
-        return;
-      }
-    }
-    
-    // Last resort - if no direct matches but we have submissions, assume the most recent is relevant
-    // This is a fallback for when milestone relationships aren't properly set
-    if (submissions.length > 0) {
-      setHasSubmission(true);
-      setSubmissionData(submissions[0]);
-      
-      // Call the callback with results
-      if (onSubmissionCheck) {
-        onSubmissionCheck(true, submissions);
-      }
-      
-      // Mark as processed
-      setHasProcessed(true);
-      processingRef.current = false;
-      return;
-    }
-    
-    // If no submissions found at all
-    setHasSubmission(false);
-    setSubmissionData(null);
-    
-    // Call the callback with negative result
+    // Call the callback with results
     if (onSubmissionCheck) {
-      onSubmissionCheck(false, null);
+      onSubmissionCheck(
+        hasSubmissions, 
+        hasSubmissions ? submissions : null
+      );
     }
     
-    // Mark as processed
-    setHasProcessed(true);
-    processingRef.current = false;
-  }, [data, isLoading, hasProcessed, teamData?.id, milestoneId, onSubmissionCheck]);
+  }, [data, isLoading, onSubmissionCheck]);
 
   // This component doesn't render anything itself
   return children || null;
