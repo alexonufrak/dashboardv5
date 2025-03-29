@@ -1,6 +1,7 @@
 import { getUserByEmail } from '../../../lib/userProfile';
 import * as auth0Client from '../../../lib/auth0';
 import { lookupInstitutionByEmail, getUserProfile } from '../../../lib/airtable';
+import { withApiAuthRequired } from '@auth0/nextjs-auth0';
 
 /**
  * API handler to check if a user exists by email and verify institution
