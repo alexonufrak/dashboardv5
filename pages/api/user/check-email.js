@@ -1,6 +1,8 @@
 import { getUserByEmail } from '../../../lib/userProfile';
-import { auth0, checkUserExistsByEmail, getSignupMetadata } from '../../../lib/auth0';
+import { auth0, getSignupMetadata } from '../../../lib/auth0';
 import { lookupInstitutionByEmail, getUserProfile } from '../../../lib/airtable';
+// Import the client for Auth0 Management API operations
+import { checkUserExists } from '../../../lib/auth0-management';
 import { withApiAuthRequired } from '@auth0/nextjs-auth0';
 
 /**
@@ -105,9 +107,9 @@ async function handlerImpl(req, res) {
       const airtableExists = !!airtableUser;
       console.log(`Airtable user existence: ${airtableExists}`);
       
-      // Then check if user exists in Auth0 (with detailed logging in the client function)
-      console.log(`Calling Auth0 client to check user existence: ${normalizedEmail}`);
-      const auth0Exists = await checkUserExistsByEmail(normalizedEmail);
+      // Then check if user exists in Auth0 using the dedicated API endpoint
+      console.log(`Calling Auth0 Management API to check user existence: ${normalizedEmail}`);
+      const auth0Exists = await checkUserExists(normalizedEmail);
       console.log(`Auth0 user existence result: ${auth0Exists}`);
       
       // Check for the special case where user exists in Airtable but not in Auth0 via Management API
