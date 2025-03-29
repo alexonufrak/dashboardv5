@@ -148,8 +148,7 @@ async function getUserByEmail(email) {
           console.log(`[Management API] Email: ${directUsers[0].email}`);
           console.log(`[Management API] Email verified: ${directUsers[0].email_verified}`);
           
-          // Return the users we found through the direct method
-          users.push(...directUsers);
+          // Return the user we found through the direct method
           return directUsers[0];
         } else {
           console.log(`[Management API] Direct API call returned no users`);
