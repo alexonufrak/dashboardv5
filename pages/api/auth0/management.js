@@ -29,28 +29,94 @@ async function getUserByEmail(email) {
     const normalizedEmail = email.toLowerCase().trim();
     console.log(`Management API looking up Auth0 user with email: ${normalizedEmail}`);
     
+    // Get Management client credentials for logging
+    const mgmtDomain = process.env.AUTH0_MGMT_API_DOMAIN || process.env.AUTH0_DOMAIN;
+    const mgmtClientId = process.env.AUTH0_MGMT_API_CLIENT_ID || process.env.AUTH0_CLIENT_ID;
+    
+    console.log(`[Management API] Using domain: ${mgmtDomain}`);
+    console.log(`[Management API] Using client ID: ${mgmtClientId}`);
+    console.log(`[Management API] Audience: https://${mgmtDomain}/api/v2/`);
+    
     // Get a management client (credentials configured in lib/auth0.js)
     const client = getManagementClient();
     
+    // Log the query details
+    const query = `email:"${normalizedEmail}"`;
+    console.log(`[Management API] Search query: ${query}`);
+    console.log(`[Management API] Search engine: v3`);
+    
     // Search for the user by email using Lucene query syntax
-    const users = await client.users.getAll({
-      q: `email:"${normalizedEmail}"`,
+    const searchParams = {
+      q: query,
       search_engine: 'v3',
       fields: 'user_id,email,name,user_metadata',
       include_fields: true
-    });
+    };
     
-    console.log(`Auth0 returned ${users?.length || 0} users for email ${normalizedEmail}`);
+    console.log(`[Management API] Full search params:`, JSON.stringify(searchParams, null, 2));
     
-    return (users && users.length > 0) ? users[0] : null;
+    // Execute the query
+    console.log(`[Management API] Executing user search...`);
+    const users = await client.users.getAll(searchParams);
+    
+    // Log the results
+    console.log(`[Management API] Auth0 returned ${users?.length || 0} users for email ${normalizedEmail}`);
+    
+    if (users && users.length > 0) {
+      console.log(`[Management API] Found user:`, JSON.stringify({
+        user_id: users[0].user_id,
+        email: users[0].email,
+        name: users[0].name
+      }, null, 2));
+      return users[0];
+    } else {
+      console.log(`[Management API] No users found with that email`);
+      
+      // Try to list some users to verify API is working
+      try {
+        console.log(`[Management API] Trying to list up to 5 users to verify API access...`);
+        const sampleUsers = await client.users.getAll({
+          per_page: 5,
+          fields: 'user_id,email',
+          include_fields: true
+        });
+        
+        console.log(`[Management API] Sample users count: ${sampleUsers?.length || 0}`);
+        if (sampleUsers && sampleUsers.length > 0) {
+          console.log(`[Management API] API is working and returning users`);
+          const sanitizedEmails = sampleUsers.map(u => {
+            if (!u.email) return 'no-email';
+            return u.email.replace(/^(.)(.*)@(.*)$/, '$1***@$3'); // Sanitize emails for privacy
+          });
+          console.log(`[Management API] Sample user emails (sanitized):`, sanitizedEmails);
+        } else {
+          console.log(`[Management API] API returned 0 users total - potential permission issue`);
+        }
+      } catch (sampleError) {
+        console.error(`[Management API] Error listing sample users:`, sampleError.message);
+      }
+      
+      return null;
+    }
   } catch (error) {
-    console.error('Error in getUserByEmail API route:', error);
+    console.error('[Management API] Error in getUserByEmail API route:', error);
+    
+    // Log detailed error information
+    console.error(`[Management API] Error type: ${error.name}`);
+    console.error(`[Management API] Error message: ${error.message}`);
+    console.error(`[Management API] Error status: ${error.statusCode}`);
+    
+    if (error.response) {
+      console.error(`[Management API] Response body:`, error.response.body);
+    }
     
     // Specific error handling for common Management API issues
     if (error.statusCode === 403) {
-      console.error('Permission denied when accessing Management API. Check client credentials and grants.');
+      console.error('[Management API] Permission denied when accessing Management API. Check client credentials and scopes.');
     } else if (error.statusCode === 429) {
-      console.error('Rate limit exceeded when accessing Management API.');
+      console.error('[Management API] Rate limit exceeded when accessing Management API.');
+    } else if (error.statusCode === 401) {
+      console.error('[Management API] Unauthorized. Check client credentials and make sure the token is valid.');
     }
     
     return null;
@@ -66,34 +132,68 @@ async function getUserByEmail(email) {
 async function updateUserMetadata(userId, metadata) {
   try {
     if (!userId) {
-      console.error('User ID is required for metadata update');
+      console.error('[Management API] User ID is required for metadata update');
       return null;
     }
     
     if (!metadata || typeof metadata !== 'object') {
-      console.error('Valid metadata object is required for update');
+      console.error('[Management API] Valid metadata object is required for update');
       return null;
     }
     
-    console.log(`Updating metadata for user ${userId}`);
+    console.log(`[Management API] Updating metadata for user ${userId}`);
+    console.log(`[Management API] Metadata keys: ${Object.keys(metadata).join(', ')}`);
     
+    // Get Management client credentials for logging
+    const mgmtDomain = process.env.AUTH0_MGMT_API_DOMAIN || process.env.AUTH0_DOMAIN;
+    const mgmtClientId = process.env.AUTH0_MGMT_API_CLIENT_ID || process.env.AUTH0_CLIENT_ID;
+    
+    console.log(`[Management API] Using domain: ${mgmtDomain}`);
+    console.log(`[Management API] Using client ID: ${mgmtClientId}`);
+    
+    // Get a management client
     const client = getManagementClient();
+    
+    // Attempt to first get the user to verify existence and access
+    console.log(`[Management API] Verifying user ${userId} exists before updating metadata`);
+    try {
+      const existingUser = await client.users.get({ id: userId });
+      console.log(`[Management API] User found, current email: ${existingUser.email}`);
+    } catch (userError) {
+      console.error(`[Management API] Error getting user before metadata update: ${userError.message}`);
+      console.log(`[Management API] Continuing with update attempt anyway`);
+    }
+    
+    // Perform the update
+    console.log(`[Management API] Executing metadata update`);
     const result = await client.users.update(
       { id: userId }, 
       { user_metadata: metadata }
     );
     
+    console.log(`[Management API] Metadata update successful for user ${userId}`);
     return result;
   } catch (error) {
+    console.error('[Management API] Error updating user metadata:', error);
+    
+    // Log detailed error information
+    console.error(`[Management API] Error type: ${error.name}`);
+    console.error(`[Management API] Error message: ${error.message}`);
+    console.error(`[Management API] Error status: ${error.statusCode}`);
+    
+    if (error.response) {
+      console.error(`[Management API] Response body:`, error.response.body);
+    }
+    
     // Specific error handling for common Management API issues
     if (error.statusCode === 403) {
-      console.error('Permission denied when updating user metadata. Check client credentials and scopes.');
+      console.error('[Management API] Permission denied when updating user metadata. Check client credentials and scopes.');
     } else if (error.statusCode === 429) {
-      console.error('Rate limit exceeded when updating user metadata.');
+      console.error('[Management API] Rate limit exceeded when updating user metadata.');
     } else if (error.statusCode === 400) {
-      console.error(`Bad request when updating metadata: ${error.message}`);
-    } else {
-      console.error('Error updating user metadata:', error);
+      console.error(`[Management API] Bad request when updating metadata: ${error.message}`);
+    } else if (error.statusCode === 401) {
+      console.error('[Management API] Unauthorized. Check client credentials and make sure the token is valid.');
     }
     
     return null;
@@ -104,96 +204,150 @@ async function updateUserMetadata(userId, metadata) {
  * API route handler for Auth0 Management operations
  */
 export default async function handler(req, res) {
+  const requestId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+  console.log(`[Management API] [${requestId}] Request received`);
+  
   try {
+    // Log request details
+    console.log(`[Management API] [${requestId}] Request method: ${req.method}`);
+    console.log(`[Management API] [${requestId}] Request headers:`, JSON.stringify({
+      'content-type': req.headers['content-type'],
+      'user-agent': req.headers['user-agent'],
+      'x-forwarded-for': req.headers['x-forwarded-for'] || 'unknown'
+    }, null, 2));
+    
     // Only allow POST requests
     if (req.method !== 'POST') {
+      console.log(`[Management API] [${requestId}] Rejecting non-POST request`);
       return res.status(405).json({ error: 'Method not allowed' });
     }
     
     // Get the operation type from the request body
     const { operation, ...params } = req.body;
     
+    console.log(`[Management API] [${requestId}] Operation: ${operation || 'not specified'}`);
+    console.log(`[Management API] [${requestId}] Parameters:`, JSON.stringify(params, null, 2));
+    
     if (!operation) {
+      console.log(`[Management API] [${requestId}] Rejecting request with no operation`);
       return res.status(400).json({ error: 'Operation not specified' });
     }
     
-    console.log(`Auth0 Management API received request for operation: ${operation}`);
+    console.log(`[Management API] [${requestId}] Auth0 Management API received request for operation: ${operation}`);
     
     // For signup flow operations, don't require authentication
     const isPublicOperation = 
       operation === 'checkUserExists' || 
       operation === 'getUserByEmail';
     
+    console.log(`[Management API] [${requestId}] Is public operation: ${isPublicOperation}`);
+    
     // For protected operations, verify authentication
     if (!isPublicOperation) {
-      const session = await auth0.getSession(req, res);
-      if (!session) {
-        return res.status(401).json({ error: 'Not authenticated' });
+      console.log(`[Management API] [${requestId}] Verifying authentication for protected operation`);
+      try {
+        const session = await auth0.getSession(req, res);
+        if (!session) {
+          console.log(`[Management API] [${requestId}] No session found, rejecting`);
+          return res.status(401).json({ error: 'Not authenticated' });
+        }
+        console.log(`[Management API] [${requestId}] Authentication verified for user: ${session.user.sub}`);
+      } catch (authError) {
+        console.error(`[Management API] [${requestId}] Authentication error:`, authError);
+        return res.status(401).json({ error: 'Authentication error', message: authError.message });
       }
     }
     
     // Handle different operation types
     switch (operation) {
       case 'getUserByEmail': {
+        console.log(`[Management API] [${requestId}] Processing getUserByEmail operation`);
+        
         const { email } = params;
         if (!email) {
+          console.log(`[Management API] [${requestId}] Missing email parameter`);
           return res.status(400).json({ error: 'Email is required' });
         }
         
+        console.log(`[Management API] [${requestId}] Looking up user by email: ${email}`);
         const user = await getUserByEmail(email);
+        
+        console.log(`[Management API] [${requestId}] User lookup result: ${user ? 'Found' : 'Not found'}`);
         return res.status(200).json({ 
           user,
-          exists: !!user
+          exists: !!user,
+          requestId: requestId
         });
       }
       
       case 'checkUserExists': {
+        console.log(`[Management API] [${requestId}] Processing checkUserExists operation`);
+        
         const { email } = params;
         if (!email) {
+          console.log(`[Management API] [${requestId}] Missing email parameter`);
           return res.status(400).json({ error: 'Email is required' });
         }
         
         const normalizedEmail = email.toLowerCase().trim();
-        console.log(`Checking if user exists with email: ${normalizedEmail}`);
+        console.log(`[Management API] [${requestId}] Checking if user exists with email: ${normalizedEmail}`);
         
         const user = await getUserByEmail(normalizedEmail);
+        console.log(`[Management API] [${requestId}] User existence check result: ${user ? 'User exists' : 'User does not exist'}`);
+        
         return res.status(200).json({ 
           exists: !!user,
-          auth0Exists: !!user
+          auth0Exists: !!user,
+          requestId: requestId
         });
       }
       
       case 'updateUserMetadata': {
+        console.log(`[Management API] [${requestId}] Processing updateUserMetadata operation`);
+        
         const { userId, metadata } = params;
         if (!userId) {
+          console.log(`[Management API] [${requestId}] Missing userId parameter`);
           return res.status(400).json({ error: 'User ID is required' });
         }
         
         if (!metadata || typeof metadata !== 'object') {
+          console.log(`[Management API] [${requestId}] Invalid metadata format`);
           return res.status(400).json({ error: 'Valid metadata object is required' });
         }
+        
+        console.log(`[Management API] [${requestId}] Updating metadata for user: ${userId}`);
+        console.log(`[Management API] [${requestId}] Metadata keys: ${Object.keys(metadata).join(', ')}`);
         
         const result = await updateUserMetadata(userId, metadata);
         
         if (!result) {
+          console.log(`[Management API] [${requestId}] Metadata update failed`);
           return res.status(500).json({ error: 'Failed to update user metadata' });
         }
         
+        console.log(`[Management API] [${requestId}] Metadata update successful`);
         return res.status(200).json({ 
           success: true,
-          user: result
+          user: result,
+          requestId: requestId
         });
       }
       
       default:
+        console.log(`[Management API] [${requestId}] Unsupported operation: ${operation}`);
         return res.status(400).json({ error: `Unsupported operation: ${operation}` });
     }
   } catch (error) {
-    console.error(`Error in Auth0 Management API:`, error);
+    console.error(`[Management API] [${requestId}] Error in Auth0 Management API:`, error);
+    console.error(`[Management API] [${requestId}] Error stack: ${error.stack}`);
     
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message
+      message: error.message,
+      requestId: requestId
     });
+  } finally {
+    console.log(`[Management API] [${requestId}] Request completed`);
   }
 }
