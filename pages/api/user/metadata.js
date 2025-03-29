@@ -142,7 +142,7 @@ async function userMetadata(req, res) {
               try {
                 // Use the Management API client directly
                 const managementClient = await auth0Client.getManagementClient();
-                await managementClient.users.updateUserMetadata({ id: userId }, newMetadata);
+                await managementClient.users.update({ id: userId }, { user_metadata: newMetadata });
                 return true;
               } catch (updateError) {
                 if (retries > 1) {
