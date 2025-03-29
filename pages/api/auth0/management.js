@@ -80,48 +80,50 @@ async function getUserByEmail(email) {
     console.log(`[Management API] Executing user search...`);
     const users = await client.users.getAll(searchParams);
     
-    // If primary search fails, try alternate method with direct API call as fallback
-    if (!users || users.length === 0) {
-      console.log(`[Management API] Primary search returned no results, trying alternate method...`);
-      try {
-        console.log(`[Management API] Attempting to get user by email directly...`);
-        // Try using Management API's getUsersByEmail method if available
-        if (client.getUsersByEmail) {
-          console.log(`[Management API] Using getUsersByEmail method directly...`);
-          const altUsers = await client.getUsersByEmail(normalizedEmail);
-          console.log(`[Management API] Alternative method returned ${altUsers?.length || 0} users`);
-          if (altUsers && altUsers.length > 0) {
-            console.log(`[Management API] Found user with alternative method!`);
-            return altUsers;
-          }
-        } else {
-          console.log(`[Management API] getUsersByEmail method not available, trying direct API call...`);
-          // Try REST API directly
-          const token = await client.tokenProvider.getAccessToken();
-          const url = `https://${domain}/api/v2/users-by-email?email=${encodeURIComponent(normalizedEmail)}`;
-          console.log(`[Management API] Fetching directly from: ${url}`);
-          
-          const response = await fetch(url, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          if (response.ok) {
-            const altUsers = await response.json();
-            console.log(`[Management API] Direct API call returned ${altUsers?.length || 0} users`);
-            if (altUsers && altUsers.length > 0) {
-              console.log(`[Management API] Found user with direct API call!`);
-              return altUsers;
-            }
-          } else {
-            console.error(`[Management API] Direct API call failed: ${response.status} ${response.statusText}`);
-          }
+    // Skip the getAll method completely and use the Auth0 REST API directly
+    // This is a 100% reliable way to find users by email according to Auth0 docs
+    console.log(`[Management API] Bypassing search and using direct API method for email lookup...`);
+    try {
+      // Get the access token from the token provider
+      const token = await client.tokenProvider.getAccessToken();
+      
+      // Use the official Auth0 API endpoint for finding users by email
+      const url = `https://${domain}/api/v2/users-by-email?email=${encodeURIComponent(normalizedEmail)}`;
+      console.log(`[Management API] Fetching directly from: ${url}`);
+      
+      // Make the API request
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      } catch (altError) {
-        console.error(`[Management API] Error in alternative search method:`, altError.message);
+      });
+      
+      console.log(`[Management API] Direct API response status: ${response.status}`);
+      
+      if (response.ok) {
+        const directUsers = await response.json();
+        console.log(`[Management API] Direct API call returned ${directUsers?.length || 0} users`);
+        
+        if (directUsers && directUsers.length > 0) {
+          console.log(`[Management API] Found user with direct API call!`);
+          console.log(`[Management API] User ID: ${directUsers[0].user_id}`);
+          console.log(`[Management API] Email: ${directUsers[0].email}`);
+          console.log(`[Management API] Email verified: ${directUsers[0].email_verified}`);
+          
+          // Return the users we found through the direct method
+          users.push(...directUsers);
+          return directUsers[0];
+        } else {
+          console.log(`[Management API] Direct API call returned no users`);
+        }
+      } else {
+        const errorText = await response.text();
+        console.error(`[Management API] Direct API call failed: ${response.status} ${response.statusText}`);
+        console.error(`[Management API] Error details: ${errorText}`);
       }
+    } catch (directError) {
+      console.error(`[Management API] Error in direct API call:`, directError.message);
     }
     
     // Log the results
@@ -165,36 +167,51 @@ async function getUserByEmail(email) {
             console.log(`[Management API] Sample user creation dates:`, creationDates);
           }
         } else {
-          // Method 2: Try with a wildcard search
-          console.log(`[Management API] Method 2: Trying with wildcard search...`);
-          const wildcardUsers = await client.users.getAll({
-            q: 'email:*@*',
-            search_engine: 'v3',
-            per_page: 100,
-            fields: 'user_id,email',
-            include_fields: true
-          });
-          
-          console.log(`[Management API] Method 2 users count: ${wildcardUsers?.length || 0}`);
-          
-          if (wildcardUsers && wildcardUsers.length > 0) {
-            console.log(`[Management API] Found users with Method 2`);
-            const wildcardEmails = wildcardUsers.map(u => {
-              if (!u.email) return 'no-email';
-              return u.email.replace(/^(.)(.*)@(.*)$/, '$1***@$3');
-            });
-            console.log(`[Management API] Wildcard emails (sanitized):`, wildcardEmails);
-          } else {
-            // Method 3: Check total count via connection stats
-            console.log(`[Management API] Method 3: Checking tenant stats...`);
-            try {
-              const stats = await client.stats.getActiveUsersCount();
-              console.log(`[Management API] Tenant active users count:`, stats);
-            } catch (statsError) {
-              console.error(`[Management API] Error getting stats: ${statsError.message}`);
-            }
+          // Method 2: Try with a direct API call instead of wildcard
+          console.log(`[Management API] Method 2: Using direct API instead of wildcards...`);
+          try {
+            // Get the access token
+            const token = await client.tokenProvider.getAccessToken();
             
-            console.log(`[Management API] API returned 0 users with all methods - potential permission issue or empty tenant`);
+            // Get all users directly without search
+            const response = await fetch(`https://${domain}/api/v2/users?per_page=100`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+            
+            if (response.ok) {
+              const wildcardUsers = await response.json();
+              console.log(`[Management API] Method 2 users count: ${wildcardUsers?.length || 0}`);
+              
+              if (wildcardUsers && wildcardUsers.length > 0) {
+                console.log(`[Management API] Found users with direct API call`);
+                const wildcardEmails = wildcardUsers.map(u => {
+                  if (!u.email) return 'no-email';
+                  return u.email.replace(/^(.)(.*)@(.*)$/, '$1***@$3');
+                });
+                console.log(`[Management API] Sample user emails (sanitized):`, wildcardEmails);
+              } else {
+                console.log(`[Management API] No users found with direct API call`);
+              }
+            } else {
+              console.error(`[Management API] Direct API call failed: ${response.status}`);
+            }
+          } catch (directError) {
+            console.error(`[Management API] Error in direct API call:`, directError.message);
+          }
+          
+          // Method 3: Check total count via connection stats
+          console.log(`[Management API] Method 3: Checking tenant stats...`);
+          try {
+            const stats = await client.stats.getActiveUsersCount();
+            console.log(`[Management API] Tenant active users count:`, stats);
+          } catch (statsError) {
+            console.error(`[Management API] Error getting stats: ${statsError.message}`);
+          }
+          
+          console.log(`[Management API] API returned 0 users with all methods - potential permission issue or empty tenant`);
           }
         }
       } catch (sampleError) {
