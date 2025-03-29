@@ -30,12 +30,12 @@ async function getUserByEmail(email) {
     console.log(`Management API looking up Auth0 user with email: ${normalizedEmail}`);
     
     // Get Management client credentials for logging
-    const mgmtDomain = process.env.AUTH0_MGMT_API_DOMAIN || process.env.AUTH0_DOMAIN;
-    const mgmtClientId = process.env.AUTH0_MGMT_API_CLIENT_ID || process.env.AUTH0_CLIENT_ID;
+    const domain = process.env.AUTH0_DOMAIN || process.env.AUTH0_ISSUER_BASE_URL?.replace(/^https?:\/\//, '');
+    const clientId = process.env.AUTH0_CLIENT_ID;
     
-    console.log(`[Management API] Using domain: ${mgmtDomain}`);
-    console.log(`[Management API] Using client ID: ${mgmtClientId}`);
-    console.log(`[Management API] Audience: https://${mgmtDomain}/api/v2/`);
+    console.log(`[Management API] Using domain: ${domain}`);
+    console.log(`[Management API] Using Dashboard client ID: ${clientId?.substring(0, 5)}...`);
+    console.log(`[Management API] Audience: https://${domain}/api/v2/`);
     
     // Get a management client (credentials configured in lib/auth0.js)
     const client = getManagementClient();
@@ -145,11 +145,11 @@ async function updateUserMetadata(userId, metadata) {
     console.log(`[Management API] Metadata keys: ${Object.keys(metadata).join(', ')}`);
     
     // Get Management client credentials for logging
-    const mgmtDomain = process.env.AUTH0_MGMT_API_DOMAIN || process.env.AUTH0_DOMAIN;
-    const mgmtClientId = process.env.AUTH0_MGMT_API_CLIENT_ID || process.env.AUTH0_CLIENT_ID;
+    const domain = process.env.AUTH0_DOMAIN || process.env.AUTH0_ISSUER_BASE_URL?.replace(/^https?:\/\//, '');
+    const clientId = process.env.AUTH0_CLIENT_ID;
     
-    console.log(`[Management API] Using domain: ${mgmtDomain}`);
-    console.log(`[Management API] Using client ID: ${mgmtClientId}`);
+    console.log(`[Management API] Using domain: ${domain}`);
+    console.log(`[Management API] Using Dashboard client ID: ${clientId?.substring(0, 5)}...`);
     
     // Get a management client
     const client = getManagementClient();
