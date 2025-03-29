@@ -1,4 +1,5 @@
 import Airtable from "airtable";
+import { auth0 } from '@/lib/auth0';
 
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
 const institutionsTable = process.env.AIRTABLE_INSTITUTIONS_TABLE_ID 
@@ -95,17 +96,7 @@ async function handlerImpl(req, res) {
 }
 
 export default async function handler(req, res) {
-  try {
-    // Check for valid Auth0 session
-    const session = await auth0.getSession(req, res);
-    if (!session) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-    
-    // Call the original handler with the authenticated session
-    return handlerImpl(req, res);
-  } catch (error) {
-    console.error('API authentication error:', error);
-    return res.status(error.status || 500).json({ error: error.message });
-  }
+  // Always allow the institution lookup endpoint without authentication
+  // This endpoint is needed during the signup flow
+  return handlerImpl(req, res);
 }

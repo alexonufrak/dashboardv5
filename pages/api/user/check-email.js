@@ -184,7 +184,14 @@ async function handlerImpl(req, res) {
 
 export default async function handler(req, res) {
   try {
-    // Check for valid Auth0 session
+    // For POST requests during signup flow, allow without authentication
+    // This endpoint needs to be publicly accessible during signup
+    if (req.method === 'POST') {
+      console.log('Allowing unauthenticated POST request to check-email for signup flow');
+      return handlerImpl(req, res);
+    }
+    
+    // For GET requests, continue to require authentication
     const session = await auth0.getSession(req, res);
     if (!session) {
       return res.status(401).json({ error: 'Not authenticated' });

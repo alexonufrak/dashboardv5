@@ -115,7 +115,7 @@ export default function SignUp() {
         
         // Delay redirect to show message to user for 2 seconds
         setTimeout(() => {
-          window.location.href = `/api/auth/login?prompt=login`;
+          window.location.href = `/auth/login?prompt=login`;
         }, 2000);
         return;
       }

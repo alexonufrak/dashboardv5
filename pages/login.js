@@ -143,7 +143,7 @@ export default function Login() {
     if (userExists) {
       // If user exists, redirect directly to Google Auth
       // Bypass Auth0 login screen by specifying connection=google-oauth2
-      window.location.href = `/api/auth/login?connection=google-oauth2&login_hint=${encodedEmail}&prompt=login`;
+      window.location.href = `/auth/login?connection=google-oauth2&login_hint=${encodedEmail}&prompt=login`;
     } else {
       // If user doesn't exist, redirect to signup with email prefilled
       router.push(`/signup?email=${encodedEmail}`);
