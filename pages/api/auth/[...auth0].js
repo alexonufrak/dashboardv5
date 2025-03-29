@@ -1,15 +1,5 @@
-import { handleAuth, handleCallback } from "@auth0/nextjs-auth0"
-
-// Required configuration for Auth0 v3
-const config = {
-  baseURL: process.env.AUTH0_BASE_URL || 'https://hub.xfoundry.org',
-  issuerBaseURL: process.env.AUTH0_ISSUER_BASE_URL,
-  clientID: process.env.AUTH0_CLIENT_ID,
-  clientSecret: process.env.AUTH0_CLIENT_SECRET,
-  secret: process.env.AUTH0_SECRET
-};
-
-console.log('Auth0 handler initialized with baseURL:', config.baseURL);
+import { handleAuth, handleCallback } from "@auth0/nextjs-auth0";
+import auth0Config from '../../../lib/auth0-config';
 
 const afterCallback = async (req, res, session, state) => {
   try {
@@ -172,11 +162,11 @@ const afterCallback = async (req, res, session, state) => {
 }
 
 export default handleAuth({
-  ...config,
+  ...auth0Config,
   async callback(req, res) {
     try {
       await handleCallback(req, res, { 
-        ...config,
+        ...auth0Config,
         afterCallback 
       })
     } catch (error) {
