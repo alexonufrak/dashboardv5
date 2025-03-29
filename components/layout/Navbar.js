@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter } from "next/router"
-import { useUser } from "@auth0/nextjs-auth0/client"
+import { useUser } from "@auth0/nextjs-auth0"
 import { useState, useEffect } from "react"
 // ProfileEditModal is now included in MainDashboardLayout
 import Logo from "@/components/common/Logo"

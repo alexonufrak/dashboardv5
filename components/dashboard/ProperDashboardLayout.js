@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
-import { useUser } from "@auth0/nextjs-auth0/client"
+import { useUser } from "@auth0/nextjs-auth0"
 import Head from "next/head"
 import { AppSidebar } from "@/components/layout/app-sidebar"
 import Breadcrumbs from "@/components/common/Breadcrumbs"

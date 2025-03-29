@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useUser } from "@auth0/nextjs-auth0/client"
+import { useUser } from "@auth0/nextjs-auth0"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle, X } from "lucide-react"
 import { Button } from "@/components/ui/button"

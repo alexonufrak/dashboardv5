@@ -1,7 +1,7 @@
 "use client"
 
 // Import Auth0 client
-import auth0 from "@/lib/auth0"
+import { auth0 } from "@/lib/auth0"
 import { useRouter } from "next/router"
 import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton"

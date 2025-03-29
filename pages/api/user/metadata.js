@@ -1,4 +1,4 @@
-import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import { auth0 } from '@/lib/auth0';
 import * as auth0Client from '../../../lib/auth0';
 
 /**
@@ -29,7 +29,7 @@ const shouldAttemptAuth0ManagementAPI = () => {
  */
 async function userMetadata(req, res) {
   try {
-    const session = await getSession(req, res);
+    const session = await auth0.getSession(req, res);
     
     if (!session || !session.user) {
       return res.status(401).json({ error: 'Not authenticated' });
@@ -209,4 +209,18 @@ async function userMetadata(req, res) {
   }
 };
 
-export default withApiAuthRequired(userMetadata)
+export default async function handlerImpl(req, res) {
+  try {
+    // Check for valid Auth0 session
+    const session = await auth0.getSession(req, res);
+    if (!session) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    // Call the original handler with the authenticated session
+    return userMetadata(req, res);
+  } catch (error) {
+    console.error('API authentication error:', error);
+    return res.status(error.status || 500).json({ error: error.message });
+  }
+}

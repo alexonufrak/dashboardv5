@@ -5,7 +5,7 @@ const institutionsTable = process.env.AIRTABLE_INSTITUTIONS_TABLE_ID
   ? base(process.env.AIRTABLE_INSTITUTIONS_TABLE_ID) 
   : null;
 
-async function handler(req, res) {
+async function handlerImpl(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -94,4 +94,18 @@ async function handler(req, res) {
   }
 }
 
-export default withApiAuthRequired(handler)
+export default async function handler(req, res) {
+  try {
+    // Check for valid Auth0 session
+    const session = await auth0.getSession(req, res);
+    if (!session) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    // Call the original handler with the authenticated session
+    return handlerImpl(req, res);
+  } catch (error) {
+    console.error('API authentication error:', error);
+    return res.status(error.status || 500).json({ error: error.message });
+  }
+}

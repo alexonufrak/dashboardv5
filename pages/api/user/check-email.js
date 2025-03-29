@@ -1,12 +1,12 @@
 import { getUserByEmail } from '../../../lib/userProfile';
-import * as auth0Client from '../../../lib/auth0';
+import { auth0, checkUserExistsByEmail, getSignupMetadata } from '../../../lib/auth0';
 import { lookupInstitutionByEmail, getUserProfile } from '../../../lib/airtable';
 import { withApiAuthRequired } from '@auth0/nextjs-auth0';
 
 /**
  * API handler to check if a user exists by email and verify institution
  */
-async function handler(req, res) {
+async function handlerImpl(req, res) {
   // Allow both POST and GET methods
   if (req.method !== 'POST' && req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -107,7 +107,7 @@ async function handler(req, res) {
       
       // Then check if user exists in Auth0 (with detailed logging in the client function)
       console.log(`Calling Auth0 client to check user existence: ${normalizedEmail}`);
-      const auth0Exists = await auth0Client.checkUserExistsByEmail(normalizedEmail);
+      const auth0Exists = await checkUserExistsByEmail(normalizedEmail);
       console.log(`Auth0 user existence result: ${auth0Exists}`);
       
       // Check for the special case where user exists in Airtable but not in Auth0 via Management API
@@ -120,7 +120,7 @@ async function handler(req, res) {
       if (airtableExists && !auth0Exists) {
         try {
           console.log(`Preparing Airtable metadata for signup: ${normalizedEmail}`);
-          signupMetadata = await auth0Client.getSignupMetadata(normalizedEmail, airtableUser);
+          signupMetadata = await getSignupMetadata(normalizedEmail, airtableUser);
           console.log(`Prepared metadata for signup:`, signupMetadata);
         } catch (metadataError) {
           console.error('Error preparing signup metadata:', metadataError);
@@ -182,4 +182,18 @@ async function handler(req, res) {
   }
 }
 
-export default withApiAuthRequired(handler)
+export default async function handler(req, res) {
+  try {
+    // Check for valid Auth0 session
+    const session = await auth0.getSession(req, res);
+    if (!session) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    // Call the original handler with the authenticated session
+    return handlerImpl(req, res);
+  } catch (error) {
+    console.error('API authentication error:', error);
+    return res.status(error.status || 500).json({ error: error.message });
+  }
+}

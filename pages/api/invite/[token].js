@@ -47,4 +47,18 @@ async function getInvitationHandler(req, res) {
   }
 }
 
-export default withApiAuthRequired(getInvitationHandler)
+export default async function handlerImpl(req, res) {
+  try {
+    // Check for valid Auth0 session
+    const session = await auth0.getSession(req, res);
+    if (!session) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    // Call the original handler with the authenticated session
+    return getInvitationHandler(req, res);
+  } catch (error) {
+    console.error('API authentication error:', error);
+    return res.status(error.status || 500).json({ error: error.message });
+  }
+}

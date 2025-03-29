@@ -6,10 +6,10 @@ import { base } from "@/lib/airtable"
  * @param {object} req - Next.js API request
  * @param {object} res - Next.js API response
  */
-async function handler(req, res) {
+async function handlerImpl(req, res) {
   try {
     // Get the current session and user
-    const session = await getSession(req, res)
+    const session = await auth0.getSession(req, res)
     if (!session?.user) {
       return res.status(401).json({ error: "Not authenticated" })
     }
@@ -70,4 +70,18 @@ async function handler(req, res) {
   }
 }
 
-export default withApiAuthRequired(handler)
+export default async function handler(req, res) {
+  try {
+    // Check for valid Auth0 session
+    const session = await auth0.getSession(req, res);
+    if (!session) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    // Call the original handler with the authenticated session
+    return handlerImpl(req, res);
+  } catch (error) {
+    console.error('API authentication error:', error);
+    return res.status(error.status || 500).json({ error: error.message });
+  }
+}

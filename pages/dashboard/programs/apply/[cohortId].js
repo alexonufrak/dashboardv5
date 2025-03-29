@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { useUser } from '@auth0/nextjs-auth0/client'
+import { useUser } from '@auth0/nextjs-auth0'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -384,9 +384,41 @@ const ProgramsApplicationPage = () => {
   )
 }
 
-import { withPageAuthRequired } from '@auth0/nextjs-auth0';
+
 
 // Auth protection with Auth0 v3
-export const getServerSideProps = withPageAuthRequired();
+// Auth protection now handled in middleware.js for Auth0 v4
+export const getServerSideProps = async ({ req, res }) => {
+  try {
+    // Get the user session, if available
+    const { auth0 } = await import('@/lib/auth0');
+    const session = await auth0.getSession(req, res);
+    
+    // If no session, middleware will redirect, but let's check just in case
+    if (!session) {
+      return {
+        redirect: {
+          destination: '/auth/login?returnTo=/dashboard/programs/apply/[cohortId]',
+          permanent: false,
+        },
+      };
+    }
+    
+    // Return session user data
+    return {
+      props: {
+        user: session.user
+      }
+    };
+  } catch (error) {
+    console.error('Error in getServerSideProps:', error);
+    return {
+      redirect: {
+        destination: '/auth/login?returnTo=/dashboard/programs/apply/[cohortId]',
+        permanent: false,
+      },
+    };
+  }
+};
 
 export default ProgramsApplicationPage

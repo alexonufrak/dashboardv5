@@ -14,7 +14,7 @@ xFoundry Dashboard is a comprehensive student management platform designed to co
 ### Technologies Used
 
 - Next.js (React framework)
-- Auth0 (Authentication)
+- Auth0 v4 (Authentication)
 - Airtable (Data storage)
 - Vercel (Deployment)
 - Resend (Email delivery)
@@ -25,51 +25,56 @@ xFoundry Dashboard is a comprehensive student management platform designed to co
 ### Installation
 
 1. Clone the repository:
-   \`\`\`
+   ```
    git clone https://github.com/your-username/xfoundry-dashboard.git
    cd xfoundry-dashboard
-   \`\`\`
+   ```
 
 2. Install dependencies:
-   \`\`\`
+   ```
    npm install
-   \`\`\`
+   ```
 
 ### Environment Variables
 
-Create a \`.env.local\` file in the root directory and add the following variables:
+Create a `.env.local` file in the root directory and add the following variables:
 
-\`\`\`
-AUTH0_SECRET=your_auth0_secret
-AUTH0_BASE_URL=http://localhost:3000
-AUTH0_ISSUER_BASE_URL=https://your-auth0-domain.auth0.com
+```
+# Auth0 v4 Configuration
+AUTH0_SECRET=your_auth0_cookie_secret_key_at_least_32_chars
 AUTH0_CLIENT_ID=your_auth0_client_id
 AUTH0_CLIENT_SECRET=your_auth0_client_secret
+AUTH0_DOMAIN=your-tenant.auth0.com
+APP_BASE_URL=http://localhost:3000
+
+# Airtable Configuration
 AIRTABLE_API_KEY=your_airtable_api_key
 AIRTABLE_BASE_ID=your_airtable_base_id
-RESEND_API_KEY=your_resend_api_key
-\`\`\`
 
-Replace the placeholder values with your actual Auth0, Airtable, and Resend credentials.
+# Email Configuration (Resend)
+RESEND_API_KEY=your_resend_api_key
+```
+
+See `.env.local.sample` for a complete list of environment variables.
 
 ### Running the Application
 
 To run the application in development mode:
 
-\`\`\`
+```
 npm run dev
-\`\`\`
+```
 
-The application will be available at \`http://localhost:3000\`.
+The application will be available at `http://localhost:3000`.
 
 ### Building for Production
 
 To build the application for production:
 
-\`\`\`
+```
 npm run build
 npm start
-\`\`\`
+```
 
 ## Architecture
 
@@ -77,18 +82,23 @@ npm start
 
 The application uses Next.js for both the frontend and API routes. This allows for server-side rendering and API route handling within the same project.
 
-- \`pages/\`: Contains all the React components for each route
-- \`pages/api/\`: Houses the API routes for data fetching and manipulation
-- \`components/\`: Reusable React components
-- \`styles/\`: Global styles and CSS modules
+- `pages/`: Contains all the React components for each route
+- `pages/api/`: Houses the API routes for data fetching and manipulation
+- `components/`: Reusable React components
+- `styles/`: Global styles and CSS modules
 
-### Auth0 Authentication
+### Auth0 v4 Authentication
 
-Auth0 is integrated for secure user authentication. The authentication flow is handled in \`pages/api/auth/[...auth0].js\`.
+Auth0 v4 is integrated for secure user authentication. The authentication flow is handled through middleware in `middleware.js` and the Auth0 client in `lib/auth0.js`.
+
+Key authentication routes:
+- `/auth/login`: Initiates login flow
+- `/auth/callback`: Handles authentication callback
+- `/auth/logout`: Logs user out
 
 ### Airtable Data Storage
 
-Airtable is used as the primary data storage solution. The integration is managed through \`lib/airtable.js\`.
+Airtable is used as the primary data storage solution. The integration is managed through `lib/airtable.js`.
 
 ### Email System
 
@@ -101,10 +111,10 @@ Resend and React Email are used for creating and delivering beautiful, responsiv
 
 ### Key Components
 
-- \`Layout.js\`: Provides the overall structure for all pages
-- \`Navbar.js\`: Navigation component with authentication-aware rendering
-- \`DashboardHeader.js\`: Displays user information on the dashboard
-- \`ProfileCard.js\`: Shows and allows editing of user profile information
+- `Layout.js`: Provides the overall structure for all pages
+- `Navbar.js`: Navigation component with authentication-aware rendering
+- `DashboardHeader.js`: Displays user information on the dashboard
+- `ProfileCard.js`: Shows and allows editing of user profile information
 
 ### API Standards
 
@@ -133,7 +143,7 @@ For example, team data is returned as:
 
 #### Handling API Responses
 
-Client code can use the adapter functions in \`lib/utils.js\` to handle API responses consistently:
+Client code can use the adapter functions in `lib/utils.js` to handle API responses consistently:
 
 ```js
 import { extractTeamData } from '@/lib/utils'
@@ -166,4 +176,3 @@ const team = extractTeamData(data) // Works with both formats: data.team or dire
 - Integrate a messaging system for student-advisor communication
 - Implement data analytics for tracking student progress
 - Expand resource management capabilities
-
