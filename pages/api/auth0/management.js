@@ -84,8 +84,45 @@ async function getUserByEmail(email) {
     // This is a 100% reliable way to find users by email according to Auth0 docs
     console.log(`[Management API] Bypassing search and using direct API method for email lookup...`);
     try {
-      // Get the access token from the token provider
-      const token = await client.tokenProvider.getAccessToken();
+      // Get the access token - handle both v4 and older SDK versions
+      let token;
+      if (client.tokenProvider && typeof client.tokenProvider.getAccessToken === 'function') {
+        token = await client.tokenProvider.getAccessToken();
+      } else if (client.getAccessToken) {
+        token = await client.getAccessToken();
+      } else {
+        // Manually get token using client credentials grant
+        console.log('[Management API] No tokenProvider available, getting token manually');
+        
+        // Prepare client credentials parameters
+        const tokenParams = new URLSearchParams();
+        tokenParams.append('grant_type', 'client_credentials');
+        tokenParams.append('client_id', process.env.AUTH0_CLIENT_ID);
+        tokenParams.append('client_secret', process.env.AUTH0_CLIENT_SECRET);
+        tokenParams.append('audience', `https://${domain}/api/v2/`);
+        
+        // Make token request
+        const tokenResponse = await fetch(`https://${domain}/oauth/token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: tokenParams
+        });
+        
+        if (!tokenResponse.ok) {
+          throw new Error(`Failed to get access token: ${tokenResponse.status} ${tokenResponse.statusText}`);
+        }
+        
+        const tokenData = await tokenResponse.json();
+        token = tokenData.access_token;
+      }
+      
+      if (!token) {
+        throw new Error('Could not obtain access token for Management API');
+      }
+      
+      console.log('[Management API] Successfully obtained access token');
       
       // Use the official Auth0 API endpoint for finding users by email
       const url = `https://${domain}/api/v2/users-by-email?email=${encodeURIComponent(normalizedEmail)}`;
@@ -170,8 +207,45 @@ async function getUserByEmail(email) {
           // Method 2: Try with a direct API call instead of wildcard
           console.log(`[Management API] Method 2: Using direct API instead of wildcards...`);
           try {
-            // Get the access token
-            const token = await client.tokenProvider.getAccessToken();
+            // Get the access token - handle both v4 and older SDK versions
+            let token;
+            if (client.tokenProvider && typeof client.tokenProvider.getAccessToken === 'function') {
+              token = await client.tokenProvider.getAccessToken();
+            } else if (client.getAccessToken) {
+              token = await client.getAccessToken();
+            } else {
+              // Manually get token using client credentials grant
+              console.log('[Management API] No tokenProvider available, getting token manually');
+              
+              // Prepare client credentials parameters
+              const tokenParams = new URLSearchParams();
+              tokenParams.append('grant_type', 'client_credentials');
+              tokenParams.append('client_id', process.env.AUTH0_CLIENT_ID);
+              tokenParams.append('client_secret', process.env.AUTH0_CLIENT_SECRET);
+              tokenParams.append('audience', `https://${domain}/api/v2/`);
+              
+              // Make token request
+              const tokenResponse = await fetch(`https://${domain}/oauth/token`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: tokenParams
+              });
+              
+              if (!tokenResponse.ok) {
+                throw new Error(`Failed to get access token: ${tokenResponse.status} ${tokenResponse.statusText}`);
+              }
+              
+              const tokenData = await tokenResponse.json();
+              token = tokenData.access_token;
+            }
+            
+            if (!token) {
+              throw new Error('Could not obtain access token for Management API');
+            }
+            
+            console.log('[Management API] Successfully obtained access token');
             
             // Get all users directly without search
             const response = await fetch(`https://${domain}/api/v2/users?per_page=100`, {
