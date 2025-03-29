@@ -40,9 +40,28 @@ async function getUserByEmail(email) {
     // Get a management client (credentials configured in lib/auth0.js)
     const client = getManagementClient();
     
-    // Log the query details
-    const query = `email:"${normalizedEmail}"`;
-    console.log(`[Management API] Search query: ${query}`);
+    // Try different query formats for thoroughness
+    console.log(`[Management API] Trying multiple query formats for email search`);
+    
+    // Format 1: Standard Lucene query with quotes
+    const queryFormat1 = `email:"${normalizedEmail}"`;
+    console.log(`[Management API] Query format 1: ${queryFormat1}`);
+    
+    // Format 2: Simple equals without quotes
+    const queryFormat2 = `email:${normalizedEmail}`;
+    console.log(`[Management API] Query format 2: ${queryFormat2}`);
+    
+    // Format 3: Using email_verified field
+    const queryFormat3 = `email:"${normalizedEmail}" OR email_verified:true`;
+    console.log(`[Management API] Query format 3: ${queryFormat3}`);
+    
+    // Format 4: Using raw search without field specification
+    const queryFormat4 = `"${normalizedEmail}"`;
+    console.log(`[Management API] Query format 4: ${queryFormat4}`);
+    
+    // Select the query format to use (try different ones if one fails)
+    const query = queryFormat1;
+    console.log(`[Management API] Using search query: ${query}`);
     console.log(`[Management API] Search engine: v3`);
     
     // Search for the user by email using Lucene query syntax
@@ -50,7 +69,9 @@ async function getUserByEmail(email) {
       q: query,
       search_engine: 'v3',
       fields: 'user_id,email,name,user_metadata',
-      include_fields: true
+      include_fields: true,
+      // Add per_page to ensure we get results
+      per_page: 100
     };
     
     console.log(`[Management API] Full search params:`, JSON.stringify(searchParams, null, 2));
@@ -58,6 +79,50 @@ async function getUserByEmail(email) {
     // Execute the query
     console.log(`[Management API] Executing user search...`);
     const users = await client.users.getAll(searchParams);
+    
+    // If primary search fails, try alternate method with direct API call as fallback
+    if (!users || users.length === 0) {
+      console.log(`[Management API] Primary search returned no results, trying alternate method...`);
+      try {
+        console.log(`[Management API] Attempting to get user by email directly...`);
+        // Try using Management API's getUsersByEmail method if available
+        if (client.getUsersByEmail) {
+          console.log(`[Management API] Using getUsersByEmail method directly...`);
+          const altUsers = await client.getUsersByEmail(normalizedEmail);
+          console.log(`[Management API] Alternative method returned ${altUsers?.length || 0} users`);
+          if (altUsers && altUsers.length > 0) {
+            console.log(`[Management API] Found user with alternative method!`);
+            return altUsers;
+          }
+        } else {
+          console.log(`[Management API] getUsersByEmail method not available, trying direct API call...`);
+          // Try REST API directly
+          const token = await client.tokenProvider.getAccessToken();
+          const url = `https://${domain}/api/v2/users-by-email?email=${encodeURIComponent(normalizedEmail)}`;
+          console.log(`[Management API] Fetching directly from: ${url}`);
+          
+          const response = await fetch(url, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const altUsers = await response.json();
+            console.log(`[Management API] Direct API call returned ${altUsers?.length || 0} users`);
+            if (altUsers && altUsers.length > 0) {
+              console.log(`[Management API] Found user with direct API call!`);
+              return altUsers;
+            }
+          } else {
+            console.error(`[Management API] Direct API call failed: ${response.status} ${response.statusText}`);
+          }
+        }
+      } catch (altError) {
+        console.error(`[Management API] Error in alternative search method:`, altError.message);
+      }
+    }
     
     // Log the results
     console.log(`[Management API] Auth0 returned ${users?.length || 0} users for email ${normalizedEmail}`);
@@ -72,28 +137,69 @@ async function getUserByEmail(email) {
     } else {
       console.log(`[Management API] No users found with that email`);
       
-      // Try to list some users to verify API is working
+      // Try multiple methods to find ANY users in the system
       try {
-        console.log(`[Management API] Trying to list up to 5 users to verify API access...`);
+        console.log(`[Management API] Trying different methods to find any users in the system...`);
+        
+        // Method 1: Get all users (standard approach)
+        console.log(`[Management API] Method 1: Listing up to 100 users with no query...`);
         const sampleUsers = await client.users.getAll({
-          per_page: 5,
-          fields: 'user_id,email',
+          per_page: 100,
+          fields: 'user_id,email,created_at',
           include_fields: true
         });
         
-        console.log(`[Management API] Sample users count: ${sampleUsers?.length || 0}`);
+        console.log(`[Management API] Method 1 users count: ${sampleUsers?.length || 0}`);
+        
         if (sampleUsers && sampleUsers.length > 0) {
-          console.log(`[Management API] API is working and returning users`);
+          console.log(`[Management API] Found users with Method 1`);
           const sanitizedEmails = sampleUsers.map(u => {
             if (!u.email) return 'no-email';
             return u.email.replace(/^(.)(.*)@(.*)$/, '$1***@$3'); // Sanitize emails for privacy
           });
           console.log(`[Management API] Sample user emails (sanitized):`, sanitizedEmails);
+          
+          // Try to log creation times to see if users are recent
+          const creationDates = sampleUsers.map(u => u.created_at).filter(Boolean);
+          if (creationDates.length > 0) {
+            console.log(`[Management API] Sample user creation dates:`, creationDates);
+          }
         } else {
-          console.log(`[Management API] API returned 0 users total - potential permission issue`);
+          // Method 2: Try with a wildcard search
+          console.log(`[Management API] Method 2: Trying with wildcard search...`);
+          const wildcardUsers = await client.users.getAll({
+            q: 'email:*@*',
+            search_engine: 'v3',
+            per_page: 100,
+            fields: 'user_id,email',
+            include_fields: true
+          });
+          
+          console.log(`[Management API] Method 2 users count: ${wildcardUsers?.length || 0}`);
+          
+          if (wildcardUsers && wildcardUsers.length > 0) {
+            console.log(`[Management API] Found users with Method 2`);
+            const wildcardEmails = wildcardUsers.map(u => {
+              if (!u.email) return 'no-email';
+              return u.email.replace(/^(.)(.*)@(.*)$/, '$1***@$3');
+            });
+            console.log(`[Management API] Wildcard emails (sanitized):`, wildcardEmails);
+          } else {
+            // Method 3: Check total count via connection stats
+            console.log(`[Management API] Method 3: Checking tenant stats...`);
+            try {
+              const stats = await client.stats.getActiveUsersCount();
+              console.log(`[Management API] Tenant active users count:`, stats);
+            } catch (statsError) {
+              console.error(`[Management API] Error getting stats: ${statsError.message}`);
+            }
+            
+            console.log(`[Management API] API returned 0 users with all methods - potential permission issue or empty tenant`);
+          }
         }
       } catch (sampleError) {
         console.error(`[Management API] Error listing sample users:`, sampleError.message);
+        console.error(`[Management API] Error details:`, sampleError);
       }
       
       return null;
