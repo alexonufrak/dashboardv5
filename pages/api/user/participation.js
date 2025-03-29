@@ -124,20 +124,28 @@ async function handlerImpl(req, res) {
       600 
     );
     
-    // Enhanced cache control headers for better performance
-    // Cache for 3 minutes client-side, 10 minutes server-side, stale-while-revalidate for 30 minutes
-    res.setHeader('Cache-Control', 'public, max-age=180, s-maxage=600, stale-while-revalidate=1800');
+    // Set cache headers for client-side caching only, no server-side caching
+    // This ensures data is cached in the browser but always fresh on server
+    res.setHeader('Cache-Control', 'private, max-age=180, no-store, must-revalidate');
     
     // Add total processing time including cache operations
     const totalTime = Date.now() - startTime;
     
-    // Return the participation data
+    // Return the participation data with enhanced debugging info
     return res.status(200).json({
       ...participationData,
       _meta: {
         ...(participationData._meta || {}),
         totalProcessingTime: totalTime,
-        cached: true
+        cached: true,
+        timestamp: new Date().toISOString(),
+        requestId: `req_${Math.random().toString(36).substring(2, 10)}`,
+        userEmail: userEmail,
+        recordCount: participationData.participation?.length || 0,
+        requestHeaders: {
+          referer: req.headers.referer || 'unknown',
+          'user-agent': req.headers['user-agent'] || 'unknown'
+        }
       }
     });
   } catch (error) {
