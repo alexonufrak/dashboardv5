@@ -1,4 +1,5 @@
 import { base, batchFetchRecords, CACHE_TYPES, createCacheKey } from "@/lib/airtable"
+import { auth0 } from "@/lib/auth0"
 
 /**
  * API endpoint to get submissions for a specific team
