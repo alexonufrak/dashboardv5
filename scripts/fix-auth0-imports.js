@@ -3,13 +3,9 @@
  * This script finds all API files that use auth0.getSession but don't import auth0
  * and adds the import.
  */
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
-const { promisify } = require('util');
-const glob = promisify(require('glob'));
-
-const readFile = promisify(fs.readFile);
-const writeFile = promisify(fs.writeFile);
+const { glob } = require('glob');
 
 async function fixAuth0Imports() {
   try {
@@ -26,7 +22,7 @@ async function fixAuth0Imports() {
       const fullPath = path.join(process.cwd(), filePath);
       
       // Read the file content
-      const content = await readFile(fullPath, 'utf-8');
+      const content = await fs.readFile(fullPath, 'utf-8');
       
       // Check if the file uses auth0.getSession but doesn't import auth0
       if (content.includes('auth0.getSession') && !content.match(/import.+auth0.+from/)) {
@@ -63,7 +59,7 @@ async function fixAuth0Imports() {
         }
         
         // Write the updated content back to the file
-        await writeFile(fullPath, updatedContent, 'utf-8');
+        await fs.writeFile(fullPath, updatedContent, 'utf-8');
         fixedCount++;
       }
     }

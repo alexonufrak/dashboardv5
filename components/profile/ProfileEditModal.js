@@ -168,18 +168,23 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
         majorType: typeof updateData.major
       });
       
-      // Use our centralized update function with cache invalidation
-      const updatedProfile = await updateProfileData(updateData, queryClient);
-      
-      // Call the component's onSave callback with the updated profile
-      if (onSave) {
-        onSave(updatedProfile);
+      try {
+        // Use our centralized update function with cache invalidation
+        const updatedProfile = await updateProfileData(updateData, queryClient);
+        
+        // Call the component's onSave callback with the updated profile
+        if (onSave) {
+          onSave(updatedProfile);
+        }
+        
+        onClose();
+      } catch (updateError) {
+        console.error("Error updating profile:", updateError);
+        setError(updateError.message || "Failed to update profile");
       }
-      
-      onClose();
-    } catch (err) {
-      console.error("Error in profile submission:", err);
-      setError(err.message || "Failed to update profile");
+    } catch (validationErr) {
+      console.error("Error in profile validation:", validationErr);
+      setError(validationErr.message || "Failed to validate profile data");
     } finally {
       setIsSubmitting(false);
     }
@@ -217,7 +222,13 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
           </Alert>
         )}
         
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form 
+          onSubmit={(e) => {
+            e.preventDefault(); // Always prevent default form submission
+            handleSubmit(e);
+          }} 
+          className="space-y-6"
+        >
           <div className="space-y-4">
             <h4 className="text-lg font-semibold border-b pb-2">Personal Information</h4>
             <div className="grid grid-cols-2 gap-4">
@@ -385,7 +396,14 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button 
+              type="button" 
+              disabled={isSubmitting}
+              onClick={(e) => {
+                e.preventDefault(); // Prevent any default form submission
+                handleSubmit(e);
+              }}
+            >
               {isSubmitting ? "Saving..." : "Save Changes"}
             </Button>
           </div>

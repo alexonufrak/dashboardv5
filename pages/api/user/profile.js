@@ -93,11 +93,18 @@ async function handlerImpl(req, res) {
           }
         });
       }
-    } else if (req.method === "PUT") {
+    } else if (req.method === "PATCH" || req.method === "PUT") {
+      // Support both PATCH (preferred) and PUT for backward compatibility
+      // PATCH only updates specified fields, while PUT would replace all fields
       const { contactId, ...updateData } = req.body
 
       if (!contactId) {
         return res.status(400).json({ error: "Contact ID is required for updates" })
+      }
+      
+      // If using PUT, warn about potential destructive update in logs
+      if (req.method === "PUT") {
+        console.warn("Using PUT method for profile update, which may clear unspecified fields. PATCH is recommended.");
       }
 
       // Check if major ID is valid - it must be an Airtable record ID format or null/undefined
