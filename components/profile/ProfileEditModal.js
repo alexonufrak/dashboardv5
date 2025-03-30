@@ -22,7 +22,10 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     institutionId: profile?.institution?.id || null,
   });
   
+  // Track submission state with multiple flags for better control
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false); // Track if a submission has happened
+  const [wasSuccessful, setWasSuccessful] = useState(false); // Track if the submission succeeded
   const [error, setError] = useState(null);
   
   // Use our custom hook to fetch and cache majors
@@ -34,9 +37,10 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
   
   // Removed major debugging useEffect
   
-  // Reset form when profile changes
+  // Reset form and submission state when profile changes or modal is opened/closed
   useEffect(() => {
     if (profile) {
+      // Reset form data with profile values
       setFormData({
         firstName: profile.firstName || "",
         lastName: profile.lastName || "",
@@ -48,8 +52,24 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
         institutionId: profile.institution?.id || null,
         programId: profile.programId // Keep original programId as a backup
       });
+      
+      // Reset submission tracking state on each new profile load
+      setIsSubmitting(false);
+      setHasSubmitted(false);
+      setWasSuccessful(false);
+      setError(null);
     }
-  }, [profile]);
+  }, [profile, isOpen]);
+  
+  // Reset submission state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setIsSubmitting(false);
+      setHasSubmitted(false);
+      setWasSuccessful(false);
+      setError(null);
+    }
+  }, [isOpen]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -98,67 +118,100 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Single submission entry point to ensure consistency
+  const handleFormSubmission = async (e) => {
+    // Immediately prevent any default form behavior
+    if (e) e.preventDefault();
+    
+    // Guard against double submissions or submitting after completion
+    if (isSubmitting || hasSubmitted) {
+      console.log(`Ignoring submission attempt - isSubmitting: ${isSubmitting}, hasSubmitted: ${hasSubmitted}`);
+      return; 
+    }
+    
+    // Set submission state
     setIsSubmitting(true);
     setError(null);
 
-    try {
+    // Define validation function separately for clarity
+    const validateForm = () => {
+      const validationErrors = [];
+      
       // Validate graduation year
       const graduationYear = formData.graduationYear;
       if (graduationYear) {
         // Make sure it's 4 digits and a valid year
         const yearPattern = /^[0-9]{4}$/;
         if (!yearPattern.test(graduationYear)) {
-          throw new Error("Please enter a valid 4-digit graduation year (e.g., 2025)");
+          validationErrors.push("Please enter a valid 4-digit graduation year (e.g., 2025)");
+          return false;
         }
         
         const yearValue = parseInt(graduationYear, 10);
         const currentYear = new Date().getFullYear();
         
-        // Check if it's a reasonable graduation year (not too far in past or future)
+        // Check if it's a reasonable graduation year
         if (yearValue < currentYear - 10 || yearValue > currentYear + 10) {
-          throw new Error(`Graduation year ${yearValue} seems unusual. Please verify and try again.`);
+          validationErrors.push(`Graduation year ${yearValue} seems unusual. Please verify and try again.`);
+          return false;
         }
       }
       
+      // All validations passed
+      return true;
+    };
+    
+    // Process and normalize the form data to ensure it's in the correct format
+    const processFormData = () => {
+      // Create a deep copy to avoid mutating the original state object
+      const processedFormData = JSON.parse(JSON.stringify(formData));
+      
       // Validate major field format - must be a valid Airtable record ID
-      if (formData.major && typeof formData.major === 'string') {
-        if (!formData.major.startsWith('rec')) {
-          console.error(`Invalid major ID format: "${formData.major}"`);
+      if (processedFormData.major && typeof processedFormData.major === 'string') {
+        if (!processedFormData.major.startsWith('rec')) {
+          console.error(`Invalid major ID format: "${processedFormData.major}"`);
           
           // Try to find the correct record ID based on the name
-          const majorName = formData.major;
+          const majorName = processedFormData.major;
           const matchingMajor = majors.find(m => m.name === majorName);
           
           if (matchingMajor) {
             console.log(`Found matching major record ID for "${majorName}": ${matchingMajor.id}`);
-            // Replace the text value with the record ID
-            formData.major = matchingMajor.id;
-          } else if (formData.programId && formData.programId.startsWith('rec')) {
+            processedFormData.major = matchingMajor.id;
+          } else if (processedFormData.programId && processedFormData.programId.startsWith('rec')) {
             // Fall back to the programId from the profile if it's valid
-            console.log(`Falling back to profile programId: ${formData.programId}`);
-            formData.major = formData.programId;
-          } else if (formData.major.trim() === '') {
+            console.log(`Falling back to profile programId: ${processedFormData.programId}`);
+            processedFormData.major = processedFormData.programId;
+          } else if (processedFormData.major.trim() === '') {
             // If it's an empty string, set to null to clear the field
-            formData.major = null;
+            processedFormData.major = null;
           } else {
             // Last resort - if we can't resolve it, don't send an invalid value
-            console.warn(`Unable to resolve major field: "${formData.major}". Setting to null.`);
-            formData.major = null;
+            console.warn(`Unable to resolve major field: "${processedFormData.major}". Setting to null.`);
+            processedFormData.major = null;
           }
         }
-      } else if (formData.major === undefined || formData.major === null) {
+      } else if (processedFormData.major === undefined || processedFormData.major === null) {
         // Explicitly set to null for API handling
-        formData.major = null;
+        processedFormData.major = null;
       }
       
       // Add contact ID and institution ID to the data
-      const updateData = {
-        ...formData,
+      return {
+        ...processedFormData,
         contactId: profile.contactId,
-        institutionId: formData.institutionId || profile.institution?.id
+        institutionId: processedFormData.institutionId || profile.institution?.id
       };
+    };
+
+    try {
+      // Run validation
+      if (!validateForm()) {
+        throw new Error("Please correct the validation errors");
+      }
+      
+      // Process the form data
+      const updateData = processFormData();
       
       // Log what we're about to submit
       console.log("Submitting profile update:", {
@@ -169,14 +222,24 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
       });
       
       try {
+        // Mark as submitted to prevent double submissions
+        setHasSubmitted(true);
+        
         // Use our centralized update function with cache invalidation
         const updatedProfile = await updateProfileData(updateData, queryClient);
         
+        // Mark success state
+        setWasSuccessful(true);
+        
+        // Small delay to ensure state updates are processed before proceeding
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
         // Call the component's onSave callback with the updated profile
-        if (onSave) {
+        if (onSave && typeof onSave === 'function') {
           onSave(updatedProfile);
         }
         
+        // Close the modal
         onClose();
       } catch (updateError) {
         console.error("Error updating profile:", updateError);
@@ -190,17 +253,20 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
           setError(
             "Your session has expired. Please save your changes, refresh the page, and try again."
           );
-          
-          // Could also trigger a redirect to login page after a delay
-          // setTimeout(() => { window.location.href = "/login"; }, 5000);
         } else {
           // For other errors, show the message or a generic fallback
           setError(updateError.message || "Failed to update profile");
         }
+        
+        // Allow resubmission if the error is recoverable
+        setHasSubmitted(false);
       }
     } catch (validationErr) {
       console.error("Error in profile validation:", validationErr);
       setError(validationErr.message || "Failed to validate profile data");
+      
+      // Allow resubmission if validation fails
+      setHasSubmitted(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -239,10 +305,10 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
         )}
         
         <form 
-          onSubmit={(e) => {
-            e.preventDefault(); // Always prevent default form submission
-            handleSubmit(e);
-          }} 
+          // Use noValidate to prevent browser validation and use our custom validation
+          noValidate
+          // Cancel the form's native onSubmit, we'll handle submissions via button click only
+          onSubmit={(e) => e.preventDefault()}
           className="space-y-6"
         >
           <div className="space-y-4">
@@ -414,13 +480,15 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
             </Button>
             <Button 
               type="button" 
-              disabled={isSubmitting}
-              onClick={(e) => {
-                e.preventDefault(); // Prevent any default form submission
-                handleSubmit(e);
-              }}
+              disabled={isSubmitting || hasSubmitted}
+              className={wasSuccessful ? "bg-green-600 hover:bg-green-700" : ""}
+              onClick={handleFormSubmission}
             >
-              {isSubmitting ? "Saving..." : "Save Changes"}
+              {isSubmitting 
+                ? "Saving..." 
+                : wasSuccessful 
+                  ? "Saved Successfully" 
+                  : "Save Changes"}
             </Button>
           </div>
         </form>
