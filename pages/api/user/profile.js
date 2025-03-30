@@ -221,20 +221,66 @@ async function handlerImpl(req, res) {
   }
 }
 
-// In Auth0 v3, we use withApiAuthRequired to protect API routes
+// API route handler with improved authentication and error handling
 export default async function handler(req, res) {
   try {
-    // Check for valid Auth0 session
-    const session = await auth0.getSession(req, res);
-    if (!session) {
-      return res.status(401).json({ error: 'Not authenticated' });
+    // Check if the method is allowed
+    if (!['GET', 'PUT', 'PATCH'].includes(req.method)) {
+      return res.status(405).json({ 
+        error: 'Method not allowed',
+        allowedMethods: ['GET', 'PUT', 'PATCH'],
+        receivedMethod: req.method
+      });
     }
     
-    // Call the original handler with the authenticated session
-    return handlerImpl(req, res);
+    console.log(`Profile API request: ${req.method} ${req.url}`);
+    
+    try {
+      // Check for valid Auth0 session with improved error handling
+      const session = await auth0.getSession(req, res);
+      
+      if (!session) {
+        console.error('No Auth0 session found for request');
+        return res.status(401).json({ 
+          error: 'Not authenticated', 
+          message: 'No valid session found. Please log in again.'
+        });
+      }
+      
+      if (!session.user) {
+        console.error('Auth0 session found but missing user data');
+        return res.status(401).json({ 
+          error: 'Invalid session', 
+          message: 'Session is missing user data. Please log in again.'
+        });
+      }
+      
+      // Session looks valid, call the implementation handler
+      return handlerImpl(req, res);
+    } catch (authError) {
+      console.error('Auth0 session verification error:', authError);
+      
+      // Provide a meaningful error response based on the error type
+      if (authError.error === 'not_authenticated') {
+        return res.status(401).json({ 
+          error: 'Session expired', 
+          message: 'Your session has expired. Please log in again.'
+        });
+      }
+      
+      return res.status(authError.status || 401).json({ 
+        error: 'Authentication error', 
+        message: authError.message || 'An error occurred during authentication',
+        code: authError.code || 'unknown_error'
+      });
+    }
   } catch (error) {
-    console.error('API authentication error:', error);
-    return res.status(error.status || 500).json({ error: error.message });
+    // Handle any uncaught errors in the handler itself
+    console.error('Unhandled error in profile API handler:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error', 
+      message: 'An unexpected error occurred processing your request'
+    });
   }
 }
 

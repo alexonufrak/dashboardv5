@@ -180,7 +180,23 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
         onClose();
       } catch (updateError) {
         console.error("Error updating profile:", updateError);
-        setError(updateError.message || "Failed to update profile");
+        
+        // Handle authentication errors specially
+        if (updateError.message === "Not authenticated" || 
+            updateError.message?.includes("Session expired") ||
+            updateError.message?.includes("Invalid session")) {
+          
+          // Show a specific error for authentication issues
+          setError(
+            "Your session has expired. Please save your changes, refresh the page, and try again."
+          );
+          
+          // Could also trigger a redirect to login page after a delay
+          // setTimeout(() => { window.location.href = "/login"; }, 5000);
+        } else {
+          // For other errors, show the message or a generic fallback
+          setError(updateError.message || "Failed to update profile");
+        }
       }
     } catch (validationErr) {
       console.error("Error in profile validation:", validationErr);
