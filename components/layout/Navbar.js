@@ -61,10 +61,11 @@ const Navbar = () => {
   const handleProfileUpdate = async (updatedData) => {
     try {
       const response = await fetch("/api/user/profile", {
-        method: "PUT",
+        method: "PATCH", // Use PATCH instead of PUT to only update specified fields
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: 'include', // Explicitly include credentials for session auth
         body: JSON.stringify(updatedData),
       });
       
@@ -76,9 +77,11 @@ const Navbar = () => {
       const updatedProfile = await response.json();
       setProfile(updatedProfile);
       
-      // If we're on the dashboard, refresh the page to show updated data
+      // If we're on the dashboard, use a gentle approach - don't reload the whole page
       if (router.pathname === "/dashboard") {
-        router.reload();
+        // Use queryClient to refetch data instead of full page reload
+        // This is less disruptive than router.reload()
+        router.replace(router.asPath, undefined, { shallow: true });
       }
       
       return updatedProfile;
@@ -113,7 +116,7 @@ const Navbar = () => {
                   Profile
                 </a>
                 <Button asChild variant="destructive" size="sm">
-                  <Link href="/api/auth/logout">Sign Out</Link>
+                  <Link href="/auth/logout">Sign Out</Link>
                 </Button>
                 <Avatar className="h-8 w-8">
                   <AvatarImage 

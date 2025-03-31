@@ -123,15 +123,27 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     // Immediately prevent any default form behavior
     if (e) e.preventDefault();
     
+    // Clear previous submission state on new submission attempt
+    setError(null);
+    
     // Guard against double submissions or submitting after completion
-    if (isSubmitting || hasSubmitted) {
-      console.log(`Ignoring submission attempt - isSubmitting: ${isSubmitting}, hasSubmitted: ${hasSubmitted}`);
+    if (isSubmitting) {
+      console.log(`Ignoring duplicate submission attempt - already submitting`);
       return; 
+    }
+    
+    // If we previously submitted successfully, just close the modal
+    if (hasSubmitted && wasSuccessful) {
+      console.log('Already submitted successfully, closing modal');
+      onClose();
+      return;
     }
     
     // Set submission state
     setIsSubmitting(true);
-    setError(null);
+    
+    // Log that we're starting a submission attempt
+    console.log("Beginning profile update submission...");
 
     // Define validation function separately for clarity
     const validateForm = () => {
@@ -222,14 +234,24 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
       });
       
       try {
+        // Log detailed profile update attempt
+        console.log("Submitting profile update with credentials...", {
+          firstName: updateData.firstName,
+          lastName: updateData.lastName,
+          hasMajor: !!updateData.major,
+          majorType: typeof updateData.major
+        });
+        
         // Mark as submitted to prevent double submissions
         setHasSubmitted(true);
         
         // Use our centralized update function with cache invalidation
+        // This now includes credentials: 'include' to ensure cookies are sent
         const updatedProfile = await updateProfileData(updateData, queryClient);
         
         // Mark success state
         setWasSuccessful(true);
+        console.log("Profile update successful!");
         
         // Small delay to ensure state updates are processed before proceeding
         await new Promise(resolve => setTimeout(resolve, 50));
@@ -247,19 +269,24 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
         // Handle authentication errors specially
         if (updateError.message === "Not authenticated" || 
             updateError.message?.includes("Session expired") ||
-            updateError.message?.includes("Invalid session")) {
+            updateError.message?.includes("Invalid session") ||
+            updateError.message?.includes("401")) {
           
           // Show a specific error for authentication issues
           setError(
             "Your session has expired. Please save your changes, refresh the page, and try again."
           );
+          
+          // Suggest refreshing the page to fix auth issues
+          console.log("Auth error detected, user should refresh the page to restore session");
         } else {
           // For other errors, show the message or a generic fallback
           setError(updateError.message || "Failed to update profile");
         }
         
-        // Allow resubmission if the error is recoverable
+        // Allow resubmission if the error is recoverable - but only for non-success cases
         setHasSubmitted(false);
+        setWasSuccessful(false);
       }
     } catch (validationErr) {
       console.error("Error in profile validation:", validationErr);
