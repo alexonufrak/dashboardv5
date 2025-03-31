@@ -273,10 +273,10 @@ async function handleRequestWithSession(req, res, session, startTime) {
 }
 
 
-// Handles verified PATCH requests with X-Auth-Verification header
+// Handles verified PATCH requests with auth params
 // This provides a fallback for clients with cookie issues
 async function handleVerifiedPatchRequest(req, res) {
-  console.log('Processing profile update with verified PATCH');
+  console.log('Processing profile update with query/header-based auth');
   const startTime = Date.now();
   
   try {
@@ -286,15 +286,36 @@ async function handleVerifiedPatchRequest(req, res) {
       return res.status(400).json({ error: "Contact ID is required for updates" });
     }
     
-    // Log the simplified update data
-    console.log('Verified profile update for contactId:', contactId);
+    // Log the update data
+    console.log('Processing verified profile update for contactId:', contactId, {
+      fields: Object.keys(updateData),
+      hasMajor: !!updateData.major
+    });
     
-    // Map fields to Airtable field names (same as normal update)
+    // Check if major ID is valid - must be a record ID format or null
+    if (updateData.major !== undefined && updateData.major !== null) {
+      if (typeof updateData.major === 'string') {
+        if (!updateData.major.startsWith('rec')) {
+          console.warn(`Invalid major ID format received: ${updateData.major}`);
+          return res.status(400).json({ 
+            error: "Invalid major ID format",
+            receivedValue: updateData.major
+          });
+        }
+      } else if (typeof updateData.major !== 'object') {
+        console.warn(`Invalid major field type: ${typeof updateData.major}`);
+        return res.status(400).json({
+          error: "Invalid major field type"
+        });
+      }
+    }
+    
+    // Map fields to Airtable field names
     const airtableData = {
       FirstName: updateData.firstName,
       LastName: updateData.lastName,
       DegreeType: updateData.degreeType,
-      Major: updateData.major,
+      Major: updateData.major, // Properly formatted record ID
       GraduationYear: updateData.graduationYear,
       GraduationSemester: updateData.graduationSemester,
       ReferralSource: updateData.referralSource,
@@ -302,20 +323,39 @@ async function handleVerifiedPatchRequest(req, res) {
       educationId: updateData.educationId,
     };
     
-    // Perform the update directly
-    await updateUserProfile(contactId, airtableData);
+    // Log full update payload for troubleshooting
+    console.log('Airtable data for update:', JSON.stringify(airtableData, null, 2));
     
-    // Return simplified success response
+    // Perform the update directly
+    const updatedProfile = await updateUserProfile(contactId, airtableData);
+    
+    // Fetch complete profile to return if possible
+    let completeProfile = null;
+    try {
+      // Try to get the complete profile data but with a timeout
+      completeProfile = await Promise.race([
+        getCompleteUserProfile({ sub: `auth0|${contactId}` }), // Fake user object
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Complete profile fetch timed out")), 3000))
+      ]);
+    } catch (profileError) {
+      console.warn('Could not fetch complete profile after update:', profileError.message);
+    }
+    
+    // Return the response with either the complete profile or a simplified version
     return res.status(200).json({
-      profile: {
-        contactId: contactId,
+      profile: completeProfile || {
+        contactId,
         ...updateData,
+        ...updatedProfile,
         updated: true
       },
       _meta: {
         verifiedUpdate: true,
         timestamp: new Date().toISOString(),
-        processingTime: Date.now() - startTime
+        processingTime: Date.now() - startTime,
+        auth: 'query-parameter',
+        complete: !!completeProfile
       }
     });
   } catch (error) {
@@ -386,23 +426,39 @@ export default async function handler(req, res) {
       console.log(`Auth session cookies found: ${sessionCookies.length > 0 ? 'Yes' : 'No'}`);
     }
     
-    // Add special handling for known authenticated requests
-    // This is a fallback for clients where cookies aren't working
-    const hasAuthHeader = !!req.headers.authorization;
-    const hasAuthVerification = req.headers['x-auth-verification'] === 'true';
+    // Handle auth info in query params or headers for PATCH requests
+    // This is a workaround for Auth0 session cookies not being sent with PATCH
+    const authQueryParam = req.query.auth;
+    const authVerificationHeader = req.headers['x-auth-verification'];
+    const authHeader = authQueryParam || authVerificationHeader;
     
-    if (hasAuthVerification && req.method === 'PATCH') {
-      console.log('Request contains X-Auth-Verification header, attempting manual auth verification');
+    // Process auth header for PATCH requests
+    if (authHeader && req.method === 'PATCH') {
+      console.log('Request contains auth verification, attempting alternative auth...');
       try {
-        // For requests that are updating profile data and have verification
-        // Proceed with a special process for PATCH operations
-        if (req.method === 'PATCH' && req.body && req.body.contactId) {
-          console.log('Using contactId from request body for authentication: ' + req.body.contactId);
-          // Call a special handler just for verified PATCH requests
+        // Decode the auth header
+        const authData = JSON.parse(atob(authHeader));
+        const { contactId, timestamp } = authData;
+        
+        // Verify timestamp is recent (within last 30 seconds)
+        const now = Date.now();
+        const isRecent = now - timestamp < 30000; // 30 seconds
+        
+        if (contactId && isRecent) {
+          console.log(`Using contactId from auth header for authentication: ${contactId}`);
+          
+          // Set the contactId in the body
+          if (!req.body) req.body = {};
+          req.body.contactId = contactId;
+          
+          // Call the special handler
           return handleVerifiedPatchRequest(req, res);
+        } else {
+          console.warn('Auth verification failed: ', 
+                     !contactId ? 'Missing contactId' : 'Expired timestamp');
         }
       } catch (verificationError) {
-        console.error('Error in verification handling:', verificationError);
+        console.error('Error in auth verification:', verificationError);
       }
     }
     

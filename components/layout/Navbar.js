@@ -115,8 +115,16 @@ const Navbar = () => {
                 >
                   Profile
                 </a>
-                <Button asChild variant="destructive" size="sm">
-                  <Link href="/auth/logout" prefetch={false}>Sign Out</Link>
+                <Button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    // Use a direct navigation instead of a link to prevent prefetching
+                    window.location.href = "/auth/logout";
+                  }}
+                  variant="destructive" 
+                  size="sm"
+                >
+                  Sign Out
                 </Button>
                 <Avatar className="h-8 w-8">
                   <AvatarImage 
