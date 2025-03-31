@@ -311,7 +311,14 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     <Dialog 
       open={isOpen} 
       onOpenChange={(open) => {
-        if (!open) onClose();
+        // Only allow closing if we're not in the middle of submitting
+        if (!open && !isSubmitting) {
+          onClose();
+        } else if (!open && isSubmitting) {
+          // Don't allow closing during submission
+          console.log("Preventing dialog close during submission");
+          return false;
+        }
       }}
     >
       <DialogContent className="sm:max-w-[600px]">
@@ -331,13 +338,8 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
           </Alert>
         )}
         
-        <form 
-          // Use noValidate to prevent browser validation and use our custom validation
-          noValidate
-          // Cancel the form's native onSubmit, we'll handle submissions via button click only
-          onSubmit={(e) => e.preventDefault()}
-          className="space-y-6"
-        >
+        <div className="space-y-6">
+          {/* Replaced form element with div to eliminate accidental submissions */}
           <div className="space-y-4">
             <h4 className="text-lg font-semibold border-b pb-2">Personal Information</h4>
             <div className="grid grid-cols-2 gap-4">
@@ -518,7 +520,7 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
                   : "Save Changes"}
             </Button>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
