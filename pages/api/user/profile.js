@@ -8,10 +8,10 @@ async function handlerImpl(req, res) {
   const startTime = Date.now();
   
   try {
-    // Auth0 v3 session handling
-    const session = await auth0.getSession(req, res)
+    // Auth0 session should be validated by the outer handler
+    const session = await auth0.getSession(req, res);
     if (!session || !session.user) {
-      return res.status(401).json({ error: "Not authenticated" })
+      return res.status(401).json({ error: "Not authenticated" });
     }
   
     if (req.method === "GET") {
@@ -221,7 +221,7 @@ async function handlerImpl(req, res) {
   }
 }
 
-// API route handler with improved authentication and error handling
+// Simplified API handler that matches the pattern used in other endpoints
 export default async function handler(req, res) {
   try {
     // Check if the method is allowed
@@ -235,52 +235,18 @@ export default async function handler(req, res) {
     
     console.log(`Profile API request: ${req.method} ${req.url}`);
     
-    try {
-      // Check for valid Auth0 session with improved error handling
-      const session = await auth0.getSession(req, res);
-      
-      if (!session) {
-        console.error('No Auth0 session found for request');
-        return res.status(401).json({ 
-          error: 'Not authenticated', 
-          message: 'No valid session found. Please log in again.'
-        });
-      }
-      
-      if (!session.user) {
-        console.error('Auth0 session found but missing user data');
-        return res.status(401).json({ 
-          error: 'Invalid session', 
-          message: 'Session is missing user data. Please log in again.'
-        });
-      }
-      
-      // Session looks valid, call the implementation handler
-      return handlerImpl(req, res);
-    } catch (authError) {
-      console.error('Auth0 session verification error:', authError);
-      
-      // Provide a meaningful error response based on the error type
-      if (authError.error === 'not_authenticated') {
-        return res.status(401).json({ 
-          error: 'Session expired', 
-          message: 'Your session has expired. Please log in again.'
-        });
-      }
-      
-      return res.status(authError.status || 401).json({ 
-        error: 'Authentication error', 
-        message: authError.message || 'An error occurred during authentication',
-        code: authError.code || 'unknown_error'
-      });
+    // Check for valid Auth0 session - matching the pattern used in other endpoints
+    const session = await auth0.getSession(req, res);
+    if (!session) {
+      console.error('No Auth0 session found for request');
+      return res.status(401).json({ error: 'Not authenticated' });
     }
+    
+    // Call the implementation handler
+    return handlerImpl(req, res);
   } catch (error) {
-    // Handle any uncaught errors in the handler itself
-    console.error('Unhandled error in profile API handler:', error);
-    return res.status(500).json({ 
-      error: 'Internal server error', 
-      message: 'An unexpected error occurred processing your request'
-    });
+    console.error('API authentication error:', error);
+    return res.status(error.status || 500).json({ error: error.message });
   }
 }
 
