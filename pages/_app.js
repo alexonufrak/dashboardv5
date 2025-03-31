@@ -241,8 +241,16 @@ function MyApp({ Component, pageProps }) {
         enableSystem
       >
         <Auth0Provider 
-          loginUrl="/auth/login"
-          returnTo={router.asPath}
+          clientId={process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID}
+          domain={process.env.NEXT_PUBLIC_AUTH0_DOMAIN}
+          authorizationParams={{
+            redirect_uri: typeof window !== 'undefined' ? window.location.origin + "/auth/callback" : undefined,
+            scope: "openid profile email",
+            audience: process.env.NEXT_PUBLIC_AUTH0_AUDIENCE,
+          }}
+          useRefreshTokens={true}
+          useSecureCookies={true}
+          cookieDomain={process.env.NODE_ENV === 'production' ? '.xfoundry.org' : undefined}
         >
           <OnboardingProvider>
             <ErrorBoundary className="bg-white dark:bg-gray-900">

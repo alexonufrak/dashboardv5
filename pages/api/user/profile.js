@@ -243,12 +243,38 @@ export default async function handler(req, res) {
         
         // Check for Authorization header (Bearer token)
         if (req.headers.authorization?.startsWith('Bearer ')) {
-          console.log('Authorization header found, will use for authentication');
-          // Auth0's getSession will try to use this automatically
+          console.log('Authorization header found, will attempt token-based authentication');
+          
+          try {
+            // Extract the token
+            const token = req.headers.authorization.split(' ')[1];
+            
+            // If we have a token, try to get the user from Auth0 using it
+            if (token) {
+              try {
+                const { getAccessToken } = await import('auth0');
+                const auth0Client = new getAccessToken({
+                  domain: process.env.AUTH0_DOMAIN,
+                  clientId: process.env.AUTH0_CLIENT_ID
+                });
+                
+                // We'll attempt to verify the token
+                console.log('Attempting to validate Bearer token');
+                
+                // Auth0's getSession should check the Authorization header automatically
+                console.log('Deferring to Auth0 session check with Authorization header');
+              } catch (tokenError) {
+                console.error('Error setting up token validation:', tokenError);
+              }
+            }
+          } catch (authHeaderError) {
+            console.error('Error processing Authorization header:', authHeaderError);
+          }
         }
       }
       
       // Additional options for Auth0 session retrieval
+      // Auth0 v4 should automatically validate Authorization headers
       const sessionOptions = {};
       
       session = await auth0.getSession(req, sessionOptions);

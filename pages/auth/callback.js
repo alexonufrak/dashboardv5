@@ -13,6 +13,17 @@ const Callback = () => {
     // Only redirect once the user object is available from Auth0
     // This ensures the session is fully established before navigation
     if (user && !isLoading) {
+      // Store the session token in sessionStorage for alternative auth
+      if (user.id_token) {
+        try {
+          // Store the token for future API calls as fallback
+          sessionStorage.setItem('auth0.id_token', user.id_token);
+          console.log('Auth0 token stored for fallback authentication');
+        } catch (e) {
+          console.warn('Unable to store auth token:', e);
+        }
+      }
+      
       // Use window.location instead of router.push to force a full page reload
       // This ensures the Auth0 session is fully established in the browser
       window.location.href = "/dashboard"
