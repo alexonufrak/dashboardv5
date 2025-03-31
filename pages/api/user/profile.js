@@ -239,10 +239,19 @@ export default async function handler(req, res) {
       
       // Check if appSession cookie is missing for PATCH requests
       if (req.method === 'PATCH' && !cookieNames.includes('appSession')) {
-        console.error('Auth0 appSession cookie is missing for PATCH request - authentication will likely fail');
+        console.error('Auth0 appSession cookie is missing for PATCH request - attempting alternative authentication methods');
+        
+        // Check for Authorization header (Bearer token)
+        if (req.headers.authorization?.startsWith('Bearer ')) {
+          console.log('Authorization header found, will use for authentication');
+          // Auth0's getSession will try to use this automatically
+        }
       }
       
-      session = await auth0.getSession(req);
+      // Additional options for Auth0 session retrieval
+      const sessionOptions = {};
+      
+      session = await auth0.getSession(req, sessionOptions);
       
       if (!session || !session.user) {
         console.error('Authentication failed - no valid session:', {

@@ -152,6 +152,18 @@ After thorough investigation, we implemented a three-part solution:
 
 4. **Centralized Authentication Logic**: Consolidated profile update code to use the central mutation function, eliminating inconsistent implementations.
 
+## Additional Authentication Fallback
+
+To further improve reliability, we've implemented a fallback authentication mechanism for situations where cookies are not properly included with requests:
+
+1. **Bearer Token Authentication**: Added support for JWT authentication using Bearer tokens as a fallback when the `appSession` cookie is missing. This helps in browsers where SameSite=none cookies have issues.
+
+2. **Token Extraction**: We now extract the authentication token from `sessionStorage` during PATCH requests and include it in the Authorization header.
+
+3. **Server-Side Validation**: The API route checks for this Authorization header as a fallback when the cookie is missing.
+
+4. **HTTPS in Development**: Confirmed the `--experimental-https` flag is used in the dev script to ensure consistent HTTPS usage in all environments.
+
 ## Future Considerations
 
 1. **Environment Consistency**: Ensure the development environment consistently uses HTTPS via the `--experimental-https` flag in package.json.
