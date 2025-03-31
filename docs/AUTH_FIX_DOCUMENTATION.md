@@ -236,16 +236,59 @@ These hooks provide React components with access to the data layer using React Q
 5. **Testability**: Isolated modules are easier to test
 6. **Error Handling**: Consistent error handling improves user experience
 
+## Auth0 API Route Protection Enhancement
+
+The codebase previously used the Auth0 v4 `withApiAuthRequired` helper function to protect API routes. However, this led to compatibility issues in production builds. We've made the following changes:
+
+1. Identified that the `withApiAuthRequired` function was causing build errors in the production environment
+2. Changed all API routes to use direct `auth0.getSession()` verification instead, following this pattern:
+
+```javascript
+export default async function handler(req, res) {
+  try {
+    // Get Auth0 session and validate user is authenticated
+    const session = await auth0.getSession(req, res);
+    if (!session) {
+      return res.status(401).json({
+        error: 'Not authenticated'
+      });
+    }
+    const { user } = session;
+    
+    // API handler logic
+  } catch (error) {
+    // Error handling
+  }
+}
+```
+
+3. Used direct path imports instead of aliases to improve build reliability:
+```javascript
+// Instead of this:
+import { auth0 } from "@/lib/auth0";
+
+// Use this:
+import { auth0 } from "../../../lib/auth0";
+```
+
+4. Removed remaining imports of `withApiAuthRequired` to prevent potential build issues
+5. Added optional chaining for better error handling (e.g., `req.body?._method?.toUpperCase()`)
+6. Added detailed comments about the auth approach in each file
+
+These changes maintain the same security model while fixing compatibility issues with production builds.
+
 ## Implementation Progress
 
-The initial refactoring included:
+The refactoring now includes:
 
-1. Setting up the new folder structure
-2. Implementing core utilities (client, cache, throttle, errors)
-3. Creating table definitions
-4. Implementing initial entity modules (users, education, institutions) 
-5. Creating a debug endpoint for authentication testing
-6. Refactoring the profile API endpoint to use the new design
+1. Complete authentication system overhaul using Auth0 v4 direct session validation
+2. Setting up the new folder structure for domain-driven design
+3. Implementing core utilities (client, cache, throttle, errors)
+4. Creating table definitions for centralized Airtable access
+5. Implementing initial entity modules (users, education, institutions) 
+6. Creating debug endpoints for authentication testing
+7. Refactoring the profile API endpoint to use the new design patterns
+8. Fixing build-time errors related to Auth0 authentication in API routes
 
 ## Next Steps
 
@@ -254,3 +297,4 @@ The initial refactoring included:
 3. **Refactor API Endpoints**: Update remaining API endpoints to use the new pattern
 4. **Update Components**: Modify React components to use the new hooks
 5. **Remove Legacy Code**: Gradually replace the monolithic airtable.js file
+6. **Test Edge Cases**: Thoroughly test authentication in various browsers and environments

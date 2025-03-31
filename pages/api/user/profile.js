@@ -1,4 +1,5 @@
-import { auth0 } from "@/lib/auth0";
+// Import dependencies without using @ alias (direct path for better compatibility)
+import { auth0 } from "../../../lib/auth0";
 import { 
   getUserByAuth0Id,
   updateUserProfile 
@@ -12,6 +13,7 @@ export const runtime = 'nodejs';
 /**
  * User Profile API - Protected with Auth0
  * Refactored to use Auth0 v4 best practices and domain-driven design
+ * IMPORTANT: This endpoint does NOT use withApiAuthRequired - it uses direct session validation
  */
 export default async function handler(req, res) {
   try {
@@ -41,7 +43,7 @@ export default async function handler(req, res) {
       
       case 'POST':
         // Special case for POST with _method override
-        const method = req.body._method?.toUpperCase();
+        const method = req.body?._method?.toUpperCase();
         if (method === 'PATCH') {
           return handleUpdateRequest(req, res, user, startTime);
         }

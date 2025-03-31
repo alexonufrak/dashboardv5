@@ -3,7 +3,7 @@ import { auth0, getSignupMetadata } from '../../../lib/auth0';
 import { lookupInstitutionByEmail, getUserProfile } from '../../../lib/airtable';
 // Import the client for Auth0 Management API operations
 import { checkUserExists } from '../../../lib/auth0-management';
-import { withApiAuthRequired } from '@auth0/nextjs-auth0';
+// No longer using withApiAuthRequired - direct session check is used instead
 
 /**
  * API handler to check if a user exists by email and verify institution
