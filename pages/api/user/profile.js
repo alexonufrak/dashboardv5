@@ -298,35 +298,31 @@ export default async function handler(req, res) {
     // Vary header to prevent cross-request caching
     res.setHeader('Vary', 'Origin, Content-Type, Accept');
     
+    // Handle OPTIONS request for CORS preflight
+    if (req.method === 'OPTIONS') {
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, PATCH, POST, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      return res.status(200).end();
+    }
+    
     // Check if the method is allowed
-    if (!['GET', 'PUT', 'PATCH'].includes(req.method)) {
+    if (!['GET', 'PUT', 'PATCH', 'OPTIONS'].includes(req.method)) {
       return res.status(405).json({ 
         error: 'Method not allowed',
-        allowedMethods: ['GET', 'PUT', 'PATCH'],
+        allowedMethods: ['GET', 'PUT', 'PATCH', 'OPTIONS'],
         receivedMethod: req.method
       });
     }
     
+    // Simple logging of request method for troubleshooting
     console.log(`Profile API request: ${req.method} ${req.url}`);
     
-    // Enhanced logging to troubleshoot session issues - log headers before session check
-    console.log(`Auth request details - Method: ${req.method}, Headers:`, {
-      cookie: req.headers.cookie ? 'Present' : 'Missing',
-      cookieLength: req.headers.cookie ? req.headers.cookie.length : 0,
-      authorization: req.headers.authorization ? 'Present' : 'Missing',
-      'x-auth-verification': req.headers['x-auth-verification'] || 'Missing',
-      contentType: req.headers['content-type'],
-      credentials: req.headers['credentials'] // Debug the credentials header if present
-    });
-    
-    // Add logging for cookies to specifically identify auth session cookies
-    if (req.headers.cookie) {
-      const cookiePairs = req.headers.cookie.split(';');
-      const sessionCookies = cookiePairs.filter(cookie => 
-        cookie.trim().startsWith('appSession=') || 
-        cookie.trim().startsWith('auth0.is.authenticated=')
-      );
-      console.log(`Auth session cookies found: ${sessionCookies.length > 0 ? 'Yes' : 'No'}`);
+    // For PATCH requests, add response headers to support CORS preflight
+    if (req.method === 'PATCH' || req.method === 'PUT') {
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, PATCH, POST, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     }
     
     // Check for valid Auth0 session using standard method

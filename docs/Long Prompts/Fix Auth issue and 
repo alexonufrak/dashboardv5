@@ -1,0 +1,373 @@
+After submission, I got this: Error Loading Dashboard
+Failed to fetch profile
+
+I got this in the vercel logs for the /api/user/profile endpoint:
+Profile API request: PATCH /api/user/profile
+Auth request details - Method: PATCH, Headers: {
+  cookie: 'Present',
+  cookieLength: 38,
+  authorization: 'Missing',
+  'x-auth-verification': 'Missing',
+  contentType: 'application/json',
+  credentials: undefined
+}
+Auth session cookies found: No
+No valid Auth0 session found for request.
+
+From the browser logs:
+ProfileEditModal opened
+5434-63b146e22ed72518.js:1 Profile programId: recLl74v8KORJuapN
+5434-63b146e22ed72518.js:1 ProfileEditModal opened
+5434-63b146e22ed72518.js:1 Profile programId: recLl74v8KORJuapN
+5434-63b146e22ed72518.js:1 ProfileEditModal opened
+5434-63b146e22ed72518.js:1 Profile programId: recLl74v8KORJuapN
+5434-63b146e22ed72518.js:1 Beginning profile update submission...
+5434-63b146e22ed72518.js:1 Submitting profile update: {firstName: 'Alexei', lastName: 'Onufrak', major: 'recLl74v8KORJuapN'}
+5434-63b146e22ed72518.js:1 ProfileEditModal opened
+5434-63b146e22ed72518.js:1 Profile programId: recLl74v8KORJuapN
+_app-62472b04d6fc558f.js:1 Applying optimistic profile update: {firstName: 'Alexei', lastName: 'Onufrak'}
+_app-62472b04d6fc558f.js:1 [profile-update-1743438048049-sox41ym] Starting profile update transaction
+_app-62472b04d6fc558f.js:1 [profile-update-1743438048049-sox41ym] Data prepared for API: {firstName: 'Alexei', lastName: 'Onufrak', hasMajor: true, majorValue: 'recLl74v8KORJuapN'}
+5434-63b146e22ed72518.js:1 ProfileEditModal opened
+5434-63b146e22ed72518.js:1 Profile programId: recLl74v8KORJuapN
+_app-62472b04d6fc558f.js:1 
+            
+            
+           PATCH https://hub.xfoundry.org/api/user/profile 401 (Unauthorized)
+mutationFn @ _app-62472b04d6fc558f.js:1
+fn @ _app-62472b04d6fc558f.js:1
+v @ _app-62472b04d6fc558f.js:1
+start @ _app-62472b04d6fc558f.js:1
+execute @ _app-62472b04d6fc558f.js:1
+await in execute
+mutate @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+S @ 5434-63b146e22ed72518.js:1
+onClick @ 5434-63b146e22ed72518.js:1
+eU @ framework-840cff9d6bb95703.js:1
+eH @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+re @ framework-840cff9d6bb95703.js:1
+rn @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+oP @ framework-840cff9d6bb95703.js:1
+eF @ framework-840cff9d6bb95703.js:1
+ro @ framework-840cff9d6bb95703.js:1
+nU @ framework-840cff9d6bb95703.js:1
+nD @ framework-840cff9d6bb95703.js:1
+_app-62472b04d6fc558f.js:1 [profile-update-1743438048049-sox41ym] API error: Not authenticated
+overrideMethod @ hook.js:608
+mutationFn @ _app-62472b04d6fc558f.js:1
+await in mutationFn
+fn @ _app-62472b04d6fc558f.js:1
+v @ _app-62472b04d6fc558f.js:1
+start @ _app-62472b04d6fc558f.js:1
+execute @ _app-62472b04d6fc558f.js:1
+await in execute
+mutate @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+S @ 5434-63b146e22ed72518.js:1
+onClick @ 5434-63b146e22ed72518.js:1
+eU @ framework-840cff9d6bb95703.js:1
+eH @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+re @ framework-840cff9d6bb95703.js:1
+rn @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+oP @ framework-840cff9d6bb95703.js:1
+eF @ framework-840cff9d6bb95703.js:1
+ro @ framework-840cff9d6bb95703.js:1
+nU @ framework-840cff9d6bb95703.js:1
+nD @ framework-840cff9d6bb95703.js:1
+_app-62472b04d6fc558f.js:1 Profile update error: Error: Not authenticated
+    at Object.mutationFn (_app-62472b04d6fc558f.js:1:34383)
+overrideMethod @ hook.js:608
+onError @ _app-62472b04d6fc558f.js:1
+execute @ _app-62472b04d6fc558f.js:1
+await in execute
+mutate @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+S @ 5434-63b146e22ed72518.js:1
+onClick @ 5434-63b146e22ed72518.js:1
+eU @ framework-840cff9d6bb95703.js:1
+eH @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+re @ framework-840cff9d6bb95703.js:1
+rn @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+oP @ framework-840cff9d6bb95703.js:1
+eF @ framework-840cff9d6bb95703.js:1
+ro @ framework-840cff9d6bb95703.js:1
+nU @ framework-840cff9d6bb95703.js:1
+nD @ framework-840cff9d6bb95703.js:1
+_app-62472b04d6fc558f.js:1 Rolling back optimistic update due to error
+_app-62472b04d6fc558f.js:1 Profile mutation completed, invalidating affected queries
+_app-62472b04d6fc558f.js:1 Fetching profile data
+_app-62472b04d6fc558f.js:1 Fetching participation data
+5434-63b146e22ed72518.js:1 Profile update failed: Error: Not authenticated
+    at Object.mutationFn (_app-62472b04d6fc558f.js:1:34383)
+overrideMethod @ hook.js:608
+onError @ 5434-63b146e22ed72518.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+batch @ _app-62472b04d6fc558f.js:1
+#P @ _app-62472b04d6fc558f.js:1
+onMutationUpdate @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+batch @ _app-62472b04d6fc558f.js:1
+#y @ _app-62472b04d6fc558f.js:1
+execute @ _app-62472b04d6fc558f.js:1
+await in execute
+mutate @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+S @ 5434-63b146e22ed72518.js:1
+onClick @ 5434-63b146e22ed72518.js:1
+eU @ framework-840cff9d6bb95703.js:1
+eH @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+re @ framework-840cff9d6bb95703.js:1
+rn @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+oP @ framework-840cff9d6bb95703.js:1
+eF @ framework-840cff9d6bb95703.js:1
+ro @ framework-840cff9d6bb95703.js:1
+nU @ framework-840cff9d6bb95703.js:1
+nD @ framework-840cff9d6bb95703.js:1
+_app-62472b04d6fc558f.js:1 Fetch failed loading: PATCH "https://hub.xfoundry.org/api/user/profile".
+mutationFn @ _app-62472b04d6fc558f.js:1
+fn @ _app-62472b04d6fc558f.js:1
+v @ _app-62472b04d6fc558f.js:1
+start @ _app-62472b04d6fc558f.js:1
+execute @ _app-62472b04d6fc558f.js:1
+await in execute
+mutate @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+S @ 5434-63b146e22ed72518.js:1
+onClick @ 5434-63b146e22ed72518.js:1
+eU @ framework-840cff9d6bb95703.js:1
+eH @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+re @ framework-840cff9d6bb95703.js:1
+rn @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+oP @ framework-840cff9d6bb95703.js:1
+eF @ framework-840cff9d6bb95703.js:1
+ro @ framework-840cff9d6bb95703.js:1
+nU @ framework-840cff9d6bb95703.js:1
+nD @ framework-840cff9d6bb95703.js:1
+5434-63b146e22ed72518.js:1 ProfileEditModal opened
+5434-63b146e22ed72518.js:1 Profile programId: recLl74v8KORJuapN
+2_app-62472b04d6fc558f.js:1 Fetching profile data
+_app-62472b04d6fc558f.js:1 
+            
+            
+           GET https://hub.xfoundry.org/api/user/participation 401 (Unauthorized)
+queryFn @ _app-62472b04d6fc558f.js:1
+fetchFn @ _app-62472b04d6fc558f.js:1
+v @ _app-62472b04d6fc558f.js:1
+start @ _app-62472b04d6fc558f.js:1
+fetch @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+batch @ _app-62472b04d6fc558f.js:1
+refetchQueries @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+batch @ _app-62472b04d6fc558f.js:1
+invalidateQueries @ _app-62472b04d6fc558f.js:1
+onSettled @ _app-62472b04d6fc558f.js:1
+execute @ _app-62472b04d6fc558f.js:1
+await in execute
+mutate @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+S @ 5434-63b146e22ed72518.js:1
+onClick @ 5434-63b146e22ed72518.js:1
+eU @ framework-840cff9d6bb95703.js:1
+eH @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+re @ framework-840cff9d6bb95703.js:1
+rn @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+oP @ framework-840cff9d6bb95703.js:1
+eF @ framework-840cff9d6bb95703.js:1
+ro @ framework-840cff9d6bb95703.js:1
+nU @ framework-840cff9d6bb95703.js:1
+nD @ framework-840cff9d6bb95703.js:1
+_app-62472b04d6fc558f.js:1 Error in participation data fetch: Error: Failed to fetch participation data: 
+    at queryFn (_app-62472b04d6fc558f.js:1:28992)
+overrideMethod @ hook.js:608
+queryFn @ _app-62472b04d6fc558f.js:1
+await in queryFn
+fetchFn @ _app-62472b04d6fc558f.js:1
+v @ _app-62472b04d6fc558f.js:1
+start @ _app-62472b04d6fc558f.js:1
+fetch @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+batch @ _app-62472b04d6fc558f.js:1
+refetchQueries @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+batch @ _app-62472b04d6fc558f.js:1
+invalidateQueries @ _app-62472b04d6fc558f.js:1
+onSettled @ _app-62472b04d6fc558f.js:1
+execute @ _app-62472b04d6fc558f.js:1
+await in execute
+mutate @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+S @ 5434-63b146e22ed72518.js:1
+onClick @ 5434-63b146e22ed72518.js:1
+eU @ framework-840cff9d6bb95703.js:1
+eH @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+re @ framework-840cff9d6bb95703.js:1
+rn @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+oP @ framework-840cff9d6bb95703.js:1
+eF @ framework-840cff9d6bb95703.js:1
+ro @ framework-840cff9d6bb95703.js:1
+nU @ framework-840cff9d6bb95703.js:1
+nD @ framework-840cff9d6bb95703.js:1
+_app-62472b04d6fc558f.js:1 
+            
+            
+           GET https://hub.xfoundry.org/api/user/profile 401 (Unauthorized)
+queryFn @ _app-62472b04d6fc558f.js:1
+fetchFn @ _app-62472b04d6fc558f.js:1
+v @ _app-62472b04d6fc558f.js:1
+start @ _app-62472b04d6fc558f.js:1
+fetch @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+batch @ _app-62472b04d6fc558f.js:1
+refetchQueries @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+batch @ _app-62472b04d6fc558f.js:1
+invalidateQueries @ _app-62472b04d6fc558f.js:1
+onSettled @ _app-62472b04d6fc558f.js:1
+execute @ _app-62472b04d6fc558f.js:1
+await in execute
+mutate @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+S @ 5434-63b146e22ed72518.js:1
+onClick @ 5434-63b146e22ed72518.js:1
+eU @ framework-840cff9d6bb95703.js:1
+eH @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+re @ framework-840cff9d6bb95703.js:1
+rn @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+oP @ framework-840cff9d6bb95703.js:1
+eF @ framework-840cff9d6bb95703.js:1
+ro @ framework-840cff9d6bb95703.js:1
+nU @ framework-840cff9d6bb95703.js:1
+nD @ framework-840cff9d6bb95703.js:1
+_app-62472b04d6fc558f.js:1 
+            
+            
+           GET https://hub.xfoundry.org/api/user/profile 401 (Unauthorized)
+queryFn @ _app-62472b04d6fc558f.js:1
+fetchFn @ _app-62472b04d6fc558f.js:1
+v @ _app-62472b04d6fc558f.js:1
+start @ _app-62472b04d6fc558f.js:1
+fetch @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+batch @ _app-62472b04d6fc558f.js:1
+refetchQueries @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+setTimeout
+onSettled @ _app-62472b04d6fc558f.js:1
+execute @ _app-62472b04d6fc558f.js:1
+await in execute
+mutate @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+S @ 5434-63b146e22ed72518.js:1
+onClick @ 5434-63b146e22ed72518.js:1
+eU @ framework-840cff9d6bb95703.js:1
+eH @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+re @ framework-840cff9d6bb95703.js:1
+rn @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+oP @ framework-840cff9d6bb95703.js:1
+eF @ framework-840cff9d6bb95703.js:1
+ro @ framework-840cff9d6bb95703.js:1
+nU @ framework-840cff9d6bb95703.js:1
+nD @ framework-840cff9d6bb95703.js:1
+_app-62472b04d6fc558f.js:1 
+            
+            
+           GET https://hub.xfoundry.org/api/user/profile 401 (Unauthorized)
+queryFn @ _app-62472b04d6fc558f.js:1
+fetchFn @ _app-62472b04d6fc558f.js:1
+v @ _app-62472b04d6fc558f.js:1
+start @ _app-62472b04d6fc558f.js:1
+fetch @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+batch @ _app-62472b04d6fc558f.js:1
+refetchQueries @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+setTimeout
+onSettled @ _app-62472b04d6fc558f.js:1
+execute @ _app-62472b04d6fc558f.js:1
+await in execute
+mutate @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+S @ 5434-63b146e22ed72518.js:1
+onClick @ 5434-63b146e22ed72518.js:1
+eU @ framework-840cff9d6bb95703.js:1
+eH @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+re @ framework-840cff9d6bb95703.js:1
+rn @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+oP @ framework-840cff9d6bb95703.js:1
+eF @ framework-840cff9d6bb95703.js:1
+ro @ framework-840cff9d6bb95703.js:1
+nU @ framework-840cff9d6bb95703.js:1
+nD @ framework-840cff9d6bb95703.js:1
+2_app-62472b04d6fc558f.js:1 Fetching profile data
+_app-62472b04d6fc558f.js:1 
+            
+            
+           GET https://hub.xfoundry.org/api/user/profile 401 (Unauthorized)
+queryFn @ _app-62472b04d6fc558f.js:1
+fetchFn @ _app-62472b04d6fc558f.js:1
+v @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+Promise.then
+(anonymous) @ _app-62472b04d6fc558f.js:1
+Promise.catch
+v @ _app-62472b04d6fc558f.js:1
+start @ _app-62472b04d6fc558f.js:1
+fetch @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+batch @ _app-62472b04d6fc558f.js:1
+refetchQueries @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+setTimeout
+onSettled @ _app-62472b04d6fc558f.js:1
+execute @ _app-62472b04d6fc558f.js:1
+await in execute
+mutate @ _app-62472b04d6fc558f.js:1
+(anonymous) @ _app-62472b04d6fc558f.js:1
+S @ 5434-63b146e22ed72518.js:1
+onClick @ 5434-63b146e22ed72518.js:1
+eU @ framework-840cff9d6bb95703.js:1
+eH @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+re @ framework-840cff9d6bb95703.js:1
+rn @ framework-840cff9d6bb95703.js:1
+(anonymous) @ framework-840cff9d6bb95703.js:1
+oP @ framework-840cff9d6bb95703.js:1
+eF @ framework-840cff9d6bb95703.js:1
+ro @ framework-840cff9d6bb95703.js:1
+nU @ framework-840cff9d6bb95703.js:1
+nD @ framework-840cff9d6bb95703.js:1
+_app-62472b04d6fc558f.js:1 
+            
+            
+           GET https://hub.xfoundry.org/api/user/profile 401 (Unauthorized)
+
+Can we please thoughtfully consider reimplementing the auth0 v4 and tanstack query implementation? I want this to be as simple as possible and as elegant as possible for a solution. We just want to update the airtable profile and ensure that tanstack query is used throughout and the auth0 v4 implementation is correct and follows the guidelines. Also, we want to make sure there arent any old calls to the way we had auth0 set up in v3. should be clean and refined code.

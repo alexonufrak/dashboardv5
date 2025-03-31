@@ -15,9 +15,8 @@ export async function middleware(request) {
     // Get hostname from request headers
     const host = request.headers.get('host') || '';
     
-    // Add correct protocol based on environment
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    return `${protocol}://${host}`;
+    // Always use HTTPS for consistency with secure cookies
+    return `https://${host}`;
   };
 
   const { pathname, search } = request.nextUrl;

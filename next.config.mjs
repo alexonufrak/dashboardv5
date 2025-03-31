@@ -11,14 +11,14 @@ const ensureProtocol = (url) => {
   return url.startsWith('http') ? url : `https://${url}`;
 };
 
-// Get base URL from auth0 config if available, otherwise use environment-specific defaults
+// Get base URL that always uses HTTPS to ensure secure cookie compatibility
 const getAppBaseUrl = () => {
-  // Check if AUTH0_BASE_URL is provided with correct protocol
+  // Check if AUTH0_BASE_URL is provided
   if (process.env.AUTH0_BASE_URL) {
     return ensureProtocol(process.env.AUTH0_BASE_URL);
   }
   
-  // Always use HTTPS for both production and development to support secure cookies
+  // Always use HTTPS for both environments (secure cookies require this)
   return process.env.NODE_ENV === 'production' 
     ? 'https://hub.xfoundry.org' 
     : 'https://localhost:3000';
