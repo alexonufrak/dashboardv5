@@ -13,15 +13,29 @@ const Callback = () => {
     // Only redirect once the user object is available from Auth0
     // This ensures the session is fully established before navigation
     if (user && !isLoading) {
-      // Store the session token in sessionStorage for alternative auth
-      if (user.id_token) {
-        try {
-          // Store the token for future API calls as fallback
+      // Store the session token in multiple storage locations for maximum compatibility
+      // This is critical for our fallback authentication system
+      try {
+        if (user.id_token) {
+          // Store in sessionStorage
           sessionStorage.setItem('auth0.id_token', user.id_token);
-          console.log('Auth0 token stored for fallback authentication');
-        } catch (e) {
-          console.warn('Unable to store auth token:', e);
+          console.log('Auth0 token stored in sessionStorage');
+          
+          // Also store in localStorage for persistence
+          localStorage.setItem('auth0.id_token', user.id_token);
+          console.log('Auth0 token stored in localStorage for persistence');
+          
+          // Set a JS-accessible cookie as another fallback
+          document.cookie = `auth0Token=${user.id_token}; path=/; secure; max-age=86400`;
+          console.log('Auth0 token also stored in cookie');
         }
+        
+        // Store the user ID globally for API requests
+        window._userId = user.sub;
+        localStorage.setItem('auth0.user_id', user.sub);
+        console.log('User ID stored for API requests');
+      } catch (e) {
+        console.warn('Error storing auth tokens:', e);
       }
       
       // Use window.location instead of router.push to force a full page reload

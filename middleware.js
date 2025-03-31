@@ -16,7 +16,9 @@ export async function middleware(request) {
     const host = request.headers.get('host') || '';
     
     // Always use HTTPS for consistency with secure cookies
-    return `https://${host}`;
+    // Force the specific domain to match the cookie domain setting
+    const domain = process.env.NODE_ENV === 'production' ? 'hub.xfoundry.org' : host;
+    return `https://${domain}`;
   };
 
   const { pathname, search } = request.nextUrl;

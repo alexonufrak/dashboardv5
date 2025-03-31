@@ -208,12 +208,22 @@ export default async function handler(req, res) {
       return res.status(200).end();
     }
     
-    // Check if the method is allowed
-    if (!['GET', 'PUT', 'PATCH', 'OPTIONS'].includes(req.method)) {
+    // Check if the method is allowed (including POST with method override)
+    // We allow POST with X-HTTP-Method-Override header for browsers with PATCH issues
+    if (!['GET', 'PUT', 'PATCH', 'POST', 'OPTIONS'].includes(req.method)) {
       return res.status(405).json({ 
         error: 'Method not allowed',
-        allowedMethods: ['GET', 'PUT', 'PATCH', 'OPTIONS']
+        allowedMethods: ['GET', 'PUT', 'PATCH', 'POST', 'OPTIONS']
       });
+    }
+    
+    // Handle method override for POST requests meant to be PATCH
+    // This is a workaround for browsers that have issues with cookies in PATCH requests
+    let effectiveMethod = req.method;
+    if (req.method === 'POST' && 
+        (req.headers['x-http-method-override'] === 'PATCH' || req.body?._method === 'PATCH')) {
+      console.log('Detected POST request with PATCH method override');
+      effectiveMethod = 'PATCH';
     }
     
     // Get Auth0 session - just once, at the top level
@@ -237,39 +247,33 @@ export default async function handler(req, res) {
         origin: req.headers.origin || 'none'
       });
       
-      // Check if appSession cookie is missing for PATCH requests
-      if (req.method === 'PATCH' && !cookieNames.includes('appSession')) {
-        console.error('Auth0 appSession cookie is missing for PATCH request - attempting alternative authentication methods');
+      // Check for authentication methods - always check regardless of cookies
+      console.log('Checking all authentication methods for API request');
+      
+      // Check for Authorization header (Bearer token)
+      if (req.headers.authorization?.startsWith('Bearer ')) {
+        console.log('Authorization header found, will use token-based authentication');
         
-        // Check for Authorization header (Bearer token)
-        if (req.headers.authorization?.startsWith('Bearer ')) {
-          console.log('Authorization header found, will attempt token-based authentication');
+        try {
+          // Extract the token
+          const token = req.headers.authorization.split(' ')[1];
           
-          try {
-            // Extract the token
-            const token = req.headers.authorization.split(' ')[1];
-            
-            // If we have a token, try to get the user from Auth0 using it
-            if (token) {
-              try {
-                const { getAccessToken } = await import('auth0');
-                const auth0Client = new getAccessToken({
-                  domain: process.env.AUTH0_DOMAIN,
-                  clientId: process.env.AUTH0_CLIENT_ID
-                });
-                
-                // We'll attempt to verify the token
-                console.log('Attempting to validate Bearer token');
-                
-                // Auth0's getSession should check the Authorization header automatically
-                console.log('Deferring to Auth0 session check with Authorization header');
-              } catch (tokenError) {
-                console.error('Error setting up token validation:', tokenError);
+          // If we have a token, add it to the request for Auth0 to validate
+          if (token) {
+            // We need to set a cookie with the token to help Auth0 validate it
+            if (!cookieNames.includes('appSession')) {
+              console.log('No appSession cookie found, adding token to request');
+              // Add the token to a special header for our getSession wrapper to use
+              req.headers['x-auth-token'] = token;
+              
+              // Check for user ID in custom header
+              if (req.headers['x-user-id']) {
+                console.log('User ID found in header, will use for additional verification');
               }
             }
-          } catch (authHeaderError) {
-            console.error('Error processing Authorization header:', authHeaderError);
           }
+        } catch (authHeaderError) {
+          console.error('Error processing Authorization header:', authHeaderError);
         }
       }
       
@@ -307,12 +311,14 @@ export default async function handler(req, res) {
     // Simple logging request details
     console.log(`Authenticated profile API request: ${req.method} ${req.url} for user ${session.user.email}`);
     
-    // Handle the request based on method
+    // Handle the request based on effective method
     if (req.method === "GET") {
       // For GET requests, fetch and return the user's profile
       return handleGetRequest(req, res, session, startTime);
-    } else if (req.method === "PATCH" || req.method === "PUT") {
-      // For PATCH/PUT requests, update the user's profile
+    } else if (effectiveMethod === "PATCH" || req.method === "PUT" || 
+              (req.method === "POST" && req.body?._method === "PATCH")) {
+      // For PATCH/PUT requests (or POST with override), update the user's profile
+      console.log('Handling update request with method:', req.method, 'effective method:', effectiveMethod);
       return handleUpdateRequest(req, res, session, startTime);
     }
     
