@@ -45,7 +45,7 @@ AUTH0_SECRET=your_auth0_cookie_secret_key_at_least_32_chars
 AUTH0_CLIENT_ID=your_auth0_client_id
 AUTH0_CLIENT_SECRET=your_auth0_client_secret
 AUTH0_DOMAIN=your-tenant.auth0.com
-APP_BASE_URL=http://localhost:3000
+APP_BASE_URL=https://localhost:3000
 
 # Airtable Configuration
 AIRTABLE_API_KEY=your_airtable_api_key
@@ -59,13 +59,21 @@ See `.env.local.sample` for a complete list of environment variables.
 
 ### Running the Application
 
-To run the application in development mode:
+To run the application in development mode with HTTPS (recommended for secure cookies):
 
 ```
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`.
+The application will be available at `https://localhost:3000`.
+
+You may need to accept a self-signed certificate warning in your browser when accessing the site for the first time.
+
+If you need to run without HTTPS (not recommended):
+
+```
+npm run dev-legacy
+```
 
 ### Building for Production
 

@@ -18,10 +18,10 @@ const getAppBaseUrl = () => {
     return ensureProtocol(process.env.AUTH0_BASE_URL);
   }
   
-  // Environment-specific defaults
+  // Always use HTTPS for both production and development to support secure cookies
   return process.env.NODE_ENV === 'production' 
     ? 'https://hub.xfoundry.org' 
-    : 'http://localhost:3000';
+    : 'https://localhost:3000';
 };
 
 // Make base URL available to both client and server
