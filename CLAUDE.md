@@ -12,6 +12,7 @@
 - `fetch` - Use this MCP tool for making web requests to external APIs or websites
 - `brave-search` - Use this MCP tool for performing web searches with Brave Search
 - `playwright` - Use this MCP tool for browser automation and web interactions
+- `airtable` - Use this MCP tool for Airtable database operations
 
 ## Code Style Guidelines
 - **Framework**: Next.js with React functional components and hooks

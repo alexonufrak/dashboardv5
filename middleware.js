@@ -2,126 +2,62 @@ import { NextResponse } from 'next/server';
 import { auth0 } from './lib/auth0';
 
 /**
- * Next.js Middleware for handling redirects and authentication
- * 
- * This middleware:
- * 1. Mounts Auth0 authentication routes (/auth/*)
- * 2. Handles redirects from legacy routes to the new URL structure
- * 3. Protects routes requiring authentication
+ * Next.js Middleware for Auth0 authentication
+ * Following Auth0 v4 best practices
  */
 export async function middleware(request) {
-  // Helper function to get base URL with appropriate protocol
-  const getBaseUrl = () => {
-    // Get hostname from request headers
-    const host = request.headers.get('host') || '';
-    
-    // Always use HTTPS for consistency with secure cookies
-    // Force the specific domain to match the cookie domain setting
-    const domain = process.env.NODE_ENV === 'production' ? 'hub.xfoundry.org' : host;
-    return `https://${domain}`;
-  };
-
-  const { pathname, search } = request.nextUrl;
-  
-  // Process Auth0 authentication routes
-  // This is the Auth0 v4 middleware that handles login, logout, callback, etc.
+  // Process Auth0 authentication routes - handles login, callback, logout
   const authResponse = await auth0.middleware(request);
   if (authResponse) {
     return authResponse;
   }
   
-  // Handle legacy URL redirects
+  const { pathname, search } = request.nextUrl;
   
-  // 1. Handle dashboard?program=X -> /dashboard/programs/X
-  if (pathname === '/dashboard' && search.includes('program=')) {
-    const params = new URLSearchParams(search);
-    const programId = params.get('program');
-    
-    if (programId) {
-      return NextResponse.redirect(
-        new URL(`/dashboard/programs/${encodeURIComponent(programId)}`, getBaseUrl())
-      );
-    }
-  }
+  // Get hostname from request headers for creating URLs
+  const host = request.headers.get('host') || '';
+  const baseUrl = `https://${host}`;
   
-  // 2. Handle /program-dashboard -> /dashboard/programs
-  if (pathname === '/program-dashboard') {
-    return NextResponse.redirect(
-      new URL('/dashboard/programs', getBaseUrl())
-    );
-  }
+  // Protected routes - require authentication
+  const protectedRoutes = ['/dashboard', '/profile', '/onboarding'];
   
-  // 3. Handle /dashboard-shell -> /dashboard
-  if (pathname === '/dashboard-shell') {
-    return NextResponse.redirect(
-      new URL('/dashboard', getBaseUrl())
-    );
-  }
+  // Check if current path should be protected
+  const shouldProtect = protectedRoutes.some(route => 
+    pathname === route || pathname.startsWith(`${route}/`)
+  );
   
-  // 4. Handle /program/[id] -> /dashboard/programs/[id]
-  if (pathname.startsWith('/program/') && !pathname.startsWith('/program-dashboard')) {
-    const programPath = pathname.replace('/program/', '');
-    
-    return NextResponse.redirect(
-      new URL(`/dashboard/programs/${programPath}${search}`, getBaseUrl())
-    );
-  }
-  
-  // 5. Handle /dashboard/program/[id] -> /dashboard/programs/[id]
-  if (pathname.startsWith('/dashboard/program/')) {
-    const programPath = pathname.replace('/dashboard/program/', '');
-    
-    return NextResponse.redirect(
-      new URL(`/dashboard/programs/${programPath}${search}`, getBaseUrl())
-    );
-  }
-  
-  // For protected routes, check authenticated session
-  if (pathname.startsWith('/dashboard') || 
-      pathname.startsWith('/program') || 
-      pathname === '/onboarding' || 
-      pathname === '/profile') {
-    
+  if (shouldProtect) {
     try {
-      // Get Auth0 session - in v4 this works in middleware
+      // Get Auth0 session using recommended method
       const session = await auth0.getSession(request);
       
-      // If no session, redirect to login
+      // If no session, redirect to login with return URL
       if (!session) {
-        // Use the Auth0 login endpoint with returnTo query parameter
         const returnPath = encodeURIComponent(pathname + search);
         return NextResponse.redirect(
-          new URL(`/auth/login?returnTo=${returnPath}`, getBaseUrl())
+          new URL(`/auth/login?returnTo=${returnPath}`, baseUrl)
         );
       }
       
-      // Session exists, allow access to the protected route
+      // Session exists, allow access
       return NextResponse.next();
     } catch (error) {
-      console.error('Error in middleware auth check:', error);
-      // On error, redirect to login as a fallback
+      console.error('Auth session error:', error);
+      
+      // On error, redirect to login
       return NextResponse.redirect(
-        new URL('/auth/login', getBaseUrl())
+        new URL('/auth/login', baseUrl)
       );
     }
   }
 
-  // For all other routes, continue the request
+  // For non-protected routes, continue normally
   return NextResponse.next();
 }
 
 // Configure middleware to run on specific paths
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
-     */
     "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
   ],
-  
-  // Remove unstable_allowDynamic as it's not supported in middleware config
-  // We'll handle this in next.config.mjs instead
 };

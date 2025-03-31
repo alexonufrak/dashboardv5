@@ -1,181 +1,370 @@
-# Authentication Fixes for Profile Updates
+# Authentication and Data Fetching Refactoring Documentation
 
-## Issue Overview
+## Overview
 
-We fixed a persistent issue where profile updates were failing with `401 Unauthorized` errors despite the user being properly authenticated. The core problem was that the browser wasn't sending authentication cookies with PATCH requests due to security policies around secure cookies.
+This document describes the comprehensive refactoring of the xFoundry Dashboard's authentication and data fetching systems. The refactoring addresses profile update authentication issues after migrating from Auth0 v3 to v4 and introduces a new domain-driven design approach for Airtable data access.
 
-**UPDATE (March 31, 2025)**: Additional debugging revealed that in some cases the `appSession` cookie is completely missing from PATCH requests, causing authentication failures. Enhanced logging shows `hasCookies: false` and empty `cookieNames` array in these cases (or only the `sidebar_state` cookie is present). We've added explicit runtime configuration for the API endpoint to ensure compatibility.
+## Authentication Refactoring
 
-**UPDATE #2 (March 31, 2025)**: We've discovered that Auth0 allows configuring cookie settings through environment variables instead of hardcoding them in the auth0.js file. This is the recommended approach for changing the SameSite cookie policy. The key environment variable is `AUTH0_COOKIE_SAME_SITE` which can be set to 'lax', 'strict', or 'none' to control cross-origin cookie behavior.
+### Goals
 
-## Key Insights
+1. Fix authentication failures during profile updates where cookies weren't being sent with PATCH requests
+2. Implement a clean, modern approach following Auth0 v4 best practices
+3. Simplify Auth0 configuration and middleware
+4. Use withApiAuthRequired for consistent API route protection
 
-1. **Secure Cookies and HTTPS**: Modern browsers require cookies marked as `secure` to be sent over HTTPS. This is especially enforced for "non-simple" HTTP methods like PATCH.
+### Implementation
 
-2. **SameSite Cookie Policies**: Using `sameSite: 'lax'` ensures better browser compatibility than `none`, while still allowing authentication cookies to work across different request types.
+#### 1. Auth0 Configuration (lib/auth0.js)
 
-3. **Cross-Origin Resource Sharing (CORS)**: PATCH requests trigger preflight OPTIONS requests, which need proper CORS headers to maintain authentication state.
-
-## Changes Made
-
-### 1. Middleware.js Update
-
-**What Changed**: Updated the `getBaseUrl` function to always use HTTPS instead of conditionally using HTTP for localhost.
-
-**Why**: This ensures consistent protocol usage across the application, which is essential for secure cookies to be properly sent with all request types.
+The Auth0 client configuration was simplified to rely on environment variables with minimal customization:
 
 ```javascript
-// Before
-const protocol = host.includes('localhost') ? 'http' : 'https';
-
-// After
-return `https://${host}`;
-```
-
-### 2. Auth0 Cookie Configuration
-
-**What Changed**: Modified to use environment variables for cookie settings, particularly sameSite.
-
-**Why**: Using environment variables allows for configuration without code changes and is the recommended approach by Auth0.
-
-```javascript
-// Before
-cookie: {
-  httpOnly: true,
-  secure: true,
-  sameSite: 'lax', // Hardcoded value
-  domain: process.env.NODE_ENV === 'production' ? '.xfoundry.org' : undefined
-}
-
-// After
-cookie: {
-  httpOnly: true,
-  secure: true,
-  // No sameSite value specified, uses AUTH0_COOKIE_SAME_SITE env variable
-  domain: process.env.NODE_ENV === 'production' ? '.xfoundry.org' : undefined
-}
-```
-
-Added to .env.local:
-```
-AUTH0_COOKIE_SAME_SITE="none"
-```
-
-This environment variable approach is recommended by Auth0 and ensures the appSession cookie will be included with cross-origin PATCH requests.
-
-### 3. API Route CORS Handling
-
-**What Changed**: Added proper CORS handlers for OPTIONS requests, improved debugging, and set explicit Node.js runtime.
-
-**Why**: PATCH requests trigger preflight OPTIONS requests that need correct CORS headers to maintain authentication. Edge Runtime has compatibility issues with Auth0.
-
-```javascript
-// Force Node.js runtime for Auth0 compatibility
-export const runtime = 'nodejs';
-
-// Extract cookie names for debugging
-const cookieNames = req.headers.cookie 
-  ? req.headers.cookie.split(';')
-      .map(c => c.trim())
-      .map(c => c.split('=')[0]) 
-  : [];
-
-// Enhanced OPTIONS handler
-if (req.method === 'OPTIONS') {
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, PATCH, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.setHeader('Access-Control-Max-Age', '86400');
-  return res.status(200).end();
-}
-```
-
-### 4. Fetch Request Configuration
-
-**What Changed**: Simplified the fetch configuration in the useUpdateProfile mutation hook.
-
-**Why**: Minimized code while keeping only the essential `credentials: 'include'` setting that ensures cookies are sent with requests.
-
-```javascript
-// Before
-const response = await fetch(`/api/user/profile`, {
-  method: "PATCH",
-  headers: {
-    "Content-Type": "application/json",
-    "X-Transaction-ID": transactionId
+export const auth0 = new Auth0Client({
+  // Session configuration for persistent sessions
+  session: {
+    rollingDuration: 24 * 60 * 60, // 24 hours
+    absoluteDuration: 7 * 24 * 60 * 60, // 7 days
+    
+    // Cookie settings - only specify what differs from Auth0 defaults
+    cookie: {
+      // Only set domain in production to allow localhost in dev
+      domain: process.env.NODE_ENV === 'production' ? '.xfoundry.org' : undefined
+    },
+    
+    // Always store ID Token in session
+    storeIDToken: true
   },
-  credentials: 'include',
-  body: JSON.stringify(dataToSend),
-  signal: AbortSignal.timeout(10000)
-});
-
-// After
-const response = await fetch(`/api/user/profile`, {
-  method: "PATCH",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  credentials: 'include',
-  body: JSON.stringify(dataToSend)
 });
 ```
 
-### 5. Next.js Configuration
+#### 2. Middleware (middleware.js)
 
-**What Changed**: Updated next.config.mjs to ensure consistent HTTPS usage.
+The middleware was simplified to focus solely on Auth0 authentication and route protection:
 
-**Why**: This ensures that all URLs in the application use HTTPS, which is required for secure cookies to function properly.
+```javascript
+export async function middleware(request) {
+  // Process Auth0 authentication routes - handles login, callback, logout
+  const authResponse = await auth0.middleware(request);
+  if (authResponse) {
+    return authResponse;
+  }
+  
+  // Protected routes logic
+  const { pathname, search } = request.nextUrl;
+  const shouldProtect = protectedRoutes.some(route => 
+    pathname === route || pathname.startsWith(`${route}/`)
+  );
+  
+  if (shouldProtect) {
+    // Session validation and redirect logic
+    const session = await auth0.getSession(request);
+    if (!session) {
+      // Redirect to login with return URL
+    }
+  }
 
-## Codebase Design Principles
+  return NextResponse.next();
+}
+```
 
-As requested, our approach to this project focuses on:
+#### 3. API Route Protection
 
-1. **Simplicity and Streamlined Implementation**: Using the simplest code necessary to achieve functionality. If a feature can be implemented with defaults, we prefer that over custom configurations.
+All API routes were refactored to use withApiAuthRequired:
 
-2. **Avoid Explicit Settings When Unnecessary**: Only explicitly specifying parameters when they're different from defaults or when absolutely necessary for functionality.
+```javascript
+import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
 
-3. **Following Official Patterns**: Adhering to the recommended implementation patterns from Auth0 and other libraries rather than creating custom solutions.
+export default withApiAuthRequired(async function handler(req, res) {
+  try {
+    const { user } = await getSession(req, res);
+    // API handler logic
+  } catch (error) {
+    // Error handling
+  }
+});
+```
 
-4. **Clean, Minimal Code**: Removing extraneous code, comments, and configurations that don't directly contribute to functionality.
+#### 4. PATCH Request Workaround
 
-5. **Using Default Handling Where Possible**: Leveraging default behaviors of libraries and frameworks when they meet our needs.
+A workaround was implemented for profile update PATCH requests to handle SameSite cookie issues in some browsers:
 
-## Comprehensive Solution
+```javascript
+// In useUpdateProfile hook
+const method = "POST";
+const modifiedData = {
+  ...dataToSend,
+  _method: "PATCH" // Signal to server this should be treated as PATCH
+};
 
-After thorough investigation, we implemented a three-part solution:
+// In API handler
+if (req.method === 'POST' && req.body._method?.toUpperCase() === 'PATCH') {
+  return handleUpdateRequest(req, res, user, startTime);
+}
+```
 
-1. **Environment Variable Configuration**: Auth0 provides environment variables for cookie settings. We added `AUTH0_COOKIE_SAME_SITE="none"` to our .env.local file, which is more maintainable than hardcoding in the auth0.js file.
+## Domain-Driven Design for Airtable Integration
 
-2. **Force Node.js Runtime**: Added `export const runtime = 'nodejs'` to API routes that use Auth0, avoiding Edge Runtime compatibility issues with Auth0's dependencies.
+### Goals
 
-3. **Better Client-Side Cookie Handling**: Enhanced debugging to verify cookies are properly included with PATCH requests, with complete client-side logging.
+1. Replace the monolithic 3,000+ line airtable.js file with a modular, maintainable structure
+2. Separate concerns for caching, data fetching, error handling, and business logic
+3. Create consistent patterns for data access
+4. Optimize API calls with better caching and throttling
+5. Improve code organization and maintainability
 
-4. **Centralized Authentication Logic**: Consolidated profile update code to use the central mutation function, eliminating inconsistent implementations.
+### Folder Structure
 
-## Additional Authentication Fallback
+The refactored code follows this domain-driven design structure:
 
-To further improve reliability, we've implemented a fallback authentication mechanism for situations where cookies are not properly included with requests:
+```
+lib/
+  airtable/
+    core/           # Core utilities
+      client.js     # Airtable client configuration
+      cache.js      # Caching mechanisms
+      throttle.js   # Rate limiting logic
+      errors.js     # Error handling utilities
+      index.js      # Re-exports
+    
+    tables/         # Table definitions
+      definitions.js # Table access functions
+      index.js      # Re-exports
+    
+    entities/       # Entity-specific operations
+      users.js      # User profile operations
+      education.js  # Education operations
+      institutions.js # Institution operations
+      [other entities]
+      index.js      # Re-exports
+    
+    hooks/          # React Query hooks
+      useProfile.js # Hooks for profile data
+      [other hooks]
+      index.js      # Re-exports
+    
+    index.js        # Main entry point
+```
 
-1. **Bearer Token Authentication**: Added support for JWT authentication using Bearer tokens as a fallback when the `appSession` cookie is missing. This helps in browsers where SameSite=none cookies have issues.
+### Key Components
 
-2. **Token Extraction**: We now extract the authentication token from `sessionStorage` during PATCH requests and include it in the Authorization header.
+#### 1. Core Utilities
 
-3. **Server-Side Validation**: The API route checks for this Authorization header as a fallback when the cookie is missing.
+**Client (client.js)**: Handles Airtable client initialization and provides query execution with error handling:
 
-4. **HTTPS in Development**: Confirmed the `--experimental-https` flag is used in the dev script to ensure consistent HTTPS usage in all environments.
+```javascript
+export function executeQuery(queryFn) {
+  try {
+    return await queryFn();
+  } catch (error) {
+    // Enhanced error handling with request ID, timestamps, etc.
+    throw enhancedError;
+  }
+}
+```
 
-## Future Considerations
+**Cache (cache.js)**: Provides a consistent caching mechanism:
 
-1. **Environment Consistency**: Ensure the development environment consistently uses HTTPS via the `--experimental-https` flag in package.json.
+```javascript
+export function getCachedOrFetch(cacheKey, fetchFn, ttl = 300, retryCount = 0) {
+  // Cache check logic
+  // Fetch and cache logic with retry capabilities
+  // Stale data handling
+}
+```
 
-2. **Dependency Versions**: Keep Auth0 and NextJS packages updated to benefit from the latest security improvements.
+**Throttle (throttle.js)**: Prevents rate limiting issues:
 
-3. **Browser Compatibility**: The current solution works across modern browsers, but if supporting older browsers becomes necessary, additional configuration might be needed.
+```javascript
+export async function throttleRequests() {
+  // Rate limit calculation
+  // Request timing and tracking
+  // Delay calculation when needed
+}
+```
 
-4. **Monitoring**: Keep an eye on authentication errors in logs to identify any regressions or new issues that might emerge.
+**Errors (errors.js)**: Standardized error handling:
 
-5. **Edge Runtime Compatibility**: Consider alternatives to using Auth0 in Edge Runtime contexts, as it relies on Node.js APIs that aren't supported in Edge environments.
+```javascript
+export class AirtableError extends Error {
+  // Enhanced error type with context
+}
 
-6. **Centralized API Authentication**: We identified multiple code paths handling profile updates inconsistently. Consider further consolidating authentication logic through a centralized client-side fetch utility that always ensures proper credentials are included.
+export function handleAirtableError(error, operation, context = {}) {
+  // User-friendly error messages based on error type
+}
+```
 
-7. **Consider NextAuth.js**: If Auth0 integration continues to be problematic, consider migrating to NextAuth.js which has deeper integration with Next.js and may provide better support for its unique features and environments.
+#### 2. Table Definitions
+
+Table definitions provide abstracted access to Airtable tables:
+
+```javascript
+export function getTable(tableId) {
+  // Table caching and access logic
+}
+
+export function getContactsTable() {
+  return getTable('CONTACTS');
+}
+```
+
+#### 3. Entity Operations
+
+Entity modules provide domain-specific operations:
+
+**Users (users.js)**:
+```javascript
+export async function getUserByAuth0Id(auth0Id, options = {}) {
+  // Cached fetching with consistent patterns
+}
+
+export async function updateUserProfile(contactId, data) {
+  // Update logic with proper error handling
+}
+```
+
+**Education (education.js)**:
+```javascript
+export async function getEducation(educationId, options = {}) {
+  // Education record fetching
+}
+
+export async function updateEducation(data) {
+  // Education update logic
+}
+```
+
+#### 4. React Query Hooks
+
+These hooks provide React components with access to the data layer:
+
+```javascript
+export function useProfileData() {
+  return useQuery({
+    queryKey: ['profile'],
+    queryFn: async () => {
+      // API call logic
+    },
+    // Query configuration
+  });
+}
+
+export function useUpdateProfile() {
+  return useMutation({
+    mutationFn: async (updatedData) => {
+      // Update API call
+    },
+    // Optimistic updates, error handling, cache invalidation
+  });
+}
+```
+
+### Benefits of Domain-Driven Design
+
+1. **Modularity**: Each module has a single responsibility, making the code easier to understand and maintain
+2. **Consistency**: Standardized patterns for data fetching, caching, and error handling
+3. **Performance**: Optimized caching and data loading improves responsiveness
+4. **Maintainability**: Smaller, focused modules are easier to update and debug
+5. **Testability**: Isolated modules are easier to test
+6. **Error Handling**: Consistent error handling improves user experience
+
+## Example API Implementation
+
+The `/api/user/profile.js` endpoint showcases the integration of Auth0 v4 best practices with the new domain-driven design:
+
+```javascript
+import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import { 
+  getUserByAuth0Id,
+  updateUserProfile 
+} from "../../../lib/airtable/entities/users";
+import { 
+  getEducation, 
+  updateEducation 
+} from "../../../lib/airtable/entities/education";
+
+export default withApiAuthRequired(async function handler(req, res) {
+  // Get session using Auth0 v4 withApiAuthRequired + getSession pattern
+  const { user } = await getSession(req, res);
+  
+  // Method handling with support for _method override
+  switch (req.method) {
+    case 'GET':
+      return handleGetRequest(req, res, user);
+    case 'PATCH':
+    case 'PUT':
+      return handleUpdateRequest(req, res, user);
+    case 'POST':
+      // Special case for POST with _method override
+      if (req.body._method?.toUpperCase() === 'PATCH') {
+        return handleUpdateRequest(req, res, user);
+      }
+      // ...
+  }
+});
+
+async function handleGetRequest(req, res, user) {
+  // Get the user profile from our entity layer
+  const baseProfile = await getUserByAuth0Id(user.sub);
+  
+  // Fetch education and institution data if available
+  const educationData = await getEducation(educationId);
+  
+  // Build complete profile with related data
+  // Return response
+}
+
+async function handleUpdateRequest(req, res, user) {
+  // Extract update data
+  const { contactId, ...updateData } = req.body;
+  
+  // Update user profile
+  await updateUserProfile(contactId, enhancedUpdateData);
+  
+  // Update education data if needed
+  await updateEducation(educationData);
+  
+  // Return success response
+}
+```
+
+## Testing and Verification
+
+A new debug endpoint was created at `/api/debug/auth-status.js` to help diagnose authentication issues:
+
+```javascript
+export default withApiAuthRequired(async function handler(req, res) {
+  // Get session information
+  const session = await getSession(req, res);
+  
+  // Fetch Airtable user data
+  const profileData = await getUserByAuth0Id(session.user.sub);
+  
+  // Return sanitized debug information
+  return res.status(200).json({
+    status: 'authenticated',
+    session: sanitizedSession,
+    profile: profileData ? {
+      // Sanitized profile data
+    } : null,
+    request: {
+      // Request information for debugging
+    },
+    // Environment information
+  });
+});
+```
+
+## Next Steps
+
+1. **Complete Entity Modules**: Implement remaining entity modules (participation, teams, etc.)
+2. **React Query Hooks**: Develop the complete set of React Query hooks
+3. **API Updates**: Refactor remaining API endpoints to use the new architecture
+4. **Component Updates**: Update React components to use the new hooks
+5. **Legacy Code Removal**: Remove the monolithic airtable.js file after all functionality is migrated
+6. **Testing and Validation**: Comprehensive testing of all refactored functionality
+
+## Conclusion
+
+This refactoring addresses the authentication issues while simultaneously improving the overall architecture through domain-driven design. The new approach is more maintainable, better organized, and follows modern best practices for both Auth0 integration and data access.
