@@ -121,9 +121,8 @@ async function handleRequestWithSession(req, res, session, startTime) {
       const processingTime = Date.now() - startTime;
       console.log(`User profile fetched in ${processingTime}ms`);
       
-      // Set cache control headers - cache for 5 minutes (300 seconds)
-      // Client caching for 1 minute, CDN/edge caching for 5 minutes
-      res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
+      // Set cache headers to prevent server/CDN caching, allow client caching via TanStack Query
+      res.setHeader('Cache-Control', 'private, no-store, must-revalidate');
       
       // Include processing metadata in response
       return res.status(200).json({
@@ -260,6 +259,18 @@ async function handleRequestWithSession(req, res, session, startTime) {
           }
         });
       }
+      
+      // Return simplified success response - client will refetch via TanStack Query
+      return res.status(200).json({
+        success: true,
+        message: "Profile updated successfully",
+        contactId: contactId, // Return contactId for reference
+        _meta: {
+          timestamp: new Date().toISOString(),
+          processingTime: Date.now() - startTime
+        }
+      });
+
     } catch (updateError) {
       console.error("Error updating profile:", updateError);
       return res.status(500).json({ 
@@ -272,123 +283,17 @@ async function handleRequestWithSession(req, res, session, startTime) {
   }
 }
 
-
-// Handles verified PATCH requests with auth params
-// This provides a fallback for clients with cookie issues
-async function handleVerifiedPatchRequest(req, res) {
-  console.log('Processing profile update with query/header-based auth');
-  const startTime = Date.now();
-  
-  try {
-    const { contactId, ...updateData } = req.body;
-    
-    if (!contactId) {
-      return res.status(400).json({ error: "Contact ID is required for updates" });
-    }
-    
-    // Log the update data
-    console.log('Processing verified profile update for contactId:', contactId, {
-      fields: Object.keys(updateData),
-      hasMajor: !!updateData.major
-    });
-    
-    // Check if major ID is valid - must be a record ID format or null
-    if (updateData.major !== undefined && updateData.major !== null) {
-      if (typeof updateData.major === 'string') {
-        if (!updateData.major.startsWith('rec')) {
-          console.warn(`Invalid major ID format received: ${updateData.major}`);
-          return res.status(400).json({ 
-            error: "Invalid major ID format",
-            receivedValue: updateData.major
-          });
-        }
-      } else if (typeof updateData.major !== 'object') {
-        console.warn(`Invalid major field type: ${typeof updateData.major}`);
-        return res.status(400).json({
-          error: "Invalid major field type"
-        });
-      }
-    }
-    
-    // Map fields to Airtable field names
-    const airtableData = {
-      FirstName: updateData.firstName,
-      LastName: updateData.lastName,
-      DegreeType: updateData.degreeType,
-      Major: updateData.major, // Properly formatted record ID
-      GraduationYear: updateData.graduationYear,
-      GraduationSemester: updateData.graduationSemester,
-      ReferralSource: updateData.referralSource,
-      InstitutionId: updateData.institutionId,
-      educationId: updateData.educationId,
-    };
-    
-    // Log full update payload for troubleshooting
-    console.log('Airtable data for update:', JSON.stringify(airtableData, null, 2));
-    
-    // Perform the update directly
-    const updatedProfile = await updateUserProfile(contactId, airtableData);
-    
-    // Skip trying to get the complete profile - it won't work without a real Auth0 session
-    // Instead, just return a simplified response with the updated fields
-    const simplifiedProfile = {
-      contactId,
-      ...updateData,
-      // Include programId to match the format expected by the ProfileEditModal
-      programId: updateData.major,
-      // Flag as updated
-      updated: true,
-      // Add timestamp for cache invalidation
-      updatedAt: new Date().toISOString()
-    };
-    
-    console.log('Returning simplified profile after update');
-    
-    // Return the simplified response
-    return res.status(200).json({
-      profile: simplifiedProfile,
-      _meta: {
-        verifiedUpdate: true,
-        timestamp: new Date().toISOString(),
-        processingTime: Date.now() - startTime,
-        auth: 'query-parameter',
-        complete: false,
-        simplified: true
-      }
-    });
-  } catch (error) {
-    console.error('Error in verified profile update:', error);
-    return res.status(500).json({ 
-      error: "Failed to update profile", 
-      message: error.message 
-    });
-  }
-}
-
 // Simplified API handler that matches the pattern used in other endpoints
 export default async function handler(req, res) {
   try {
-    // Set cache control headers explicitly per request type
-    // This ensures Vercel/CDN won't cache our mutation requests
-    if (req.method === 'GET') {
-      // For GET: Follow TanStack Query's recommended caching approach
-      // Short client cache, longer shared cache, allow stale-while-revalidate
-      res.setHeader(
-        'Cache-Control',
-        'private, max-age=30, s-maxage=60, stale-while-revalidate=300'
-      );
-    } else {
-      // For mutations: Explicitly prevent any caching
-      res.setHeader(
-        'Cache-Control',
-        'no-store, private, no-cache, must-revalidate, proxy-revalidate'
-      );
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-      
-      // Add additional headers to ensure CDNs don't cache
-      res.setHeader('Surrogate-Control', 'no-store');
-    }
+    // Set headers to prevent server/CDN caching for all methods
+    res.setHeader(
+      'Cache-Control',
+      'no-store, private, no-cache, must-revalidate, proxy-revalidate'
+    );
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
     
     // Vary header to prevent cross-request caching
     res.setHeader('Vary', 'Origin, Content-Type, Accept');
@@ -424,80 +329,21 @@ export default async function handler(req, res) {
       console.log(`Auth session cookies found: ${sessionCookies.length > 0 ? 'Yes' : 'No'}`);
     }
     
-    // Handle auth info in query params or headers for PATCH requests
-    // This is a workaround for Auth0 session cookies not being sent with PATCH
-    const authQueryParam = req.query.auth;
-    const authVerificationHeader = req.headers['x-auth-verification'];
-    const authHeader = authQueryParam || authVerificationHeader;
-    
-    // Process auth header for PATCH requests
-    if (authHeader && req.method === 'PATCH') {
-      console.log('Request contains auth verification, attempting alternative auth...');
-      try {
-        // Decode the auth header
-        const authData = JSON.parse(atob(authHeader));
-        const { contactId, timestamp } = authData;
-        
-        // Verify timestamp is recent (within last 30 seconds)
-        const now = Date.now();
-        const isRecent = now - timestamp < 30000; // 30 seconds
-        
-        if (contactId && isRecent) {
-          console.log(`Using contactId from auth header for authentication: ${contactId}`);
-          
-          // Set the contactId in the body
-          if (!req.body) req.body = {};
-          req.body.contactId = contactId;
-          
-          // Call the special handler
-          return handleVerifiedPatchRequest(req, res);
-        } else {
-          console.warn('Auth verification failed: ', 
-                     !contactId ? 'Missing contactId' : 'Expired timestamp');
-        }
-      } catch (verificationError) {
-        console.error('Error in auth verification:', verificationError);
-      }
-    }
-    
-    // Check for valid Auth0 session - try with withAPIAuthRequired pattern first
+    // Check for valid Auth0 session using standard method
     try {
       const session = await auth0.getSession(req, res);
-      
-      if (!session) {
-        // First attempt failed, try an alternate approach as fallback
-        console.warn('Primary session check failed, trying fallback auth methods');
-        
-        // Get session from cookie directly as fallback
-        if (req.headers.cookie && req.headers.cookie.includes('appSession=')) {
-          console.log('AppSession cookie found, attempting to use it directly');
-          
-          // Manually validate the session cookie
-          try {
-            // Call getSession again with explicit option to read from cookie
-            const fallbackSession = await auth0.getSession(req, res);
-            if (fallbackSession && fallbackSession.user) {
-              console.log('Fallback session validation successful');
-              return handlerImpl(req, res); // Skip the check below and proceed
-            }
-          } catch (fallbackError) {
-            console.error('Fallback session validation failed:', fallbackError.message);
-          }
-        }
-        
-        console.error('No Auth0 session found for request - missing or invalid session cookie');
+      if (!session || !session.user) {
+        console.error('No valid Auth0 session found for request.');
         return res.status(401).json({ error: 'Not authenticated' });
       }
+      // Session is valid, proceed with the core logic
+      return handlerImpl(req, res);
     } catch (sessionError) {
       console.error('Error checking Auth0 session:', sessionError);
       return res.status(401).json({ error: 'Authentication error', message: sessionError.message });
     }
-    
-    // Call the implementation handler
-    return handlerImpl(req, res);
   } catch (error) {
     console.error('API authentication error:', error);
     return res.status(error.status || 500).json({ error: error.message });
   }
 }
-

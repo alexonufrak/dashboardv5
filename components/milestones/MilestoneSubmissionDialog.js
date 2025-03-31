@@ -463,51 +463,9 @@ export default function MilestoneSubmissionDialog({
               });
             }, 100);
             
-            // Clear any server-side cache for submissions
-            try {
-              console.log(`Requesting server-side cache clear for team=${teamData.id}, milestone=${milestone.id}`);
-              
-              // Use the new type-based cache clearing approach with fallback to pattern-based
-              fetch('/api/cache-invalidate', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  cacheKeys: ['submissions'],
-                  clearSubmissions: true,
-                  teamId: teamData.id,
-                  milestoneId: milestone.id,
-                  // Add the new cache types array for type-based clearing
-                  cacheTypes: ['submissions']
-                }),
-              }).then(response => {
-                if (response.ok) {
-                  console.log('Server cache invalidation request successful');
-                  return response.json();
-                } else {
-                  console.warn('Server cache invalidation request failed');
-                  return null;
-                }
-              }).then(data => {
-                if (data) {
-                  console.log('Cache invalidation results:', data);
-                  // Log the number of entries cleared for better visibility
-                  if (data.totalClearedEntries > 0) {
-                    console.log(`Cleared ${data.totalClearedEntries} cache entries`);
-                  } else {
-                    console.warn('No cache entries were cleared - may need to check cache key format');
-                  }
-                }
-              }).catch(err => {
-                console.warn('Error processing cache invalidation response:', err);
-              });
-            } catch (cacheError) {
-              console.warn('Error clearing server cache:', cacheError);
-              // Non-blocking - continue even if this fails
-            }
+            // Server-side cache invalidation removed. Client-side invalidation handles refresh.
+            console.log("Refreshing milestone data via React Query client-side invalidation.");
             
-            console.log("Refreshing milestone data via React Query");
           } else {
             console.warn("QueryClient not available for cache invalidation, falling back to fetch");
           }

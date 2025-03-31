@@ -75,56 +75,36 @@ export default function RefreshButton({
     try {
       // Use global queryClient if available
       if (typeof window !== 'undefined' && window._queryClient) {
-        console.log(`Refreshing data for queries: ${queryKeys.join(', ')}`)
+        console.log(`Invalidating client cache for queries: ${queryKeys.join(', ')}`)
         
-        // Make API call to invalidate both client and server caches
-        const response = await fetch('/api/cache-invalidate', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            cacheKeys: queryKeys,
-            cacheTypes: cacheTypes, // Use the new type-based cache clearing
-            clearSubmissions: true // Also include legacy submission cache clearing for backward compatibility
-          }),
-        });
-        
-        if (response.ok) {
-          // Invalidate all specified query keys locally too
-          queryKeys.forEach(key => {
-            window._queryClient.invalidateQueries([key])
-            // More targeted approach for submissions
-            if (key === 'submissions') {
-              // Get the team ID from the context if available
-              const teamId = window._activeTeamId || 
-                (window._queryClient.getQueryData(['teams']) && 
-                window._queryClient.getQueryData(['teams'])[0]?.id);
-              
-              if (teamId) {
-                console.log(`Targeted refresh for team ${teamId} submissions`);
-                // Refetch only this team's submissions
-                window._queryClient.refetchQueries({
-                  queryKey: [key, teamId],
-                  exact: false // Include any milestone-specific queries
-                });
-              } else {
-                // Fallback to fetching all submissions
-                console.log('No team context available, refreshing all submissions');
-                window._queryClient.refetchQueries({
-                  queryKey: [key],
-                  exact: false
-                });
-              }
+        // Invalidate all specified query keys locally using TanStack Query client
+        queryKeys.forEach(key => {
+          window._queryClient.invalidateQueries({ queryKey: [key] }); // Use object syntax for invalidateQueries
+          
+          // More targeted approach for submissions
+          if (key === 'submissions') {
+            // Get the team ID from the context if available
+            const teamId = window._activeTeamId || 
+              (window._queryClient.getQueryData(['teams']) && 
+              window._queryClient.getQueryData(['teams'])[0]?.id);
+            
+            if (teamId) {
+              console.log(`Targeted refetch for team ${teamId} submissions`);
+              // Refetch only this team's submissions
+              window._queryClient.refetchQueries({
+                queryKey: [key, teamId],
+                exact: false // Include any milestone-specific queries
+              });
+            } else {
+              // Fallback to refetching all submissions if no specific team context
+              console.log('No team context available, refetching all submissions');
+              window._queryClient.refetchQueries({
+                queryKey: [key],
+                exact: false
+              });
             }
-          })
-        } else {
-          console.warn('Cache invalidation API call failed, falling back to client-side only');
-          // Still invalidate client-side cache even if server-side fails
-          queryKeys.forEach(key => {
-            window._queryClient.invalidateQueries([key])
-          })
-        }
+          }
+        });
         
         // Allow custom refresh logic if provided
         if (onRefresh) {

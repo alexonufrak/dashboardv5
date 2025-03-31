@@ -124,9 +124,8 @@ async function handlerImpl(req, res) {
       600 
     );
     
-    // Set cache headers for client-side caching only, no server-side caching
-    // This ensures data is cached in the browser but always fresh on server
-    res.setHeader('Cache-Control', 'private, max-age=180, no-store, must-revalidate');
+    // Set headers to prevent server/CDN caching, allow client caching via TanStack Query
+    res.setHeader('Cache-Control', 'private, no-store, must-revalidate');
     
     // Add total processing time including cache operations
     const totalTime = Date.now() - startTime;
