@@ -116,7 +116,7 @@ const Navbar = () => {
                   Profile
                 </a>
                 <Button asChild variant="destructive" size="sm">
-                  <Link href="/auth/logout">Sign Out</Link>
+                  <Link href="/auth/logout" prefetch={false}>Sign Out</Link>
                 </Button>
                 <Avatar className="h-8 w-8">
                   <AvatarImage 
