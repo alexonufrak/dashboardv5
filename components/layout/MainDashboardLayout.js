@@ -164,17 +164,25 @@ const MainDashboardLayout = ({
         // Use context handler if available
         await dashboardContext.updateProfile(updatedProfile);
       } else {
-        // Otherwise fallback to API call
-        const response = await fetch('/api/user/profile', {
-          method: 'POST',
+        // Otherwise fallback to API call using PATCH (not POST)
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://hub.xfoundry.org';
+        const apiUrl = new URL('/api/user/profile', baseUrl).toString();
+        
+        console.log('Updating profile via PATCH request to:', apiUrl);
+        
+        const response = await fetch(apiUrl, {
+          method: 'PATCH', // Use PATCH instead of POST to match API expectations
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include', // Include cookies for auth
           body: JSON.stringify(updatedProfile),
         });
         
         if (!response.ok) {
-          throw new Error('Failed to update profile');
+          const errorText = await response.text();
+          console.error('Profile update failed:', response.status, errorText);
+          throw new Error(`Failed to update profile: ${response.status} ${response.statusText}`);
         }
       }
       
