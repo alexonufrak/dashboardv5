@@ -120,10 +120,6 @@ export const config = {
     "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
   ],
   
-  // Allow dynamic code evaluation in Auth0 and its dependencies
-  // This silences the warning about process.version
-  unstable_allowDynamic: [
-    '**/node_modules/auth0/**',
-    '**/node_modules/@auth0/**'
-  ]
+  // Remove unstable_allowDynamic as it's not supported in middleware config
+  // We'll handle this in next.config.mjs instead
 };

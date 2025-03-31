@@ -42,12 +42,8 @@ const nextConfig = {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
-    // Allow dynamic evaluation for Auth0 libraries
-    // This fixes the "process.version not supported in Edge Runtime" error
-    unstable_allowDynamic: [
-      '**/node_modules/auth0/**',
-      '**/node_modules/@auth0/**',
-    ],
+    // These packages should be processed by webpack normally
+    serverComponentsExternalPackages: ['auth0'],
   },
   // Make base URL available to client
   env: {
