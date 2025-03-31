@@ -4,7 +4,9 @@
 
 We fixed a persistent issue where profile updates were failing with `401 Unauthorized` errors despite the user being properly authenticated. The core problem was that the browser wasn't sending authentication cookies with PATCH requests due to security policies around secure cookies.
 
-**UPDATE (March 31, 2025)**: Additional debugging revealed that in some cases the `appSession` cookie is completely missing from PATCH requests, causing authentication failures. Enhanced logging shows `hasCookies: false` and empty `cookieNames` array in these cases. We've added explicit runtime configuration for the API endpoint to ensure compatibility.
+**UPDATE (March 31, 2025)**: Additional debugging revealed that in some cases the `appSession` cookie is completely missing from PATCH requests, causing authentication failures. Enhanced logging shows `hasCookies: false` and empty `cookieNames` array in these cases (or only the `sidebar_state` cookie is present). We've added explicit runtime configuration for the API endpoint to ensure compatibility.
+
+**UPDATE #2 (March 31, 2025)**: We've discovered that Auth0 allows configuring cookie settings through environment variables instead of hardcoding them in the auth0.js file. This is the recommended approach for changing the SameSite cookie policy. The key environment variable is `AUTH0_COOKIE_SAME_SITE` which can be set to 'lax', 'strict', or 'none' to control cross-origin cookie behavior.
 
 ## Key Insights
 
@@ -32,17 +34,16 @@ return `https://${host}`;
 
 ### 2. Auth0 Cookie Configuration
 
-**What Changed**: Simplified cookie configuration to focus on the essential settings while keeping critical security options.
+**What Changed**: Modified to use environment variables for cookie settings, particularly sameSite.
 
-**Why**: The minimal configuration is less prone to errors while maintaining all required security settings.
+**Why**: Using environment variables allows for configuration without code changes and is the recommended approach by Auth0.
 
 ```javascript
 // Before
 cookie: {
   httpOnly: true,
   secure: true,
-  sameSite: 'lax',
-  transient: false,
+  sameSite: 'lax', // Hardcoded value
   domain: process.env.NODE_ENV === 'production' ? '.xfoundry.org' : undefined
 }
 
@@ -50,10 +51,17 @@ cookie: {
 cookie: {
   httpOnly: true,
   secure: true,
-  sameSite: 'lax',
+  // No sameSite value specified, uses AUTH0_COOKIE_SAME_SITE env variable
   domain: process.env.NODE_ENV === 'production' ? '.xfoundry.org' : undefined
 }
 ```
+
+Added to .env.local:
+```
+AUTH0_COOKIE_SAME_SITE="none"
+```
+
+This environment variable approach is recommended by Auth0 and ensures the appSession cookie will be included with cross-origin PATCH requests.
 
 ### 3. API Route CORS Handling
 
@@ -132,6 +140,18 @@ As requested, our approach to this project focuses on:
 
 5. **Using Default Handling Where Possible**: Leveraging default behaviors of libraries and frameworks when they meet our needs.
 
+## Comprehensive Solution
+
+After thorough investigation, we implemented a three-part solution:
+
+1. **Environment Variable Configuration**: Auth0 provides environment variables for cookie settings. We added `AUTH0_COOKIE_SAME_SITE="none"` to our .env.local file, which is more maintainable than hardcoding in the auth0.js file.
+
+2. **Force Node.js Runtime**: Added `export const runtime = 'nodejs'` to API routes that use Auth0, avoiding Edge Runtime compatibility issues with Auth0's dependencies.
+
+3. **Better Client-Side Cookie Handling**: Enhanced debugging to verify cookies are properly included with PATCH requests, with complete client-side logging.
+
+4. **Centralized Authentication Logic**: Consolidated profile update code to use the central mutation function, eliminating inconsistent implementations.
+
 ## Future Considerations
 
 1. **Environment Consistency**: Ensure the development environment consistently uses HTTPS via the `--experimental-https` flag in package.json.
@@ -145,3 +165,5 @@ As requested, our approach to this project focuses on:
 5. **Edge Runtime Compatibility**: Consider alternatives to using Auth0 in Edge Runtime contexts, as it relies on Node.js APIs that aren't supported in Edge environments.
 
 6. **Centralized API Authentication**: We identified multiple code paths handling profile updates inconsistently. Consider further consolidating authentication logic through a centralized client-side fetch utility that always ensures proper credentials are included.
+
+7. **Consider NextAuth.js**: If Auth0 integration continues to be problematic, consider migrating to NextAuth.js which has deeper integration with Next.js and may provide better support for its unique features and environments.
