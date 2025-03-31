@@ -1,11 +1,29 @@
 {
   "headers": [
     {
+      "source": "/api/user/(.*)",
+      "headers": [
+        { 
+          "key": "Cache-Control", 
+          "value": "no-store, no-cache, private, must-revalidate" 
+        }
+      ]
+    },
+    {
+      "source": "/api/teams/(.*)",
+      "headers": [
+        { 
+          "key": "Cache-Control", 
+          "value": "no-store, no-cache, private, must-revalidate" 
+        }
+      ]
+    },
+    {
       "source": "/api/(.*)",
       "headers": [
         { 
           "key": "Cache-Control", 
-          "value": "public, max-age=300, s-maxage=600, stale-while-revalidate=1200, must-revalidate" 
+          "value": "private, max-age=30, s-maxage=60, stale-while-revalidate=300" 
         }
       ]
     }

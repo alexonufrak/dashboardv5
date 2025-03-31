@@ -330,6 +330,31 @@ async function handleVerifiedPatchRequest(req, res) {
 // Simplified API handler that matches the pattern used in other endpoints
 export default async function handler(req, res) {
   try {
+    // Set cache control headers explicitly per request type
+    // This ensures Vercel/CDN won't cache our mutation requests
+    if (req.method === 'GET') {
+      // For GET: Follow TanStack Query's recommended caching approach
+      // Short client cache, longer shared cache, allow stale-while-revalidate
+      res.setHeader(
+        'Cache-Control',
+        'private, max-age=30, s-maxage=60, stale-while-revalidate=300'
+      );
+    } else {
+      // For mutations: Explicitly prevent any caching
+      res.setHeader(
+        'Cache-Control',
+        'no-store, private, no-cache, must-revalidate, proxy-revalidate'
+      );
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
+      // Add additional headers to ensure CDNs don't cache
+      res.setHeader('Surrogate-Control', 'no-store');
+    }
+    
+    // Vary header to prevent cross-request caching
+    res.setHeader('Vary', 'Origin, Content-Type, Accept');
+    
     // Check if the method is allowed
     if (!['GET', 'PUT', 'PATCH'].includes(req.method)) {
       return res.status(405).json({ 

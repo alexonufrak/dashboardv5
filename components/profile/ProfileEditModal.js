@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useMajors, updateProfileData } from "@/lib/useDataFetching";
+import { useMajors, updateProfileData, useUpdateProfile } from "@/lib/useDataFetching";
 
 const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
   const queryClient = useQueryClient();
@@ -20,7 +20,11 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     graduationYear: profile?.graduationYear || "",
     educationId: profile?.educationId || null,
     institutionId: profile?.institution?.id || null,
+    contactId: profile?.contactId || null, // Ensure we have the contact ID for the update
   });
+  
+  // Use TanStack Query's mutation hook for profile updates
+  const updateProfile = useUpdateProfile();
   
   // Track submission state with multiple flags for better control
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -234,35 +238,35 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
       });
       
       try {
-        // Log detailed profile update attempt
-        console.log("Submitting profile update with credentials...", {
+        // Log update attempt
+        console.log("Submitting profile update using TanStack mutation...", {
           firstName: updateData.firstName,
           lastName: updateData.lastName,
           hasMajor: !!updateData.major,
-          majorType: typeof updateData.major
+          contactId: updateData.contactId
         });
         
-        // Mark as submitted to prevent double submissions
+        // Mark as submitting to prevent double submissions
+        setIsSubmitting(true);
         setHasSubmitted(true);
         
-        // Use our centralized update function with cache invalidation
-        // This now includes credentials: 'include' to ensure cookies are sent
-        const updatedProfile = await updateProfileData(updateData, queryClient);
-        
-        // Mark success state
-        setWasSuccessful(true);
-        console.log("Profile update successful!");
-        
-        // Small delay to ensure state updates are processed before proceeding
-        await new Promise(resolve => setTimeout(resolve, 50));
-        
-        // Call the component's onSave callback with the updated profile
-        if (onSave && typeof onSave === 'function') {
-          onSave(updatedProfile);
-        }
-        
-        // Close the modal
-        onClose();
+        // Use the TanStack mutation hook
+        // This handles optimistic updates, error handling, and cache invalidation
+        await updateProfile.mutateAsync(updateData, {
+          onSuccess: (data) => {
+            // Mark success state
+            setWasSuccessful(true);
+            console.log("Profile update successful!");
+            
+            // Call the component's onSave callback with the updated profile
+            if (onSave && typeof onSave === 'function') {
+              onSave(data);
+            }
+            
+            // Close the modal after a small delay to ensure state updates
+            setTimeout(() => onClose(), 50);
+          }
+        });
       } catch (updateError) {
         console.error("Error updating profile:", updateError);
         
