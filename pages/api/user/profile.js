@@ -329,33 +329,31 @@ async function handleVerifiedPatchRequest(req, res) {
     // Perform the update directly
     const updatedProfile = await updateUserProfile(contactId, airtableData);
     
-    // Fetch complete profile to return if possible
-    let completeProfile = null;
-    try {
-      // Try to get the complete profile data but with a timeout
-      completeProfile = await Promise.race([
-        getCompleteUserProfile({ sub: `auth0|${contactId}` }), // Fake user object
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error("Complete profile fetch timed out")), 3000))
-      ]);
-    } catch (profileError) {
-      console.warn('Could not fetch complete profile after update:', profileError.message);
-    }
+    // Skip trying to get the complete profile - it won't work without a real Auth0 session
+    // Instead, just return a simplified response with the updated fields
+    const simplifiedProfile = {
+      contactId,
+      ...updateData,
+      // Include programId to match the format expected by the ProfileEditModal
+      programId: updateData.major,
+      // Flag as updated
+      updated: true,
+      // Add timestamp for cache invalidation
+      updatedAt: new Date().toISOString()
+    };
     
-    // Return the response with either the complete profile or a simplified version
+    console.log('Returning simplified profile after update');
+    
+    // Return the simplified response
     return res.status(200).json({
-      profile: completeProfile || {
-        contactId,
-        ...updateData,
-        ...updatedProfile,
-        updated: true
-      },
+      profile: simplifiedProfile,
       _meta: {
         verifiedUpdate: true,
         timestamp: new Date().toISOString(),
         processingTime: Date.now() - startTime,
         auth: 'query-parameter',
-        complete: !!completeProfile
+        complete: false,
+        simplified: true
       }
     });
   } catch (error) {
