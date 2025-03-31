@@ -1,4 +1,4 @@
-import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import { auth0 } from "@/lib/auth0";
 import { 
   getUserByAuth0Id,
   updateUserProfile 
@@ -13,10 +13,16 @@ export const runtime = 'nodejs';
  * User Profile API - Protected with Auth0
  * Refactored to use Auth0 v4 best practices and domain-driven design
  */
-export default withApiAuthRequired(async function handler(req, res) {
+export default async function handler(req, res) {
   try {
-    // Get session using Auth0 v4 withApiAuthRequired + getSession pattern
-    const { user } = await getSession(req, res);
+    // Get Auth0 session and validate user is authenticated
+    const session = await auth0.getSession(req, res);
+    if (!session) {
+      return res.status(401).json({
+        error: 'Not authenticated'
+      });
+    }
+    const { user } = session;
     
     // Set standard headers for all responses
     res.setHeader('Cache-Control', 'no-store, private, no-cache, must-revalidate');
@@ -64,7 +70,7 @@ export default withApiAuthRequired(async function handler(req, res) {
       message: error.message
     });
   }
-});
+};
 
 /**
  * Handle GET requests for user profile

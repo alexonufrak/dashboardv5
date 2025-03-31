@@ -1,4 +1,4 @@
-import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import { auth0 } from "@/lib/auth0";
 import { getUserByAuth0Id } from '../../../lib/airtable/entities/users';
 
 // Force Node.js runtime for Auth0 compatibility
@@ -8,13 +8,13 @@ export const runtime = 'nodejs';
  * Debug endpoint to check authentication status and session details
  * Provides information about the current session for troubleshooting
  */
-export default withApiAuthRequired(async function handler(req, res) {
+export default async function handler(req, res) {
   try {
     // Record start time to measure performance
     const startTime = Date.now();
     
     // Get session information using Auth0 SDK
-    const session = await getSession(req, res);
+    const session = await auth0.getSession(req, res);
     
     // Reject if no session
     if (!session || !session.user) {
@@ -117,4 +117,4 @@ export default withApiAuthRequired(async function handler(req, res) {
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
-});
+};

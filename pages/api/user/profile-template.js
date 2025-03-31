@@ -1,4 +1,4 @@
-import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
+import { auth0 } from "@/lib/auth0";
 import { getUserProfile, updateUserProfile } from '../../../lib/airtable';
 
 // Force Node.js runtime for Auth0 compatibility
@@ -8,10 +8,16 @@ export const runtime = 'nodejs';
  * Template for protected API route with Auth0 v4
  * This follows the recommended approach from Auth0 documentation
  */
-export default withApiAuthRequired(async function handler(req, res) {
+export default async function handler(req, res) {
   try {
     // Get Auth0 session - this validates the user is authenticated
-    const { user } = await getSession(req, res);
+    const session = await auth0.getSession(req, res);
+    if (!session) {
+      return res.status(401).json({
+        error: 'Not authenticated'
+      });
+    }
+    const { user } = session;
 
     // Set common headers
     res.setHeader('Cache-Control', 'no-store, private, no-cache, must-revalidate');
@@ -45,7 +51,7 @@ export default withApiAuthRequired(async function handler(req, res) {
       message: error.message,
     });
   }
-});
+};
 
 /**
  * Handle GET request to fetch user profile

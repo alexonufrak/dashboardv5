@@ -11,13 +11,13 @@ This document describes the comprehensive refactoring of the xFoundry Dashboard'
 1. Fix authentication failures during profile updates where cookies weren't being sent with PATCH requests
 2. Implement a clean, modern approach following Auth0 v4 best practices
 3. Simplify Auth0 configuration and middleware
-4. Use withApiAuthRequired for consistent API route protection
+4. Use Auth0 SDK for consistent API route protection
 
 ### Implementation
 
 #### 1. Auth0 Configuration (lib/auth0.js)
 
-The Auth0 client configuration was simplified to rely on environment variables with minimal customization:
+The Auth0 client configuration was enhanced to provide more features:
 
 ```javascript
 export const auth0 = new Auth0Client({
@@ -35,6 +35,49 @@ export const auth0 = new Auth0Client({
     // Always store ID Token in session
     storeIDToken: true
   },
+  
+  // Default authorization parameters
+  authorizationParameters: {
+    scope: 'openid profile email'
+  },
+  
+  // Standard routes - these match our existing routes
+  routes: {
+    callback: '/auth/callback',
+    login: '/auth/login',
+    logout: '/auth/logout'
+  },
+  
+  // Custom session enhancement - adds user metadata to session
+  async onSessionCreated({ session, user }) {
+    // Add custom claims to session
+    session.user.firstName = user.given_name || user.name?.split(' ')[0] || '';
+    session.user.lastName = user.family_name || user.name?.split(' ').slice(1).join(' ') || '';
+    
+    // Add user metadata from Auth0 if available
+    if (user.user_metadata) {
+      // Copy specific metadata fields to the session
+      const {
+        contactId, airtableId, institutionId, institution,
+        firstName, lastName, referralSource, onboarding,
+        onboardingCompleted, selectedCohort
+      } = user.user_metadata;
+      
+      // Add fields to session if they exist
+      if (contactId) session.user.contactId = contactId;
+      if (airtableId) session.user.airtableId = airtableId;
+      if (institutionId) session.user.institutionId = institutionId;
+      if (institution) session.user.institution = institution;
+      if (firstName) session.user.firstName = firstName;
+      if (lastName) session.user.lastName = lastName;
+      if (referralSource) session.user.referralSource = referralSource;
+      if (onboarding) session.user.onboarding = onboarding;
+      if (typeof onboardingCompleted !== 'undefined') session.user.onboardingCompleted = onboardingCompleted;
+      if (selectedCohort) session.user.selectedCohort = selectedCohort;
+    }
+    
+    return session;
+  }
 });
 ```
 
@@ -70,19 +113,26 @@ export async function middleware(request) {
 
 #### 3. API Route Protection
 
-All API routes were refactored to use withApiAuthRequired:
+API routes were refactored to use a consistent auth0.getSession pattern instead of the withApiAuthRequired wrapper:
 
 ```javascript
-import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
-
-export default withApiAuthRequired(async function handler(req, res) {
+// Standard pattern for protected API routes
+export default async function handler(req, res) {
   try {
-    const { user } = await getSession(req, res);
+    // Get Auth0 session and validate user is authenticated
+    const session = await auth0.getSession(req, res);
+    if (!session) {
+      return res.status(401).json({
+        error: 'Not authenticated'
+      });
+    }
+    const { user } = session;
+    
     // API handler logic
   } catch (error) {
     // Error handling
   }
-});
+}
 ```
 
 #### 4. PATCH Request Workaround
@@ -90,16 +140,19 @@ export default withApiAuthRequired(async function handler(req, res) {
 A workaround was implemented for profile update PATCH requests to handle SameSite cookie issues in some browsers:
 
 ```javascript
-// In useUpdateProfile hook
-const method = "POST";
-const modifiedData = {
-  ...dataToSend,
-  _method: "PATCH" // Signal to server this should be treated as PATCH
-};
-
 // In API handler
-if (req.method === 'POST' && req.body._method?.toUpperCase() === 'PATCH') {
-  return handleUpdateRequest(req, res, user, startTime);
+switch (req.method) {
+  case 'PATCH':
+  case 'PUT':
+    return handleUpdateRequest(req, res, user, startTime);
+  
+  case 'POST':
+    // Special case for POST with _method override
+    const method = req.body._method?.toUpperCase();
+    if (method === 'PATCH') {
+      return handleUpdateRequest(req, res, user, startTime);
+    }
+    // Handle normal POST...
 }
 ```
 
@@ -150,115 +203,29 @@ lib/
 
 #### 1. Core Utilities
 
-**Client (client.js)**: Handles Airtable client initialization and provides query execution with error handling:
+**Client (client.js)**: Handles Airtable client initialization and provides query execution with error handling.
 
-```javascript
-export function executeQuery(queryFn) {
-  try {
-    return await queryFn();
-  } catch (error) {
-    // Enhanced error handling with request ID, timestamps, etc.
-    throw enhancedError;
-  }
-}
-```
+**Cache (cache.js)**: Provides a consistent caching mechanism with TTL support.
 
-**Cache (cache.js)**: Provides a consistent caching mechanism:
+**Throttle (throttle.js)**: Prevents rate limiting issues with request spacing.
 
-```javascript
-export function getCachedOrFetch(cacheKey, fetchFn, ttl = 300, retryCount = 0) {
-  // Cache check logic
-  // Fetch and cache logic with retry capabilities
-  // Stale data handling
-}
-```
-
-**Throttle (throttle.js)**: Prevents rate limiting issues:
-
-```javascript
-export async function throttleRequests() {
-  // Rate limit calculation
-  // Request timing and tracking
-  // Delay calculation when needed
-}
-```
-
-**Errors (errors.js)**: Standardized error handling:
-
-```javascript
-export class AirtableError extends Error {
-  // Enhanced error type with context
-}
-
-export function handleAirtableError(error, operation, context = {}) {
-  // User-friendly error messages based on error type
-}
-```
+**Errors (errors.js)**: Standardized error handling with useful context.
 
 #### 2. Table Definitions
 
-Table definitions provide abstracted access to Airtable tables:
-
-```javascript
-export function getTable(tableId) {
-  // Table caching and access logic
-}
-
-export function getContactsTable() {
-  return getTable('CONTACTS');
-}
-```
+Table definitions provide abstracted access to Airtable tables with cleaner internal naming.
 
 #### 3. Entity Operations
 
-Entity modules provide domain-specific operations:
+Entity modules provide domain-specific operations for different business entities:
 
-**Users (users.js)**:
-```javascript
-export async function getUserByAuth0Id(auth0Id, options = {}) {
-  // Cached fetching with consistent patterns
-}
-
-export async function updateUserProfile(contactId, data) {
-  // Update logic with proper error handling
-}
-```
-
-**Education (education.js)**:
-```javascript
-export async function getEducation(educationId, options = {}) {
-  // Education record fetching
-}
-
-export async function updateEducation(data) {
-  // Education update logic
-}
-```
+- **Users (users.js)**: User profile management
+- **Education (education.js)**: Education data operations
+- **Institutions (institutions.js)**: Institution data operations
 
 #### 4. React Query Hooks
 
-These hooks provide React components with access to the data layer:
-
-```javascript
-export function useProfileData() {
-  return useQuery({
-    queryKey: ['profile'],
-    queryFn: async () => {
-      // API call logic
-    },
-    // Query configuration
-  });
-}
-
-export function useUpdateProfile() {
-  return useMutation({
-    mutationFn: async (updatedData) => {
-      // Update API call
-    },
-    // Optimistic updates, error handling, cache invalidation
-  });
-}
-```
+These hooks provide React components with access to the data layer using React Query.
 
 ### Benefits of Domain-Driven Design
 
@@ -269,102 +236,21 @@ export function useUpdateProfile() {
 5. **Testability**: Isolated modules are easier to test
 6. **Error Handling**: Consistent error handling improves user experience
 
-## Example API Implementation
+## Implementation Progress
 
-The `/api/user/profile.js` endpoint showcases the integration of Auth0 v4 best practices with the new domain-driven design:
+The initial refactoring included:
 
-```javascript
-import { withApiAuthRequired, getSession } from '@auth0/nextjs-auth0';
-import { 
-  getUserByAuth0Id,
-  updateUserProfile 
-} from "../../../lib/airtable/entities/users";
-import { 
-  getEducation, 
-  updateEducation 
-} from "../../../lib/airtable/entities/education";
-
-export default withApiAuthRequired(async function handler(req, res) {
-  // Get session using Auth0 v4 withApiAuthRequired + getSession pattern
-  const { user } = await getSession(req, res);
-  
-  // Method handling with support for _method override
-  switch (req.method) {
-    case 'GET':
-      return handleGetRequest(req, res, user);
-    case 'PATCH':
-    case 'PUT':
-      return handleUpdateRequest(req, res, user);
-    case 'POST':
-      // Special case for POST with _method override
-      if (req.body._method?.toUpperCase() === 'PATCH') {
-        return handleUpdateRequest(req, res, user);
-      }
-      // ...
-  }
-});
-
-async function handleGetRequest(req, res, user) {
-  // Get the user profile from our entity layer
-  const baseProfile = await getUserByAuth0Id(user.sub);
-  
-  // Fetch education and institution data if available
-  const educationData = await getEducation(educationId);
-  
-  // Build complete profile with related data
-  // Return response
-}
-
-async function handleUpdateRequest(req, res, user) {
-  // Extract update data
-  const { contactId, ...updateData } = req.body;
-  
-  // Update user profile
-  await updateUserProfile(contactId, enhancedUpdateData);
-  
-  // Update education data if needed
-  await updateEducation(educationData);
-  
-  // Return success response
-}
-```
-
-## Testing and Verification
-
-A new debug endpoint was created at `/api/debug/auth-status.js` to help diagnose authentication issues:
-
-```javascript
-export default withApiAuthRequired(async function handler(req, res) {
-  // Get session information
-  const session = await getSession(req, res);
-  
-  // Fetch Airtable user data
-  const profileData = await getUserByAuth0Id(session.user.sub);
-  
-  // Return sanitized debug information
-  return res.status(200).json({
-    status: 'authenticated',
-    session: sanitizedSession,
-    profile: profileData ? {
-      // Sanitized profile data
-    } : null,
-    request: {
-      // Request information for debugging
-    },
-    // Environment information
-  });
-});
-```
+1. Setting up the new folder structure
+2. Implementing core utilities (client, cache, throttle, errors)
+3. Creating table definitions
+4. Implementing initial entity modules (users, education, institutions) 
+5. Creating a debug endpoint for authentication testing
+6. Refactoring the profile API endpoint to use the new design
 
 ## Next Steps
 
 1. **Complete Entity Modules**: Implement remaining entity modules (participation, teams, etc.)
-2. **React Query Hooks**: Develop the complete set of React Query hooks
-3. **API Updates**: Refactor remaining API endpoints to use the new architecture
-4. **Component Updates**: Update React components to use the new hooks
-5. **Legacy Code Removal**: Remove the monolithic airtable.js file after all functionality is migrated
-6. **Testing and Validation**: Comprehensive testing of all refactored functionality
-
-## Conclusion
-
-This refactoring addresses the authentication issues while simultaneously improving the overall architecture through domain-driven design. The new approach is more maintainable, better organized, and follows modern best practices for both Auth0 integration and data access.
+2. **Develop React Query Hooks**: Create the complete set of React Query hooks
+3. **Refactor API Endpoints**: Update remaining API endpoints to use the new pattern
+4. **Update Components**: Modify React components to use the new hooks
+5. **Remove Legacy Code**: Gradually replace the monolithic airtable.js file
