@@ -4,6 +4,8 @@
 
 We fixed a persistent issue where profile updates were failing with `401 Unauthorized` errors despite the user being properly authenticated. The core problem was that the browser wasn't sending authentication cookies with PATCH requests due to security policies around secure cookies.
 
+**UPDATE (March 31, 2025)**: Additional debugging revealed that in some cases the `appSession` cookie is completely missing from PATCH requests, causing authentication failures. Enhanced logging shows `hasCookies: false` and empty `cookieNames` array in these cases. We've added explicit runtime configuration for the API endpoint to ensure compatibility.
+
 ## Key Insights
 
 1. **Secure Cookies and HTTPS**: Modern browsers require cookies marked as `secure` to be sent over HTTPS. This is especially enforced for "non-simple" HTTP methods like PATCH.
@@ -55,16 +57,27 @@ cookie: {
 
 ### 3. API Route CORS Handling
 
-**What Changed**: Added proper CORS handlers for OPTIONS requests and simplified the API route implementation.
+**What Changed**: Added proper CORS handlers for OPTIONS requests, improved debugging, and set explicit Node.js runtime.
 
-**Why**: PATCH requests trigger preflight OPTIONS requests that need correct CORS headers to maintain authentication.
+**Why**: PATCH requests trigger preflight OPTIONS requests that need correct CORS headers to maintain authentication. Edge Runtime has compatibility issues with Auth0.
 
 ```javascript
-// Added OPTIONS handler
+// Force Node.js runtime for Auth0 compatibility
+export const runtime = 'nodejs';
+
+// Extract cookie names for debugging
+const cookieNames = req.headers.cookie 
+  ? req.headers.cookie.split(';')
+      .map(c => c.trim())
+      .map(c => c.split('=')[0]) 
+  : [];
+
+// Enhanced OPTIONS handler
 if (req.method === 'OPTIONS') {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, PATCH, POST, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('Access-Control-Max-Age', '86400');
   return res.status(200).end();
 }
 ```
@@ -128,3 +141,7 @@ As requested, our approach to this project focuses on:
 3. **Browser Compatibility**: The current solution works across modern browsers, but if supporting older browsers becomes necessary, additional configuration might be needed.
 
 4. **Monitoring**: Keep an eye on authentication errors in logs to identify any regressions or new issues that might emerge.
+
+5. **Edge Runtime Compatibility**: Consider alternatives to using Auth0 in Edge Runtime contexts, as it relies on Node.js APIs that aren't supported in Edge environments.
+
+6. **Centralized API Authentication**: We identified multiple code paths handling profile updates inconsistently. Consider further consolidating authentication logic through a centralized client-side fetch utility that always ensures proper credentials are included.

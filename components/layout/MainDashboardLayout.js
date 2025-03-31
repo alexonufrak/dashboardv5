@@ -157,33 +157,25 @@ const MainDashboardLayout = ({
   }
 
   // Normal content state
-  // Define update profile handler
+  // Define update profile handler using centralized logic
   const handleProfileUpdate = async (updatedProfile) => {
     try {
       if (dashboardContext?.updateProfile) {
         // Use context handler if available
         await dashboardContext.updateProfile(updatedProfile);
       } else {
-        // Otherwise fallback to API call using PATCH (not POST)
-        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://hub.xfoundry.org';
-        const apiUrl = new URL('/api/user/profile', baseUrl).toString();
+        // Import the update function from the centralized module
+        const { updateProfileData } = await import('@/lib/useDataFetching');
         
-        console.log('Updating profile via PATCH request to:', apiUrl);
+        // Get React Query client from the global instance
+        // This avoids using the hook outside of a component
+        const { QueryClient } = await import('@tanstack/react-query');
+        const queryClient = window.__REACT_QUERY_GLOBAL_CLIENT__ || new QueryClient();
         
-        const response = await fetch(apiUrl, {
-          method: 'PATCH', // Use PATCH instead of POST to match API expectations
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include', // Include cookies for auth
-          body: JSON.stringify(updatedProfile),
-        });
+        console.log('Using centralized updateProfileData function');
         
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Profile update failed:', response.status, errorText);
-          throw new Error(`Failed to update profile: ${response.status} ${response.statusText}`);
-        }
+        // Use the centralized function with proper error handling
+        await updateProfileData(updatedProfile, queryClient);
       }
       
       // Close modal after updating

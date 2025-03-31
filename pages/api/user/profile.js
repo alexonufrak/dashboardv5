@@ -2,6 +2,9 @@ import { getCompleteUserProfile } from "../../../lib/userProfile"
 import { updateUserProfile } from "../../../lib/airtable"
 import { auth0 } from "../../../lib/auth0"
 
+// Force Node.js runtime for Auth0 compatibility
+export const runtime = 'nodejs';
+
 // Handle GET requests for user profile
 async function handleGetRequest(req, res, session, startTime) {
   try {
@@ -189,7 +192,7 @@ export default async function handler(req, res) {
     const startTime = Date.now();
     
     // Set headers to prevent server/CDN caching
-    res.setHeader('Cache-Control', 'no-store, private, no-cache, must-revalidate');
+    res.setHeader('Cache-Control', 'no-store, private, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     
@@ -200,7 +203,7 @@ export default async function handler(req, res) {
     // Handle OPTIONS request for CORS preflight
     if (req.method === 'OPTIONS') {
       res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, PATCH, POST, DELETE, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
       res.setHeader('Access-Control-Max-Age', '86400'); // 24 hours
       return res.status(200).end();
     }
