@@ -67,9 +67,22 @@ export default async function handler(req, res) {
     }
   } catch (error) {
     console.error('Profile API error:', error);
-    return res.status(500).json({
+    
+    // Check for specific Airtable schema errors
+    let errorMessage = error.message;
+    let statusCode = 500;
+    
+    if (error.message && error.message.includes('Unknown field name')) {
+      errorMessage = 'Database schema error: Unknown field name referenced. The schema may have changed. Please contact support.';
+      console.error('Schema error detected. Original error:', error.message);
+      statusCode = 422; // Unprocessable entity
+    }
+    
+    return res.status(statusCode).json({
       error: 'Internal server error',
-      message: error.message
+      message: errorMessage,
+      errorType: error.name || 'UnknownError',
+      statusCode
     });
   }
 };
@@ -148,21 +161,30 @@ async function handleGetRequest(req, res, user, startTime) {
         
         // Education data
         educationId: educationId,
-        degreeType: educationData?.degreeType || baseProfile["Degree Type (from Education)"]?.[0] || "",
-        major: educationData?.majorName || baseProfile["Major (from Education)"]?.[0] || "",
-        programId: educationData?.major?.[0] || null,
-        graduationYear: educationData?.graduationYear || baseProfile["Graduation Year (from Education)"]?.[0] || "",
-        graduationSemester: educationData?.graduationSemester || baseProfile["Graduation Semester (from Education)"]?.[0] || "",
+        degreeType: educationData?.degreeType || 
+                   baseProfile["Degree Type (from Education)"]?.[0] || 
+                   baseProfile.degreeType || "",
+        major: educationData?.majorName || 
+              baseProfile["Major (from Education)"]?.[0] || 
+              baseProfile.majorName || 
+              baseProfile.major || "",
+        programId: educationData?.major?.[0] || baseProfile.programId || null,
+        graduationYear: educationData?.graduationYear || 
+                      baseProfile["Graduation Year (from Education)"]?.[0] || 
+                      baseProfile.graduationYear || "",
+        graduationSemester: educationData?.graduationSemester || 
+                          baseProfile["Graduation Semester (from Education)"]?.[0] || 
+                          baseProfile.graduationSemester || "",
         
         // Institution data
         institution: {
           id: institutionData?.id || educationData?.institution?.[0] || null,
-          name: institutionData?.name || educationData?.institutionName?.[0] || 
-                baseProfile["Name (from Institution (from Education))"]?.[0] || "Not specified"
+          name: institutionData?.name || educationData?.institutionName || 
+                baseProfile.institutionName || "Not specified"
         },
         institutionId: institutionData?.id || educationData?.institution?.[0] || null,
-        institutionName: institutionData?.name || educationData?.institutionName?.[0] || 
-                        baseProfile["Name (from Institution (from Education))"]?.[0] || "Not specified",
+        institutionName: institutionData?.name || educationData?.institutionName || 
+                        baseProfile.institutionName || "Not specified",
         
         // Other profile data
         referralSource: baseProfile["Referral Source"] || "",
@@ -171,15 +193,22 @@ async function handleGetRequest(req, res, user, startTime) {
           ? baseProfile.Headshot[0].url 
           : null,
         
-        // Determine if profile is complete
+        // Determine if profile is complete - with extra fallbacks for field names
         isProfileComplete: Boolean(
           baseProfile.firstName &&
           baseProfile.lastName &&
-          (educationData?.degreeType || baseProfile["Degree Type (from Education)"]?.[0]) &&
-          (educationData?.graduationYear || baseProfile["Graduation Year (from Education)"]?.[0]) &&
-          ((institutionData?.name || educationData?.institutionName?.[0] || 
-            baseProfile["Name (from Institution (from Education))"]?.[0]) && 
-           (institutionData?.id || educationData?.institution?.[0]))
+          (educationData?.degreeType || 
+           baseProfile["Degree Type (from Education)"]?.[0] || 
+           baseProfile.degreeType) &&
+          (educationData?.graduationYear || 
+           baseProfile["Graduation Year (from Education)"]?.[0] || 
+           baseProfile.graduationYear) &&
+          ((institutionData?.name || 
+            educationData?.institutionName || 
+            baseProfile.institutionName) && 
+           (institutionData?.id || 
+            educationData?.institution?.[0] || 
+            baseProfile.institutionId))
         ),
         
         // Add timestamp for caching and debugging
@@ -203,18 +232,41 @@ async function handleGetRequest(req, res, user, startTime) {
   } catch (error) {
     console.error("Error fetching profile:", error);
     
-    // Return basic profile as fallback
+    // Analyze the error to provide more helpful responses
+    const isAirtableSchemaError = error.message && (
+      error.message.includes('Unknown field name') || 
+      error.message.includes('UNKNOWN_FIELD_NAME')
+    );
+    
+    const isNetworkError = error.code === 'ECONNRESET' || 
+                         error.code === 'ETIMEDOUT' || 
+                         error.name === 'AbortError';
+    
+    // Log additional details for debugging
+    if (isAirtableSchemaError) {
+      console.error('Airtable schema error detected:', error.message);
+    } else if (isNetworkError) {
+      console.error('Network error when communicating with Airtable:', error.message);
+    }
+    
+    // Return basic profile as fallback so the app doesn't completely break
     return res.status(200).json({
       profile: {
         auth0Id: user.sub,
         email: user.email,
         name: user.name,
+        firstName: user.given_name || user.name?.split(' ')[0] || '',
+        lastName: user.family_name || user.name?.split(' ').slice(1).join(' ') || '',
         picture: user.picture,
         isProfileComplete: false,
       },
       _meta: {
-        error: error.message,
-        timestamp: new Date().toISOString()
+        error: isAirtableSchemaError 
+               ? 'Database schema error: The database structure may have changed. Please contact support.'
+               : error.message,
+        errorType: error.name || 'UnknownError',
+        timestamp: new Date().toISOString(),
+        errorCode: error.code || error.statusCode
       }
     });
   }
