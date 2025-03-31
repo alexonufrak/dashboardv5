@@ -216,15 +216,28 @@ export default async function handler(req, res) {
     // Get Auth0 session - just once, at the top level
     let session;
     try {
+      // Extract cookie names for detailed debugging (without exposing values)
+      const cookieNames = req.headers.cookie 
+        ? req.headers.cookie.split(';')
+            .map(c => c.trim())
+            .map(c => c.split('=')[0]) 
+        : [];
+      
       // Log detailed request info for debugging
       console.log('Auth request details:', {
         method: req.method,
         path: req.url,
         hasCookies: !!req.headers.cookie,
         cookieCount: req.headers.cookie?.split(';').length || 0,
+        cookieNames: cookieNames, // Added cookie names for better debugging
         hasAuthHeader: !!req.headers.authorization,
         origin: req.headers.origin || 'none'
       });
+      
+      // Check if appSession cookie is missing for PATCH requests
+      if (req.method === 'PATCH' && !cookieNames.includes('appSession')) {
+        console.error('Auth0 appSession cookie is missing for PATCH request - authentication will likely fail');
+      }
       
       session = await auth0.getSession(req);
       
@@ -232,7 +245,8 @@ export default async function handler(req, res) {
         console.error('Authentication failed - no valid session:', {
           method: req.method,
           path: req.url,
-          hasCookies: !!req.headers.cookie
+          hasCookies: !!req.headers.cookie,
+          cookieNames: cookieNames // Add cookie names to error log
         });
         
         // Add cache-control headers to ensure this 401 isn't cached
