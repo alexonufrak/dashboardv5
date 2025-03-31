@@ -122,97 +122,122 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     }));
   };
 
-  // Single submission entry point to ensure consistency
+  /**
+   * Handle form submission with proper TanStack Query integration
+   * 
+   * This function:
+   * 1. Validates the form data
+   * 2. Processes the form data to ensure it's in the correct format
+   * 3. Triggers the mutation using TanStack Query
+   * 4. Handles success and error states
+   */
   const handleFormSubmission = async (e) => {
-    // Immediately prevent any default form behavior
-    if (e) e.preventDefault();
+    // Prevent any default browser form submission behavior
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     
-    // Clear previous submission state on new submission attempt
+    // Reset error state
     setError(null);
     
-    // Guard against double submissions or submitting after completion
+    // Don't allow submitting if we're already in progress
     if (isSubmitting) {
-      console.log(`Ignoring duplicate submission attempt - already submitting`);
+      console.log(`Ignoring duplicate submission - already in progress`);
       return; 
     }
     
-    // If we previously submitted successfully, just close the modal
+    // If already submitted successfully, just close the modal
     if (hasSubmitted && wasSuccessful) {
       console.log('Already submitted successfully, closing modal');
       onClose();
       return;
     }
     
-    // Set submission state
+    // Mark submission as started
     setIsSubmitting(true);
-    
-    // Log that we're starting a submission attempt
     console.log("Beginning profile update submission...");
 
-    // Define validation function separately for clarity
+    /**
+     * Validate the form input values
+     * @returns {boolean} Whether the form is valid
+     */
     const validateForm = () => {
-      const validationErrors = [];
-      
       // Validate graduation year
       const graduationYear = formData.graduationYear;
       if (graduationYear) {
-        // Make sure it's 4 digits and a valid year
+        // Ensure it's a 4-digit year
         const yearPattern = /^[0-9]{4}$/;
         if (!yearPattern.test(graduationYear)) {
-          validationErrors.push("Please enter a valid 4-digit graduation year (e.g., 2025)");
+          setError("Please enter a valid 4-digit graduation year (e.g., 2025)");
           return false;
         }
         
+        // Ensure the year is within a reasonable range
         const yearValue = parseInt(graduationYear, 10);
         const currentYear = new Date().getFullYear();
-        
-        // Check if it's a reasonable graduation year
         if (yearValue < currentYear - 10 || yearValue > currentYear + 10) {
-          validationErrors.push(`Graduation year ${yearValue} seems unusual. Please verify and try again.`);
+          setError(`Graduation year ${yearValue} seems unusual. Please verify.`);
           return false;
         }
+      }
+      
+      // Add validation for required fields
+      if (!formData.firstName?.trim()) {
+        setError("First name is required");
+        return false;
+      }
+      
+      if (!formData.lastName?.trim()) {
+        setError("Last name is required");
+        return false;
       }
       
       // All validations passed
       return true;
     };
     
-    // Process and normalize the form data to ensure it's in the correct format
+    /**
+     * Process and normalize the form data for the API
+     * @returns {Object} Processed form data
+     */
     const processFormData = () => {
-      // Create a deep copy to avoid mutating the original state object
+      // Create a deep copy to avoid mutating state
       const processedFormData = JSON.parse(JSON.stringify(formData));
       
-      // Validate major field format - must be a valid Airtable record ID
+      // Process major field - must be a valid Airtable record ID
       if (processedFormData.major && typeof processedFormData.major === 'string') {
+        // Ensure it's a valid Airtable record ID (starts with 'rec')
         if (!processedFormData.major.startsWith('rec')) {
-          console.error(`Invalid major ID format: "${processedFormData.major}"`);
+          console.log(`Processing non-standard major: "${processedFormData.major}"`);
           
-          // Try to find the correct record ID based on the name
+          // Try to match by name in the majors list
           const majorName = processedFormData.major;
           const matchingMajor = majors.find(m => m.name === majorName);
           
           if (matchingMajor) {
-            console.log(`Found matching major record ID for "${majorName}": ${matchingMajor.id}`);
+            // Found a match by name
+            console.log(`Found matching major ID: ${matchingMajor.id}`);
             processedFormData.major = matchingMajor.id;
           } else if (processedFormData.programId && processedFormData.programId.startsWith('rec')) {
-            // Fall back to the programId from the profile if it's valid
-            console.log(`Falling back to profile programId: ${processedFormData.programId}`);
+            // Fall back to existing programId
+            console.log(`Using existing programId: ${processedFormData.programId}`);
             processedFormData.major = processedFormData.programId;
           } else if (processedFormData.major.trim() === '') {
-            // If it's an empty string, set to null to clear the field
+            // Empty string = null (clear the field)
             processedFormData.major = null;
           } else {
-            // Last resort - if we can't resolve it, don't send an invalid value
-            console.warn(`Unable to resolve major field: "${processedFormData.major}". Setting to null.`);
+            // Unresolvable value - set to null
+            console.warn(`Unable to resolve major: "${processedFormData.major}"`);
             processedFormData.major = null;
           }
         }
-      } else if (processedFormData.major === undefined || processedFormData.major === null) {
-        // Explicitly set to null for API handling
+      } else {
+        // Explicit null for empty major
         processedFormData.major = null;
       }
       
-      // Add contact ID and institution ID to the data
+      // Ensure contactId and institutionId are included
       return {
         ...processedFormData,
         contactId: profile.contactId,
@@ -221,85 +246,66 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     };
 
     try {
-      // Run validation
+      // Step 1: Validate the form
       if (!validateForm()) {
-        throw new Error("Please correct the validation errors");
+        // Validation failed, allow resubmission
+        setIsSubmitting(false);
+        return;
       }
       
-      // Process the form data
+      // Step 2: Process the form data
       const updateData = processFormData();
       
-      // Log what we're about to submit
+      // Step 3: Mark submission as in progress
+      setHasSubmitted(true);
+      
+      // Log what we're submitting
       console.log("Submitting profile update:", {
         firstName: updateData.firstName,
         lastName: updateData.lastName,
-        major: updateData.major,
-        majorType: typeof updateData.major
+        major: updateData.major
       });
       
-      try {
-        // Log update attempt
-        console.log("Submitting profile update using TanStack mutation...", {
-          firstName: updateData.firstName,
-          lastName: updateData.lastName,
-          hasMajor: !!updateData.major,
-          contactId: updateData.contactId
-        });
-        
-        // Mark as submitting to prevent double submissions
-        setIsSubmitting(true);
-        setHasSubmitted(true);
-        
-        // Use the TanStack mutation hook
-        // This handles optimistic updates, error handling, and cache invalidation
-        await updateProfile.mutateAsync(updateData, {
-          onSuccess: (data) => {
-            // Mark success state
-            setWasSuccessful(true);
-            console.log("Profile update successful!");
-            
-            // Call the component's onSave callback with the updated profile
-            if (onSave && typeof onSave === 'function') {
-              onSave(data);
-            }
-            
-            // Close the modal after a small delay to ensure state updates
-            setTimeout(() => onClose(), 50);
+      // Step 4: Trigger the mutation using TanStack Query's mutation hook
+      // The mutation hook handles:
+      // - Optimistic updates (updating UI before API completes)
+      // - Error handling with automatic rollback
+      // - Proper cache invalidation to update all components
+      updateProfile.mutate(updateData, {
+        // These callbacks apply to this specific mutation call
+        // They supplement (not replace) the ones defined in the mutation hook
+        onSuccess: (data) => {
+          // Update component state on success
+          setWasSuccessful(true);
+          setIsSubmitting(false);
+          console.log("Profile update completed successfully");
+          
+          // Call the component's onSave callback with the updated profile
+          if (onSave && typeof onSave === 'function') {
+            onSave(data);
           }
-        });
-      } catch (updateError) {
-        console.error("Error updating profile:", updateError);
-        
-        // Handle authentication errors specially
-        if (updateError.message === "Not authenticated" || 
-            updateError.message?.includes("Session expired") ||
-            updateError.message?.includes("Invalid session") ||
-            updateError.message?.includes("401")) {
           
-          // Show a specific error for authentication issues
-          setError(
-            "Your session has expired. Please save your changes, refresh the page, and try again."
-          );
-          
-          // Suggest refreshing the page to fix auth issues
-          console.log("Auth error detected, user should refresh the page to restore session");
-        } else {
-          // For other errors, show the message or a generic fallback
-          setError(updateError.message || "Failed to update profile");
+          // Close the modal after a short delay
+          setTimeout(() => onClose(), 100);
+        },
+        onError: (error) => {
+          // Handle errors specific to this component
+          console.error("Profile update failed:", error);
+          setIsSubmitting(false);
+          setHasSubmitted(false);
+          setError(error.message || "Failed to update profile");
         }
-        
-        // Allow resubmission if the error is recoverable - but only for non-success cases
-        setHasSubmitted(false);
-        setWasSuccessful(false);
-      }
-    } catch (validationErr) {
-      console.error("Error in profile validation:", validationErr);
-      setError(validationErr.message || "Failed to validate profile data");
+      });
+    } catch (error) {
+      // Handle general errors (like validation failures or other JS errors)
+      console.error("Error in profile update process:", error);
       
-      // Allow resubmission if validation fails
-      setHasSubmitted(false);
-    } finally {
+      // Display the error message
+      setError(error.message || "An unexpected error occurred");
+      
+      // Reset submission state to allow retrying
       setIsSubmitting(false);
+      setHasSubmitted(false);
     }
   };
 
@@ -513,9 +519,19 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
             </Button>
             <Button 
               type="button" 
-              disabled={isSubmitting || hasSubmitted}
+              disabled={isSubmitting}
               className={wasSuccessful ? "bg-green-600 hover:bg-green-700" : ""}
-              onClick={handleFormSubmission}
+              onClick={(e) => {
+                // Explicitly prevent any default browser behaviors
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Avoid any form submission, handle everything through TanStack Query
+                handleFormSubmission(e);
+                
+                // Return false to further prevent any default behaviors
+                return false;
+              }}
             >
               {isSubmitting 
                 ? "Saving..." 
