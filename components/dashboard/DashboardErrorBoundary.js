@@ -43,8 +43,8 @@ class DashboardErrorBoundary extends React.Component {
   }
 
   handleLogout = () => {
-    // Redirect to logout URL
-    window.location.href = '/api/auth/logout';
+    // Redirect to Auth0 v4 logout URL
+    window.location.href = '/auth/logout';
   }
 
   formatComponentStack(componentStack) {

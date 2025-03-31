@@ -214,14 +214,42 @@ export default async function handler(req, res) {
     }
     
     // Get Auth0 session - just once, at the top level
-    const session = await auth0.getSession(req);
-    if (!session || !session.user) {
-      console.error('Authentication failed:', {
+    let session;
+    try {
+      // Log detailed request info for debugging
+      console.log('Auth request details:', {
         method: req.method,
         path: req.url,
-        hasCookies: !!req.headers.cookie
+        hasCookies: !!req.headers.cookie,
+        cookieCount: req.headers.cookie?.split(';').length || 0,
+        hasAuthHeader: !!req.headers.authorization,
+        origin: req.headers.origin || 'none'
       });
-      return res.status(401).json({ error: 'Not authenticated' });
+      
+      session = await auth0.getSession(req);
+      
+      if (!session || !session.user) {
+        console.error('Authentication failed - no valid session:', {
+          method: req.method,
+          path: req.url,
+          hasCookies: !!req.headers.cookie
+        });
+        
+        // Add cache-control headers to ensure this 401 isn't cached
+        res.setHeader('Cache-Control', 'no-store, private, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        
+        return res.status(401).json({ 
+          error: 'Not authenticated',
+          message: 'Session validation failed. Try refreshing the page or logging in again.'
+        });
+      }
+    } catch (authError) {
+      console.error('Auth0 getSession error:', authError);
+      return res.status(401).json({ 
+        error: 'Authentication error',
+        message: authError.message || 'Failed to validate session'
+      });
     }
     
     // Simple logging request details
