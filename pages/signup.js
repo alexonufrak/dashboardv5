@@ -302,7 +302,8 @@ export default function SignUp() {
     
     // Redirect directly to Google authentication, bypassing Auth0 login screen
     // Use login_hint with connection=google-oauth2 to go straight to Google
-    window.location.href = `/api/auth/login?connection=google-oauth2&${queryParams.toString()}&prompt=login&login_hint=${encodedEmail}`;
+    // Updated to use Auth0 v4 path
+    window.location.href = `/auth/login?connection=google-oauth2&${queryParams.toString()}&prompt=login&login_hint=${encodedEmail}`;
   };
 
   if (isLoading) {
