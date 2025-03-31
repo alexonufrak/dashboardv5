@@ -41,3 +41,68 @@
 - `contexts/`: React Context providers
 - `public/`: Static assets
 - `styles/`: Global CSS with Tailwind
+
+## Auth0 v4 Implementation Guidelines
+
+### Auth0 Configuration
+- Auth0 client is initialized in `lib/auth0.js` using `Auth0Client` from `@auth0/nextjs-auth0/server`
+- Required environment variables: `AUTH0_SECRET`, `AUTH0_BASE_URL`, `AUTH0_ISSUER_BASE_URL`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`
+- Configuration includes session settings, authorization parameters, routes, and callbacks
+
+### API Route Protection
+API routes should be protected using the auth0 client directly from `lib/auth0.js`:
+
+```javascript
+import { auth0 } from "@/lib/auth0";
+
+export default async function handler(req, res) {
+  try {
+    // Get Auth0 session and validate user is authenticated
+    const session = await auth0.getSession(req, res);
+    if (!session) {
+      return res.status(401).json({
+        error: 'Not authenticated'
+      });
+    }
+    const { user } = session;
+    
+    // API handler logic
+  } catch (error) {
+    // Error handling
+  }
+}
+```
+
+### User Sessions
+- Use `auth0.getSession()` to retrieve user sessions on the server
+- Use the `useUser()` hook from `@auth0/nextjs-auth0/client` to access user data in client components
+- For updating sessions, use `auth0.updateSession()`
+
+### Login/Logout Flow
+- For login: `<a href="/auth/login">Login</a>`
+- For logout: `<a href="/auth/logout">Logout</a>`
+
+### Cookie Domain Configuration
+Set cookie domain only in production to allow localhost in development:
+```javascript
+cookie: {
+  domain: process.env.NODE_ENV === 'production' ? '.xfoundry.org' : undefined
+}
+```
+
+### POST Method Override
+For profile updates, use POST with a `_method` parameter to handle SameSite cookie issues:
+```javascript
+// API handler
+if (req.method === 'POST' && req.body._method?.toUpperCase() === 'PATCH') {
+  return handleUpdateRequest(req, res, user);
+}
+```
+
+## Airtable Domain-Driven Design
+The Airtable integration follows a domain-driven design pattern with:
+
+- `lib/airtable/core/` - Core utilities (client, cache, throttle, errors)
+- `lib/airtable/tables/` - Table definitions and schemas
+- `lib/airtable/entities/` - Entity-specific operations (users, education, etc.)
+- `lib/airtable/hooks/` - React Query hooks for frontend components
