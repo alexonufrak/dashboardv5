@@ -150,3 +150,6 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
 - Added proper cache clearing in the user profile endpoints
 - Addressed import errors in build process by re-exporting functions
 - Added new user profile-v2 and onboarding-completed routes using domain model architecture
+- Fixed profile update functionality by fully migrating to v2 endpoints
+- Created check-email-v2 endpoint using domain entities
+- Updated all profile hooks to use v2 endpoints consistently
