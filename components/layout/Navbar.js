@@ -33,7 +33,7 @@ const Navbar = () => {
       if (user && isProfileModalOpen && !profile) {
         setIsProfileLoading(true)
         try {
-          const response = await fetch("/api/user/profile")
+          const response = await fetch("/api/user/profile-v2")
           if (response.ok) {
             const data = await response.json()
             setProfile(data)
@@ -60,7 +60,7 @@ const Navbar = () => {
 
   const handleProfileUpdate = async (updatedData) => {
     try {
-      const response = await fetch("/api/user/profile", {
+      const response = await fetch("/api/user/profile-v2", {
         method: "PATCH", // Use PATCH instead of PUT to only update specified fields
         headers: {
           "Content-Type": "application/json",
