@@ -153,3 +153,4 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
 - Fixed profile update functionality by fully migrating to v2 endpoints
 - Created check-email-v2 endpoint using domain entities
 - Updated all profile hooks to use v2 endpoints consistently
+- Refactored components to use React Query hooks instead of direct API calls
