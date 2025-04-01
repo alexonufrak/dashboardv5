@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useMajors, updateProfileData, useUpdateProfile } from "@/lib/useDataFetching";
+import { useMajors } from "@/lib/useDataFetching";
+import { useUpdateProfile } from '@/lib/airtable/hooks/useProfile';
 
 const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
   const queryClient = useQueryClient();
