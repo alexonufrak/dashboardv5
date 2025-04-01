@@ -52,8 +52,11 @@ export function OnboardingProvider({ children }) {
   // Check onboarding status using the profile data from Airtable
   // This avoids a separate API call since the profile already has the onboarding status
   const checkOnboardingStatus = async (profileData) => {
+    // Prevent duplicate/simultaneous processing with refs
+    const profileDataId = profileData?.contactId || profileData?.email || JSON.stringify(profileData);
+    
     // Don't process the same profile data twice (prevents loops)
-    if (processedDataRef.current === profileData) {
+    if (processedDataRef.current === profileDataId) {
       console.log("Already checked this exact profile data, skipping");
       return;
     }
@@ -67,141 +70,93 @@ export function OnboardingProvider({ children }) {
     // Mark that we're processing a check
     processingRef.current = true;
     // Store reference to this profileData to avoid processing it again
-    processedDataRef.current = profileData;
+    processedDataRef.current = profileDataId;
     
     // Set loading state only if not already loading
     if (!isLoading) {
-      setIsLoading(true)
+      setIsLoading(true);
     }
     
     try {
-      console.log("Checking onboarding status from profile:", profileData?.contactId || "unknown")
+      console.log("Checking onboarding status from profile:", profileData?.contactId || "unknown");
       
-      // If we have a profile with onboarding data
+      // If we have a profile with onboarding data, use the isOnboardingComplete flag from the new API
       if (profileData) {
-        // Get participation data from all possible locations - this is CRITICAL for proper evaluation
-        // The participation data might be in different locations depending on the context/loading state
-        
-        // 1. Check directly on profile (participations, Participation arrays)
-        const participationArrays = profileData.participations || profileData.Participation;
-        
-        // 2. Check participationData.participation (nested from API/context)
-        const nestedParticipations = 
-          profileData.participationData && 
-          profileData.participationData.participation &&
-          Array.isArray(profileData.participationData.participation) ? 
-            profileData.participationData.participation : [];
-        
-        // Log detailed participation data for debugging
-        console.log("Detailed participation check:", {
-          directArrays: participationArrays ? 
-            (Array.isArray(participationArrays) ? participationArrays.length : "not array") : "not found",
-          nestedArray: nestedParticipations.length,
-          nestedFound: profileData.participationData ? "yes" : "no",
-          hasActiveFlag: profileData.hasActiveParticipation
-        });
-        
-        // Combine all participation checks - if ANY of them indicate participation, the user has participated
-        const hasParticipationRecords = (
-          // Direct arrays on profile
-          (participationArrays && Array.isArray(participationArrays) && participationArrays.length > 0) ||
-          // Nested participation data
-          (nestedParticipations.length > 0) ||
-          // Flag explicitly set on profile
-          profileData.hasActiveParticipation === true
-        );
-        
-        // Check if the user has applications records
+        // Use the explicit isOnboardingComplete flag from the refactored API if available
+        const isOnboardingComplete = profileData.isOnboardingComplete === true;
+        const hasParticipationRecords = profileData.hasActiveParticipation === true;
         const hasApplicationsRecords = profileData.applications && 
                                      Array.isArray(profileData.applications) && 
                                      profileData.applications.length > 0;
-                                     
-        // Log the participation status for debugging
-        console.log("Participation status check:", {
+        
+        // Get onboarding status from the profile - using consistent property name
+        const onboardingStatus = profileData.onboardingStatus || profileData.Onboarding || "Registered";
+        
+        // Log determination for debugging
+        console.log("Onboarding determination:", {
+          isOnboardingComplete,
+          onboardingStatus,
           hasParticipationRecords,
-          participationsDirect: participationArrays ? 
-            (Array.isArray(participationArrays) ? participationArrays.length : 0) : 0,
-          participationsNested: profileData.participationData && 
-                               profileData.participationData.participation ? 
-                               profileData.participationData.participation.length : 0,
-          hasActiveParticipationFlag: profileData.hasActiveParticipation,
-          hasApplicationsRecords,
-          applicationCount: hasApplicationsRecords ? profileData.applications.length : 0
+          hasApplicationsRecords
         });
         
-        // Get onboarding status directly from the profile
-        const onboardingStatus = profileData.Onboarding || "Registered" // Default to "Registered" if not set
-        console.log("Onboarding status from profile:", onboardingStatus)
-        
-        // Enhanced debug logging to show what data we're working with
-        console.log("Full profile data properties for onboarding:", {
-          hasOnboardingField: profileData.hasOwnProperty('Onboarding'),
-          onboardingValue: profileData.Onboarding,
-          hasParticipationsArray: Boolean(participationArrays),
-          participationsProperty: Boolean(profileData.hasOwnProperty('participations')),
-          participationProperty: Boolean(profileData.hasOwnProperty('Participation')),
-          hasParticipationData: Boolean(profileData.participationData),
-          hasActiveParticipationFlag: Boolean(profileData.hasActiveParticipation),
-          contactId: profileData.contactId
-        });
-        
-        // User has completed onboarding if:
-        // 1. Onboarding status is "Applied" OR
-        // 2. They have participation records OR
-        // 3. They have applications
-        if (onboardingStatus === "Applied" || hasParticipationRecords || hasApplicationsRecords) {
-          console.log("Onboarding considered completed because:", {
-            statusIsApplied: onboardingStatus === "Applied",
-            hasParticipationRecords,
-            hasApplicationsRecords
-          })
+        // User has completed onboarding if any of these are true
+        if (isOnboardingComplete || onboardingStatus === "Applied" || 
+            hasParticipationRecords || hasApplicationsRecords) {
           
           // Set state for completed onboarding
-          setOnboardingCompleted(true)
-          setForceDialogOpen(false) // Don't force dialog for completed users
-          setDialogOpen(false) // Close dialog if it was open
+          setOnboardingCompleted(true);
+          setForceDialogOpen(false); // Don't force dialog for completed users
+          setDialogOpen(false); // Close dialog if it was open
           
           // Mark both steps as completed
           setSteps(prevSteps => ({
             ...prevSteps,
-            register: {
-              ...prevSteps.register,
-              completed: true
-            },
-            selectCohort: {
-              ...prevSteps.selectCohort,
-              completed: true
-            }
-          }))
+            register: { ...prevSteps.register, completed: true },
+            selectCohort: { ...prevSteps.selectCohort, completed: true }
+          }));
           
           // If they have participation/applications but their status isn't "Applied",
           // update it in the background for consistency
           if (onboardingStatus !== "Applied" && (hasParticipationRecords || hasApplicationsRecords)) {
-            console.log("Updating onboarding status to 'Applied' for user with participation/applications")
-            // Update Airtable in the background (no await to prevent blocking)
-            fetch('/api/user/onboarding-completed', { method: 'POST' })
+            console.log("Updating onboarding status to 'Applied' for user with participation/applications");
+            
+            // Update Airtable in the background using v2 API (no await to prevent blocking)
+            // Make the API call timeout after 3 seconds to prevent long-running requests
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            
+            fetch('/api/user/onboarding-completed', { 
+              method: 'POST',
+              signal: controller.signal
+            })
               .then(response => {
+                clearTimeout(timeoutId);
                 if (response.ok) {
-                  console.log("Successfully updated Airtable onboarding status to 'Applied'")
+                  console.log("Successfully updated Airtable onboarding status to 'Applied'");
                 } else {
-                  console.warn("Failed to update Airtable onboarding status")
+                  console.warn("Failed to update Airtable onboarding status");
                 }
               })
               .catch(error => {
-                console.error("Error updating Airtable onboarding status:", error)
-              })
+                if (error.name === 'AbortError') {
+                  console.warn("Onboarding status update timed out");
+                } else {
+                  console.error("Error updating Airtable onboarding status:", error);
+                }
+              });
           }
           
-          setIsLoading(false)
-          return
+          setIsLoading(false);
+          return;
         }
         
         // If we reach here, user needs to complete onboarding, but we no longer force open the dialog
-        console.log("User needs to complete onboarding, but dialog is disabled")
-        setOnboardingCompleted(false)
+        console.log("User needs to complete onboarding, but dialog is disabled");
+        setOnboardingCompleted(false);
         // Dialog functionality disabled - no longer force it open
-        setForceDialogOpen(false)
-        setDialogOpen(false)
+        setForceDialogOpen(false);
+        setDialogOpen(false);
         
         // Mark register step as completed (always true since they're registered)
         setSteps(prevSteps => ({
@@ -210,16 +165,18 @@ export function OnboardingProvider({ children }) {
             ...prevSteps.register,
             completed: true
           }
-        }))
+        }));
       }
     } catch (error) {
-      console.error("Error checking onboarding status:", error)
+      console.error("Error checking onboarding status:", error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
       
-      // Reset processing state so future calls can proceed
-      processingRef.current = false;
-      // Don't reset processedDataRef to continue preventing repeated processing
+      // Reset processing state after waiting briefly to prevent immediate repeat calls
+      setTimeout(() => {
+        processingRef.current = false;
+      }, 300);
+      // processedDataRef remains set to prevent repeated processing of same data
     }
   }
   

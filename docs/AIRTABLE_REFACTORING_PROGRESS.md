@@ -29,6 +29,7 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
 - ✅ Points entity (`entities/points.js`)
 - ✅ Resources entity (`entities/resources.js`)
 - ✅ Events entity (`entities/events.js`)
+- ✅ Partnerships entity (`entities/partnerships.js`)
 - ✅ Entities index exports (`entities/index.js`)
 
 ### React Query Hooks
@@ -41,13 +42,14 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
 - ✅ Points hooks (`hooks/usePoints.js`)
 - ✅ Resources hooks (`hooks/useResources.js`)
 - ✅ Events hooks (`hooks/useEvents.js`)
+- ✅ Partnerships hooks (`hooks/usePartnerships.js`)
 - ✅ Hooks index exports (`hooks/index.js`)
 
 ### Sample API Routes
 - ✅ Team members API (`pages/api/teams/members/[teamId].js`)
 - ✅ User profile API v2 (`pages/api/user/profile-v2.js`)
 - ✅ Participation leave API v2 (`pages/api/participation/leave-v2.js`)
-- ✅ Program details API v2 (`pages/api/programs/details-v2.js`)
+- ✅ Initiative details API v2 (`pages/api/programs/details-v2.js`) (using program in URL for compatibility)
 - ✅ Team submissions API v2 (`pages/api/submissions/team-v2.js`)
 - ✅ User points summary API v2 (`pages/api/points/user-summary-v2.js`)
 - ✅ Available resources API v2 (`pages/api/resources/available-v2.js`)
@@ -58,6 +60,10 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
 - ✅ Rewards available API v2 (`pages/api/rewards/available-v2.js`)
 - ✅ Rewards claim API v2 (`pages/api/rewards/claim-v2.js`)
 - ✅ Team members update API v2 (`pages/api/teams/members/update-v2.js`)
+- ✅ Partnerships API (`pages/api/partnerships/index.js`)
+- ✅ Partnership detail API (`pages/api/partnerships/[partnershipId].js`)
+- ✅ Institution partnerships API (`pages/api/institutions/[institutionId]/partnerships.js`)
+- ✅ Initiative partnerships API (`pages/api/programs/[programId]/partnerships.js`) (using program in URL for compatibility)
 
 ### Sample Refactored Components
 - ✅ User profile operations (`userProfile.refactored.js`)
@@ -91,12 +97,16 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
 - ⏳ Migration of remaining API routes to use new architecture
   - ✅ Automatically updated 8 API routes with import script
   - ✅ Manually refactored team creation API route
+  - ✅ Added user onboarding-completed route using new architecture
+  - ✅ Added user profile-v2 route using new architecture
   - ⏳ Continue refactoring remaining routes
 
 ### Components
 - ⏳ Migration of remaining components to use new hooks
   - ✅ Completed TeamCard.js refactoring
   - ✅ Completed ProfileCard.js refactoring
+  - ✅ Updated OnboardingContext to use new API endpoints
+  - ✅ Updated onboarding page to use profile-v2 API
   - ⏳ Continue refactoring and renaming remaining components
 
 ## Pending Items
@@ -111,14 +121,15 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
 | Domain Area            | Entities | Hooks | Sample API | Sample Component | Progress |
 |------------------------|----------|-------|------------|------------------|----------|
 | User & Profile         | ✅       | ✅    | ✅         | ✅               | 100%     |
-| Education/Institutions | ✅       | ✅    | ❌         | ❌               | 50%      |
+| Education/Institutions | ✅       | ✅    | ✅         | ❌               | 75%      |
 | Teams                  | ✅       | ✅    | ✅         | ✅               | 100%     |
-| Participation          | ✅       | ✅    | ✅         | ❌               | 75%      |
-| Programs & Cohorts     | ✅       | ✅    | ✅         | ✅               | 100%     |
+| Participation          | ✅       | ✅    | ✅         | ✅               | 100%     |
+| Initiatives & Cohorts  | ✅       | ✅    | ✅         | ✅               | 100%     |
 | Submissions            | ✅       | ✅    | ✅         | ✅               | 100%     |
 | Points & Rewards       | ✅       | ✅    | ✅         | ✅               | 100%     |
 | Resources              | ✅       | ✅    | ✅         | ✅               | 100%     |
 | Events                 | ✅       | ✅    | ✅         | ✅               | 100%     |
+| Partnerships           | ✅       | ✅    | ✅         | ❌               | 75%      |
 
 ## Next Steps
 

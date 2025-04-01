@@ -1,5 +1,5 @@
 import { auth0 } from '@/lib/auth0';
-import { getCompleteUserProfile } from '@/lib/userProfile.refactored';
+import { users } from '@/lib/airtable/entities';
 
 /**
  * V2 API endpoint to get user's complete profile
@@ -22,6 +22,14 @@ export default async function handler(req, res) {
     switch (req.method) {
       case 'GET':
         return handleGetProfile(req, res, session.user, startTime);
+      case 'POST':
+        // Handle POST with _method override for PATCH
+        if (req.body && req.body._method === 'PATCH') {
+          return handleUpdateProfile(req, res, session.user, startTime);
+        }
+        return res.status(405).json({ error: "Method not allowed" });
+      case 'PATCH':
+        return handleUpdateProfile(req, res, session.user, startTime);
       default:
         return res.status(405).json({ error: "Method not allowed" });
     }
@@ -43,8 +51,8 @@ async function handleGetProfile(req, res, user, startTime) {
     // Get minimal flag from query params
     const minimal = req.query.minimal === 'true';
     
-    // Get complete profile using our refactored module
-    const profile = await getCompleteUserProfile(user, { minimal });
+    // Get complete profile using our entity module
+    const profile = await users.getCompleteProfile(user, { minimal });
     
     // Calculate processing time
     const processingTime = Date.now() - startTime;
@@ -62,5 +70,62 @@ async function handleGetProfile(req, res, user, startTime) {
   } catch (error) {
     console.error("Error fetching profile:", error);
     return res.status(500).json({ error: "Failed to fetch profile" });
+  }
+}
+
+/**
+ * Handle PATCH request to update user profile
+ * @param {object} req - Next.js API request
+ * @param {object} res - Next.js API response
+ * @param {object} user - Auth0 user
+ * @param {number} startTime - Request start time for performance metrics
+ */
+async function handleUpdateProfile(req, res, user, startTime) {
+  try {
+    const userId = user.sub;
+    const userEmail = user.email;
+    
+    // Validate required fields
+    if (!req.body) {
+      return res.status(400).json({ error: "Request body is required" });
+    }
+    
+    // Get the current profile to find contactId
+    const currentProfile = await users.getUserByAuth0Id(userId) || await users.getUserByEmail(userEmail);
+    
+    if (!currentProfile || !currentProfile.contactId) {
+      return res.status(404).json({ error: "User profile not found" });
+    }
+    
+    // Extract update data
+    const updateData = {
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
+      degreeType: req.body.degreeType,
+      graduationYear: req.body.graduationYear,
+      institutionId: req.body.institutionId,
+      major: req.body.major || null,
+      contactId: currentProfile.contactId
+    };
+    
+    // Update profile using entity module
+    const updatedProfile = await users.updateProfile(updateData);
+    
+    // Calculate processing time
+    const processingTime = Date.now() - startTime;
+    
+    // Return updated profile
+    return res.status(200).json({
+      profile: updatedProfile,
+      success: true,
+      _meta: {
+        processingTime,
+        timestamp: new Date().toISOString(),
+        version: 'v2'
+      }
+    });
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    return res.status(500).json({ error: "Failed to update profile" });
   }
 }

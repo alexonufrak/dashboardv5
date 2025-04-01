@@ -1,175 +1,129 @@
 import { auth0 } from '@/lib/auth0';
-// Import for auth0Client no longer needed
-import { getUserProfile, getOnboardingStatus, updateOnboardingStatus } from '../../../lib/airtable';
+import { users } from '@/lib/airtable/entities';
 
 /**
- * Direct API to check and set onboarding completion status
- * Uses Airtable Contact Onboarding field as the primary source of truth
- * Still updates Auth0 metadata for backwards compatibility
+ * API endpoint to handle onboarding completion status
+ * Refactored to use the domain-driven Airtable architecture
+ * 
+ * @param {object} req - Next.js API request
+ * @param {object} res - Next.js API response
  */
-async function onboardingCompleted(req, res) {
+export default async function handler(req, res) {
   try {
+    // Check for valid Auth0 session
     const session = await auth0.getSession(req, res);
-    
-    if (!session || !session.user) {
+    if (!session?.user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
-    
+
     const userId = session.user.sub;
     const userEmail = session.user.email;
     
-    // First, get the user's Airtable contact record
-    const userProfile = await getUserProfile(userId, userEmail);
+    // Handle different HTTP methods
+    switch (req.method) {
+      case 'GET':
+        return handleGetOnboardingStatus(req, res, session.user);
+      case 'POST':
+        return handleCompleteOnboarding(req, res, session.user);
+      default:
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+  } catch (error) {
+    console.error('API authentication error:', error);
+    return res.status(error.status || 500).json({ error: error.message });
+  }
+}
+
+/**
+ * Handle GET request to check onboarding status
+ * 
+ * @param {object} req - Next.js API request
+ * @param {object} res - Next.js API response
+ * @param {object} user - Auth0 user object
+ */
+async function handleGetOnboardingStatus(req, res, user) {
+  try {
+    const userId = user.sub;
+    const userEmail = user.email;
+    
+    // Get user from Airtable by Auth0 ID or email
+    const userProfile = await users.getUserByAuth0Id(userId) || await users.getUserByEmail(userEmail);
     
     if (!userProfile || !userProfile.contactId) {
       return res.status(404).json({ error: 'User profile not found in Airtable' });
     }
-    
+
     const contactId = userProfile.contactId;
     
-    // GET: Check if onboarding is completed using Airtable as primary source
-    if (req.method === 'GET') {
-      // Get onboarding status from Airtable
-      const airtableStatus = await getOnboardingStatus(contactId);
-      
-      console.log(`Airtable onboarding status for user ${userId} (contact ${contactId}):`, airtableStatus);
-      
-      // Set default values if Airtable check fails
-      let completed = false;
-      let status = "Registered";
-      
-      if (airtableStatus && !airtableStatus.error) {
-        // Use Airtable data (primary source)
-        completed = airtableStatus.completed;
-        status = airtableStatus.status;
-      } else {
-        console.warn('Airtable status check failed, falling back to Auth0:', airtableStatus?.error);
-        
-        // Fall back to Auth0 as secondary source
-        try {
-          // Use the auth0 default export for compatibility with old auth0Client
-          const userData = await auth0.default.getUser({ id: userId });
-          
-          if (userData && userData.user_metadata) {
-            completed = userData.user_metadata.onboardingCompleted === true;
-            status = completed ? "Applied" : "Registered";
-            
-            console.log(`Auth0 fallback for onboarding [user ${userId}]:`, {
-              completed,
-              onboardingCompleted: userData.user_metadata.onboardingCompleted
-            });
-            
-            // If Auth0 says completed but Airtable failed, update Airtable
-            if (completed && contactId) {
-              try {
-                await updateOnboardingStatus(contactId, "Applied");
-                console.log(`Updated Airtable with status from Auth0 for user ${userId}`);
-              } catch (syncError) {
-                console.error("Failed to sync Auth0 status to Airtable:", syncError);
-              }
-            }
-          }
-        } catch (auth0Error) {
-          console.warn('Error checking Auth0:', auth0Error.message);
-          // Continue with defaults
-        }
-      }
+    // Get onboarding status directly from user entity
+    const onboardingStatus = userProfile.onboardingStatus || "Registered";
+    const hasParticipation = userProfile.hasActiveParticipation === true;
+    const hasApplications = userProfile.applications && userProfile.applications.length > 0;
+    
+    // Determine if onboarding is completed
+    const completed = onboardingStatus === "Applied" || hasParticipation || hasApplications;
+    
+    // Return the onboarding status
+    return res.status(200).json({ 
+      completed,
+      status: completed ? "Applied" : onboardingStatus,
+      userId,
+      contactId,
+      source: 'airtable-entity'
+    });
+  } catch (error) {
+    console.error('Error checking onboarding status:', error);
+    return res.status(500).json({ error: 'Failed to check onboarding status' });
+  }
+}
+
+/**
+ * Handle POST request to complete onboarding
+ * 
+ * @param {object} req - Next.js API request
+ * @param {object} res - Next.js API response
+ * @param {object} user - Auth0 user object
+ */
+async function handleCompleteOnboarding(req, res, user) {
+  try {
+    const userId = user.sub;
+    const userEmail = user.email;
+    const timestamp = new Date().toISOString();
+    
+    // Get user from Airtable by Auth0 ID or email
+    const userProfile = await users.getUserByAuth0Id(userId) || await users.getUserByEmail(userEmail);
+    
+    if (!userProfile || !userProfile.contactId) {
+      return res.status(404).json({ error: 'User profile not found in Airtable' });
+    }
+
+    const contactId = userProfile.contactId;
+    
+    // Update Airtable using the users entity
+    try {
+      // Update the user's onboarding status in Airtable
+      const airtableResult = await users.updateOnboardingStatus(contactId, "Applied");
+      console.log(`Updated Airtable onboarding status for contact ${contactId}:`, airtableResult);
       
       return res.status(200).json({ 
-        completed,
-        status,
+        success: true,
         userId,
         contactId,
-        source: airtableStatus && !airtableStatus.error ? 'airtable' : 'auth0-fallback'
+        timestamp,
+        onboardingStatus: "Applied"
+      });
+    } catch (error) {
+      console.error('Error updating Airtable onboarding status:', error);
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
       });
     }
-    
-    // POST: Mark onboarding as completed - update in both Airtable and Auth0
-    if (req.method === 'POST') {
-      try {
-        const timestamp = new Date().toISOString();
-        const results = {
-          airtable: null,
-          auth0: null
-        };
-        
-        // 1. Update Airtable (primary source)
-        try {
-          const airtableResult = await updateOnboardingStatus(contactId, "Applied");
-          results.airtable = airtableResult;
-          console.log(`Updated Airtable onboarding status for contact ${contactId}:`, airtableResult);
-        } catch (airtableError) {
-          console.error('Error updating Airtable onboarding status:', airtableError);
-          results.airtable = { success: false, error: airtableError.message };
-        }
-        
-        // 2. Also update Auth0 for backwards compatibility
-        try {
-          // Attempt to update directly in Auth0 with retry logic
-          const updateWithRetry = async (retries = 3, delay = 500) => {
-            try {
-              await auth0.default.updateUserMetadata({ id: userId }, {
-                onboardingCompleted: true,
-                onboardingCompletedAt: timestamp
-              });
-              return true;
-            } catch (updateError) {
-              if (retries > 1) {
-                console.log(`Auth0 update failed, retrying in ${delay}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
-                return updateWithRetry(retries - 1, delay * 2);
-              }
-              throw updateError;
-            }
-          };
-          
-          const updateSuccessful = await updateWithRetry();
-          results.auth0 = { success: updateSuccessful, timestamp };
-        } catch (auth0Error) {
-          console.error('Error updating Auth0 metadata:', auth0Error);
-          results.auth0 = { success: false, error: auth0Error.message };
-        }
-        
-        // Consider the operation successful if Airtable (primary) was updated successfully
-        const overallSuccess = results.airtable && results.airtable.success;
-        
-        return res.status(200).json({ 
-          success: overallSuccess,
-          userId,
-          contactId,
-          timestamp,
-          results
-        });
-      } catch (error) {
-        console.error('Error in onboarding completion update:', error);
-        return res.status(500).json({ 
-          success: false,
-          error: error.message,
-          userId,
-          contactId
-        });
-      }
-    }
-    
-    return res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
-    console.error('Error in onboarding completion endpoint:', error);
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-};
-
-export default async function handlerImpl(req, res) {
-  try {
-    // Check for valid Auth0 session
-    const session = await auth0.getSession(req, res);
-    if (!session) {
-      return res.status(401).json({ error: 'Not authenticated' });
-    }
-    
-    // Call the original handler with the authenticated session
-    return onboardingCompleted(req, res);
-  } catch (error) {
-    console.error('API authentication error:', error);
-    return res.status(error.status || 500).json({ error: error.message });
+    console.error('Error in onboarding completion update:', error);
+    return res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
   }
 }

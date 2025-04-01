@@ -47,15 +47,35 @@ function Onboarding() {
   useEffect(() => {
     // Add a flag to prevent duplicate calls and race conditions
     let isMounted = true;
+    // Track API calls in progress to prevent race conditions
+    let apiCallInProgress = false;
     
     const fetchMinimalData = async () => {
-      // Set loading state
+      // Prevent concurrent API calls
+      if (apiCallInProgress) {
+        console.log("API call already in progress, skipping");
+        return;
+      }
+      
+      // Set flags
+      apiCallInProgress = true;
       setIsLoading(true);
       
       try {
-        // Step 1: Fetch minimal profile data with cohorts
+        // Step 1: Fetch minimal profile data using the v2 API with better caching
         console.log("Fetching minimal profile data with cohorts...");
-        const profileResponse = await fetch('/api/user/profile?minimal=true');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+        
+        const profileResponse = await fetch('/api/user/profile-v2?minimal=true', {
+          signal: controller.signal,
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        });
+        
+        clearTimeout(timeoutId);
         
         if (!profileResponse.ok) {
           throw new Error('Failed to fetch profile data');
@@ -70,73 +90,42 @@ function Onboarding() {
         // Set the profile data
         setProfile(profileData);
         
-        // Step 2: Check if onboarding is already complete
-        const onboardingStatus = profileData.Onboarding || "Registered";
-        const hasParticipation = profileData.hasActiveParticipation === true;
-        const hasApps = profileData.applications && profileData.applications.length > 0;
+        // Step 2: Check if onboarding is already complete using isOnboardingComplete flag
+        const isOnboardingComplete = profileData.isOnboardingComplete === true;
         
-        console.log("Quick onboarding check:", { 
-          onboardingStatus, 
-          hasParticipation, 
-          hasApps 
+        console.log("Onboarding check from v2 API:", { 
+          isOnboardingComplete,
+          onboardingStatus: profileData.onboardingStatus, 
+          hasParticipation: profileData.hasActiveParticipation === true
         });
                 
-        // If already onboarded, redirect to dashboard
-        if (onboardingStatus === "Applied" || hasParticipation || hasApps) {
+        // If already onboarded, redirect to dashboard with a slight delay
+        // The delay helps prevent redirect loops by ensuring state is fully updated
+        if (isOnboardingComplete) {
           console.log("Onboarding already complete, redirecting to dashboard");
-          router.push('/dashboard');
+          setTimeout(() => {
+            router.push('/dashboard');
+          }, 100);
           return;
         }
         
-        // Step 3: Update the onboarding context ONCE
+        // Step 3: Update the onboarding context ONCE with our optimized checks
         await checkOnboardingStatus(profileData);
         
         // Step 4: For new users, DON'T fetch applications - they won't have any yet
-        // Only fetch applications if we think they might have some
-        if (profileData.hasOwnProperty('applications') && 
-            profileData.applications && 
-            profileData.applications.length > 0) {
-          
-          console.log("User may have applications, fetching them...");
-          setIsLoadingApplications(true);
-          
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 3000); // shorter timeout
-            
-            const applicationsResponse = await fetch('/api/user/check-application', {
-              signal: controller.signal
-            }).catch(error => {
-              console.log('Applications fetch aborted or failed:', error.message);
-              return { ok: false };
-            });
-            
-            clearTimeout(timeoutId);
-            
-            if (applicationsResponse.ok && isMounted) {
-              const applicationsData = await applicationsResponse.json();
-              setApplications(applicationsData.applications || []);
-            } else {
-              // If we can't get applications, just use an empty array
-              console.log('Using empty applications array due to fetch failure');
-              setApplications([]);
-            }
-          } catch (appError) {
-            console.warn('Error fetching applications:', appError.message);
-            setApplications([]);
-          } finally {
-            if (isMounted) setIsLoadingApplications(false);
-          }
-        } else {
-          // User definitely has no applications, skip the fetch
-          console.log("New user, skipping applications fetch");
-          setApplications([]);
-        }
+        // With our new API, we'll always have applications data in the profile
+        const applications = profileData.applications || [];
+        setApplications(applications);
+        
+        // No need for separate applications fetch with the v2 API
+        console.log(`Profile has ${applications.length} applications already included`);
+        
       } catch (error) {
         console.error('Error in onboarding data fetch:', error);
       } finally {
         if (isMounted) {
           setIsLoading(false);
+          apiCallInProgress = false;
         }
       }
     };
