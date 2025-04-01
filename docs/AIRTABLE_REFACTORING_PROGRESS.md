@@ -30,7 +30,7 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
 - ✅ Resources entity (`entities/resources.js`)
 - ✅ Events entity (`entities/events.js`)
 - ✅ Partnerships entity (`entities/partnerships.js`)
-- ✅ Entities index exports (`entities/index.js`)
+- ✅ Entities index exports (`entities/index.js`) with both default exports and named exports for backward compatibility
 
 ### React Query Hooks
 - ✅ Profile hooks (`hooks/useProfile.js`)
@@ -99,6 +99,7 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
   - ✅ Manually refactored team creation API route
   - ✅ Added user onboarding-completed route using new architecture
   - ✅ Added user profile-v2 route using new architecture
+  - ✅ Fixed entity exports to support both old and new import patterns
   - ⏳ Continue refactoring remaining routes
 
 ### Components
@@ -107,6 +108,7 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
   - ✅ Completed ProfileCard.js refactoring
   - ✅ Updated OnboardingContext to use new API endpoints
   - ✅ Updated onboarding page to use profile-v2 API
+  - ✅ Fixed entity exports to ensure compatibility with existing code
   - ⏳ Continue refactoring and renaming remaining components
 
 ## Pending Items
@@ -138,3 +140,13 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
 3. Begin systematically replacing imports in the codebase
 4. Develop a testing plan to ensure all functionality works correctly
 5. Gradually phase out the old `airtable.js` implementation
+
+## Recent Updates
+
+### April 1, 2025
+- Fixed entity export pattern in `entities/index.js` to ensure backwards compatibility
+- Updated all entity files to have consistent default exports
+- Fixed infinite redirect loop in onboarding flow
+- Added proper cache clearing in the user profile endpoints
+- Addressed import errors in build process by re-exporting functions
+- Added new user profile-v2 and onboarding-completed routes using domain model architecture
