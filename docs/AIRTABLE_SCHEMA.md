@@ -1,33 +1,34 @@
+
 neXus Schema Documentation
 Base Information
 Base ID: appiD7gplQcnVpXgm
 Base Name: neXus
-Tables: 38
+Tables: 37
 Table Summary
 Table Name	Fields	Primary Field
 Contacts	91	-
-Education	21	-
+Education	24	-
 Applications ⭐	55	-
 Applicants	10	-
-Participation	11	-
-Initiatives	9	-
-Topics	4	-
+Participation	13	-
+Initiatives	10	-
+Topics	5	-
 Classes	2	-
-Cohorts	22	-
-Teams	43	-
-Members	27	-
+Cohorts	23	-
+Teams	40	-
+Members	24	-
 Invites	11	-
-Institutions	21	-
+Institutions	23	-
 Partnerships	4	-
 Programs	8	-
-Colleges	6	-
-Roles	12	-
-Organizations	8	-
+Colleges	7	-
+Roles	13	-
+Organizations	9	-
 Forms	49	-
-Events	22	-
-Attendance	15	-
+Events	26	-
+Attendance	17	-
 Milestones	16	-
-Submissions	21	-
+Submissions	20	-
 Bounties	17	-
 Deliverables	9	-
 Resources	22	-
@@ -35,7 +36,6 @@ Inventory	9	-
 Requests	7	-
 Provisioning	2	-
 Locations	2	-
-Points	27	-
 Point Transactions	13	-
 Achievements	9	-
 Rewards	7	-
@@ -75,6 +75,7 @@ ID	autoNumber
 Identify and elaborate on three specific skills and experiences you possess that will contribute to creating an innovative and effective solution in the Xperience program.	multilineText		
 Initiative (from Cohort)	multipleLookupValues		
 Institution	multipleRecordLinks		Links to: Institutions (Single)
+Join Team Message	multilineText		
 Last Modified	lastModifiedTime		
 Last Name	singleLineText		
 Major	multipleRecordLinks		Links to: Programs (Single)
@@ -89,16 +90,15 @@ Resume	multipleAttachments
 Source	singleSelect		Options: Campus calendar, Newsletter, Social media (e.g., LinkedIn, Facebook, Instagram, X/Twitter), Search engine (e.g., Google, Bing), Word of mouth (e.g. From a friend), Direct email (e.g. from Jasmine Kelly), Event or conference, xFoundry email
 Status	singleSelect		Options: Submitted, In Review, Interview Requested, Interview Scheduled, Interview Completed, Accepted, Enrolled, Withdrawn, Denied After Interview, Denied
 Submission Confirmation Sent	checkbox		
+Team to Join	multipleRecordLinks		Links to: Teams (Single)
 UID	number		
 Unofficial Transcript	multipleAttachments		
 What are you looking to gain as a result of participating in Xperience?	multilineText		
 What's something outside of your work/degree that you are passionate about?	multilineText		
 Xperience/Description	multilineText		
 Xperience/Header Image	multipleAttachments		
-Xperience/Join Team Message	multilineText		
 Xperience/Looking for Additional Members	checkbox		
 Xperience/Team Name	singleLineText		
-Xperience/Team to Join	multipleRecordLinks		Links to: Teams (Single)
 Xperience/Terms and Conditions	checkbox		
 Xtrapreneurs/Commitment	singleSelect		Options: Weekly, Monthly, Occasionally
 Xtrapreneurs/Reason	multilineText		
@@ -139,7 +139,7 @@ Example:
 
 let contactsRecords = await base.getTable("Contacts").selectRecordsAsync();
 Education
-Fields: 21
+Fields: 24
 
 Field Name	Type	Required	Description
 Abbreviation (from Colleges) (from Major)	multipleLookupValues		
@@ -148,6 +148,7 @@ College (Text)	formula
 Colleges (from Major)	multipleLookupValues		
 Contact	multipleRecordLinks		Links to: Contacts (Multiple)
 contactEmail	rollup		
+Created	createdTime		
 Degree Type	singleSelect		Options: Undergraduate, Graduate, Doctorate, ...
 Education ID	formula		
 Graduation Semester	singleSelect		Options: Fall, Spring, Summer, ...
@@ -162,15 +163,17 @@ Matriculation Name	formula		Determines if a student is Freshman, Sophomore, Juni
 Matriculation Name 2	formula		Determines the academic standing (Freshman, Sophomore, Junior, Senior, Alumni) based on graduation y...
 memberTeamLast (from Contact)	multipleLookupValues		
 Name (from Institution)	multipleLookupValues		
+Record ID	formula		
 Second Major	multipleRecordLinks		Links to: Programs (Single)
+Webflow Status	singleSelect		Options: Archived, Draft, Active
 Example:
 
 let educationRecords = await base.getTable("Education").selectRecordsAsync();
 Cohorts
-Fields: 22
+Fields: 23
 
 Field Name	Type	Required	Description
-Action Button	singleSelect		Options: Apply, Register
+Action Button	singleSelect		Options: Apply, Register, Join
 Application Form ID (Fillout)	singleLineText		
 Applications	multipleRecordLinks		Links to: Applications (Multiple)
 Classes	multipleRecordLinks		Links to: Classes (Single)
@@ -192,31 +195,31 @@ Start Date	date
 Status	singleSelect		Options: Closed, Applications Open, Applications Closed, ...
 Teams	multipleRecordLinks		Links to: Teams (Multiple)
 Topics	multipleRecordLinks		Links to: Topics (Single)
+Webflow Status	singleSelect		Options: Archived, Draft, Active
 Example:
 
 let cohortsRecords = await base.getTable("Cohorts").selectRecordsAsync();
 Teams
-Fields: 43 (showing 25 of 43)
+Fields: 40 (showing 25 of 40)
 
 Field Name	Type	Required	Description
+Active Count	count		
 Applications	multipleRecordLinks		Links to: Applications (Multiple)
-CMS-B: Action	singleSelect		Options: Draft item in Webflow, Re: Item drafted in Webflow, Archive item in Webflow, ...
-CMS-B: Message	richText		
-CMS-B: Sync time	dateTime		
-CMS-B: Webflow ID	singleLineText		
-CMS-B: Webflow Slug	singleLineText		
 Cohorts	multipleRecordLinks		Links to: Cohorts (Single)
 Contact (from Members)	multipleLookupValues		
 Count (Members)	count		
+Created	createdTime		
 Description	multilineText		
 Email (from Contact) (from Members)	multipleLookupValues		
 Forms	multipleRecordLinks		Links to: Forms (Multiple)
 ID	autoNumber		
 Image	multipleAttachments		
+Inactive Count	count		
 Ineligible Members	multipleLookupValues		
 Initiative (from Cohorts)	multipleLookupValues		
 Initiative Rollup (from Cohorts)	rollup		
 Institution	multipleRecordLinks		Links to: Institutions (Single)
+Invited Count	count		
 Invites	multipleRecordLinks		Links to: Invites (Multiple)
 Join Team (Applications)	multipleRecordLinks		Links to: Applications (Multiple)
 Joinable	checkbox		
@@ -224,21 +227,23 @@ Joinable (Yes No)	formula
 Last Modified	lastModifiedTime		
 Matching Created	checkbox		
 Member Points	rollup		
+memberEmails	rollup		
 Example:
 
 let teamsRecords = await base.getTable("Teams").selectRecordsAsync();
 Members
-Fields: 27 (showing 25 of 27)
+Fields: 24
 
 Field Name	Type	Required	Description
 Contact	multipleRecordLinks		Links to: Contacts (Single)
+Contact Headshot	multipleLookupValues		
 Contact Points	multipleLookupValues		
 contactId	rollup		
+Created	createdTime		
 Email (from Contact)	multipleLookupValues		
 Forms	multipleRecordLinks		Links to: Forms (Multiple)
 Graduation Semester (from Education) (from Contact)	multipleLookupValues		
 Graduation Year (from Education) (from Contact)	multipleLookupValues		
-Headshot (from Contact)	multipleLookupValues		
 ID	autoNumber		
 Invites	multipleRecordLinks		Links to: Invites (Multiple)
 Last Modified	lastModifiedTime		
@@ -249,18 +254,16 @@ Member ID	formula
 memberName	multipleLookupValues		
 memberstackID	multipleLookupValues		
 Record ID (from Team)	multipleLookupValues		
-Requests	singleLineText		
-Reward Redemptions	singleLineText		
 Status	singleSelect		Options: Active, Inactive, Invited
 Submissions	multipleRecordLinks		Links to: Submissions (Multiple)
 Team	multipleRecordLinks		Links to: Teams (Single)
 Team Name (from Team)	multipleLookupValues		
-Xperience Ambassadors	singleLineText		
+Webflow Status	singleSelect		Options: Archived, Draft, Active
 Example:
 
 let membersRecords = await base.getTable("Members").selectRecordsAsync();
 Institutions
-Fields: 21
+Fields: 23
 
 Field Name	Type	Required	Description
 AI assist	aiText		
@@ -277,6 +280,7 @@ Horizons Challenge Joinable Teams Count	count
 Initiatives	multipleRecordLinks		Links to: Initiatives (Multiple)
 Institution Type	formula		
 Last Modified	lastModifiedTime		
+Logo	multipleAttachments		
 Name	singleLineText		
 Partnerships	multipleRecordLinks		Links to: Partnerships (Multiple)
 Record ID	formula		
@@ -284,6 +288,7 @@ Roles	multipleRecordLinks		Links to: Roles (Multiple)
 stateCode	singleLineText		
 Teams	multipleRecordLinks		Links to: Teams (Multiple)
 Web Pages	singleLineText		
+Webflow Status	singleSelect		Options: Archived, Draft, Active
 Example:
 
 let institutionsRecords = await base.getTable("Institutions").selectRecordsAsync();
@@ -320,7 +325,7 @@ Example:
 
 let formsRecords = await base.getTable("Forms").selectRecordsAsync();
 Events
-Fields: 22
+Fields: 26 (showing 25 of 26)
 
 Field Name	Type	Required	Description
 Achievements	multipleRecordLinks		Links to: Achievements (Multiple)
@@ -332,22 +337,49 @@ Classes (from Cohorts)	multipleLookupValues
 Cohorts	multipleRecordLinks		Links to: Cohorts (Single)
 Contacts	multipleRecordLinks		Links to: Contacts (Multiple)
 Contacts (from Attendance)	multipleLookupValues		
-Date	date		
+Date and Time End	dateTime		
+Date and Time Start	dateTime		
 Description	multilineText		
 eventcreate Event ID	formula		Extracts event ID from eventcreate.com links in the Registration Link field.
 eventcreate User ID	formula		Extracts user ID from eventcreate.com links in the Registration Link field.
 Form Submission Count	count		
 Forms	multipleRecordLinks		Links to: Forms (Multiple)
+General Event Registration	formula		Generates a unique registration link for each event by appending the record ID to the base URL as a ...
 Last Modified	lastModifiedTime		
+Location Name	singleLineText		General name of the location (not the address)
 Name	singleLineText		
 Open Unique RFI	button		
 Record ID	formula		
 Registration Link	url		
 Season	singleSelect		Options: FA23, SP24, SM24, ...
-Unique RFI Form	formula		Unique link for each event that prefills the General RFI form with that event
+Unique Registration Link	formula		
 Example:
 
 let eventsRecords = await base.getTable("Events").selectRecordsAsync();
+Attendance
+Fields: 17
+
+Field Name	Type	Required	Description
+Attendance ID	formula		
+Checked In	singleLineText		
+Checked-in	checkbox		Mark this record as checked in, which creates a new record with the same event and contact, but with...
+Contacts	multipleRecordLinks		Links to: Contacts (Single)
+Degree Program/Type	singleLineText		
+Education Program	singleLineText		
+Email	email		
+Event	multipleRecordLinks		Links to: Events (Single)
+EventCreate Attendee ID	singleLineText		
+First Name	singleLineText		
+Grad Year	number		
+ID	autoNumber		
+Last Modified	lastModifiedTime		
+Last Name	singleLineText		
+Phone	phoneNumber		
+Referral Source	singleSelect		Options: Friend or Classmate, Professor or Advisor, Email, ...
+Status	singleSelect		Options: Invited, Registered, Attended, ...
+Example:
+
+let attendanceRecords = await base.getTable("Attendance").selectRecordsAsync();
 Milestones
 Fields: 16
 
@@ -372,7 +404,7 @@ Example:
 
 let milestonesRecords = await base.getTable("Milestones").selectRecordsAsync();
 Submissions
-Fields: 21
+Fields: 20
 
 Field Name	Type	Required	Description
 Attachment	multipleAttachments		
@@ -385,7 +417,6 @@ ID	autoNumber
 Link	multilineText		
 Member	multipleRecordLinks		Links to: Members (Single)
 memberEmails	rollup		
-Members copy	multipleRecordLinks		Links to: Points (Multiple)
 Members copy	singleLineText		
 Members copy	singleLineText		
 Milestone	multipleRecordLinks		Links to: Milestones (Single)
@@ -454,38 +485,6 @@ Type	singleSelect		The type of resource, e.g. Software, E-Book, Course, etc. •
 Example:
 
 let resourcesRecords = await base.getTable("Resources").selectRecordsAsync();
-Points
-Fields: 27 (showing 25 of 27)
-
-Field Name	Type	Required	Description
-Automation	singleSelect		Options: Add, Registration Added, Class Attendance Added, ...
-Automation copy	multipleSelects		Options: Add, Registration Added, Class Attendance Added, ...
-Business Plan	number		
-Class Attendance	number		
-Contact	multipleRecordLinks		Links to: Contacts (Single)
-Course Enrollment Bonus	number		
-Created	createdTime		
-Email (from Contact)	multipleLookupValues		
-Event Attendance	number		
-Finals Verififcation	number		
-Graduation Semester (from Education) (from Contact)	multipleLookupValues		
-Graduation Year (from Education) (from Contact)	multipleLookupValues		
-ID	autoNumber		
-Major (from Education) (from Contact)	multipleLookupValues		
-Matriculation Name 2 (from Education) (from Contact)	multipleLookupValues		
-Prototype Demonstration	number		
-Record ID	formula		
-Record ID (from Team)	multipleLookupValues		
-Recruiting new members	number		
-Registration Bonus	number		
-Requests	singleLineText		
-Sales Pitch	number		
-Submissions	multipleRecordLinks		Links to: Submissions (Multiple)
-Team	multipleRecordLinks		Links to: Teams (Single)
-Team Demo	number		
-Example:
-
-let pointsRecords = await base.getTable("Points").selectRecordsAsync();
 Rubric Submissions
 Fields: 30 (showing 25 of 30)
 
@@ -668,7 +667,7 @@ Machine-Readable Schema
   {
    "id": "tbl7wRkeRCopTvqGT",
    "name": "Education",
-   "fieldCount": 21,
+   "fieldCount": 24,
    "fields": [
     {
      "name": "Abbreviation (from Colleges) (from Major)",
@@ -697,6 +696,10 @@ Machine-Readable Schema
     {
      "name": "contactEmail",
      "type": "rollup"
+    },
+    {
+     "name": "Created",
+     "type": "createdTime"
     },
     {
      "name": "Degree Type",
@@ -784,11 +787,27 @@ Machine-Readable Schema
      "type": "multipleLookupValues"
     },
     {
+     "name": "Record ID",
+     "type": "formula"
+    },
+    {
      "name": "Second Major",
      "type": "multipleRecordLinks",
      "options": {
       "linkedTableName": "Programs",
       "recordSelectivity": "Single"
+     }
+    },
+    {
+     "name": "Webflow Status",
+     "type": "singleSelect",
+     "options": {
+      "choiceCount": 3,
+      "choices": [
+       "Archived",
+       "Draft",
+       "Active"
+      ]
      }
     }
    ]
@@ -948,6 +967,10 @@ Machine-Readable Schema
      }
     },
     {
+     "name": "Join Team Message",
+     "type": "multilineText"
+    },
+    {
      "name": "Last Modified",
      "type": "lastModifiedTime"
     },
@@ -1040,6 +1063,14 @@ Machine-Readable Schema
      "type": "checkbox"
     },
     {
+     "name": "Team to Join",
+     "type": "multipleRecordLinks",
+     "options": {
+      "linkedTableName": "Teams",
+      "recordSelectivity": "Single"
+     }
+    },
+    {
      "name": "UID",
      "type": "number",
      "options": {
@@ -1067,24 +1098,12 @@ Machine-Readable Schema
      "type": "multipleAttachments"
     },
     {
-     "name": "Xperience/Join Team Message",
-     "type": "multilineText"
-    },
-    {
      "name": "Xperience/Looking for Additional Members",
      "type": "checkbox"
     },
     {
      "name": "Xperience/Team Name",
      "type": "singleLineText"
-    },
-    {
-     "name": "Xperience/Team to Join",
-     "type": "multipleRecordLinks",
-     "options": {
-      "linkedTableName": "Teams",
-      "recordSelectivity": "Single"
-     }
     },
     {
      "name": "Xperience/Terms and Conditions",
@@ -1116,17 +1135,17 @@ Machine-Readable Schema
   {
    "id": "tblyab7kraX4t4N3j",
    "name": "Participation",
-   "fieldCount": 11
+   "fieldCount": 13
   },
   {
    "id": "tblBbX9ZpqRdE08Pc",
    "name": "Initiatives",
-   "fieldCount": 9
+   "fieldCount": 10
   },
   {
    "id": "tblgNUObXtNbULK4S",
    "name": "Topics",
-   "fieldCount": 4
+   "fieldCount": 5
   },
   {
    "id": "tblGGdJ8qwkadwHss",
@@ -1136,16 +1155,17 @@ Machine-Readable Schema
   {
    "id": "tbl6iyzrUj4oQnYnp",
    "name": "Cohorts",
-   "fieldCount": 22,
+   "fieldCount": 23,
    "fields": [
     {
      "name": "Action Button",
      "type": "singleSelect",
      "options": {
-      "choiceCount": 2,
+      "choiceCount": 3,
       "choices": [
        "Apply",
-       "Register"
+       "Register",
+       "Join"
       ]
      }
     },
@@ -1284,14 +1304,30 @@ Machine-Readable Schema
       "linkedTableName": "Topics",
       "recordSelectivity": "Single"
      }
+    },
+    {
+     "name": "Webflow Status",
+     "type": "singleSelect",
+     "options": {
+      "choiceCount": 3,
+      "choices": [
+       "Archived",
+       "Draft",
+       "Active"
+      ]
+     }
     }
    ]
   },
   {
    "id": "tblfr4EuiTufRyCXK",
    "name": "Teams",
-   "fieldCount": 43,
+   "fieldCount": 40,
    "fields": [
+    {
+     "name": "Active Count",
+     "type": "count"
+    },
     {
      "name": "Applications",
      "type": "multipleRecordLinks",
@@ -1299,35 +1335,6 @@ Machine-Readable Schema
       "linkedTableName": "Applications",
       "recordSelectivity": "Multiple"
      }
-    },
-    {
-     "name": "CMS-B: Action",
-     "type": "singleSelect",
-     "options": {
-      "choiceCount": 11,
-      "choices": [
-       "Draft item in Webflow",
-       "Re: Item drafted in Webflow",
-       "Archive item in Webflow",
-       "..."
-      ]
-     }
-    },
-    {
-     "name": "CMS-B: Message",
-     "type": "richText"
-    },
-    {
-     "name": "CMS-B: Sync time",
-     "type": "dateTime"
-    },
-    {
-     "name": "CMS-B: Webflow ID",
-     "type": "singleLineText"
-    },
-    {
-     "name": "CMS-B: Webflow Slug",
-     "type": "singleLineText"
     },
     {
      "name": "Cohorts",
@@ -1344,6 +1351,10 @@ Machine-Readable Schema
     {
      "name": "Count (Members)",
      "type": "count"
+    },
+    {
+     "name": "Created",
+     "type": "createdTime"
     },
     {
      "name": "Description",
@@ -1370,6 +1381,10 @@ Machine-Readable Schema
      "type": "multipleAttachments"
     },
     {
+     "name": "Inactive Count",
+     "type": "count"
+    },
+    {
      "name": "Ineligible Members",
      "type": "multipleLookupValues"
     },
@@ -1388,6 +1403,10 @@ Machine-Readable Schema
       "linkedTableName": "Institutions",
       "recordSelectivity": "Single"
      }
+    },
+    {
+     "name": "Invited Count",
+     "type": "count"
     },
     {
      "name": "Invites",
@@ -1424,13 +1443,17 @@ Machine-Readable Schema
     {
      "name": "Member Points",
      "type": "rollup"
+    },
+    {
+     "name": "memberEmails",
+     "type": "rollup"
     }
    ]
   },
   {
    "id": "tblvfcITrjCJLBsTq",
    "name": "Members",
-   "fieldCount": 27,
+   "fieldCount": 24,
    "fields": [
     {
      "name": "Contact",
@@ -1441,12 +1464,20 @@ Machine-Readable Schema
      }
     },
     {
+     "name": "Contact Headshot",
+     "type": "multipleLookupValues"
+    },
+    {
      "name": "Contact Points",
      "type": "multipleLookupValues"
     },
     {
      "name": "contactId",
      "type": "rollup"
+    },
+    {
+     "name": "Created",
+     "type": "createdTime"
     },
     {
      "name": "Email (from Contact)",
@@ -1466,10 +1497,6 @@ Machine-Readable Schema
     },
     {
      "name": "Graduation Year (from Education) (from Contact)",
-     "type": "multipleLookupValues"
-    },
-    {
-     "name": "Headshot (from Contact)",
      "type": "multipleLookupValues"
     },
     {
@@ -1517,14 +1544,6 @@ Machine-Readable Schema
      "type": "multipleLookupValues"
     },
     {
-     "name": "Requests",
-     "type": "singleLineText"
-    },
-    {
-     "name": "Reward Redemptions",
-     "type": "singleLineText"
-    },
-    {
      "name": "Status",
      "type": "singleSelect",
      "options": {
@@ -1557,8 +1576,16 @@ Machine-Readable Schema
      "type": "multipleLookupValues"
     },
     {
-     "name": "Xperience Ambassadors",
-     "type": "singleLineText"
+     "name": "Webflow Status",
+     "type": "singleSelect",
+     "options": {
+      "choiceCount": 3,
+      "choices": [
+       "Archived",
+       "Draft",
+       "Active"
+      ]
+     }
     }
    ]
   },
@@ -1570,7 +1597,7 @@ Machine-Readable Schema
   {
    "id": "tblE2f8nG8uve4s6i",
    "name": "Institutions",
-   "fieldCount": 21,
+   "fieldCount": 23,
    "fields": [
     {
      "name": "AI assist",
@@ -1652,6 +1679,10 @@ Machine-Readable Schema
      "type": "lastModifiedTime"
     },
     {
+     "name": "Logo",
+     "type": "multipleAttachments"
+    },
+    {
      "name": "Name",
      "type": "singleLineText"
     },
@@ -1690,6 +1721,18 @@ Machine-Readable Schema
     {
      "name": "Web Pages",
      "type": "singleLineText"
+    },
+    {
+     "name": "Webflow Status",
+     "type": "singleSelect",
+     "options": {
+      "choiceCount": 3,
+      "choices": [
+       "Archived",
+       "Draft",
+       "Active"
+      ]
+     }
     }
    ]
   },
@@ -1706,17 +1749,17 @@ Machine-Readable Schema
   {
    "id": "tblsijPr68Sywj7A0",
    "name": "Colleges",
-   "fieldCount": 6
+   "fieldCount": 7
   },
   {
    "id": "tblBinGGFaCqUB8J0",
    "name": "Roles",
-   "fieldCount": 12
+   "fieldCount": 13
   },
   {
    "id": "tblopwzOpPldjzqa6",
    "name": "Organizations",
-   "fieldCount": 8
+   "fieldCount": 9
   },
   {
    "id": "tblXlNsVNAFbEIYCg",
@@ -1895,7 +1938,7 @@ Machine-Readable Schema
   {
    "id": "tblnD6zkNKcFJFKCX",
    "name": "Events",
-   "fieldCount": 22,
+   "fieldCount": 26,
    "fields": [
     {
      "name": "Achievements",
@@ -1974,8 +2017,12 @@ Machine-Readable Schema
      "type": "multipleLookupValues"
     },
     {
-     "name": "Date",
-     "type": "date"
+     "name": "Date and Time End",
+     "type": "dateTime"
+    },
+    {
+     "name": "Date and Time Start",
+     "type": "dateTime"
     },
     {
      "name": "Description",
@@ -2002,8 +2049,16 @@ Machine-Readable Schema
      }
     },
     {
+     "name": "General Event Registration",
+     "type": "formula"
+    },
+    {
      "name": "Last Modified",
      "type": "lastModifiedTime"
+    },
+    {
+     "name": "Location Name",
+     "type": "singleLineText"
     },
     {
      "name": "Name",
@@ -2035,7 +2090,7 @@ Machine-Readable Schema
      }
     },
     {
-     "name": "Unique RFI Form",
+     "name": "Unique Registration Link",
      "type": "formula"
     }
    ]
@@ -2043,7 +2098,106 @@ Machine-Readable Schema
   {
    "id": "tbl2x5g0QDRUuTwAJ",
    "name": "Attendance",
-   "fieldCount": 15
+   "fieldCount": 17,
+   "fields": [
+    {
+     "name": "Attendance ID",
+     "type": "formula"
+    },
+    {
+     "name": "Checked In",
+     "type": "singleLineText"
+    },
+    {
+     "name": "Checked-in",
+     "type": "checkbox"
+    },
+    {
+     "name": "Contacts",
+     "type": "multipleRecordLinks",
+     "options": {
+      "linkedTableName": "Contacts",
+      "recordSelectivity": "Single"
+     }
+    },
+    {
+     "name": "Degree Program/Type",
+     "type": "singleLineText"
+    },
+    {
+     "name": "Education Program",
+     "type": "singleLineText"
+    },
+    {
+     "name": "Email",
+     "type": "email"
+    },
+    {
+     "name": "Event",
+     "type": "multipleRecordLinks",
+     "options": {
+      "linkedTableName": "Events",
+      "recordSelectivity": "Single"
+     }
+    },
+    {
+     "name": "EventCreate Attendee ID",
+     "type": "singleLineText"
+    },
+    {
+     "name": "First Name",
+     "type": "singleLineText"
+    },
+    {
+     "name": "Grad Year",
+     "type": "number",
+     "options": {
+      "precision": 0
+     }
+    },
+    {
+     "name": "ID",
+     "type": "autoNumber"
+    },
+    {
+     "name": "Last Modified",
+     "type": "lastModifiedTime"
+    },
+    {
+     "name": "Last Name",
+     "type": "singleLineText"
+    },
+    {
+     "name": "Phone",
+     "type": "phoneNumber"
+    },
+    {
+     "name": "Referral Source",
+     "type": "singleSelect",
+     "options": {
+      "choiceCount": 7,
+      "choices": [
+       "Friend or Classmate",
+       "Professor or Advisor",
+       "Email",
+       "..."
+      ]
+     }
+    },
+    {
+     "name": "Status",
+     "type": "singleSelect",
+     "options": {
+      "choiceCount": 7,
+      "choices": [
+       "Invited",
+       "Registered",
+       "Attended",
+       "..."
+      ]
+     }
+    }
+   ]
   },
   {
    "id": "tblfWVQpvieoPAKaq",
@@ -2147,7 +2301,7 @@ Machine-Readable Schema
   {
    "id": "tblQOSJDm7tbqb6ty",
    "name": "Submissions",
-   "fieldCount": 21,
+   "fieldCount": 20,
    "fields": [
     {
      "name": "Attachment",
@@ -2200,14 +2354,6 @@ Machine-Readable Schema
     {
      "name": "memberEmails",
      "type": "rollup"
-    },
-    {
-     "name": "Members copy",
-     "type": "multipleRecordLinks",
-     "options": {
-      "linkedTableName": "Points",
-      "recordSelectivity": "Multiple"
-     }
     },
     {
      "name": "Members copy",
@@ -2561,173 +2707,6 @@ Machine-Readable Schema
    "id": "tbli0LegyPHMv7lvz",
    "name": "Locations",
    "fieldCount": 2
-  },
-  {
-   "id": "tblp4e2mAeLUoFTxZ",
-   "name": "Points",
-   "fieldCount": 27,
-   "fields": [
-    {
-     "name": "Automation",
-     "type": "singleSelect",
-     "options": {
-      "choiceCount": 6,
-      "choices": [
-       "Add",
-       "Registration Added",
-       "Class Attendance Added",
-       "..."
-      ]
-     }
-    },
-    {
-     "name": "Automation copy",
-     "type": "multipleSelects",
-     "options": {
-      "choiceCount": 6,
-      "choices": [
-       "Add",
-       "Registration Added",
-       "Class Attendance Added",
-       "..."
-      ]
-     }
-    },
-    {
-     "name": "Business Plan",
-     "type": "number",
-     "options": {
-      "precision": 1
-     }
-    },
-    {
-     "name": "Class Attendance",
-     "type": "number",
-     "options": {
-      "precision": 1
-     }
-    },
-    {
-     "name": "Contact",
-     "type": "multipleRecordLinks",
-     "options": {
-      "linkedTableName": "Contacts",
-      "recordSelectivity": "Single"
-     }
-    },
-    {
-     "name": "Course Enrollment Bonus",
-     "type": "number",
-     "options": {
-      "precision": 1
-     }
-    },
-    {
-     "name": "Created",
-     "type": "createdTime"
-    },
-    {
-     "name": "Email (from Contact)",
-     "type": "multipleLookupValues"
-    },
-    {
-     "name": "Event Attendance",
-     "type": "number",
-     "options": {
-      "precision": 1
-     }
-    },
-    {
-     "name": "Finals Verififcation",
-     "type": "number",
-     "options": {
-      "precision": 1
-     }
-    },
-    {
-     "name": "Graduation Semester (from Education) (from Contact)",
-     "type": "multipleLookupValues"
-    },
-    {
-     "name": "Graduation Year (from Education) (from Contact)",
-     "type": "multipleLookupValues"
-    },
-    {
-     "name": "ID",
-     "type": "autoNumber"
-    },
-    {
-     "name": "Major (from Education) (from Contact)",
-     "type": "multipleLookupValues"
-    },
-    {
-     "name": "Matriculation Name 2 (from Education) (from Contact)",
-     "type": "multipleLookupValues"
-    },
-    {
-     "name": "Prototype Demonstration",
-     "type": "number",
-     "options": {
-      "precision": 1
-     }
-    },
-    {
-     "name": "Record ID",
-     "type": "formula"
-    },
-    {
-     "name": "Record ID (from Team)",
-     "type": "multipleLookupValues"
-    },
-    {
-     "name": "Recruiting new members",
-     "type": "number",
-     "options": {
-      "precision": 1
-     }
-    },
-    {
-     "name": "Registration Bonus",
-     "type": "number",
-     "options": {
-      "precision": 1
-     }
-    },
-    {
-     "name": "Requests",
-     "type": "singleLineText"
-    },
-    {
-     "name": "Sales Pitch",
-     "type": "number",
-     "options": {
-      "precision": 1
-     }
-    },
-    {
-     "name": "Submissions",
-     "type": "multipleRecordLinks",
-     "options": {
-      "linkedTableName": "Submissions",
-      "recordSelectivity": "Multiple"
-     }
-    },
-    {
-     "name": "Team",
-     "type": "multipleRecordLinks",
-     "options": {
-      "linkedTableName": "Teams",
-      "recordSelectivity": "Single"
-     }
-    },
-    {
-     "name": "Team Demo",
-     "type": "number",
-     "options": {
-      "precision": 1
-     }
-    }
-   ]
   },
   {
    "id": "tbllnSCeUWSLMGlR0",
