@@ -1,11 +1,7 @@
 // Import dependencies without using @ alias (direct path for better compatibility)
 import { auth0 } from "../../../lib/auth0";
-import { 
-  getUserByAuth0Id,
-  updateUserProfile 
-} from "../../../lib/airtable/entities/users";
-import { getEducation, updateEducation } from "../../../lib/airtable/entities/education";
-import { getInstitution } from "../../../lib/airtable/entities/institutions";
+import { updateUserProfile } from "../../../lib/airtable/entities/users";
+import { updateEducation } from "../../../lib/airtable/entities/education";
 
 // Force Node.js runtime for Auth0 compatibility
 export const runtime = 'nodejs';
@@ -89,144 +85,27 @@ export default async function handler(req, res) {
 
 /**
  * Handle GET requests for user profile
+ * Now uses the refactored profile implementation
  */
 async function handleGetRequest(req, res, user, startTime) {
   try {
     // Check if minimal mode is requested (for onboarding flow)
     const minimal = req.query.minimal === 'true';
     
-    // Set timeout for profile fetch
-    const timeoutDuration = minimal ? 3000 : 9000;
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("Profile fetch timed out")), timeoutDuration)
-    );
+    // Import the refactored profile implementation
+    const { getCompleteUserProfile } = await import('@/lib/userProfile.refactored');
     
-    // Prepare profile processing function
-    const processingPromise = async () => {
-      // Get the user profile from our entity layer
-      const baseProfile = await getUserByAuth0Id(user.sub);
-      
-      if (!baseProfile) {
-        // Return basic profile from Auth0 if no profile found
-        return {
-          auth0Id: user.sub,
-          email: user.email,
-          name: user.name,
-          picture: user.picture,
-          isProfileComplete: false,
-        };
-      }
-      
-      // If we're in minimal mode, return basic profile
-      if (minimal) {
-        return {
-          auth0Id: user.sub,
-          contactId: baseProfile.contactId,
-          email: baseProfile.email || user.email,
-          firstName: baseProfile.firstName || user.given_name,
-          lastName: baseProfile.lastName || user.family_name,
-          picture: user.picture,
-          onboardingStatus: baseProfile.onboardingStatus || "Registered",
-          isProfileComplete: false, // Simplified determination for minimal mode
-        };
-      }
-      
-      // For full profile, fetch related data
-      const educationId = baseProfile.Education && baseProfile.Education.length > 0 
-        ? baseProfile.Education[0] 
-        : null;
-      
-      // Fetch education data if available
-      let educationData = null;
-      let institutionData = null;
-      
-      if (educationId) {
-        educationData = await getEducation(educationId);
-        
-        // Fetch institution data if available in education
-        if (educationData && educationData.institution && educationData.institution.length > 0) {
-          institutionData = await getInstitution(educationData.institution[0]);
-        }
-      }
-      
-      // Combine all data into complete profile
-      const completeProfile = {
-        // Basic user info
-        auth0Id: user.sub,
-        contactId: baseProfile.contactId,
-        email: baseProfile.email || user.email,
-        firstName: baseProfile.firstName || user.given_name,
-        lastName: baseProfile.lastName || user.family_name,
-        picture: user.picture,
-        
-        // Education data
-        educationId: educationId,
-        degreeType: educationData?.degreeType || 
-                   baseProfile["Degree Type (from Education)"]?.[0] || 
-                   baseProfile.degreeType || "",
-        major: educationData?.majorName || 
-              baseProfile["Major (from Education)"]?.[0] || 
-              baseProfile.majorName || 
-              baseProfile.major || "",
-        programId: educationData?.major?.[0] || baseProfile.programId || null,
-        graduationYear: educationData?.graduationYear || 
-                      baseProfile["Graduation Year (from Education)"]?.[0] || 
-                      baseProfile.graduationYear || "",
-        graduationSemester: educationData?.graduationSemester || 
-                          baseProfile["Graduation Semester (from Education)"]?.[0] || 
-                          baseProfile.graduationSemester || "",
-        
-        // Institution data
-        institution: {
-          id: institutionData?.id || educationData?.institution?.[0] || null,
-          name: institutionData?.name || educationData?.institutionName || 
-                baseProfile.institutionName || "Not specified"
-        },
-        institutionId: institutionData?.id || educationData?.institution?.[0] || null,
-        institutionName: institutionData?.name || educationData?.institutionName || 
-                        baseProfile.institutionName || "Not specified",
-        
-        // Other profile data
-        referralSource: baseProfile["Referral Source"] || "",
-        onboardingStatus: baseProfile.onboardingStatus || "Registered",
-        headshot: baseProfile.Headshot && baseProfile.Headshot.length > 0 
-          ? baseProfile.Headshot[0].url 
-          : null,
-        
-        // Determine if profile is complete - with extra fallbacks for field names
-        isProfileComplete: Boolean(
-          baseProfile.firstName &&
-          baseProfile.lastName &&
-          (educationData?.degreeType || 
-           baseProfile["Degree Type (from Education)"]?.[0] || 
-           baseProfile.degreeType) &&
-          (educationData?.graduationYear || 
-           baseProfile["Graduation Year (from Education)"]?.[0] || 
-           baseProfile.graduationYear) &&
-          ((institutionData?.name || 
-            educationData?.institutionName || 
-            baseProfile.institutionName) && 
-           (institutionData?.id || 
-            educationData?.institution?.[0] || 
-            baseProfile.institutionId))
-        ),
-        
-        // Add timestamp for caching and debugging
-        lastUpdated: new Date().toISOString()
-      };
-      
-      return completeProfile;
-    };
-    
-    // Race profile fetch against timeout
-    const profile = await Promise.race([processingPromise(), timeoutPromise]);
+    // Get complete profile using the refactored implementation
+    const profile = await getCompleteUserProfile(user, { minimal });
     
     // Return full profile with metadata
     return res.status(200).json({
       profile,
       _meta: {
         processingTime: Date.now() - startTime,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        // Include a flag to indicate this is using the refactored implementation
+        refactored: true
       }
     });
   } catch (error) {
