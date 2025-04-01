@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Calendar, Clock, MapPin, ExternalLink } from 'lucide-react';
 import { format, addHours, isAfter } from 'date-fns';
-import { useUser } from '@auth0/nextjs-auth0/client';
+import { useUser } from '@auth0/nextjs-auth0';
 
 /**
  * UpcomingEvents Component - Refactored to use the new Airtable hooks
