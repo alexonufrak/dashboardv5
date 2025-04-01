@@ -1,5 +1,6 @@
 import { auth0 } from '@/lib/auth0'
-import { getUserProfile, base, createParticipationRecord } from '@/lib/airtable'
+import { createParticipationRecord } from '@/lib/airtable/entities';
+
 
 /**
  * API handler to create a new application

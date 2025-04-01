@@ -1,12 +1,6 @@
 import { auth0 } from '@/lib/auth0'
-import { 
-  getUserProfile, 
-  base, 
-  getTeamById, 
-  lookupInstitutionByEmail,
-  createTeamInvitation
-} from '@/lib/airtable'
 import { sendTeamInviteEmail } from '@/lib/email-service'
+import { getTeamById, lookupInstitutionByEmail } from '@/lib/airtable/entities'
 
 /**
  * API handler to invite a new member to an existing team

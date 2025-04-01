@@ -1,6 +1,6 @@
 import { auth0 } from '@/lib/auth0'
-import { getUserProfile, getTeamById } from '@/lib/airtable'
 import { updateMemberStatus, deleteTeamInvitation } from '@/lib/leaveOperations'
+import { getTeamById } from '@/lib/airtable/entities'
 
 /**
  * API handler to manage team members - update status or delete 

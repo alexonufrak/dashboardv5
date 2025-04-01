@@ -1,5 +1,6 @@
 import { auth0 } from '@/lib/auth0'
-import { getUserProfile, base, getTeamById } from '@/lib/airtable'
+import { teams, users } from '@/lib/airtable/entities'
+import { base } from '@/lib/airtable'
 
 /**
  * API handler to create a new team and add the user as a member
@@ -35,10 +36,10 @@ async function createTeamHandler(req, res) {
       return res.status(400).json({ error: 'Team name is required' })
     }
     
-    // Get user profile from Airtable
-    const userProfile = await getUserProfile(session.user.sub, session.user.email)
+    // Get user profile from Airtable using the new entity module
+    const userProfile = await users.getUserByAuth0Id(session.user.sub)
     
-    if (!userProfile || !userProfile.contactId) {
+    if (!userProfile || !userProfile.id) {
       return res.status(404).json({ error: 'User profile not found' })
     }
     
@@ -131,7 +132,7 @@ async function createTeamHandler(req, res) {
     
     // Get the complete team record to ensure we have the correct data structure
     // This is an extra API call, but ensures consistency and makes sure all team data is properly initialized
-    const completeTeam = await getTeamById(teamRecord.id, userProfile.contactId)
+    const completeTeam = await teams.getTeamById(teamRecord.id)
     
     if (!completeTeam) {
       // If we can't get the complete team (unlikely), fall back to manual construction

@@ -1,242 +1,210 @@
-// components/TeamCard.js
-import { useState, useEffect } from "react";
-import { useRouter } from "next/router";
-import Image from "next/image";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Users, Info, Pencil, UserPlus, Compass } from "lucide-react";
-import TeamDetailModal from "./TeamDetailModal";
-import TeamEditDialog from "./TeamEditDialog";
-import TeamInviteDialog from "./TeamInviteDialog";
-import CohortCard from "@/components/cohorts/CohortCard";
-import ProgramDetailModal from "@/components/program/ProgramDetailModal";
-import { useToast } from "@/components/ui/use-toast";
-import { useTeamCohorts } from "@/lib/useDataFetching";
+import React from 'react';
+import { useRouter } from 'next/router';
+import { useTeam, useTeamMembers } from '@/lib/airtable/hooks';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Users, ExternalLink, ChevronRight } from 'lucide-react';
 
 /**
- * TeamCard component displays team information with associated cohorts.
+ * TeamCard Component - Refactored to use the new Airtable hooks
+ * Displays a card with summary information about a team
+ * 
  * @param {Object} props - Component props
- * @param {Object} props.team - Team data object
- * @param {Object} props.profile - User profile data
- * @param {Function} props.onTeamUpdated - Callback function when team is updated
+ * @param {string} props.teamId - The ID of the team to display
+ * @param {boolean} props.showFooter - Whether to show the footer with action buttons
+ * @param {function} props.onViewDetails - Callback when the view details button is clicked
  */
-const TeamCard = ({ team, profile, onTeamUpdated }) => {
+export default function TeamCard({ teamId, showFooter = true, onViewDetails }) {
   const router = useRouter();
-  const { toast } = useToast();
-  const [currentTeam, setCurrentTeam] = useState(team);
-  const [showDetails, setShowDetails] = useState(false);
-  const [showTeamEditDialog, setShowTeamEditDialog] = useState(false);
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [selectedCohort, setSelectedCohort] = useState(null);
   
-  // Use our custom hook to fetch and cache team cohorts
+  // Use the team hook to fetch team data
   const { 
-    data: teamCohorts = [], 
-    isLoading: isLoadingCohorts, 
-    error: cohortsError 
-  } = useTeamCohorts(currentTeam?.id);
+    data: team, 
+    isLoading: teamLoading, 
+    error: teamError 
+  } = useTeam(teamId);
   
-  // Update current team when prop changes
-  useEffect(() => {
-    setCurrentTeam(team);
-  }, [team]);
+  // Use the team members hook to fetch member data
+  const { 
+    data: members, 
+    isLoading: membersLoading 
+  } = useTeamMembers(teamId);
   
-  // Handle viewing cohort details
-  const handleViewCohortDetails = (cohort) => {
-    setSelectedCohort(cohort);
-  };
+  const isLoading = teamLoading || membersLoading;
   
-  // Handle team updates
-  const handleTeamUpdated = (updatedTeam) => {
-    setCurrentTeam(updatedTeam);
-    
-    // Call parent callback if provided
-    if (onTeamUpdated) {
-      onTeamUpdated(updatedTeam);
-    }
-  };
-  
-  // Handle program dashboard navigation
-  const handleProgramDashboardClick = (cohort) => {
-    if (cohort && cohort.initiativeDetails && cohort.initiativeDetails.id) {
-      router.push(`/dashboard/program/${cohort.initiativeDetails.id}`, undefined, { shallow: true });
-    } else {
-      // Fallback to first cohort's initiative if available
-      const firstCohort = teamCohorts && teamCohorts.length > 0 ? teamCohorts[0] : null;
-      if (firstCohort && firstCohort.initiativeDetails && firstCohort.initiativeDetails.id) {
-        router.push(`/dashboard/program/${firstCohort.initiativeDetails.id}`, undefined, { shallow: true });
-      } else {
-        // No specific program found, redirect to dashboard
-        router.push("/dashboard", undefined, { shallow: true });
-      }
-    }
-  };
-  
-  // If no team data is provided, show a not found message
-  if (!currentTeam) {
+  // Handle loading state
+  if (isLoading) {
     return (
-      <Card className="mb-5">
-        <CardContent className="py-6 text-center text-muted-foreground italic">
-          You are not currently part of any team.
+      <Card className="w-full">
+        <CardHeader>
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+          <div className="flex mt-4">
+            <Skeleton className="h-8 w-8 rounded-full" />
+            <Skeleton className="h-8 w-8 rounded-full -ml-2" />
+            <Skeleton className="h-8 w-8 rounded-full -ml-2" />
+          </div>
         </CardContent>
+        {showFooter && (
+          <CardFooter className="border-t px-6 py-4">
+            <Skeleton className="h-9 w-full" />
+          </CardFooter>
+        )}
       </Card>
     );
   }
   
-  // Get active members only
-  const activeMembers = currentTeam.members ? currentTeam.members.filter(member => member.status === "Active") : [];
-  
-  return (
-    <>
-      <Card className="mb-5">
-        <CardHeader className="flex flex-col gap-4">
-          {currentTeam.image && (
-            <div className="w-full h-40 relative rounded-md overflow-hidden -mt-3 -mx-6 px-6 pt-3">
-              <Image 
-                src={currentTeam.image}
-                alt={`${currentTeam.name} header`}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 600px"
-              />
-            </div>
-          )}
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">{currentTeam.name}</CardTitle>
-            <Badge className="ml-2">
-              {activeMembers.length} {activeMembers.length === 1 ? 'member' : 'members'}
-            </Badge>
-          </div>
+  // Handle error state
+  if (teamError) {
+    return (
+      <Card className="w-full border-red-200 bg-red-50">
+        <CardHeader>
+          <CardTitle className="text-red-700">Error Loading Team</CardTitle>
+          <CardDescription className="text-red-600">
+            {teamError.message || 'Failed to load team details'}
+          </CardDescription>
         </CardHeader>
-        
-        <CardContent>
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-            {currentTeam.description || "No description available."}
-          </p>
-          
-          {activeMembers.length > 0 && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-              <Users className="h-4 w-4" />
-              <span>
-                {activeMembers.filter(m => m.isCurrentUser).length > 0 ? 
-                  "You and " + (activeMembers.length - 1) + " others" : 
-                  activeMembers.length + " team members"}
-              </span>
-            </div>
-          )}
-          
-          {/* Team's Cohorts/Programs Section */}
-          <div className="mt-4">
-            <h4 className="text-sm font-semibold mb-2">Team Programs:</h4>
-            <div className="flex flex-wrap">
-              {isLoadingCohorts ? (
-                <div className="w-full space-y-2">
-                  <div className="flex animate-pulse space-x-2">
-                    <div className="h-16 w-32 bg-gray-200 rounded"></div>
-                    <div className="h-16 w-32 bg-gray-200 rounded"></div>
-                  </div>
-                  <div className="h-4 w-40 bg-gray-100 rounded animate-pulse"></div>
-                </div>
-              ) : cohortsError ? (
-                <p className="text-sm text-red-500">Failed to load programs</p>
-              ) : teamCohorts && teamCohorts.length > 0 ? (
-                teamCohorts.map(cohort => (
-                  <CohortCard 
-                    key={cohort.id}
-                    cohort={{
-                      ...cohort,
-                      onViewDetails: () => handleViewCohortDetails(cohort)
-                    }}
-                    profile={profile}
-                    condensed={true}
-                  />
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground italic">No programs associated with this team yet.</p>
-              )}
-            </div>
-          </div>
-        </CardContent>
-        
-        <CardFooter className="flex gap-2 pt-2 flex-wrap">
-          <Button 
-            variant="secondary"
-            className="flex-1"
-            size="default"
-            onClick={() => setShowDetails(true)}
-          >
-            <Info className="h-4 w-4 mr-1" />
-            View Details
-          </Button>
-          
-          {activeMembers.some(m => m.isCurrentUser) && (
-            <>
-              <Button
-                variant="outline"
-                className="flex-1"
-                size="default"
-                onClick={() => setShowTeamEditDialog(true)}
-              >
-                <Pencil className="h-4 w-4 mr-1" />
-                Edit Details
-              </Button>
-              
-              <Button
-                variant="default"
-                className="flex-1"
-                size="default"
-                onClick={() => setShowInviteDialog(true)}
-              >
-                <UserPlus className="h-4 w-4 mr-1" />
-                Invite Member
-              </Button>
-            </>
-          )}
-        </CardFooter>
       </Card>
-      
-      <TeamDetailModal 
-        team={currentTeam} 
-        isOpen={showDetails} 
-        onClose={() => setShowDetails(false)} 
-        onTeamUpdated={handleTeamUpdated}
-      />
-      
-      <TeamEditDialog 
-        team={currentTeam}
-        open={showTeamEditDialog}
-        onClose={() => setShowTeamEditDialog(false)}
-        onTeamUpdated={handleTeamUpdated}
-      />
-      
-      <TeamInviteDialog
-        team={currentTeam}
-        open={showInviteDialog}
-        onClose={() => setShowInviteDialog(false)}
-        onTeamUpdated={handleTeamUpdated}
-      />
-      
-      {/* Program Detail Modal for cohorts */}
-      {selectedCohort && (
-        <ProgramDetailModal
-          cohort={selectedCohort}
-          profile={profile}
-          isOpen={!!selectedCohort}
-          onClose={() => setSelectedCohort(null)}
-          onApply={(cohort) => {
-            // Handle successful application
-            toast({
-              title: "Application Submitted",
-              description: `Your application to ${cohort.initiativeDetails?.name || "the program"} has been submitted.`,
-            });
-            setSelectedCohort(null);
-          }}
-          applications={[]} // We don't have applications data in the team card context
-        />
-      )}
-    </>
-  );
-};
+    );
+  }
+  
+  // Handle case where team is not found
+  if (!team) {
+    return (
+      <Card className="w-full border-orange-200 bg-orange-50">
+        <CardHeader>
+          <CardTitle className="text-orange-700">Team Not Found</CardTitle>
+          <CardDescription className="text-orange-600">
+            The team you&apos;re looking for doesn&apos;t exist or you may not have access.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+  
+  // Get the team member count
+  const memberCount = members?.length || team.memberCount || 0;
+  
+  // Display a subset of members for the avatar group
+  const displayMembers = members?.slice(0, 3) || [];
+  
+  // Handle view details click
+  const handleViewDetails = () => {
+    if (onViewDetails) {
+      onViewDetails(team);
+    } else {
+      // Default behavior: navigate to team details page
+      router.push(`/dashboard/teams/${team.id}`);
+    }
+  };
 
-export default TeamCard;
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle>{team.name}</CardTitle>
+            {team.programName && (
+              <CardDescription>
+                {team.programName}
+                {team.cohortName && ` • ${team.cohortName}`}
+              </CardDescription>
+            )}
+          </div>
+          {team.status && (
+            <Badge className={
+              team.status === 'Active' ? 'bg-green-100 text-green-800' : 
+              team.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
+              'bg-gray-100 text-gray-800'
+            }>
+              {team.status}
+            </Badge>
+          )}
+        </div>
+      </CardHeader>
+      
+      <CardContent>
+        {team.description && (
+          <p className="text-sm text-muted-foreground mb-4">
+            {team.description}
+          </p>
+        )}
+        
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            {displayMembers.length > 0 ? (
+              <div className="flex -space-x-2">
+                {displayMembers.map((member, i) => (
+                  <Avatar key={member.id || i} className="border-2 border-background">
+                    <AvatarImage 
+                      src={member.avatarUrl} 
+                      alt={member.name} 
+                    />
+                    <AvatarFallback>
+                      {member.name?.split(' ').map(n => n[0]).join('').toUpperCase() || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                ))}
+                {memberCount > displayMembers.length && (
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-xs font-medium -ml-2 border-2 border-background">
+                    +{memberCount - displayMembers.length}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center text-muted-foreground">
+                <Users className="h-4 w-4 mr-1" />
+                <span className="text-sm">{memberCount} members</span>
+              </div>
+            )}
+          </div>
+          
+          {team.createdTime && (
+            <span className="text-xs text-muted-foreground">
+              {new Date(team.createdTime).toLocaleDateString()}
+            </span>
+          )}
+        </div>
+      </CardContent>
+      
+      {showFooter && (
+        <CardFooter className="border-t px-6 py-4">
+          <div className="flex w-full justify-between">
+            {team.externalUrl ? (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1"
+                onClick={() => window.open(team.externalUrl, '_blank')}
+              >
+                <ExternalLink className="h-4 w-4" />
+                External Link
+              </Button>
+            ) : (
+              <div></div>
+            )}
+            
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="gap-1"
+              onClick={handleViewDetails}
+            >
+              View Details
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardFooter>
+      )}
+    </Card>
+  );
+}

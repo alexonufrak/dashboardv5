@@ -1,6 +1,6 @@
 import { auth0 } from '@/lib/auth0'
-import { getUserProfile, getTeamById } from '@/lib/airtable'
 import { leaveTeam } from '@/lib/leaveOperations'
+import { getTeamById } from '@/lib/airtable/entities'
 
 /**
  * API handler for leaving a team

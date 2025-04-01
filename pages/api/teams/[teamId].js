@@ -1,5 +1,6 @@
 import { auth0 } from '@/lib/auth0'
-import { getUserProfile, getTeamById, updateTeam, base } from '@/lib/airtable'
+import { getTeamById, updateTeam } from '@/lib/airtable/entities';
+
 
 /**
  * API handler to get or update a specific team

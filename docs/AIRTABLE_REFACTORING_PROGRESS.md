@@ -1,0 +1,129 @@
+# Airtable Refactoring Progress
+
+## Overview
+
+The Airtable refactoring project aims to replace the monolithic `airtable.js` implementation with a domain-driven architecture. This document tracks the progress of this refactoring effort.
+
+## Completed Items
+
+### Core Infrastructure
+- ✅ Core client module (`core/client.js`)
+- ✅ Caching mechanism (`core/cache.js`)
+- ✅ Rate limiting/throttling (`core/throttle.js`)
+- ✅ Error handling utilities (`core/errors.js`)
+- ✅ Core index exports (`core/index.js`)
+
+### Table Definitions
+- ✅ Table schema definitions (`tables/definitions.js`)
+- ✅ Table index exports (`tables/index.js`)
+
+### Entity Modules
+- ✅ Users entity (`entities/users.js`)
+- ✅ Education entity (`entities/education.js`)
+- ✅ Institutions entity (`entities/institutions.js`)
+- ✅ Participation entity (`entities/participation.js`)
+- ✅ Teams entity (`entities/teams.js`)
+- ✅ Cohorts entity (`entities/cohorts.js`)
+- ✅ Programs entity (`entities/programs.js`)
+- ✅ Submissions entity (`entities/submissions.js`)
+- ✅ Points entity (`entities/points.js`)
+- ✅ Resources entity (`entities/resources.js`)
+- ✅ Events entity (`entities/events.js`)
+- ✅ Entities index exports (`entities/index.js`)
+
+### React Query Hooks
+- ✅ Profile hooks (`hooks/useProfile.js`)
+- ✅ Participation hooks (`hooks/useParticipation.js`)
+- ✅ Teams hooks (`hooks/useTeams.js`)
+- ✅ Cohorts hooks (`hooks/useCohorts.js`)
+- ✅ Programs hooks (`hooks/usePrograms.js`)
+- ✅ Submissions hooks (`hooks/useSubmissions.js`)
+- ✅ Points hooks (`hooks/usePoints.js`)
+- ✅ Resources hooks (`hooks/useResources.js`)
+- ✅ Events hooks (`hooks/useEvents.js`)
+- ✅ Hooks index exports (`hooks/index.js`)
+
+### Sample API Routes
+- ✅ Team members API (`pages/api/teams/members/[teamId].js`)
+- ✅ User profile API v2 (`pages/api/user/profile-v2.js`)
+- ✅ Participation leave API v2 (`pages/api/participation/leave-v2.js`)
+- ✅ Program details API v2 (`pages/api/programs/details-v2.js`)
+- ✅ Team submissions API v2 (`pages/api/submissions/team-v2.js`)
+- ✅ User points summary API v2 (`pages/api/points/user-summary-v2.js`)
+- ✅ Available resources API v2 (`pages/api/resources/available-v2.js`)
+- ✅ Upcoming events API v2 (`pages/api/events/upcoming-v2.js`)
+- ✅ Dashboard overview API v2 (`pages/api/dashboard/overview-v2.js`)
+- ✅ User participation API v2 (`pages/api/user/participation-v2.js`)
+- ✅ Team creation API v2 (`pages/api/teams/create-v2.js`)
+- ✅ Rewards available API v2 (`pages/api/rewards/available-v2.js`)
+- ✅ Rewards claim API v2 (`pages/api/rewards/claim-v2.js`)
+- ✅ Team members update API v2 (`pages/api/teams/members/update-v2.js`)
+
+### Sample Refactored Components
+- ✅ User profile operations (`userProfile.refactored.js`)
+- ✅ Leave operations (`leaveOperations.refactored.js`)
+- ✅ Program overview (`components/program/ProgramOverview.refactored.js`)
+- ✅ Submission summary card (`components/submissions/SubmissionSummaryCard.refactored.js`)
+- ✅ Resources component (`components/program/common/Resources.refactored.js`)
+- ✅ Points summary component (`components/program/common/PointsSummary.refactored.js`)
+- ✅ Upcoming events component (`components/program/common/UpcomingEvents.refactored.js`)
+- ✅ Program dashboard component (`components/program/ProgramDashboard.refactored.js`)
+- ✅ Team card component (`components/teams/TeamCard.refactored.js`)
+- ✅ Cohort card component (`components/cohorts/CohortCard.refactored.js`)
+- ✅ Profile card component (`components/profile/ProfileCard.refactored.js`)
+- ✅ Milestone table component (`components/milestones/MilestoneTable.refactored.js`)
+
+### Documentation
+- ✅ Airtable Migration Guide (`docs/AIRTABLE_MIGRATION_GUIDE.md`)
+- ✅ Airtable Refactoring Progress (`docs/AIRTABLE_REFACTORING_PROGRESS.md`)
+- ✅ Airtable Implementation Summary (`docs/AIRTABLE_IMPLEMENTATION_SUMMARY.md`)
+- ✅ Airtable Transition Plan (`docs/AIRTABLE_TRANSITION_PLAN.md`)
+- ✅ Airtable Testing Strategy (`docs/AIRTABLE_TESTING_STRATEGY.md`)
+- ✅ Airtable Final Migration Plan (`docs/AIRTABLE_FINAL_MIGRATION_PLAN.md`)
+
+### Migration Tools
+- ✅ Import updater script (`scripts/update-airtable-imports.js`)
+- ✅ Refactored file renamer script (`scripts/rename-refactored-files.js`)
+
+## In Progress Items
+
+### API Routes
+- ⏳ Migration of remaining API routes to use new architecture
+  - ✅ Automatically updated 8 API routes with import script
+  - ✅ Manually refactored team creation API route
+  - ⏳ Continue refactoring remaining routes
+
+### Components
+- ⏳ Migration of remaining components to use new hooks
+  - ✅ Completed TeamCard.js refactoring
+  - ✅ Completed ProfileCard.js refactoring
+  - ⏳ Continue refactoring and renaming remaining components
+
+## Pending Items
+
+- 📋 Comprehensive testing of all refactored modules
+- 📋 Performance comparison between old and new implementations
+- 📋 Deprecation plan for the old `airtable.js` file
+- 📋 Gradual rollout of refactored components to production
+
+## Migration Progress
+
+| Domain Area            | Entities | Hooks | Sample API | Sample Component | Progress |
+|------------------------|----------|-------|------------|------------------|----------|
+| User & Profile         | ✅       | ✅    | ✅         | ✅               | 100%     |
+| Education/Institutions | ✅       | ✅    | ❌         | ❌               | 50%      |
+| Teams                  | ✅       | ✅    | ✅         | ✅               | 100%     |
+| Participation          | ✅       | ✅    | ✅         | ❌               | 75%      |
+| Programs & Cohorts     | ✅       | ✅    | ✅         | ✅               | 100%     |
+| Submissions            | ✅       | ✅    | ✅         | ✅               | 100%     |
+| Points & Rewards       | ✅       | ✅    | ✅         | ✅               | 100%     |
+| Resources              | ✅       | ✅    | ✅         | ✅               | 100%     |
+| Events                 | ✅       | ✅    | ✅         | ✅               | 100%     |
+
+## Next Steps
+
+1. Continue refactoring more API routes to use the new architecture
+2. Create more sample refactored components
+3. Begin systematically replacing imports in the codebase
+4. Develop a testing plan to ensure all functionality works correctly
+5. Gradually phase out the old `airtable.js` implementation

@@ -1,5 +1,6 @@
 import { auth0 } from "@/lib/auth0"
-import { getUserProfile, getParticipationRecords, getCachedOrFetch } from "@/lib/airtable"
+import { getParticipationRecords } from '@/lib/airtable/entities';
+
 
 /**
  * API endpoint to get a user's active program participation
