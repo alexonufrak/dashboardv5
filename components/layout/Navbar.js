@@ -3,18 +3,31 @@
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { useUser } from "@auth0/nextjs-auth0"
-import { useState, useEffect } from "react"
+import { useState } from "react"
 // ProfileEditModal is now included in MainDashboardLayout
 import Logo from "@/components/common/Logo"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { useProfileData, useUpdateProfile } from "@/lib/airtable/hooks/useProfile"
+import { toast } from "sonner"
 
 const Navbar = () => {
   const router = useRouter()
-  const { user, isLoading } = useUser()
+  const { user, isLoading: userLoading } = useUser()
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
-  const [profile, setProfile] = useState(null)
-  const [isProfileLoading, setIsProfileLoading] = useState(false)
+  
+  // Use the React Query hook for profile data
+  const { 
+    data: profile, 
+    isLoading: profileLoading,
+    error: profileError 
+  } = useProfileData()
+  
+  // Use the mutation hook for profile updates
+  const updateProfileMutation = useUpdateProfile()
+  
+  // Combined loading state
+  const isLoading = userLoading || profileLoading
 
   // Get initials for avatar fallback
   const getInitials = () => {
@@ -27,28 +40,6 @@ const Navbar = () => {
       .toUpperCase();
   };
 
-  // Fetch user profile when needed
-  useEffect(() => {
-    const fetchProfile = async () => {
-      if (user && isProfileModalOpen && !profile) {
-        setIsProfileLoading(true)
-        try {
-          const response = await fetch("/api/user/profile-v2")
-          if (response.ok) {
-            const data = await response.json()
-            setProfile(data)
-          }
-        } catch (error) {
-          console.error("Error fetching profile:", error)
-        } finally {
-          setIsProfileLoading(false)
-        }
-      }
-    }
-    
-    fetchProfile()
-  }, [user, isProfileModalOpen, profile])
-
   const handleOpenProfileModal = (e) => {
     e.preventDefault()
     setIsProfileModalOpen(true)
@@ -60,33 +51,22 @@ const Navbar = () => {
 
   const handleProfileUpdate = async (updatedData) => {
     try {
-      const response = await fetch("/api/user/profile-v2", {
-        method: "PATCH", // Use PATCH instead of PUT to only update specified fields
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: 'include', // Explicitly include credentials for session auth
-        body: JSON.stringify(updatedData),
-      });
+      // Use the mutation hook to update the profile
+      await updateProfileMutation.mutateAsync(updatedData);
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update profile");
-      }
-      
-      const updatedProfile = await response.json();
-      setProfile(updatedProfile);
+      // Close the modal on success
+      setIsProfileModalOpen(false);
       
       // If we're on the dashboard, use a gentle approach - don't reload the whole page
       if (router.pathname === "/dashboard") {
-        // Use queryClient to refetch data instead of full page reload
-        // This is less disruptive than router.reload()
+        // Use router.replace for a shallow update
         router.replace(router.asPath, undefined, { shallow: true });
       }
       
-      return updatedProfile;
+      return updatedData;
     } catch (err) {
       console.error("Error updating profile:", err);
+      toast.error(err.message || "Failed to update profile");
       throw err;
     }
   };

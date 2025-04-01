@@ -18,6 +18,7 @@ import { auth0 } from '@/lib/auth0'
 import MainDashboardLayout from '@/components/layout/MainDashboardLayout'
 import TransitionLayout from '@/components/common/TransitionLayout'
 import { BlurFade } from "@/components/magicui/blur-fade"
+import { useProfileData } from '@/lib/airtable/hooks/useProfile'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -36,52 +37,39 @@ const ProgramsApplicationPage = () => {
   const { user, error: userError, isLoading: userLoading } = useUser()
   const { cohortId } = router.query
   
+  // Use the profile hook directly instead of state and fetch
+  const { data: profile, isLoading: profileLoading, error: profileError } = useProfileData();
+  
   // State to manage application data and UI
-  const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
   const [cohort, setCohort] = useState(null)
-  const [profile, setProfile] = useState(null)
   const [showXtrapreneursForm, setShowXtrapreneursForm] = useState(false)
   const [applicationType, setApplicationType] = useState('standard')
+  const [isCohortLoading, setIsCohortLoading] = useState(true)
   
-  // Fetch cohort and profile data
+  // Combined loading state
+  const isLoading = profileLoading || userLoading || isCohortLoading;
+  
+  // Set profile error to component error if exists
   useEffect(() => {
-    // Only fetch data when cohortId is available and user is loaded
-    if (cohortId && user && !userLoading) {
-      setIsLoading(true)
+    if (profileError) {
+      setError(profileError.message || 'Failed to load profile data');
+    }
+  }, [profileError]);
+  
+  // Fetch cohort data
+  useEffect(() => {
+    // Only fetch data when cohortId is available and profile is loaded
+    if (cohortId && user && !userLoading && profile) {
+      setIsCohortLoading(true)
       setError(null) // Clear any previous errors
       
-      // Fetch data in sequence to avoid race conditions
-      const fetchData = async () => {
+      // Fetch cohort data
+      const fetchCohortData = async () => {
         try {
-          // Step 1: Fetch user profile
-          const profileResponse = await fetch('/api/user/profile')
-          const profileData = await profileResponse.json()
-          
-          if (!profileResponse.ok) {
-            throw new Error('Failed to load user profile')
-          }
-          
-          if (profileData.profile) {
-            setProfile(profileData.profile)
-          } else if (profileData.auth0Id) {
-            // Use the basic profile info if it's available
-            setProfile({
-              ...profileData,
-              // Add any missing fields that might be needed
-              contactId: profileData.contactId || null,
-              email: profileData.email || user.email,
-              firstName: profileData.firstName || user.given_name || user.name?.split(' ')[0] || '',
-              lastName: profileData.lastName || user.family_name || user.name?.split(' ').slice(1).join(' ') || '',
-              institutionName: profileData.institutionName || profileData.institution?.name || ''
-            })
-          } else {
-            throw new Error('Failed to load user profile data')
-          }
-          
-          // Step 2: Fetch cohort data
+          // Fetch cohort data
           const cohortResponse = await fetch(`/api/cohorts/${cohortId}/details`)
           const cohortData = await cohortResponse.json()
           
@@ -119,16 +107,16 @@ const ProgramsApplicationPage = () => {
             throw new Error('Failed to load cohort details')
           }
         } catch (error) {
-          console.error('Error loading application data:', error)
-          setError(error.message || 'An error occurred loading application data')
+          console.error('Error loading cohort data:', error)
+          setError(error.message || 'An error occurred loading cohort data')
         } finally {
-          setIsLoading(false)
+          setIsCohortLoading(false)
         }
       }
       
-      fetchData()
+      fetchCohortData()
     }
-  }, [cohortId, user, userLoading])
+  }, [cohortId, user, userLoading, profile])
   
   // Handle Fillout form submission
   const handleFilloutSubmit = async (submissionId) => {
