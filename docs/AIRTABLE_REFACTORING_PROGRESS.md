@@ -43,11 +43,14 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
 - ✅ Resources hooks (`hooks/useResources.js`)
 - ✅ Events hooks (`hooks/useEvents.js`)
 - ✅ Partnerships hooks (`hooks/usePartnerships.js`)
+- ✅ Onboarding hooks (`hooks/useOnboarding.js`)
 - ✅ Hooks index exports (`hooks/index.js`)
 
 ### Sample API Routes
 - ✅ Team members API (`pages/api/teams/members/[teamId].js`)
 - ✅ User profile API v2 (`pages/api/user/profile-v2.js`)
+- ✅ User onboarding API v2 (`pages/api/user/onboarding-completed-v2.js`)
+- ✅ User check email API v2 (`pages/api/user/check-email-v2.js`)
 - ✅ Participation leave API v2 (`pages/api/participation/leave-v2.js`)
 - ✅ Initiative details API v2 (`pages/api/programs/details-v2.js`) (using program in URL for compatibility)
 - ✅ Team submissions API v2 (`pages/api/submissions/team-v2.js`)
@@ -149,8 +152,17 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
 - Fixed infinite redirect loop in onboarding flow
 - Added proper cache clearing in the user profile endpoints
 - Addressed import errors in build process by re-exporting functions
-- Added new user profile-v2 and onboarding-completed routes using domain model architecture
+- Added new user profile-v2 and onboarding-completed-v2 routes using domain model architecture
 - Fixed profile update functionality by fully migrating to v2 endpoints
 - Created check-email-v2 endpoint using domain entities
 - Updated all profile hooks to use v2 endpoints consistently
 - Refactored components to use React Query hooks instead of direct API calls
+- Created dedicated useOnboarding.js with useUpdateOnboardingStatus hook
+- Updated program page to use onboarding hooks instead of direct API calls
+- Implemented best practices for React Query with optimistic updates for onboarding
+- Created missing hooks for remaining dashboard functionality:
+  - useApplications.js for application data
+  - useMilestones.js for cohort milestone data
+  - Added useUserTeams to useTeams.js for fetching all user teams
+- Updated DashboardContext to use refactored hooks, removing direct dependency on useDataFetching.js
+- Consolidated dashboard data fetching through domain-driven hooks for improved maintainability

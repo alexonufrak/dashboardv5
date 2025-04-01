@@ -5,14 +5,17 @@ import { useUser } from "@auth0/nextjs-auth0"
 import { useQueryClient } from '@tanstack/react-query'
 import { 
   useProfileData, 
-  useUpdateProfile
+  useUpdateProfile,
+  useUpdateOnboardingStatus,
+  useUserTeams,
+  useUserApplications,
+  useParticipation,
+  useCohortMilestones
 } from '@/lib/airtable/hooks'
 
+// Still need these functions from the old implementation
+// These will be refactored later
 import {
-  useTeamsData, 
-  useApplicationsData, 
-  useProgramData, 
-  useMilestoneData,
   updateTeamData,
   inviteTeamMember,
   invalidateAllData
@@ -130,18 +133,18 @@ export function DashboardProvider({ children }) {
     data: teams, 
     isLoading: isTeamsLoading, 
     error: teamsError 
-  } = useTeamsData()
+  } = useUserTeams()
   
   const { 
     data: applications, 
     isLoading: isApplicationsLoading 
-  } = useApplicationsData()
+  } = useUserApplications()
   
   const {
     data: participationData,
     isLoading: isProgramLoading,
     error: programError
-  } = useProgramData()
+  } = useParticipation()
   
   // Process teams data
   const teamData = useMemo(() => {
@@ -213,7 +216,7 @@ export function DashboardProvider({ children }) {
   const { 
     data: milestonesData,
     isLoading: isMilestonesLoading 
-  } = useMilestoneData(cohortId)
+  } = useCohortMilestones(cohortId)
   
   
   // Function to get program cohort IDs - Define the function before using it
@@ -325,8 +328,9 @@ export function DashboardProvider({ children }) {
   // Combine error states
   const error = profileError || teamsError
   
-  // Handle profile update with the new hooks
+  // Use the new hooks
   const updateProfileMutation = useUpdateProfile();
+  const updateOnboardingStatusMutation = useUpdateOnboardingStatus();
   
   async function handleProfileUpdate(updatedData) {
     setIsUpdating(true)
@@ -336,6 +340,20 @@ export function DashboardProvider({ children }) {
       return updatedProfile
     } catch (err) {
       setIsUpdating(false)
+      throw err
+    }
+  }
+  
+  // Handle onboarding status update with the new hook
+  async function handleUpdateOnboardingStatus(status = 'Applied', options = {}) {
+    try {
+      return await updateOnboardingStatusMutation.mutateAsync({
+        contactId: profile?.contactId,
+        status,
+        ...options
+      })
+    } catch (err) {
+      console.error("Error updating onboarding status:", err)
       throw err
     }
   }
@@ -810,6 +828,7 @@ export function DashboardProvider({ children }) {
     // Actions
     refreshData: refreshDataWithTimestamps,
     handleProfileUpdate,
+    updateOnboardingStatus: handleUpdateOnboardingStatus,
     
     // Helper methods for navigation
     hasProgramData: Boolean(programDataProcessed.cohort) || Boolean(teamData?.cohortIds?.length),

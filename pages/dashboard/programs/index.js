@@ -29,7 +29,8 @@ function ProgramsPageContent({ onNavigate }) {
     profile, 
     applications, 
     isLoadingApplications,
-    participationData 
+    participationData,
+    updateOnboardingStatus // Use the context method instead of direct hook
   } = useDashboard()
 
   // If no profile, don't render anything - parent component will handle loading state
@@ -85,12 +86,11 @@ function ProgramsPageContent({ onNavigate }) {
           onApplySuccess={(cohort) => {
             toast.success(`Applied to ${cohort.initiativeDetails?.name || 'program'} successfully!`);
             
-            // Update onboarding status in Airtable to 'Applied'
-            fetch('/api/user/onboarding-completed', {
-              method: 'POST'
-            }).catch(err => {
-              console.error("Error updating onboarding status after application:", err);
-            });
+            // Update onboarding status using the context method
+            updateOnboardingStatus('Applied', { showToast: false })
+              .catch(error => {
+                console.error("Error updating onboarding status after application:", error);
+              });
           }}
         />
       </BlurFade>
