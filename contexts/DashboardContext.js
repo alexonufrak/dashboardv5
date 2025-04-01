@@ -5,11 +5,14 @@ import { useUser } from "@auth0/nextjs-auth0"
 import { useQueryClient } from '@tanstack/react-query'
 import { 
   useProfileData, 
+  useUpdateProfile
+} from '@/lib/airtable/hooks'
+
+import {
   useTeamsData, 
   useApplicationsData, 
   useProgramData, 
   useMilestoneData,
-  updateProfileData,
   updateTeamData,
   inviteTeamMember,
   invalidateAllData
@@ -322,11 +325,13 @@ export function DashboardProvider({ children }) {
   // Combine error states
   const error = profileError || teamsError
   
-  // Handle profile update with caching
+  // Handle profile update with the new hooks
+  const updateProfileMutation = useUpdateProfile();
+  
   async function handleProfileUpdate(updatedData) {
     setIsUpdating(true)
     try {
-      const updatedProfile = await updateProfileData(updatedData, queryClient)
+      const updatedProfile = await updateProfileMutation.mutateAsync(updatedData)
       setIsUpdating(false)
       return updatedProfile
     } catch (err) {
