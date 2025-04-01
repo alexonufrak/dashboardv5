@@ -109,7 +109,7 @@ async function handleUpdateProfile(req, res, user, startTime) {
     };
     
     // Update profile using entity module
-    const updatedProfile = await users.updateProfile(updateData);
+    const updatedProfile = await users.updateUserProfile(currentProfile.contactId, updateData);
     
     // Calculate processing time
     const processingTime = Date.now() - startTime;
