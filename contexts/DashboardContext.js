@@ -21,6 +21,9 @@ import {
   invalidateAllData
 } from '@/lib/useDataFetching'
 
+// Import user entity functions for optimized lookups
+import usersModule from '@/lib/airtable/entities/users'
+
 /**
  * Generates fallback milestones if none are fetched from API
  * @param {string} programName - Name of the program/cohort
@@ -791,6 +794,48 @@ export function DashboardProvider({ children }) {
       });
     }
   };
+  
+  /**
+   * Enhanced user lookup function that tries multiple paths to find a user
+   * Uses the optimized findUserByAnyIdentifier from our entities module
+   * @param {Object} identifiers Object containing available identifiers (email, auth0Id, contactId)
+   * @param {boolean} fetchDetails Whether to fetch additional details like applications
+   * @returns {Promise<Object|null>} User object or null if not found
+   */
+  const findUser = async (identifiers, fetchDetails = false) => {
+    try {
+      // Use our optimized lookup function from the users entity module
+      const user = await usersModule.findUserByAnyIdentifier(identifiers);
+      
+      if (!user) return null;
+      
+      // If we don't need details, return basic user data
+      if (!fetchDetails) return user;
+      
+      // Fetch additional user details
+      const userDetails = {
+        ...user,
+        applications: []
+      };
+      
+      // Add applications if contactId is available
+      if (user.contactId && fetchDetails) {
+        try {
+          const applications = await usersModule.fetchApplicationsByContactId(user.contactId);
+          userDetails.applications = applications;
+          userDetails.hasApplications = applications.length > 0;
+        } catch (err) {
+          console.error("Error fetching applications:", err);
+          userDetails.applicationsError = err.message;
+        }
+      }
+      
+      return userDetails;
+    } catch (error) {
+      console.error("Error finding user:", error);
+      return null;
+    }
+  };
 
   // Create context value
   const value = {
@@ -846,7 +891,18 @@ export function DashboardProvider({ children }) {
     
     // Data freshness tracking
     lastUpdatedTimestamps,
-    getLastUpdatedTimestamp
+    getLastUpdatedTimestamp,
+    
+    // Enhanced user lookups
+    findUser,
+    
+    // Extra utility tools
+    userLookupTools: {
+      findUser,
+      findUserByAnyIdentifier: usersModule.findUserByAnyIdentifier,
+      fetchApplicationsByContactId: usersModule.fetchApplicationsByContactId,
+      findUserViaLinkedRecords: usersModule.findUserViaLinkedRecords
+    }
   }
 
   return (
