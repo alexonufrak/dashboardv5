@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RefreshButton } from '@/components/common/RefreshButton';
+import RefreshButton from '@/components/common/RefreshButton';
 
 // Import all hooks in one place to make them available for testing
 import * as allHooks from '@/lib/airtable/hooks';
