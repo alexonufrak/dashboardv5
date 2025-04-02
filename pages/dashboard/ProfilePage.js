@@ -14,12 +14,12 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2, Mail, School, MapPin, Smartphone } from "lucide-react"
-// ProfileEditModal is now included in MainDashboardLayout
+// Import our standalone profile dialog button
+import ProfileDialogButton from "@/components/profile/ProfileDialogButton"
 
 // Inner component that uses dashboard context
 function ProfilePageInner({ onNavigate }) {
-  const { profile, user, isLoading, error, handleProfileUpdate, refreshData } = useDashboard()
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const { profile, user, isLoading, error, refreshData } = useDashboard()
   
   if (isLoading) {
     return (
@@ -50,26 +50,8 @@ function ProfilePageInner({ onNavigate }) {
     )
   }
   
-  const handleEditClick = () => {
-    console.log("Opening edit modal in ProfilePage");
-    console.log("Current state before:", isEditModalOpen);
-    
-    // Use the function version of setState to guarantee we're operating on the latest state
-    setIsEditModalOpen(prev => {
-      console.log("Setting to true, previous was:", prev);
-      return true;
-    });
-    
-    // Add a delay and check if the state was properly updated
-    setTimeout(() => {
-      console.log("State after timeout:", isEditModalOpen);
-    }, 100);
-  }
-  
-  const handleEditClose = () => {
-    console.log("Closing edit modal in ProfilePage");
-    setIsEditModalOpen(false);
-  }
+  // We're now using the ProfileDialogButton component 
+  // which handles its own state management
   
   return (
     <div className="profile-page space-y-6">
@@ -80,9 +62,9 @@ function ProfilePageInner({ onNavigate }) {
             Manage your personal information and preferences
           </p>
         </div>
-        <Button onClick={handleEditClick}>
+        <ProfileDialogButton>
           Edit Profile
-        </Button>
+        </ProfileDialogButton>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
