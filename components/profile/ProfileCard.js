@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { useProfileData, useUpdateProfile } from '@/lib/airtable/hooks';
+import React, { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useProfileData, useUpdateProfile, useCompositeProfile } from '@/lib/airtable/hooks';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,12 +21,15 @@ export default function ProfileCard() {
   const { user } = useUser();
   const [isEditOpen, setIsEditOpen] = useState(false);
   
-  // Use the profile data hook to fetch user profile
+  // Use the composite profile hook to fetch comprehensive user profile data
   const { 
     data: profile, 
     isLoading: profileLoading, 
     error: profileError 
-  } = useProfileData(user?.sub);
+  } = useCompositeProfile({
+    enabled: !!user?.sub,
+    alwaysEnabled: true
+  });
   
   // Handle loading state
   if (profileLoading) {
@@ -96,7 +100,11 @@ export default function ProfileCard() {
             
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
               <DialogTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setIsEditOpen(true)}
+                >
                   <Pencil className="h-4 w-4" />
                 </Button>
               </DialogTrigger>
@@ -136,10 +144,17 @@ export default function ProfileCard() {
             </div>
           )}
           
-          {profile.institutionName && (
+          {(profile.institutionName || profile.institution?.name || profile.institutionId) && (
             <div className="flex items-center text-sm">
               <School className="h-4 w-4 mr-3 text-muted-foreground" />
-              <span>{profile.institutionName}</span>
+              <span>
+                {profile.institutionName || 
+                 profile.institution?.name || 
+                 (profile.institution?.fields?.Name) || 
+                 (profile.institutionId && !profile.institutionId.startsWith('rec') 
+                  ? profile.institutionId 
+                  : "Unknown Institution")}
+              </span>
             </div>
           )}
           
@@ -150,13 +165,15 @@ export default function ProfileCard() {
             </div>
           )}
           
-          {(profile.major || profile.gradYear) && (
+          {(profile.major || profile.majorName || profile.education?.major || profile.graduationYear || profile.gradYear) && (
             <div className="flex items-center text-sm">
               <Briefcase className="h-4 w-4 mr-3 text-muted-foreground" />
               <span>
-                {profile.major}
-                {profile.major && profile.gradYear && ' • '}
-                {profile.gradYear && `Class of ${profile.gradYear}`}
+                {profile.majorName || profile.major || profile.education?.major}
+                {(profile.majorName || profile.major || profile.education?.major) && 
+                 (profile.graduationYear || profile.gradYear) && ' • '}
+                {(profile.graduationYear || profile.gradYear) && 
+                 `Class of ${profile.graduationYear || profile.gradYear}`}
               </span>
             </div>
           )}
@@ -168,17 +185,34 @@ export default function ProfileCard() {
 
 // Profile Edit Form Component
 function ProfileEditForm({ profile, onSuccess }) {
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     name: profile.name || '',
     headline: profile.headline || '',
     bio: profile.bio || '',
     pronouns: profile.pronouns || '',
     location: profile.location || '',
-    avatarUrl: profile.avatarUrl || ''
+    avatarUrl: profile.avatarUrl || '',
+    // Include education and institution fields for better record updating
+    educationId: profile?.education?.id || profile?.educationId || null,
+    institutionId: profile?.institution?.id || profile?.institutionId || null,
+    contactId: profile?.contactId || null
   });
   
-  // Use the mutation hook for profile updates
+  // Use the mutation hook for profile updates with proper debugging
   const updateProfileMutation = useUpdateProfile();
+  
+  // Log the available profile data to debug
+  useEffect(() => {
+    if (profile) {
+      console.log('ProfileEditForm received profile:', {
+        institutionName: profile.institutionName,
+        institution: profile.institution,
+        educationId: profile.educationId,
+        contactId: profile.contactId
+      });
+    }
+  }, [profile]);
   
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -189,10 +223,19 @@ function ProfileEditForm({ profile, onSuccess }) {
     e.preventDefault();
     
     try {
+      console.log('Submitting profile update with data:', formData);
+      
       await updateProfileMutation.mutateAsync({
-        auth0Id: profile.auth0Id,
+        auth0Id: profile.auth0Id, 
+        contactId: profile.contactId, // Include contactId for more reliable updates
         updateData: formData
       });
+      
+      // Invalidate related queries to ensure UI consistency
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: ['contact', 'current'] });
+      queryClient.invalidateQueries({ queryKey: ['education', 'user'] });
+      queryClient.invalidateQueries({ queryKey: ['profile', 'composed'] });
       
       onSuccess?.();
     } catch (error) {
