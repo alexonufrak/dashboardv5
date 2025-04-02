@@ -13,6 +13,28 @@
 - `brave-search` - Use this MCP tool for performing web searches with Brave Search
 - `playwright` - Use this MCP tool for browser automation and web interactions
 - `airtable` - Use this MCP tool for Airtable database operations
+- `linear` - Use this MCP tool for Linear project management operations
+
+### Linear MCP Tool Usage Guide
+The Linear MCP tool allows interaction with the Linear project management system. To use it effectively:
+
+1. **Authentication**: Requires a Linear API token to be configured
+2. **Available Commands**:
+   - View issues: `Show me all my Linear issues`
+   - Create issues: `Create a new issue titled 'Fix login bug' in the Frontend team`
+   - Update status: `Change the status of issue FE-123 to 'In Progress'`
+   - Assign issues: `Assign issue BE-456 to John Smith`
+   - Add comments: `Add a comment to issue UI-789: 'This needs to be fixed by Friday'`
+   - View projects and teams
+   - Create projects and teams
+
+3. **Features**:
+   - Retrieve issues, projects, teams, and other data from Linear
+   - Create and update issues
+   - Change issue status
+   - Assign issues to team members
+   - Add comments
+   - Create projects and teams
 
 ## Code Style Guidelines
 - **Framework**: Next.js with React functional components and hooks
@@ -43,6 +65,15 @@
 - `styles/`: Global CSS with Tailwind
 
 ## Auth0 v4 Implementation Guidelines
+
+### Auth0 Correct Import Paths
+- Client-side components: 
+  - ✅ `import { useUser } from "@auth0/nextjs-auth0"`
+  - ❌ NOT `import { useUser } from "@auth0/nextjs-auth0/client"` (fails in production)
+- Server-side (Auth0 client): 
+  - ✅ `import { Auth0Client } from "@auth0/nextjs-auth0/server"`
+- Auth0Provider in _app.js: 
+  - ✅ `import { Auth0Provider } from "@auth0/nextjs-auth0"`
 
 ### Auth0 Configuration
 - Auth0 client is initialized in `lib/auth0.js` using `Auth0Client` from `@auth0/nextjs-auth0/server`
@@ -75,12 +106,13 @@ export default async function handler(req, res) {
 
 ### User Sessions
 - Use `auth0.getSession()` to retrieve user sessions on the server
-- Use the `useUser()` hook from `@auth0/nextjs-auth0/client` to access user data in client components
+- Use the `useUser()` hook from `@auth0/nextjs-auth0` to access user data in client components
 - For updating sessions, use `auth0.updateSession()`
 
 ### Login/Logout Flow
-- For login: `<a href="/auth/login">Login</a>`
-- For logout: `<a href="/auth/logout">Logout</a>`
+- For login: `<a href="/auth/login">Login</a>` (not `/api/auth/login`)
+- For logout: `<a href="/auth/logout">Logout</a>` (not `/api/auth/logout`)
+- Callback URL is now `/auth/callback` (not `/api/auth/callback`)
 
 ### Cookie Domain Configuration
 Set cookie domain only in production to allow localhost in development:
