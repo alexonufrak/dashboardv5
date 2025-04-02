@@ -6,7 +6,7 @@
  */
 import React, { useState } from 'react';
 import { useMyContact } from '@/lib/hooks/useContact';
-import { useMyEducation, useUpdateEducation } from '@/lib/hooks/useEducation';
+import { useMyEducation, useUpdateEducation } from '@/lib/airtable/hooks/useEducation';
 import DataDisplay from '@/components/common/DataDisplay';
 
 export function EducationInfo() {
