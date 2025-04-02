@@ -17,11 +17,27 @@ export default createApiHandler({
   // GET handler for retrieving current user's contact
   GET: async (req, res, { user, startTime }) => {
     try {
-      // First try to fetch by Auth0 ID, then by email
-      let contact = await getUserByAuth0Id(user.sub);
+      // Prioritize lookup by email first (more reliable)
+      let contact = null;
       
-      if (!contact && user.email) {
+      if (user.email) {
+        // First try direct email lookup
         contact = await getUserByEmail(user.email);
+        
+        // If email lookup fails, try finding via linked records
+        if (!contact) {
+          try {
+            const { findUserViaLinkedRecords } = await import('@/lib/airtable/entities/users');
+            contact = await findUserViaLinkedRecords(user.email);
+          } catch (err) {
+            console.error("Error finding user via linked records:", err);
+          }
+        }
+      }
+      
+      // Fallback to Auth0 ID lookup only if email methods failed
+      if (!contact && user.sub) {
+        contact = await getUserByAuth0Id(user.sub);
       }
       
       // If no contact found, return basic user info

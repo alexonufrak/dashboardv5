@@ -252,23 +252,48 @@ const ProfileEditModal = ({ profile: providedProfile, onSave, onClose }) => {
   // Error state
   if (profileError && !profile) {
     const errorMessage = profileError.message || "Failed to load profile data";
+    
+    // Determine error type for better user guidance
     const isAuth0Error = errorMessage.includes("Auth0 ID") || 
                           errorMessage.includes("auth0") ||
                           errorMessage.includes("not found");
     
-    // Provide more helpful error message and retry option
+    const isConnectionError = errorMessage.includes("network") || 
+                             errorMessage.includes("timeout") || 
+                             errorMessage.includes("connect") ||
+                             errorMessage.includes("database") ||
+                             errorMessage.includes("rate limit");
+    
+    // Enhanced error handling based on error type                         
     return (
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Error Loading Profile</DialogTitle>
         </DialogHeader>
-        <Alert variant="destructive" className="mb-4">
+        <Alert 
+          variant={isConnectionError ? "warning" : "destructive"} 
+          className="mb-4"
+        >
           <AlertDescription>
-            {isAuth0Error 
-              ? "We're having trouble identifying your account. This may be because your profile was created with a different email." 
-              : errorMessage}
+            {isConnectionError 
+              ? "There was a problem connecting to our database. This is likely a temporary issue."
+              : isAuth0Error 
+                ? "We're having trouble identifying your account. This may be because your profile was created with a different email." 
+                : errorMessage}
           </AlertDescription>
         </Alert>
+        
+        {/* Show different troubleshooting guidance based on error type */}
+        {isConnectionError && (
+          <div className="my-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+            <h4 className="font-medium text-blue-800 mb-2">Connection Issues:</h4>
+            <ul className="list-disc list-inside text-sm text-blue-700 space-y-1">
+              <li>This is likely a temporary database connection issue</li>
+              <li>Wait a moment and try again using the Retry button</li>
+              <li>Check your internet connection if the problem persists</li>
+            </ul>
+          </div>
+        )}
         
         {isAuth0Error && (
           <div className="my-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
@@ -281,6 +306,16 @@ const ProfileEditModal = ({ profile: providedProfile, onSave, onClose }) => {
           </div>
         )}
         
+        {/* If it's an unknown error, show the detailed error for debugging */}
+        {!isConnectionError && !isAuth0Error && (
+          <div className="my-4 p-4 bg-slate-50 border border-slate-200 rounded-md overflow-auto max-h-40">
+            <h4 className="font-medium text-slate-800 mb-2">Error Details:</h4>
+            <pre className="text-xs text-slate-700 whitespace-pre-wrap">
+              {JSON.stringify(profileError, null, 2)}
+            </pre>
+          </div>
+        )}
+        
         <DialogFooter className="gap-2">
           <Button 
             variant="outline" 
@@ -290,11 +325,20 @@ const ProfileEditModal = ({ profile: providedProfile, onSave, onClose }) => {
           </Button>
           <Button 
             onClick={() => {
-              // Re-trigger the profile query
-              queryClient.invalidateQueries({ queryKey: ['contact', 'current'] });
-              queryClient.invalidateQueries({ queryKey: ['education', 'user'] });
-              queryClient.invalidateQueries({ queryKey: ['profile', 'composed'] });
+              // Show feedback during retry
+              console.log("Retrying profile fetch...");
+              
+              // Invalidate the cache for all related queries
+              queryClient.invalidateQueries({ queryKey: ['contact'] });
+              queryClient.invalidateQueries({ queryKey: ['education'] });
+              queryClient.invalidateQueries({ queryKey: ['profile'] });
+              
+              // Force refetch the critical queries
               queryClient.refetchQueries({ queryKey: ['contact', 'current', 'email'] });
+              setTimeout(() => {
+                // Wait a moment and refetch again if needed
+                queryClient.refetchQueries({ queryKey: ['profile', 'composed'] });
+              }, 1500);
             }}
           >
             Retry

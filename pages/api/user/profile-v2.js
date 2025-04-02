@@ -90,8 +90,27 @@ async function handleUpdateProfile(req, res, user, startTime) {
       return res.status(400).json({ error: "Request body is required" });
     }
     
-    // Get the current profile to find contactId
-    const currentProfile = await users.getUserByAuth0Id(userId) || await users.getUserByEmail(userEmail);
+    // Get the current profile to find contactId, prioritizing email lookup
+    let currentProfile = null;
+    
+    if (userEmail) {
+      // Try email lookup first
+      currentProfile = await users.getUserByEmail(userEmail);
+      
+      // If email lookup fails, try finding via linked records
+      if (!currentProfile) {
+        try {
+          currentProfile = await users.findUserViaLinkedRecords(userEmail);
+        } catch (err) {
+          console.error("Error finding user via linked records:", err);
+        }
+      }
+    }
+    
+    // Fallback to Auth0 ID lookup only if email methods failed
+    if (!currentProfile && userId) {
+      currentProfile = await users.getUserByAuth0Id(userId);
+    }
     
     if (!currentProfile || !currentProfile.contactId) {
       return res.status(404).json({ error: "User profile not found" });

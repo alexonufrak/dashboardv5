@@ -46,8 +46,27 @@ async function handleGetOnboardingStatus(req, res, user) {
     const userId = user.sub;
     const userEmail = user.email;
     
-    // Get user from Airtable by Auth0 ID or email
-    const userProfile = await users.getUserByAuth0Id(userId) || await users.getUserByEmail(userEmail);
+    // Get user from Airtable with email-first lookup strategy
+    let userProfile = null;
+    
+    if (userEmail) {
+      // Try email lookup first
+      userProfile = await users.getUserByEmail(userEmail);
+      
+      // If email lookup fails, try finding via linked records
+      if (!userProfile) {
+        try {
+          userProfile = await users.findUserViaLinkedRecords(userEmail);
+        } catch (err) {
+          console.error("Error finding user via linked records:", err);
+        }
+      }
+    }
+    
+    // Fallback to Auth0 ID lookup only if email methods failed
+    if (!userProfile && userId) {
+      userProfile = await users.getUserByAuth0Id(userId);
+    }
     
     if (!userProfile || !userProfile.contactId) {
       return res.status(404).json({ error: 'User profile not found in Airtable' });
@@ -96,9 +115,28 @@ async function handleCompleteOnboarding(req, res, user) {
     // If contactId is provided in the request, use it directly
     let contactId = requestContactId;
     
-    // Otherwise look up the user to get their contactId
+    // Otherwise look up the user to get their contactId with email-first strategy
     if (!contactId) {
-      const userProfile = await users.getUserByAuth0Id(userId) || await users.getUserByEmail(userEmail);
+      let userProfile = null;
+      
+      if (userEmail) {
+        // Try email lookup first
+        userProfile = await users.getUserByEmail(userEmail);
+        
+        // If email lookup fails, try finding via linked records
+        if (!userProfile) {
+          try {
+            userProfile = await users.findUserViaLinkedRecords(userEmail);
+          } catch (err) {
+            console.error("Error finding user via linked records:", err);
+          }
+        }
+      }
+      
+      // Fallback to Auth0 ID lookup only if email methods failed
+      if (!userProfile && userId) {
+        userProfile = await users.getUserByAuth0Id(userId);
+      }
       
       if (!userProfile || !userProfile.contactId) {
         return res.status(404).json({ error: 'User profile not found in Airtable' });
