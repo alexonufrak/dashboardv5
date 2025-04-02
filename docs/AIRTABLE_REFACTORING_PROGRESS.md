@@ -67,6 +67,8 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
 - ✅ Partnership detail API (`pages/api/partnerships/[partnershipId].js`)
 - ✅ Institution partnerships API (`pages/api/institutions/[institutionId]/partnerships.js`)
 - ✅ Initiative partnerships API (`pages/api/programs/[programId]/partnerships.js`) (using program in URL for compatibility)
+- ✅ Education API - user's education (`pages/api/education/mine.js`)
+- ✅ Education API - specific education record (`pages/api/education/[educationId].js`)
 
 ### Sample Refactored Components
 - ✅ User profile operations (`userProfile.refactored.js`)
@@ -81,6 +83,7 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
 - ✅ Cohort card component (`components/cohorts/CohortCard.refactored.js`)
 - ✅ Profile card component (`components/profile/ProfileCard.refactored.js`)
 - ✅ Milestone table component (`components/milestones/MilestoneTable.refactored.js`)
+- ✅ Education info component (`components/profile/EducationInfo.refactored.js`)
 
 ### Documentation
 - ✅ Airtable Migration Guide (`docs/AIRTABLE_MIGRATION_GUIDE.md`)
@@ -126,7 +129,7 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
 | Domain Area            | Entities | Hooks | Sample API | Sample Component | Progress |
 |------------------------|----------|-------|------------|------------------|----------|
 | User & Profile         | ✅       | ✅    | ✅         | ✅               | 100%     |
-| Education/Institutions | ✅       | ✅    | ✅         | ❌               | 75%      |
+| Education/Institutions | ✅       | ✅    | ✅         | ✅               | 100%     |
 | Teams                  | ✅       | ✅    | ✅         | ✅               | 100%     |
 | Participation          | ✅       | ✅    | ✅         | ✅               | 100%     |
 | Initiatives & Cohorts  | ✅       | ✅    | ✅         | ✅               | 100%     |
@@ -135,6 +138,7 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
 | Resources              | ✅       | ✅    | ✅         | ✅               | 100%     |
 | Events                 | ✅       | ✅    | ✅         | ✅               | 100%     |
 | Partnerships           | ✅       | ✅    | ✅         | ❌               | 75%      |
+
 
 ## Next Steps
 
@@ -145,6 +149,19 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
 5. Gradually phase out the old `airtable.js` implementation
 
 ## Recent Updates
+
+### April 2, 2025
+- Completed the Education/Institutions domain implementation
+- Created Education API endpoints for both user education and specific education records
+- Implemented React Query hooks for education data in `useEducation.js`
+- Created sample refactored `EducationInfo.refactored.js` component using the new hooks
+- Updated the refactoring progress document to mark Education/Institutions domain as 100% complete
+- Fixed Auth0 ID lookup issues in Airtable:
+  - Implemented direct record fetching for reliability using getUsersByRecordIds function
+  - Added caching for Auth0 ID to record ID mapping for faster, more reliable lookups
+  - Updated formula queries to use SEARCH instead of equality for better special character handling
+  - Modified getCompleteProfile to prioritize email lookups over Auth0 ID
+  - Added robust error handling and fallbacks for Auth0 ID queries
 
 ### April 1, 2025
 - Fixed entity export pattern in `entities/index.js` to ensure backwards compatibility

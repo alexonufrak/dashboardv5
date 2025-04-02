@@ -1,9 +1,8 @@
 /**
- * API endpoint for managing the current user's education record
+ * API endpoint for managing education records by ID
  * Supports GET and PATCH methods
  */
 import { auth0 } from '@/lib/auth0';
-import { getUserProfile } from '@/lib/airtable/entities/users';
 import { getEducation, updateEducation } from '@/lib/airtable/entities/education';
 
 export default async function handler(req, res) {
@@ -15,25 +14,33 @@ export default async function handler(req, res) {
         error: 'Not authenticated'
       });
     }
-    const { user } = session;
+    
+    // Get education ID from route parameter
+    const { educationId } = req.query;
+    
+    if (!educationId) {
+      return res.status(400).json({
+        error: 'Education ID is required'
+      });
+    }
     
     // Handle different HTTP methods
     switch (req.method) {
       case 'GET':
-        return handleGetRequest(req, res, user);
+        return handleGetRequest(req, res, educationId);
       case 'PATCH':
-        return handlePatchRequest(req, res, user);
+        return handlePatchRequest(req, res, educationId);
       case 'POST':
         // Support POST with _method=PATCH to handle SameSite cookie issues
         if (req.body && req.body._method?.toUpperCase() === 'PATCH') {
-          return handlePatchRequest(req, res, user);
+          return handlePatchRequest(req, res, educationId);
         }
         return res.status(405).json({ error: 'Method not allowed' });
       default:
         return res.status(405).json({ error: 'Method not allowed' });
     }
   } catch (error) {
-    console.error('Error in education/mine API:', error);
+    console.error(`Error in education/[educationId] API:`, error);
     return res.status(500).json({
       error: 'Internal server error',
       message: error.message
@@ -42,38 +49,16 @@ export default async function handler(req, res) {
 }
 
 /**
- * Handle GET request to fetch the user's education record
+ * Handle GET request to fetch a specific education record
  */
-async function handleGetRequest(req, res, user) {
+async function handleGetRequest(req, res, educationId) {
   try {
-    // Get the user's profile to find their contact ID
-    const profile = await getUserProfile(user.sub);
-    
-    if (!profile) {
-      return res.status(404).json({
-        error: 'User profile not found'
-      });
-    }
-    
-    // Check if the user has an education record linked
-    if (!profile.educationId) {
-      return res.status(200).json({
-        education: {
-          exists: false,
-          message: 'No education record found for this user'
-        }
-      });
-    }
-    
     // Fetch the education record
-    const education = await getEducation(profile.educationId);
+    const education = await getEducation(educationId);
     
     if (!education) {
-      return res.status(200).json({
-        education: {
-          exists: false,
-          message: 'Education record linked but not found'
-        }
+      return res.status(404).json({
+        error: 'Education record not found'
       });
     }
     
@@ -94,22 +79,22 @@ async function handleGetRequest(req, res, user) {
 }
 
 /**
- * Handle PATCH request to update the user's education record
+ * Handle PATCH request to update a specific education record
  */
-async function handlePatchRequest(req, res, user) {
+async function handlePatchRequest(req, res, educationId) {
   try {
-    // Get the user's profile to find their contact ID
-    const profile = await getUserProfile(user.sub);
+    // Check if education record exists
+    const existingEducation = await getEducation(educationId);
     
-    if (!profile || !profile.contactId) {
+    if (!existingEducation) {
       return res.status(404).json({
-        error: 'User profile or contact record not found'
+        error: 'Education record not found'
       });
     }
     
     // Extract education data from the request body
     const {
-      educationId,
+      contactId,
       institutionId,
       institutionName,
       degreeType,
@@ -120,16 +105,16 @@ async function handlePatchRequest(req, res, user) {
     } = req.body;
     
     // Validate required fields
-    if (!institutionId && !institutionName) {
+    if (!contactId) {
       return res.status(400).json({
-        error: 'Institution is required'
+        error: 'Contact ID is required'
       });
     }
     
-    // Update or create the education record
+    // Update the education record
     const updatedEducation = await updateEducation({
-      educationId: educationId || profile.educationId,
-      contactId: profile.contactId,
+      educationId,
+      contactId,
       institutionId,
       institutionName,
       degreeType,
