@@ -7,8 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useMajors } from "@/lib/useDataFetching";
-import { useUpdateProfile } from '@/lib/airtable/hooks/useProfile';
+// Import all hooks directly from the hooks index file for centralized access
+import { 
+  useUpdateProfile, 
+  useAllMajors, 
+  useCompositeProfile 
+} from '@/lib/airtable/hooks';
 
 const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
   const queryClient = useQueryClient();
@@ -33,29 +37,49 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
   const [wasSuccessful, setWasSuccessful] = useState(false); // Track if the submission succeeded
   const [error, setError] = useState(null);
   
-  // Use our custom hook to fetch and cache majors
+  // Use the composite profile hook to fetch complete profile data if not provided
+  const {
+    data: composedProfile,
+    isLoading: isLoadingProfile
+  } = useCompositeProfile({
+    // Only fetch if we're open and don't have a profile provided
+    enabled: isOpen && !profile,
+    // Stale time of 1 minute for quick refreshes
+    staleTime: 60 * 1000
+  });
+
+  // Use the DDD hook to fetch majors
   const { 
     data: majors = [], 
     isLoading: isLoadingMajors, 
     error: majorsError 
-  } = useMajors();
+  } = useAllMajors();
   
   // Removed major debugging useEffect
   
   // Reset form and submission state when profile changes or modal is opened/closed
   useEffect(() => {
-    if (profile) {
+    // Use the provided profile or the composed profile from our DDD hook
+    const profileData = profile || composedProfile;
+    
+    if (profileData) {
       // Reset form data with profile values
       setFormData({
-        firstName: profile.firstName || "",
-        lastName: profile.lastName || "",
-        degreeType: profile.degreeType || "",
-        major: profile.programId && profile.programId.startsWith('rec') ? profile.programId : "", // Validate record ID
-        majorName: profile.major || "", // Display name format
-        graduationYear: profile.graduationYear || "",
-        educationId: profile.educationId || null,
-        institutionId: profile.institution?.id || null,
-        programId: profile.programId // Keep original programId as a backup
+        firstName: profileData.firstName || "",
+        lastName: profileData.lastName || "",
+        degreeType: profileData.degreeType || "",
+        // Support both profileData.programId and profileData.major (which might be a record ID)
+        major: (profileData.programId && profileData.programId.startsWith('rec')) 
+          ? profileData.programId 
+          : (profileData.major && profileData.major.startsWith('rec') 
+            ? profileData.major
+            : ""), 
+        majorName: profileData.majorName || profileData.major || "", // Store the name for display purposes
+        graduationYear: profileData.graduationYear || "",
+        educationId: profileData.educationId || profileData.education?.id || null,
+        institutionId: profileData.institutionId || profileData.institution?.id || null,
+        contactId: profileData.contactId || null, // Ensure we have the contact ID for the update
+        programId: profileData.programId // Keep original programId as a backup
       });
       
       // Reset submission tracking state on each new profile load
@@ -64,7 +88,7 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
       setWasSuccessful(false);
       setError(null);
     }
-  }, [profile, isOpen]);
+  }, [profile, composedProfile, isOpen]);
   
   // Reset submission state when modal closes
   useEffect(() => {
@@ -238,11 +262,21 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
         processedFormData.major = null;
       }
       
-      // Ensure contactId and institutionId are included
+      // Ensure we have the proper IDs for the update
+      // Prioritize in this order:
+      // 1. Form data
+      // 2. Provided profile data
+      // 3. Composed profile data (from our DDD hooks)
       return {
         ...processedFormData,
-        contactId: profile.contactId,
-        institutionId: processedFormData.institutionId || profile.institution?.id
+        // Contact ID is required for updates
+        contactId: processedFormData.contactId || 
+                  profile?.contactId || 
+                  composedProfile?.contactId,
+        // Institution ID may be needed for some updates
+        institutionId: processedFormData.institutionId || 
+                      profile?.institution?.id || 
+                      composedProfile?.institution?.id
       };
     };
 
@@ -285,6 +319,14 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
           if (onSave && typeof onSave === 'function') {
             onSave(data);
           }
+          
+          // Invalidate related queries to ensure consistent UI state
+          // This is also done in the hook's onSuccess, but we do it here too
+          // to ensure proper timing with the modal closing
+          queryClient.invalidateQueries({ queryKey: ['profile'] });
+          queryClient.invalidateQueries({ queryKey: ['contact', 'current'] });
+          queryClient.invalidateQueries({ queryKey: ['education', 'user'] });
+          queryClient.invalidateQueries({ queryKey: ['profile', 'composed'] });
           
           // Close the modal after a short delay
           setTimeout(() => onClose(), 100);

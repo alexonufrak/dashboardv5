@@ -9,7 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { School, Mail, MapPin, Briefcase, Pencil } from 'lucide-react';
 import { useUser } from '@auth0/nextjs-auth0';
-import { useMyContact, useUpdateContact } from '@/lib/hooks/useContact';
+import { useMyContact } from '@/lib/airtable/hooks/useContact';
+import { useUpdateProfile } from '@/lib/airtable/hooks/useContact';
 import { useMyEducation } from '@/lib/airtable/hooks/useEducation';
 import DataDisplay from '@/components/common/DataDisplay';
 
@@ -229,7 +230,7 @@ function ProfileEditForm({ profile, onSuccess }) {
   });
   
   // Use the domain-specific hook for updates
-  const { update, isUpdating } = useUpdateContact();
+  const { execute: update, isExecuting: isUpdating } = useUpdateProfile();
   
   const handleChange = (e) => {
     const { name, value } = e.target;

@@ -5,12 +5,13 @@
  * using the domain-driven hooks and components.
  */
 import React, { useState } from 'react';
-import { useMyContact, useUpdateContact } from '@/lib/hooks/useContact';
+import { useMyContact } from '@/lib/airtable/hooks/useContact';
+import { useUpdateProfile as useUpdateContact } from '@/lib/airtable/hooks/useContact';
 import DataDisplay from '@/components/common/DataDisplay';
 
 export function ContactInfo() {
   const { data: contact, isLoading, isError, error, refetch } = useMyContact();
-  const { update: updateContact, isUpdating } = useUpdateContact();
+  const { execute: updateContact, isExecuting: isUpdating } = useUpdateContact();
   
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({

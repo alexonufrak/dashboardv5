@@ -5,7 +5,7 @@
  * using the domain-driven hooks and components.
  */
 import React from 'react';
-import { useMyParticipation } from '@/lib/hooks/useParticipation';
+import { useParticipation as useMyParticipation } from '@/lib/airtable/hooks/useParticipation';
 import DataDisplay from '@/components/common/DataDisplay';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';

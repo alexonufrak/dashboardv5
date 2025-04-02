@@ -5,7 +5,7 @@
  * using the domain-driven hooks and components.
  */
 import React, { useState } from 'react';
-import { useMyContact } from '@/lib/hooks/useContact';
+import { useMyContact } from '@/lib/airtable/hooks/useContact';
 import { useMyEducation, useUpdateEducation } from '@/lib/airtable/hooks/useEducation';
 import DataDisplay from '@/components/common/DataDisplay';
 
