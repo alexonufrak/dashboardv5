@@ -3,7 +3,7 @@
  * Supports GET and PATCH methods
  */
 import { auth0 } from '@/lib/auth0';
-import { getUserProfile } from '@/lib/airtable/entities/users';
+import { getCompleteProfile } from '@/lib/airtable/entities/users';
 import { getEducation, updateEducation } from '@/lib/airtable/entities/education';
 
 export default async function handler(req, res) {
@@ -46,17 +46,18 @@ export default async function handler(req, res) {
  */
 async function handleGetRequest(req, res, user) {
   try {
-    // Get the user's profile to find their contact ID
-    const profile = await getUserProfile(user.sub);
+    // Get the user's profile to find their contact ID, using the complete profile function
+    // which prioritizes email-based lookups over Auth0 ID
+    const profile = await getCompleteProfile(user);
     
-    if (!profile) {
+    if (!profile || !profile.contactId) {
       return res.status(404).json({
         error: 'User profile not found'
       });
     }
     
     // Check if the user has an education record linked
-    if (!profile.educationId) {
+    if (!profile.education || profile.education.length === 0) {
       return res.status(200).json({
         education: {
           exists: false,
@@ -65,8 +66,11 @@ async function handleGetRequest(req, res, user) {
       });
     }
     
+    // Use the first education record ID
+    const educationId = profile.education[0];
+    
     // Fetch the education record
-    const education = await getEducation(profile.educationId);
+    const education = await getEducation(educationId);
     
     if (!education) {
       return res.status(200).json({
@@ -98,8 +102,9 @@ async function handleGetRequest(req, res, user) {
  */
 async function handlePatchRequest(req, res, user) {
   try {
-    // Get the user's profile to find their contact ID
-    const profile = await getUserProfile(user.sub);
+    // Get the user's profile to find their contact ID, using the complete profile function
+    // which prioritizes email-based lookups over Auth0 ID
+    const profile = await getCompleteProfile(user);
     
     if (!profile || !profile.contactId) {
       return res.status(404).json({
@@ -126,9 +131,14 @@ async function handlePatchRequest(req, res, user) {
       });
     }
     
+    // Get existing educationId if available
+    const existingEducationId = 
+      educationId || 
+      (profile.education && profile.education.length > 0 ? profile.education[0] : null);
+    
     // Update or create the education record
     const updatedEducation = await updateEducation({
-      educationId: educationId || profile.educationId,
+      educationId: existingEducationId,
       contactId: profile.contactId,
       institutionId,
       institutionName,
