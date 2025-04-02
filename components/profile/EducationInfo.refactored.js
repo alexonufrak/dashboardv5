@@ -5,7 +5,7 @@
  * Uses the domain-driven hooks for Airtable integration
  */
 import React, { useState, useEffect } from 'react';
-import { useUser } from '@auth0/nextjs-auth0/client';
+import { useUser } from '@auth0/nextjs-auth0';
 import { useMyEducation, useUpdateEducation } from '@/lib/airtable/hooks/useEducation';
 import { useInstitutionSearch } from '@/lib/airtable/hooks/useInstitutions';
 import { Button } from '@/components/ui/button';

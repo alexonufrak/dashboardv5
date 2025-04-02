@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { School, Mail, MapPin, Briefcase, Pencil } from 'lucide-react';
-import { useUser } from '@auth0/nextjs-auth0/client';
+import { useUser } from '@auth0/nextjs-auth0';
 import { useMyContact, useUpdateContact } from '@/lib/hooks/useContact';
 import { useMyEducation } from '@/lib/hooks/useEducation';
 import DataDisplay from '@/components/common/DataDisplay';

@@ -23,7 +23,7 @@ import {
   FileText,
   Award
 } from 'lucide-react';
-import { useUser } from '@auth0/nextjs-auth0/client';
+import { useUser } from '@auth0/nextjs-auth0';
 import ErrorDisplay from '@/components/common/ErrorDisplay';
 
 // Import the refactored components

@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useMemo } from "react"
-import { useUser as useAuth0User } from "@auth0/nextjs-auth0/client"
+import { useUser as useAuth0User } from "@auth0/nextjs-auth0"
 import { useQueryClient } from "@tanstack/react-query"
 import { 
   useProfileData, 

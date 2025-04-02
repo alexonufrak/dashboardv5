@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Calendar, FileText, Clock, Upload, ExternalLink, Check, X, AlertTriangle } from 'lucide-react';
 import { format, isAfter, isBefore } from 'date-fns';
-import { useUser } from '@auth0/nextjs-auth0/client';
+import { useUser } from '@auth0/nextjs-auth0';
 
 /**
  * MilestoneTable Component - Refactored to use the new Airtable hooks
