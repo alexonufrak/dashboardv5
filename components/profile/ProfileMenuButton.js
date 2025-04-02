@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useDashboard } from "@/contexts/DashboardContext"
+import { Dialog } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -23,6 +24,7 @@ import {
   XCircle,
   ExternalLink
 } from "lucide-react"
+import ProfileEditModal from "./ProfileEditModal.refactored"
 
 const ProfileMenuButton = ({ user, profile, onEditClick }) => {
   // Import dashboard context to access modal state
@@ -38,15 +40,21 @@ const ProfileMenuButton = ({ user, profile, onEditClick }) => {
       .toUpperCase()
   }
   
-  // Handle edit profile click - use context if available, otherwise use prop function
+  // State for the local dialog if context is not available
+  const [localDialogOpen, setLocalDialogOpen] = useState(false);
+  
+  // Handle edit profile click - use context if available, otherwise use local state
   const handleEditClick = (e) => {
     e.preventDefault();
     
-    // Try context first, then fallback to prop
+    // Try context first, then fallback to prop function, then local state
     if (typeof setIsEditModalOpen === 'function') {
       setIsEditModalOpen(true);
     } else if (typeof onEditClick === 'function') {
       onEditClick();
+    } else {
+      // Use local state as last resort
+      setLocalDialogOpen(true);
     }
   }
 
@@ -140,6 +148,23 @@ const ProfileMenuButton = ({ user, profile, onEditClick }) => {
         </div>
       </div>
     </div>
+    
+    {/* Local dialog fallback if context is not available */}
+    {profile && (
+      <Dialog 
+        open={localDialogOpen} 
+        onOpenChange={setLocalDialogOpen}
+      >
+        <ProfileEditModal 
+          profile={profile}
+          onClose={() => setLocalDialogOpen(false)}
+          onSave={() => {
+            setLocalDialogOpen(false);
+            window.location.reload(); // Simple refresh after saving
+          }}
+        />
+      </Dialog>
+    )}
   )
 }
 

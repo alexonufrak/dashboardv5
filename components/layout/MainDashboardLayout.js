@@ -13,7 +13,8 @@ import { Separator } from "@/components/ui/separator"
 import { isProgramRoute } from '@/lib/routing'
 import { Skeleton } from "@/components/ui/skeleton"
 import { Toaster } from "sonner"
-import ProfileEditModal from "@/components/profile/ProfileEditModal"
+import { Dialog } from "@/components/ui/dialog"
+import ProfileEditModal from "@/components/profile/ProfileEditModal.refactored"
 import { useDashboard } from "@/contexts/DashboardContext"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -204,14 +205,15 @@ const MainDashboardLayout = ({
         {children}
       </LayoutShell>
       
-      {/* Add profile edit modal to all dashboard pages */}
+      {/* Add profile edit modal to all dashboard pages using the refactored component */}
       {profile && (
-        <ProfileEditModal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          profile={profile}
-          onSave={handleProfileUpdate}
-        />
+        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+          <ProfileEditModal
+            profile={profile}
+            onClose={() => setIsEditModalOpen(false)}
+            onSave={handleProfileUpdate}
+          />
+        </Dialog>
       )}
     </>
   )
