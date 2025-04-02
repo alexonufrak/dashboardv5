@@ -99,7 +99,7 @@ export function EducationInfo() {
           refetch={refetch}
           emptyComponent={
             <div className="text-center p-4 text-gray-500">
-              No education information found. Click "Add Education" to get started.
+              No education information found. Click &quot;Add Education&quot; to get started.
             </div>
           }
         >
@@ -136,11 +136,11 @@ export function EducationInfo() {
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">Select Degree Type</option>
-                        <option value="Bachelor's">Bachelor's</option>
-                        <option value="Master's">Master's</option>
-                        <option value="PhD">PhD</option>
-                        <option value="Associate's">Associate's</option>
-                        <option value="Certificate">Certificate</option>
+                        <option value="Bachelor&apos;s">Bachelor&apos;s</option>
+                        <option value="Master&apos;s">Master&apos;s</option>
+                        <option value="Doctorate">Doctorate</option>
+                        <option value="Undergraduate">Undergraduate</option>
+                        <option value="Graduate">Graduate</option>
                       </select>
                     </div>
                   </div>
