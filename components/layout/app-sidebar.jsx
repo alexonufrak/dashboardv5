@@ -131,13 +131,15 @@ export function AppSidebar({
     }
   ];
 
-  // Get institution name from profile data
+  // Get institution name from profile data with updated education structure
   const institutionName = React.useMemo(() => {
     if (!profile) return "Institution";
     
-    return profile.institutionName || 
-           profile.institution?.name || 
-           "Your Institution";
+    // Use proper field paths from Airtable lookup fields
+    return profile["Name (from Institution)"] || 
+           profile.institutionName || 
+           profile["Institution (from Education)"]?.[0] || 
+           "Institution";
   }, [profile]);
 
   // User data for the NavUser component
