@@ -251,18 +251,54 @@ const ProfileEditModal = ({ profile: providedProfile, onSave, onClose }) => {
   
   // Error state
   if (profileError && !profile) {
+    const errorMessage = profileError.message || "Failed to load profile data";
+    const isAuth0Error = errorMessage.includes("Auth0 ID") || 
+                          errorMessage.includes("auth0") ||
+                          errorMessage.includes("not found");
+    
+    // Provide more helpful error message and retry option
     return (
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Error Loading Profile</DialogTitle>
         </DialogHeader>
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="mb-4">
           <AlertDescription>
-            {profileError.message || "Failed to load profile data"}
+            {isAuth0Error 
+              ? "We're having trouble identifying your account. This may be because your profile was created with a different email." 
+              : errorMessage}
           </AlertDescription>
         </Alert>
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Close</Button>
+        
+        {isAuth0Error && (
+          <div className="my-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
+            <h4 className="font-medium text-amber-800 mb-2">Troubleshooting Steps:</h4>
+            <ul className="list-disc list-inside text-sm text-amber-700 space-y-1">
+              <li>Verify you're logged in with the correct account</li>
+              <li>Try logging out and back in again</li>
+              <li>Contact support if the issue persists</li>
+            </ul>
+          </div>
+        )}
+        
+        <DialogFooter className="gap-2">
+          <Button 
+            variant="outline" 
+            onClick={onClose}
+          >
+            Close
+          </Button>
+          <Button 
+            onClick={() => {
+              // Re-trigger the profile query
+              queryClient.invalidateQueries({ queryKey: ['contact', 'current'] });
+              queryClient.invalidateQueries({ queryKey: ['education', 'user'] });
+              queryClient.invalidateQueries({ queryKey: ['profile', 'composed'] });
+              queryClient.refetchQueries({ queryKey: ['contact', 'current', 'email'] });
+            }}
+          >
+            Retry
+          </Button>
         </DialogFooter>
       </DialogContent>
     );
