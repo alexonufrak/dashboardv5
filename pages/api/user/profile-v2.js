@@ -124,8 +124,17 @@ async function handleUpdateProfile(req, res, user, startTime) {
       graduationYear: req.body.graduationYear,
       institutionId: req.body.institutionId,
       major: req.body.major || null,
+      educationId: req.body.educationId, // Include education ID for updating existing record
       contactId: currentProfile.contactId
     };
+    
+    // Log detailed update information to help with debugging
+    console.log(`Profile update for user ${userEmail} with education data:`, {
+      educationId: req.body.educationId,
+      degreeType: req.body.degreeType,
+      major: req.body.major,
+      graduationYear: req.body.graduationYear
+    });
     
     // Update profile using entity module
     const updatedProfile = await users.updateUserProfile(currentProfile.contactId, updateData);
