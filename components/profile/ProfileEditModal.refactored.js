@@ -75,9 +75,9 @@ const ProfileEditModal = ({ profile: providedProfile, onSave, onClose }) => {
         firstName: profile.firstName || "",
         lastName: profile.lastName || "",
         degreeType: profile.degreeType || "",
-        major: (profile.programId && profile.programId.startsWith('rec')) 
+        major: (profile.programId && typeof profile.programId === 'string' && profile.programId.startsWith('rec')) 
           ? profile.programId 
-          : (profile.major && profile.major.startsWith('rec') 
+          : (profile.major && typeof profile.major === 'string' && profile.major.startsWith('rec') 
             ? profile.major
             : ""), 
         majorName: profile.majorName || profile.major || "",
@@ -191,13 +191,13 @@ const ProfileEditModal = ({ profile: providedProfile, onSave, onClose }) => {
       const processedData = { ...formData };
       
       // Process major field - must be a valid Airtable record ID
-      if (processedData.major && !processedData.major.startsWith('rec')) {
+      if (processedData.major && typeof processedData.major === 'string' && !processedData.major.startsWith('rec')) {
         // Try to match by name
         const matchingMajor = majors.find(m => m.name === processedData.major);
         
         if (matchingMajor) {
           processedData.major = matchingMajor.id;
-        } else if (profile?.programId && profile.programId.startsWith('rec')) {
+        } else if (profile?.programId && typeof profile.programId === 'string' && profile.programId.startsWith('rec')) {
           processedData.major = profile.programId;
         } else {
           processedData.major = null;

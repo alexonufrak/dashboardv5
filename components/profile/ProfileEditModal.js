@@ -20,7 +20,7 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     firstName: profile?.firstName || "",
     lastName: profile?.lastName || "",
     degreeType: profile?.degreeType || "",
-    major: profile?.programId && profile?.programId.startsWith('rec') ? profile.programId : "", // Ensure it's a valid record ID
+    major: profile?.programId && typeof profile.programId === 'string' && profile.programId.startsWith('rec') ? profile.programId : "", // Ensure it's a valid record ID
     majorName: profile?.major || "", // Store the name for display purposes
     graduationYear: profile?.graduationYear || "",
     educationId: profile?.educationId || null,
@@ -69,9 +69,9 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
         lastName: profileData.lastName || "",
         degreeType: profileData.degreeType || "",
         // Support both profileData.programId and profileData.major (which might be a record ID)
-        major: (profileData.programId && profileData.programId.startsWith('rec')) 
+        major: (profileData.programId && typeof profileData.programId === 'string' && profileData.programId.startsWith('rec')) 
           ? profileData.programId 
-          : (profileData.major && profileData.major.startsWith('rec') 
+          : (profileData.major && typeof profileData.major === 'string' && profileData.major.startsWith('rec') 
             ? profileData.major
             : ""), 
         majorName: profileData.majorName || profileData.major || "", // Store the name for display purposes
@@ -513,7 +513,7 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
                           console.log(`Major selection changed to: "${selectedValue}"`);
                           
                           // Validate the value is a valid Airtable ID
-                          if (selectedValue && !selectedValue.startsWith('rec')) {
+                          if (selectedValue && typeof selectedValue === 'string' && !selectedValue.startsWith('rec')) {
                             console.warn(`Selected major value is not a valid Airtable ID: ${selectedValue}`);
                           }
                           
