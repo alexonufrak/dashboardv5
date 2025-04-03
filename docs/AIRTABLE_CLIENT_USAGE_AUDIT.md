@@ -33,7 +33,7 @@ We've conducted a thorough audit of the codebase to identify all instances where
 | ---- | ------ | --------------- | -------- | ------ |
 | `/lib/airtable/hooks/useContact.js` | `import { users } from '../entities'` | `/api/contacts/me` | High | ✅ Fixed |
 | `/lib/airtable/hooks/useMyContact` and `useContactByAuth0Id` | Direct Airtable access | `/api/contacts/me` | High | ✅ Fixed |
-| `/lib/airtable/hooks/useEducation.js` | `import { education } from '../entities'` | `/api/education/mine` and `/api/education/[educationId]` | High |
+| `/lib/airtable/hooks/useEducation.js` | `import { education } from '../entities'` | `/api/education/mine` and `/api/education/[educationId]` | High | ✅ Fixed |
 | `/lib/airtable/hooks/useEducationRecords.js` | `import { education, institutions } from '../entities'` | `/api/education/mine` and `/api/institutions` | Medium |
 | `/lib/airtable/hooks/useApplications.js` | `import { applications } from '../entities'` | `/api/applications/mine` and `/api/applications/create` | Medium |
 | `/lib/airtable/hooks/useTeams.js` | `import { teams } from '../entities'` | `/api/teams/[teamId]` and related endpoints | Medium |
@@ -58,7 +58,8 @@ The following API endpoints need to be created or enhanced:
 
 1. **High Priority**:
    - ✅ User/contact-related hooks (useContact.js) - COMPLETED
-   - Education-related hooks (useEducation.js, useEducationRecords.js)
+   - ✅ Education-related hooks (useEducation.js) - COMPLETED
+   - Education records hooks (useEducationRecords.js)
 
 2. **Medium Priority**:
    - Program/cohort-related hooks (usePrograms.js, useCohorts.js) 

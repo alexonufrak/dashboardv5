@@ -299,7 +299,7 @@ const ProfileEditModal = ({ profile: providedProfile, onSave, onClose }) => {
           <div className="my-4 p-4 bg-amber-50 border border-amber-200 rounded-md">
             <h4 className="font-medium text-amber-800 mb-2">Troubleshooting Steps:</h4>
             <ul className="list-disc list-inside text-sm text-amber-700 space-y-1">
-              <li>Verify you're logged in with the correct account</li>
+              <li>Verify you&apos;re logged in with the correct account</li>
               <li>Try logging out and back in again</li>
               <li>Contact support if the issue persists</li>
             </ul>

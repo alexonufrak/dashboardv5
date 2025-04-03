@@ -388,7 +388,7 @@ export function EducationInfo() {
             </div>
           ) : (
             <div className="text-center p-4 text-gray-500">
-              No education information found. Click "Add Education" to get started.
+              No education information found. Click &quot;Add Education&quot; to get started.
             </div>
           )
         )}

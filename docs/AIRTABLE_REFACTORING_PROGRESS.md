@@ -106,6 +106,7 @@ The Airtable refactoring project aims to replace the monolithic `airtable.js` im
   - ✅ Added user onboarding-completed route using new architecture
   - ✅ Added user profile-v2 route using new architecture
   - ✅ Fixed entity exports to support both old and new import patterns
+  - ✅ Refactored education hooks to use API-first pattern
   - ⏳ Continue refactoring remaining routes
 
 ### Components

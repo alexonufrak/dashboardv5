@@ -161,8 +161,8 @@ export default function EducationProfileExample() {
                 <SelectValue placeholder="Select degree type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Bachelors">Bachelor's</SelectItem>
-                <SelectItem value="Masters">Master's</SelectItem>
+                <SelectItem value="Bachelors">Bachelor&apos;s</SelectItem>
+                <SelectItem value="Masters">Master&apos;s</SelectItem>
                 <SelectItem value="PhD">PhD</SelectItem>
                 <SelectItem value="Associate">Associate</SelectItem>
                 <SelectItem value="High School">High School</SelectItem>
