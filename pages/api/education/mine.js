@@ -131,10 +131,22 @@ async function handlePatchRequest(req, res, user) {
       });
     }
     
-    // Get existing educationId if available
-    const existingEducationId = 
-      educationId || 
-      (profile.education && profile.education.length > 0 ? profile.education[0] : null);
+    // Always check for existing education records first
+    let existingEducationId = null;
+    
+    // First look for educationId in request
+    if (educationId) {
+      existingEducationId = educationId;
+      console.log(`Using education ID from request: ${existingEducationId}`);
+    } 
+    // Then check profile's education array
+    else if (profile.education && profile.education.length > 0) {
+      existingEducationId = profile.education[0];
+      console.log(`Found existing education record in profile: ${existingEducationId}`);
+    }
+    
+    // Log the education update for debugging
+    console.log(`Education update request for user ${user.email} using educationId: ${existingEducationId || 'creating new'}`);
     
     // Update or create the education record
     const updatedEducation = await updateEducation({

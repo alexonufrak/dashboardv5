@@ -7,12 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-// Import all hooks directly from the hooks index file for centralized access
-import { 
-  useUpdateProfile, 
-  useAllMajors, 
-  useCompositeProfile 
-} from '@/lib/airtable/hooks';
+// Import hooks directly from their source modules for better control
+import { useCompositeProfile } from '@/lib/airtable/hooks/useProfileComposite';
+import { useUpdateEducationViaApi } from '@/lib/airtable/hooks/useEducation';
+import { useAllMajors } from '@/lib/airtable/hooks';
 
 const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
   const queryClient = useQueryClient();
@@ -28,8 +26,8 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
     contactId: profile?.contactId || null, // Ensure we have the contact ID for the update
   });
   
-  // Use TanStack Query's mutation hook for profile updates
-  const updateProfile = useUpdateProfile();
+  // Use the API-first education update hook
+  const updateEducation = useUpdateEducationViaApi();
   
   // Track submission state with multiple flags for better control
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -294,38 +292,58 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
       // Step 3: Mark submission as in progress
       setHasSubmitted(true);
       
-      // Log what we're submitting
+      // Log what we're submitting with full details
       console.log("Submitting profile update:", {
         firstName: updateData.firstName,
         lastName: updateData.lastName,
-        major: updateData.major
+        degreeType: updateData.degreeType,
+        graduationYear: updateData.graduationYear,
+        major: updateData.major,
+        educationId: updateData.educationId, // Log educationId for debugging
+        institutionId: updateData.institutionId,
+        contactId: updateData.contactId
       });
       
-      // Step 4: Trigger the mutation using TanStack Query's mutation hook
+      // Step 4: Trigger the education update mutation using the API-first hook
       // The mutation hook handles:
-      // - Optimistic updates (updating UI before API completes)
-      // - Error handling with automatic rollback
-      // - Proper cache invalidation to update all components
-      updateProfile.mutate(updateData, {
+      // - API request with proper error handling
+      // - Cache invalidation across related queries
+      updateEducation.mutate(updateData, {
         // These callbacks apply to this specific mutation call
-        // They supplement (not replace) the ones defined in the mutation hook
         onSuccess: (data) => {
           // Update component state on success
           setWasSuccessful(true);
           setIsSubmitting(false);
-          console.log("Profile update completed successfully");
+          console.log("Education update completed successfully:", data);
           
           // Call the component's onSave callback with the updated profile
           if (onSave && typeof onSave === 'function') {
-            onSave(data);
+            // Extract education data from the response
+            const updatedEducation = data.education;
+            
+            // Construct a complete profile object with the updated education data
+            const updatedProfile = {
+              ...updateData,
+              education: updatedEducation,
+              educationId: updatedEducation.id,
+              // Include education fields at the top level for backward compatibility
+              degreeType: updatedEducation.degreeType,
+              graduationYear: updatedEducation.graduationYear,
+              major: updatedEducation.major,
+              majorName: updatedEducation.majorName,
+              institution: {
+                id: updateData.institutionId
+              }
+            };
+            
+            onSave(updatedProfile);
           }
           
-          // Invalidate related queries to ensure consistent UI state
-          // This is also done in the hook's onSuccess, but we do it here too
-          // to ensure proper timing with the modal closing
+          // Manual invalidation to ensure all components update
+          // The hook also does this, but we add it here for completeness
+          queryClient.invalidateQueries({ queryKey: ['education'] });
           queryClient.invalidateQueries({ queryKey: ['profile'] });
-          queryClient.invalidateQueries({ queryKey: ['contact', 'current'] });
-          queryClient.invalidateQueries({ queryKey: ['education', 'user'] });
+          queryClient.invalidateQueries({ queryKey: ['contact'] });
           queryClient.invalidateQueries({ queryKey: ['profile', 'composed'] });
           
           // Close the modal after a short delay
@@ -333,10 +351,10 @@ const ProfileEditModal = ({ isOpen, onClose, profile, onSave }) => {
         },
         onError: (error) => {
           // Handle errors specific to this component
-          console.error("Profile update failed:", error);
+          console.error("Education update failed:", error);
           setIsSubmitting(false);
           setHasSubmitted(false);
-          setError(error.message || "Failed to update profile");
+          setError(error.message || "Failed to update education information");
         }
       });
     } catch (error) {
