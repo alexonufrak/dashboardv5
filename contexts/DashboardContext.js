@@ -87,6 +87,27 @@ function LegacyContextBridge({ children }) {
     refreshData: (dataType) => {
       switch(dataType) {
         case 'profile':
+          console.log('Refreshing profile data from DashboardContext');
+          // Use query client to force invalidation
+          const queryClient = window._queryClient;
+          if (queryClient) {
+            // Invalidate all profile-related queries
+            queryClient.invalidateQueries({ queryKey: ['profile'] });
+            queryClient.invalidateQueries({ queryKey: ['contact'] });
+            queryClient.invalidateQueries({ queryKey: ['education'] });
+            queryClient.invalidateQueries({ queryKey: ['profile', 'composed'] });
+            
+            // Force refetch of v2 API endpoint
+            queryClient.fetchQuery({
+              queryKey: ['profile', 'current'],
+              queryFn: async () => {
+                const response = await fetch('/api/user/profile-v2?refresh=true');
+                if (!response.ok) throw new Error('Failed to fetch profile');
+                return response.json();
+              }
+            });
+          }
+          // Also call the refetch function
           userContext.refetchProfile()
           break
         case 'teams':

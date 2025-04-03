@@ -46,9 +46,14 @@ export default async function handler(req, res) {
  */
 async function handleGetRequest(req, res, user) {
   try {
+    // Check if we should force a refresh
+    const forceRefresh = req.query.refresh === 'true';
+    
     // Get the user's profile to find their contact ID, using the complete profile function
     // which prioritizes email-based lookups over Auth0 ID
-    const profile = await getCompleteProfile(user);
+    const profile = await getCompleteProfile(user, { forceRefresh });
+    
+    console.log(`Fetching education for user ${user.email}, force refresh: ${forceRefresh}`);
     
     if (!profile || !profile.contactId) {
       return res.status(404).json({
@@ -58,6 +63,7 @@ async function handleGetRequest(req, res, user) {
     
     // Check if the user has an education record linked
     if (!profile.education || profile.education.length === 0) {
+      console.log(`No education records found for user ${user.email}`);
       return res.status(200).json({
         education: {
           exists: false,
@@ -68,11 +74,13 @@ async function handleGetRequest(req, res, user) {
     
     // Use the first education record ID
     const educationId = profile.education[0];
+    console.log(`Found education record ID ${educationId} for user ${user.email}`);
     
-    // Fetch the education record
-    const education = await getEducation(educationId);
+    // Fetch the education record, passing refresh option
+    const education = await getEducation(educationId, { ttl: forceRefresh ? 0 : 3600 });
     
     if (!education) {
+      console.log(`Education record ${educationId} not found for user ${user.email}`);
       return res.status(200).json({
         education: {
           exists: false,
@@ -80,6 +88,12 @@ async function handleGetRequest(req, res, user) {
         }
       });
     }
+    
+    console.log(`Successfully fetched education record for user ${user.email}:`, {
+      institutionName: education.institutionName,
+      major: education.major,
+      graduationYear: education.graduationYear
+    });
     
     // Return the education data
     return res.status(200).json({

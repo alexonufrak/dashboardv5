@@ -51,13 +51,48 @@ async function handleGetProfile(req, res, user, startTime) {
     // Get minimal flag from query params
     const minimal = req.query.minimal === 'true';
     
+    // Force refresh parameter for bypassing cache
+    const forceRefresh = req.query.refresh === 'true';
+    
     // Get complete profile using our entity module
-    const profile = await users.getCompleteProfile(user, { minimal });
+    const profile = await users.getCompleteProfile(user, { minimal, forceRefresh });
+    
+    // If the profile has education record IDs but no education data, fetch that data
+    if (profile && Array.isArray(profile.education) && profile.education.length > 0) {
+      try {
+        // Import the education module to fetch education data
+        const { getEducation } = await import('@/lib/airtable/entities/education');
+        
+        // Get the first education record (most profiles only have one)
+        const educationId = profile.education[0];
+        const educationData = await getEducation(educationId);
+        
+        if (educationData) {
+          console.log(`Found education data for profile, adding to response`);
+          
+          // Add education data to the profile
+          profile.educationData = educationData;
+          
+          // Expose education fields at the top level for easier access in components
+          profile.educationId = educationData.id;
+          profile.institutionName = educationData.institutionName;
+          profile.institution = educationData.institution;
+          profile.degreeType = educationData.degreeType;
+          profile.graduationYear = educationData.graduationYear;
+          profile.graduationSemester = educationData.graduationSemester;
+          profile.major = educationData.major;
+          profile.majorName = educationData.majorName;
+        }
+      } catch (educationError) {
+        console.error("Error fetching education data:", educationError);
+        // Don't fail the whole request if education data fetch fails
+      }
+    }
     
     // Calculate processing time
     const processingTime = Date.now() - startTime;
     
-    // Return the profile data
+    // Return the enhanced profile data
     return res.status(200).json({
       profile,
       _meta: {

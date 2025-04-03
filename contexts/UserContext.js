@@ -23,13 +23,13 @@ export function UserProvider({ children }) {
   const { user: auth0User, isLoading: isAuth0Loading, error: auth0Error } = useAuth0User()
   const queryClient = useQueryClient()
   
-  // Fetch user profile data using domain-specific hooks
+  // Fetch user profile data using domain-specific hooks with refresh support
   const { 
     data: profile, 
     isLoading: isProfileLoading, 
     error: profileError,
     refetch: refetchProfile
-  } = useProfileData()
+  } = useProfileData({ refresh: true })
   
   // Mutation hooks for user operations
   const updateProfileMutation = useUpdateProfile()
