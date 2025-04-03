@@ -8,7 +8,7 @@ import {
   useUpdateProfile,
   useUpdateOnboardingStatus
 } from "@/lib/airtable/hooks"
-import usersModule from "@/lib/airtable/entities/users"
+import { createDataHook } from "@/lib/utils/hook-factory"
 
 /**
  * Context for user-related data and operations
@@ -68,6 +68,22 @@ export function UserProvider({ children }) {
     }
   }
   
+  // Create API-based hooks for profile lookup
+  const useUserProfile = createDataHook({
+    queryKey: ['user', 'profile'],
+    endpoint: '/api/user/profile-v3',
+    errorMessage: 'Failed to fetch user profile',
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+  
+  // Create API-based hooks for applications
+  const useUserApplications = createDataHook({
+    queryKey: ['user', 'applications'],
+    endpoint: '/api/applications/mine',
+    errorMessage: 'Failed to fetch user applications',
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+  
   /**
    * Enhanced user lookup function that tries multiple paths to find a user
    * @param {Object} identifiers - Object containing available identifiers (email, auth0Id, contactId)
@@ -76,8 +92,21 @@ export function UserProvider({ children }) {
    */
   const findUser = async (identifiers, fetchDetails = false) => {
     try {
-      // Use the optimized lookup function from the users entity module
-      const user = await usersModule.findUserByAnyIdentifier(identifiers)
+      // Use the existing user profile endpoint with query params
+      const params = new URLSearchParams()
+      if (identifiers.email) params.append('email', identifiers.email)
+      if (identifiers.auth0Id) params.append('auth0Id', identifiers.auth0Id)
+      if (identifiers.contactId) params.append('contactId', identifiers.contactId)
+      
+      // Use the profile API endpoint which already has user lookup logic
+      const response = await fetch(`/api/user/profile-v3?${params.toString()}`)
+      
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      const user = data.profile || null
       
       if (!user) return null
       
@@ -93,9 +122,16 @@ export function UserProvider({ children }) {
       // Add applications if contactId is available
       if (user.contactId && fetchDetails) {
         try {
-          const applications = await usersModule.fetchApplicationsByContactId(user.contactId)
-          userDetails.applications = applications
-          userDetails.hasApplications = applications.length > 0
+          const applicationsResponse = await fetch('/api/applications/mine')
+          
+          if (applicationsResponse.ok) {
+            const applicationsData = await applicationsResponse.json()
+            const applications = applicationsData.applications || []
+            userDetails.applications = applications
+            userDetails.hasApplications = applications.length > 0
+          } else {
+            throw new Error(`Failed to fetch applications: ${applicationsResponse.status}`)
+          }
         } catch (err) {
           console.error("Error fetching applications:", err)
           userDetails.applicationsError = err.message
@@ -158,12 +194,11 @@ export function UserProvider({ children }) {
     isUpdatingProfile: updateProfileMutation.isPending,
     updateProfileError: updateProfileMutation.error,
     
-    // Advanced user lookup tools
+    // Advanced user lookup tools (API-based)
     userLookupTools: {
       findUser,
-      findUserByAnyIdentifier: usersModule.findUserByAnyIdentifier,
-      fetchApplicationsByContactId: usersModule.fetchApplicationsByContactId,
-      findUserViaLinkedRecords: usersModule.findUserViaLinkedRecords
+      useUserProfile,
+      useUserApplications
     }
   }
   
