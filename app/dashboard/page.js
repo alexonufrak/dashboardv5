@@ -73,7 +73,7 @@ async function ProgramsSection({ userId }) {
   
   return (
     <div className="space-y-4">
-      <p className="text-muted-foreground">You're not currently enrolled in any programs.</p>
+      <p className="text-muted-foreground">You&apos;re not currently enrolled in any programs.</p>
     </div>
   );
 }
@@ -84,7 +84,7 @@ async function TeamsSection({ userId }) {
   
   return (
     <div className="space-y-4">
-      <p className="text-muted-foreground">You're not currently a member of any teams.</p>
+      <p className="text-muted-foreground">You&apos;re not currently a member of any teams.</p>
     </div>
   );
 }

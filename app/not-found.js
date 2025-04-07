@@ -11,7 +11,7 @@ export default function NotFound() {
       <div className="mx-auto flex max-w-xl flex-col items-center justify-center space-y-6 text-center">
         <h2 className="text-3xl font-bold tracking-tight">Page Not Found</h2>
         <p className="text-muted-foreground">
-          Sorry, we couldn't find the page you're looking for.
+          Sorry, we couldn&apos;t find the page you&apos;re looking for.
         </p>
         <Button asChild>
           <Link href="/dashboard">Back to Dashboard</Link>
