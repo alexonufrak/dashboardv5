@@ -1,4 +1,4 @@
-import { Auth0Provider } from "@auth0/nextjs-auth0"
+// import { Auth0Provider } from "@auth0/nextjs-auth0"
 import "../styles/globals.css"
 import "@fillout/react/style.css" // Import Fillout styles
 import { Toaster } from 'sonner';
@@ -10,7 +10,7 @@ import { Analytics } from "@vercel/analytics/react"
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { ThemeProvider } from '@/components/theme-provider'
-import { useUser } from "@auth0/nextjs-auth0"
+// import { useUser } from "@auth0/nextjs-auth0"
 import { AppRouterToggle } from '@/components/common/AppRouterToggle'
 
 // Simple class-based error boundary component defined inline to avoid import issues
@@ -55,7 +55,7 @@ class ErrorBoundary extends React.Component {
 
 // Special AppContent component to handle non-dashboard pages
 function AppContent({ Component, pageProps, router, queryClient }) {
-  const { user, isLoading } = useUser();
+  // const { user, isLoading } = useUser();
   
   // Check if this is a dashboard-related page to keep app state
   const isDashboardRoute = 
@@ -72,6 +72,7 @@ function AppContent({ Component, pageProps, router, queryClient }) {
     router.pathname.includes('/programs/apply/');
 
   // Set up user-specific query keys when user is available
+  /*
   useEffect(() => {
     if (user?.sub) {
       // Associate the user ID with the query client to ensure user-specific cache
@@ -90,8 +91,10 @@ function AppContent({ Component, pageProps, router, queryClient }) {
       }
     }
   }, [user, queryClient]);
+  */
 
   // Handle onboarding check (moved from middleware)
+  /*
   useEffect(() => {
     // Skip check if not logged in, loading, or not on dashboard
     if (!user || isLoading || router.pathname !== '/dashboard') {
@@ -114,6 +117,7 @@ function AppContent({ Component, pageProps, router, queryClient }) {
 
     checkOnboarding();
   }, [user, isLoading, router]);
+  */
 
   // If not a dashboard route, render Component directly
   if (!isDashboardRoute) {
@@ -241,7 +245,7 @@ function MyApp({ Component, pageProps }) {
         defaultTheme="system"
         enableSystem
       >
-        <Auth0Provider 
+        {/* <Auth0Provider 
           clientId={process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID}
           domain={process.env.NEXT_PUBLIC_AUTH0_DOMAIN}
           authorizationParams={{
@@ -252,7 +256,7 @@ function MyApp({ Component, pageProps }) {
           useRefreshTokens={true}
           useSecureCookies={true}
           cookieDomain={process.env.NODE_ENV === 'production' ? '.xfoundry.org' : undefined}
-        >
+        > */}
           <OnboardingProvider>
             <ErrorBoundary className="bg-white dark:bg-gray-900">
               <AppContent Component={Component} pageProps={pageProps} router={router} queryClient={queryClient} />
@@ -261,7 +265,7 @@ function MyApp({ Component, pageProps }) {
               {process.env.NODE_ENV === 'development' && <AppRouterToggle />}
             </ErrorBoundary>
           </OnboardingProvider>
-        </Auth0Provider>
+        {/* </Auth0Provider> */}
         {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
       </ThemeProvider>
     </QueryClientProvider>
