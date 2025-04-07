@@ -11,6 +11,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { ThemeProvider } from '@/components/theme-provider'
 import { useUser } from "@auth0/nextjs-auth0"
+import { AppRouterToggle } from '@/components/common/AppRouterToggle'
 
 // Simple class-based error boundary component defined inline to avoid import issues
 class ErrorBoundary extends React.Component {
@@ -256,6 +257,8 @@ function MyApp({ Component, pageProps }) {
             <ErrorBoundary className="bg-white dark:bg-gray-900">
               <AppContent Component={Component} pageProps={pageProps} router={router} queryClient={queryClient} />
               <Analytics />
+              {/* App Router feature flag toggle */}
+              {process.env.NODE_ENV === 'development' && <AppRouterToggle />}
             </ErrorBoundary>
           </OnboardingProvider>
         </Auth0Provider>

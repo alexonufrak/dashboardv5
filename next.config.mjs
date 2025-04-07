@@ -1,3 +1,7 @@
+/**
+ * Next.js configuration for hybrid Pages/App Router mode during migration
+ */
+
 let userConfig = undefined
 try {
   userConfig = await import('./v0-user-next.config')
@@ -44,6 +48,8 @@ const nextConfig = {
     parallelServerCompiles: true,
     // These packages should be processed by webpack normally
     serverComponentsExternalPackages: ['auth0'],
+    // Enable api routes collision detection between /pages and /app
+    allowedRevalidateHeaderKeys: [],
   },
   // Make base URL available to client
   env: {
@@ -72,6 +78,63 @@ const nextConfig = {
         source: '/dashboard/program/:path*',
         destination: '/dashboard/programs/:path*',
       },
+      // Add App Router priority rewrites
+      // These ensure the App Router routes are hit before Pages Router
+      {
+        source: '/dashboard',
+        destination: '/app/dashboard',
+        has: [
+          {
+            type: 'header',
+            key: 'x-use-app-router',
+            value: 'true'
+          }
+        ]
+      },
+      {
+        source: '/profile',
+        destination: '/app/dashboard/profile',
+        has: [
+          {
+            type: 'header',
+            key: 'x-use-app-router',
+            value: 'true'
+          }
+        ]
+      },
+      {
+        source: '/dashboard/profile',
+        destination: '/app/dashboard/profile',
+        has: [
+          {
+            type: 'header',
+            key: 'x-use-app-router',
+            value: 'true'
+          }
+        ]
+      },
+      {
+        source: '/dashboard/programs',
+        destination: '/app/dashboard/programs',
+        has: [
+          {
+            type: 'header',
+            key: 'x-use-app-router',
+            value: 'true'
+          }
+        ]
+      },
+      {
+        source: '/dashboard/program/:path*',
+        destination: '/app/dashboard/program/:path*',
+        has: [
+          {
+            type: 'header',
+            key: 'x-use-app-router',
+            value: 'true'
+          }
+        ]
+      }
     ]
   },
 }
