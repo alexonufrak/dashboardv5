@@ -1,8 +1,9 @@
 'use server'
 
-import { events } from '@/lib/airtable/entities';
-import { revalidatePath, revalidateTag } from 'next/cache';
-import { auth } from '@/lib/app-router-auth';
+import { revalidatePath } from 'next/cache';
+import { getCurrentUser } from '@/lib/app-router-auth';
+import { getEventsTable } from '@/lib/airtable/tables/definitions';
+import { redirect } from 'next/navigation';
 
 /**
  * Server Action to create a new event
@@ -10,64 +11,95 @@ import { auth } from '@/lib/app-router-auth';
  */
 export async function createEvent(formData) {
   try {
-    // Get auth session
-    const session = await auth();
-    if (!session) {
-      return { success: false, error: 'Not authenticated' };
+    // Get current user
+    const user = await getCurrentUser();
+    if (!user) {
+      redirect('/auth/login');
     }
     
-    // Extract data from formData
-    const eventData = {
-      name: formData.get('name'),
-      description: formData.get('description') || '',
-      startDateTime: formData.get('startDateTime'),
-      endDateTime: formData.get('endDateTime') || formData.get('startDateTime'),
-      location: formData.get('location') || '',
-      url: formData.get('url') || '',
-      type: formData.get('type') || 'General',
-      programId: formData.get('programId') || null,
-      cohortId: formData.get('cohortId') || null,
-      status: formData.get('status') || 'Scheduled',
+    // Parse dates from the form
+    const startDate = formData.get('startDate');
+    const startTime = formData.get('startTime');
+    const endDate = formData.get('endDate') || startDate;
+    const endTime = formData.get('endTime');
+    
+    // Format dates for Airtable
+    const formatDateForAirtable = (date, time) => {
+      if (!date) return null;
       
-      // Add creator information
-      createdBy: session.user.sub,
-      createdByName: `${session.user.given_name || ''} ${session.user.family_name || ''}`.trim()
+      // If no time provided, set to start of day
+      const timeToUse = time || '00:00';
+      
+      // Combine date and time into ISO string
+      const combinedDateTime = `${date}T${timeToUse}:00`;
+      return new Date(combinedDateTime).toISOString();
     };
     
+    const startDateTime = formatDateForAirtable(startDate, startTime);
+    const endDateTime = formatDateForAirtable(endDate, endTime);
+    
+    // Extract remaining data from formData
+    const name = formData.get('name');
+    const description = formData.get('description') || '';
+    const location = formData.get('location') || '';
+    const registrationUrl = formData.get('registrationUrl') || '';
+    const type = formData.get('type') || 'Workshop';
+    const programId = formData.get('programId') || null;
+    const cohortId = formData.get('cohortId') || null;
+    const status = formData.get('status') || 'Confirmed';
+    const registrationStatus = formData.get('registrationStatus') || 'Open';
+    const capacity = formData.get('capacity') ? parseInt(formData.get('capacity'), 10) : null;
+    
     // Validate required fields
-    if (!eventData.name) {
+    if (!name) {
       return { success: false, error: 'Event name is required' };
     }
     
-    if (!eventData.startDateTime) {
-      return { success: false, error: 'Start date/time is required' };
+    if (!startDate) {
+      return { success: false, error: 'Start date is required' };
     }
     
-    // Create the event
-    const result = await events.createEvent(eventData);
+    // Create fields object for Airtable
+    const fields = {
+      'Name': name,
+      'Description': description,
+      'Start Date': startDate,
+      'End Date': endDate || startDate,
+      'Start Time': startTime,
+      'End Time': endTime,
+      'Location': location,
+      'Registration URL': registrationUrl,
+      'Type': type,
+      'Status': status,
+      'Registration Status': registrationStatus,
+      'Capacity': capacity,
+      'Registration Count': 0
+    };
     
-    // Revalidate caches
-    revalidateTag('events');
-    revalidateTag('upcoming-events');
-    
-    if (eventData.programId) {
-      revalidateTag(`program:${eventData.programId}:events`);
+    // Add program and cohort if provided
+    if (programId) {
+      fields['Program'] = [programId];
     }
     
-    if (eventData.cohortId) {
-      revalidateTag(`cohort:${eventData.cohortId}:events`);
+    if (cohortId) {
+      fields['Cohort'] = [cohortId];
     }
+    
+    // Create the event in Airtable
+    const eventsTable = getEventsTable();
+    const createdEvent = await eventsTable.create(fields);
     
     // Revalidate related paths
     revalidatePath('/dashboard/events');
+    revalidatePath('/dashboard');
     
-    if (eventData.programId) {
-      revalidatePath(`/dashboard/program/${eventData.programId}`);
+    if (programId) {
+      revalidatePath(`/dashboard/programs/${programId}`);
     }
     
     return { 
       success: true,
-      data: result
+      data: createdEvent._rawJson
     };
   } catch (error) {
     console.error('Failed to create event:', error);

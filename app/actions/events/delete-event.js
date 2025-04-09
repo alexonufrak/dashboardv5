@@ -1,49 +1,61 @@
-'use server'
+'use server';
 
-import { events } from '@/lib/airtable/entities';
-import { revalidatePath, revalidateTag } from 'next/cache';
-import { auth } from '@/lib/app-router-auth';
+import { revalidatePath } from 'next/cache';
+import { getCurrentUser } from '@/lib/app-router-auth';
+import { getEventsTable } from '@/lib/airtable/tables/definitions';
+import { redirect } from 'next/navigation';
+import { getEventById } from '@/lib/app-router';
 
-export async function deleteEvent(eventId) {
+/**
+ * Server Action to delete an event
+ */
+export async function deleteEvent(formData) {
   try {
-    // Get auth session
-    const session = await auth();
-    if (!session) {
-      return { success: false, error: 'Not authenticated' };
+    // Get current user
+    const user = await getCurrentUser();
+    if (!user) {
+      redirect('/auth/login');
     }
-
-    // Validate event ID
+    
+    // Check if user is an admin (in a real app, use proper role checks)
+    const isAdmin = user.email?.endsWith('@xfoundry.org') || false;
+    if (!isAdmin) {
+      return { success: false, error: 'You do not have permission to delete events' };
+    }
+    
+    // Get event ID from the form data
+    const eventId = formData.get('eventId');
     if (!eventId) {
       return { success: false, error: 'Event ID is required' };
     }
     
-    // Check if event exists before deletion
-    const existingEvent = await events.getEventById(eventId);
-    if (!existingEvent) {
+    // Get the event details for revalidation purposes
+    const event = await getEventById(eventId);
+    if (!event) {
       return { success: false, error: 'Event not found' };
     }
     
     // Delete the event
-    const result = await events.deleteEvent(eventId);
+    const eventsTable = getEventsTable();
+    await eventsTable.destroy(eventId);
     
-    if (!result) {
-      return { success: false, error: 'Failed to delete event' };
+    // Revalidate related paths
+    revalidatePath('/dashboard/events');
+    revalidatePath('/dashboard');
+    
+    if (event.program) {
+      revalidatePath(`/dashboard/programs/${event.program}`);
     }
     
-    // Revalidate caches
-    revalidateTag('events');
-    revalidateTag('upcoming-events');
-    
-    // Revalidate paths
-    revalidatePath('/dashboard/events');
-    
     return { 
-      success: true, 
-      message: 'Event deleted successfully',
-      data: { id: eventId }
+      success: true,
+      message: 'Event deleted successfully'
     };
   } catch (error) {
-    console.error('Error deleting event:', error);
-    return { success: false, error: error.message || 'Failed to delete event' };
+    console.error('Failed to delete event:', error);
+    return { 
+      success: false, 
+      error: error.message || 'Failed to delete event'
+    };
   }
 }

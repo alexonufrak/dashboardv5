@@ -1,33 +1,16 @@
 import { Suspense } from 'react';
-import { getUserProfile } from '@/lib/app-router-auth';
-import { DashboardShell } from '@/components/dashboard/DashboardShell.jsx';
-import { redirect } from 'next/navigation';
+import { AppSidebarServer } from '@/components/layout/app-sidebar-server';
 
 /**
  * Dashboard Layout - Server Component
- * Provides common layout for all dashboard pages
+ * Provides common layout for all dashboard pages using the shadcn sidebar
  */
 export default async function DashboardLayout({ children }) {
-  try {
-    // Get user profile for dashboard
-    const profile = await getUserProfile();
-    
-    // If no profile, redirect to login
-    if (!profile) {
-      redirect('/auth/login');
-    }
-    
-    return (
-      <DashboardShell user={profile}>
-        <Suspense fallback={<div className="p-4">Loading...</div>}>
-          {children}
-        </Suspense>
-      </DashboardShell>
-    );
-  } catch (error) {
-    console.error('Dashboard layout error:', error);
-    
-    // If error occurs, redirect to login
-    redirect('/auth/login');
-  }
+  return (
+    <AppSidebarServer>
+      <Suspense fallback={<div className="p-4">Loading...</div>}>
+        {children}
+      </Suspense>
+    </AppSidebarServer>
+  );
 }

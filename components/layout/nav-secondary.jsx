@@ -1,5 +1,7 @@
-import * as React from "react"
-import Link from "next/link"
+'use client';
+
+import * as React from "react";
+import Link from "next/link";
 
 import {
   SidebarGroup,
@@ -8,21 +10,18 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 
-export function NavSecondary({
-  items,
-  ...props
-}) {
+export function NavSecondary({ items, ...props }) {
   return (
-    (<SidebarGroup {...props}>
+    <SidebarGroup {...props}>
       <SidebarGroupLabel>Links</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton asChild size="sm">
-                {item.url.startsWith('/api/') ? (
+                {item.url.startsWith('/auth/') ? (
                   // Internal auth links like logout
                   <Link href={item.url}>
                     <item.icon className="mr-2 h-4 w-4" />
@@ -40,6 +39,6 @@ export function NavSecondary({
           ))}
         </SidebarMenu>
       </SidebarGroupContent>
-    </SidebarGroup>)
+    </SidebarGroup>
   );
 }

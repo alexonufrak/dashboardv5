@@ -1,18 +1,19 @@
-"use client"
+'use client';
 
 import {
   LogOut,
   User,
   Moon,
   Sun,
-} from "lucide-react"
-import { useTheme } from "next-themes"
+} from "lucide-react";
+import { useTheme } from "next-themes";
+import Link from "next/link";
 
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@/components/ui/avatar"
+} from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,15 +22,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar"
-import { CaretSortIcon } from "@radix-ui/react-icons"
-import Link from "next/link"
+} from "@/components/ui/sidebar";
+import { CaretSortIcon } from "@radix-ui/react-icons";
 
 /**
  * Helper function to generate initials from name
@@ -43,16 +43,13 @@ function getInitials(name) {
   return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
 }
 
-export function NavUser({
-  user,
-  profile
-}) {
-  const { isMobile } = useSidebar()
-  const { setTheme, theme } = useTheme()
+export function NavUser({ user, profile }) {
+  const { isMobile } = useSidebar();
+  const { setTheme, theme } = useTheme();
   const initials = getInitials(user.name);
 
   return (
-    (<SidebarMenu>
+    <SidebarMenu>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -90,7 +87,7 @@ export function NavUser({
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
-                <Link href="/profile">
+                <Link href="/dashboard/profile">
                   <User className="mr-2 h-4 w-4" />
                   View Profile
                 </Link>
@@ -119,13 +116,15 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => window.location.href = '/auth/logout'}>
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Sign Out</span>
+            <DropdownMenuItem asChild>
+              <Link href="/auth/logout">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Sign Out</span>
+              </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
-    </SidebarMenu>)
+    </SidebarMenu>
   );
 }

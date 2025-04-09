@@ -37,6 +37,22 @@ export function DashboardShell({ user, children }) {
                 Programs
               </Link>
               <Link
+                href="/dashboard/teams"
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  pathname.startsWith("/dashboard/teams") ? "text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                Teams
+              </Link>
+              <Link
+                href="/dashboard/events"
+                className={`text-sm font-medium transition-colors hover:text-primary ${
+                  pathname.startsWith("/dashboard/events") ? "text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                Events
+              </Link>
+              <Link
                 href="/dashboard/profile"
                 className={`text-sm font-medium transition-colors hover:text-primary ${
                   pathname === "/dashboard/profile" ? "text-foreground" : "text-muted-foreground"
