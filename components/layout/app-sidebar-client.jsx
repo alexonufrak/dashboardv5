@@ -110,8 +110,8 @@ export function AppSidebarClient({
     
     return {
       name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || "User",
-      email: user.email,
-      avatar: user.headshot || '/placeholder-user.jpg',
+      email: user.email || user.sub,
+      avatar: user.picture || user.headshot || '/placeholder-user.jpg',
       onEditClick: onProfileEdit
     };
   }, [user, onProfileEdit]);
